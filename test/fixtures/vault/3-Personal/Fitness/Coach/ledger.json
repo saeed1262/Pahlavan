@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "constraints": [
+    {
+      "id": "abdominal-wall",
+      "area": "abdomen",
+      "noTags": [
+        "abdomen-high"
+      ],
+      "until": "2026-04-19",
+      "note": "No high-strain lifts until the review."
+    },
+    {
+      "id": "shoulder",
+      "area": "shoulder",
+      "noMovements": [
+        "overhead-press",
+        "ring-dip-unknown"
+      ]
+    }
+  ]
+}

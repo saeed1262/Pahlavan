@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "units": {
+    "load": "lb",
+    "body": "kg"
+  },
+  "basics": {
+    "birthYear": 1984,
+    "heightCm": 180,
+    "sex": "male"
+  },
+  "goals": [
+    {
+      "id": "recomp",
+      "kind": "recomposition",
+      "label": "Recomposition",
+      "importance": 9,
+      "confidence": 7,
+      "measure": "waist"
+    },
+    {
+      "id": "posture",
+      "kind": "posture",
+      "label": "Posture capacity",
+      "importance": 7,
+      "confidence": 6
+    }
+  ],
+  "availability": {
+    "daysPerWeek": 4,
+    "minutesPerSession": 60
+  },
+  "equipment": [
+    "dumbbells",
+    "cable",
+    "barbell",
+    "bench",
+    "rowing machine"
+  ],
+  "trackingLevel": "standard",
+  "screening": {
+    "outcome": "go",
+    "date": "2026-02-23"
+  },
+  "emphasis": [
+    {
+      "area": "Posture",
+      "seen": "Head forward, shoulders rounded",
+      "confidence": "medium",
+      "emphasis": "Pull:push about 2:1",
+      "kind": "forward-head-rounded-shoulders"
+    }
+  ],
+  "priorityMuscles": [
+    "glutes"
+  ],
+  "experience": "intermediate",
+  "preferences": {
+    "likes": [
+      "goblet-squat"
+    ],
+    "dislikes": [
+      "burpee-unknown"
+    ],
+    "cardio": [
+      "zone2-bike"
+    ]
+  },
+  "useHistory": true
+}

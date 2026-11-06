@@ -1,0 +1,373 @@
+{
+ "_about": "Reference numbers for this synthetic vault on 2026-04-12, computed outside this code base by running the fitness-coach skill's numbers.md snippets (date fixed to 2026-04-12; the readiness snippet's RHR flag patched to read a null resting HR as missing, README open question 13) and fitness_log.py review --date 2026-04-12 on a copy of these files.",
+ "date": "2026-04-12",
+ "snippets": {
+  "adherence": {
+   "weeks": [
+    {
+     "weekOf": "2026-03-16",
+     "lift": 3,
+     "short": 1,
+     "custom": 0,
+     "days": 4,
+     "habitDays": 4
+    },
+    {
+     "weekOf": "2026-03-23",
+     "lift": 2,
+     "short": 0,
+     "custom": 0,
+     "days": 2,
+     "habitDays": 2
+    },
+    {
+     "weekOf": "2026-03-30",
+     "lift": 3,
+     "short": 1,
+     "custom": 0,
+     "days": 4,
+     "habitDays": 4
+    },
+    {
+     "weekOf": "2026-04-06",
+     "lift": 3,
+     "short": 1,
+     "custom": 1,
+     "days": 5,
+     "habitDays": 6
+    }
+   ],
+   "lifting": {
+    "done": 11,
+    "planned": 12
+   },
+   "short": {
+    "done": 3,
+    "planned": 4
+   },
+   "meanSessionsPerWeek": 3.75,
+   "meanTrainingDays": 3.75
+  },
+  "readiness": {
+   "scored": 34,
+   "days": [
+    {
+     "date": "2026-03-28",
+     "r": -0.0012942748209168631,
+     "s": 0.0312987486286613,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-03-30",
+     "r": 0.2883194314498772,
+     "s": 0.15980909003926924,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-03-31",
+     "r": -0.4603072574475924,
+     "s": -0.15024908370416157,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-01",
+     "r": 0.1647507615479542,
+     "s": 0.007250838921896319,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": true
+    },
+    {
+     "date": "2026-04-02",
+     "r": -0.09945719539946017,
+     "s": -0.046103178238781926,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-03",
+     "r": -0.464334396643504,
+     "s": -0.25521878744114296,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-04",
+     "r": 0.577616094779398,
+     "s": 0.16119865366912753,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-05",
+     "r": 0.22493268560940466,
+     "s": 0.19306566963926608,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-06",
+     "r": -0.016154676105571576,
+     "s": 0.08845549676684725,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-07",
+     "r": 0.15575395878592993,
+     "s": 0.12210472777638859,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": false
+    },
+    {
+     "date": "2026-04-08",
+     "r": -0.44215950618590705,
+     "s": -0.16002738920475923,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": true
+    },
+    {
+     "date": "2026-04-09",
+     "r": -0.40065203017699336,
+     "s": -0.2803397096908763,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": true
+    },
+    {
+     "date": "2026-04-10",
+     "r": -1.5473666444984953,
+     "s": -0.9138531770946858,
+     "signals": 5,
+     "rhrFlag": false,
+     "shortSleep": true
+    },
+    {
+     "date": "2026-04-11",
+     "r": -1.5200736367230547,
+     "s": -1.2169634069088704,
+     "signals": 5,
+     "rhrFlag": true,
+     "shortSleep": true
+    }
+   ]
+  },
+  "weight": {
+   "cycleStart": "2026-02-23",
+   "weighIns": 45,
+   "trend": 83.77169121222504,
+   "slopeKgPerWeek": -0.1918369923269566,
+   "pctPerWeek": -0.0022899978447487915,
+   "spanDays": 28,
+   "windowWeighIns": 27,
+   "proteinFloor": 134
+  },
+  "e1rm": {
+   "Goblet Squat": {
+    "unit": "lb",
+    "sessions": 8,
+    "cut": 0,
+    "flag": null,
+    "best": 71.5,
+    "change": 0.1289473684210527,
+    "points": 8,
+    "twoMisses": false
+   },
+   "Flat DB Bench Press": {
+    "unit": "lb",
+    "sessions": 8,
+    "cut": 0,
+    "flag": null,
+    "best": 70.0,
+    "change": 0.004784688995215447,
+    "points": 8,
+    "twoMisses": true
+   },
+   "Romanian Deadlift": {
+    "unit": "kg",
+    "sessions": 7,
+    "cut": 0,
+    "flag": null,
+    "best": 88.66666666666666,
+    "change": 0.07692307692307687,
+    "points": 7,
+    "twoMisses": false
+   },
+   "Seated Cable Row": {
+    "unit": "lb",
+    "sessions": 8,
+    "cut": 6,
+    "flag": [
+     "2026-04-01",
+     "2026-04-06"
+    ],
+    "best": 160.0,
+    "change": null,
+    "points": 2,
+    "twoMisses": false
+   }
+  },
+  "volume": {
+   "planned": {
+    "quads": 10.5,
+    "glutes": 17.25,
+    "abs": 10.0,
+    "upper-back": 13.5,
+    "hamstrings": 9.75,
+    "chest": 6.5,
+    "shoulders": 15.25,
+    "triceps": 3.25,
+    "lower-back": 2.25,
+    "forearms": 4.5,
+    "lats": 4.5,
+    "biceps": 2.25,
+    "obliques": 5.25
+   },
+   "done": {
+    "hamstrings": 11.0,
+    "glutes": 19.0,
+    "lower-back": 3.0,
+    "forearms": 6.0,
+    "upper-back": 13.5,
+    "lats": 6.0,
+    "biceps": 3.0,
+    "shoulders": 17.5,
+    "quads": 10.0,
+    "abs": 14.5,
+    "obliques": 7.5,
+    "triceps": 5.0,
+    "chest": 7.0
+   },
+   "doneSessions": 4,
+   "missing": []
+  }
+ },
+ "fitnessLogReview": {
+  "week": {
+   "start": "2026-04-06",
+   "end": "2026-04-12",
+   "planWeek": 6,
+   "deload": false,
+   "deloadNext": false
+  },
+  "adherence": {
+   "lifting": {
+    "done": 3,
+    "target": 3
+   },
+   "short": {
+    "done": 1,
+    "target": 1
+   },
+   "custom": 1,
+   "cardioMin": 50
+  },
+  "lifts": {
+   "Barbell Back Squat": {
+    "last": null,
+    "next": null
+   },
+   "Goblet Squat": {
+    "last": {
+     "date": "2026-04-08",
+     "weight": 55,
+     "reps": 9,
+     "unit": "lb"
+    },
+    "next": {
+     "weight": 55,
+     "reps": 10
+    }
+   },
+   "Flat DB Bench Press": {
+    "last": {
+     "date": "2026-04-08",
+     "weight": 60,
+     "reps": 5,
+     "unit": "lb"
+    },
+    "next": {
+     "weight": 60,
+     "reps": 6
+    }
+   },
+   "Romanian Deadlift": {
+    "last": {
+     "date": "2026-04-11",
+     "weight": 70,
+     "reps": 8,
+     "unit": "kg"
+    },
+    "next": {
+     "weight": 70,
+     "reps": 9
+    }
+   },
+   "Seated Cable Row": {
+    "last": {
+     "date": "2026-04-11",
+     "weight": 120,
+     "reps": 10,
+     "unit": "lb"
+    },
+    "next": {
+     "weight": 120,
+     "reps": 11
+    }
+   }
+  },
+  "body": {
+   "cycleStart": "2026-02-23",
+   "weightTrend": 83.7,
+   "ratePerWeek": -0.22,
+   "sleep7": {
+    "value": 6.09,
+    "days": 7,
+    "through": "2026-04-11"
+   },
+   "steps7": {
+    "value": 8289.43,
+    "days": 7,
+    "through": "2026-04-10"
+   },
+   "floors7": {
+    "value": 3.0,
+    "days": 7,
+    "through": "2026-04-10"
+   },
+   "rhr7": {
+    "value": 61.0,
+    "days": 7,
+    "through": "2026-04-11"
+   }
+  },
+  "ladders": [
+   {
+    "id": "pushup",
+    "level": 2,
+    "since": "2026-03-17",
+    "testShowsLevel": null
+   },
+   {
+    "id": "handstand",
+    "level": 3,
+    "since": "2026-03-24",
+    "testShowsLevel": null
+   }
+  ],
+  "dueTemporaryChanges": []
+ }
+}

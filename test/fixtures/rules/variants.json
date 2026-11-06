@@ -1,0 +1,302 @@
+{
+  "name": "variants",
+  "about": "One full-body session in kg. Express: the plan's block (2 and 2 working sets, a face-pull finisher), or without one the main lifts at 2 sets. Hotel: each pattern kept with bodyweight, dumbbells or a band, the Ledger's abdominal limit (no high-strain lifts) in force; a 10-day trip scales the sets to a third, a 3-day one keeps them; reps shifted up 1.5x, RIR one lower but not under 1 (or the screening floor).",
+  "date": "2026-03-10",
+  "exercises": {
+    "back-squat": {
+      "name": "Barbell back squat",
+      "unit": "kg",
+      "increment": 2.5,
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "hamstrings"
+        ]
+      },
+      "pattern": "squat",
+      "risk": [
+        "abdomen-high"
+      ]
+    },
+    "db-bench": {
+      "name": "Flat dumbbell bench press",
+      "unit": "kg",
+      "increment": 2.5,
+      "muscles": {
+        "main": [
+          "chest"
+        ],
+        "helps": [
+          "triceps",
+          "shoulders"
+        ]
+      },
+      "pattern": "horizontal-push",
+      "risk": [
+        "abdomen-low"
+      ]
+    },
+    "seated-cable-row": {
+      "name": "Seated cable row",
+      "unit": "kg",
+      "increment": 2.5,
+      "muscles": {
+        "main": [
+          "lats",
+          "upper-back"
+        ],
+        "helps": [
+          "biceps"
+        ]
+      },
+      "pattern": "horizontal-pull",
+      "risk": [
+        "abdomen-low"
+      ]
+    },
+    "lat-pulldown": {
+      "name": "Lat pulldown",
+      "unit": "kg",
+      "increment": 2.5,
+      "muscles": {
+        "main": [
+          "lats"
+        ],
+        "helps": [
+          "biceps"
+        ]
+      },
+      "pattern": "vertical-pull",
+      "risk": [
+        "abdomen-low"
+      ]
+    },
+    "plank": {
+      "name": "Front plank",
+      "kind": "timed",
+      "pattern": "core-anti-extension",
+      "risk": [
+        "abdomen-low"
+      ]
+    },
+    "zone2-bike": {
+      "name": "Easy bike (zone 2)",
+      "kind": "cardio",
+      "pattern": "conditioning"
+    },
+    "face-pull": {
+      "name": "Cable face pull",
+      "unit": "kg",
+      "increment": 2.5,
+      "muscles": {
+        "main": [
+          "upper-back"
+        ],
+        "helps": [
+          "shoulders"
+        ]
+      },
+      "pattern": "rear-delt",
+      "risk": [
+        "abdomen-low"
+      ]
+    }
+  },
+  "template": {
+    "id": "upper-lower",
+    "name": "Full body",
+    "kind": "lift",
+    "slots": [
+      {
+        "exercise": "back-squat",
+        "sets": 4,
+        "repRange": [
+          5,
+          8
+        ],
+        "rir": 2,
+        "main": true
+      },
+      {
+        "exercise": "db-bench",
+        "sets": 3,
+        "repRange": [
+          6,
+          10
+        ],
+        "rir": 2,
+        "main": true
+      },
+      {
+        "exercise": "seated-cable-row",
+        "sets": 3,
+        "repRange": [
+          8,
+          12
+        ],
+        "rir": 2
+      },
+      {
+        "exercise": "lat-pulldown",
+        "sets": 2,
+        "repRange": [
+          10,
+          12
+        ],
+        "rir": 1
+      },
+      {
+        "exercise": "plank",
+        "sets": 3,
+        "repRange": [
+          1,
+          1
+        ],
+        "rir": 2
+      },
+      {
+        "exercise": "zone2-bike",
+        "sets": 1,
+        "repRange": [
+          1,
+          1
+        ],
+        "rir": 3
+      }
+    ]
+  },
+  "ledger": [
+    {
+      "id": "abdominal-wall",
+      "noTags": [
+        "abdomen-high"
+      ],
+      "until": "2026-04-30"
+    }
+  ],
+  "express": {
+    "block": {
+      "warmup": "band work",
+      "mainSets": 2,
+      "secondSets": 2,
+      "finish": {
+        "exercise": "face-pull",
+        "sets": 2,
+        "repRange": [
+          15,
+          15
+        ]
+      }
+    },
+    "withBlock": [
+      [
+        "back-squat",
+        2
+      ],
+      [
+        "db-bench",
+        2
+      ],
+      [
+        "face-pull",
+        2
+      ]
+    ],
+    "withoutBlock": [
+      [
+        "back-squat",
+        2
+      ],
+      [
+        "db-bench",
+        2
+      ]
+    ]
+  },
+  "hotel": {
+    "shortTrip": {
+      "tripDays": 3,
+      "slots": [
+        [
+          "goblet-squat",
+          4,
+          [
+            8,
+            12
+          ],
+          1
+        ],
+        [
+          "push-up",
+          3,
+          [
+            9,
+            15
+          ],
+          1
+        ],
+        [
+          "band-row",
+          3,
+          [
+            12,
+            18
+          ],
+          1
+        ],
+        [
+          "band-pulldown",
+          2,
+          [
+            15,
+            18
+          ],
+          1
+        ],
+        [
+          "plank",
+          3,
+          [
+            1,
+            1
+          ],
+          1
+        ],
+        [
+          "zone2-bike",
+          1,
+          [
+            1,
+            1
+          ],
+          3
+        ]
+      ]
+    },
+    "longTrip": {
+      "tripDays": 10,
+      "sets": [
+        2,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "conservative": {
+      "capMinRir": 4,
+      "rir": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        3
+      ]
+    }
+  }
+}

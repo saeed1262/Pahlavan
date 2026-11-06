@@ -1,0 +1,66 @@
+{
+  "_about": "Made-up tracked items for the synthetic vault (2026-04-10): what Pahlavan tracks and reminds about.",
+  "schemaVersion": 1,
+  "items": [
+    { "id": "creatine", "kind": "supplement", "name": "Creatine", "dose": "5 g", "when": "morning", "schedule": { "kind": "daily" }, "reminder": { "at": "09:00" }, "start": "2026-03-02", "source": { "by": "coach", "why": "From your eating plan: 3 to 5 g a day", "from": "eating plan", "on": "2026-03-02" }, "note": "Any time of day works; mornings stick." },
+    { "id": "multivitamin", "kind": "supplement", "name": "Multivitamin", "dose": "1 tablet", "when": "morning", "schedule": { "kind": "daily" }, "reminder": { "at": "09:00" }, "start": "2026-03-02", "source": { "by": "user", "from": "Habit Nudges", "on": "2026-03-02" } },
+    { "id": "shake", "kind": "supplement", "name": "Protein shake", "dose": "30 g", "when": "training", "whenDetail": "after", "schedule": { "kind": "training" }, "reminder": { "afterLog": true }, "start": "2026-03-02", "source": { "by": "user", "on": "2026-03-02" } },
+    { "id": "fish-oil", "kind": "supplement", "name": "Fish oil", "dose": "2 capsules", "when": "midday", "schedule": { "kind": "weekdays", "days": ["mon", "tue", "wed", "thu", "fri"] }, "reminder": { "at": "12:30" }, "start": "2026-03-02", "pauses": [{ "from": "2026-03-28" }], "source": { "by": "user", "on": "2026-03-02" }, "note": "Ran out; paused until the new box comes." },
+    { "id": "magnesium", "kind": "supplement", "name": "Magnesium", "dose": "300 mg", "when": "evening", "schedule": { "kind": "daily" }, "reminder": { "at": "21:30" }, "start": "2026-03-02", "source": { "by": "user", "from": "Habit Nudges", "on": "2026-03-02" } },
+    { "id": "protein", "kind": "tick", "name": "Protein", "goal": { "amount": 134, "unit": "g" }, "means": "At least 134 g of protein", "when": "evening", "schedule": { "kind": "daily" }, "reminder": { "at": "20:00" }, "habit": "protein", "start": "2026-03-02", "source": { "by": "coach", "why": "Your protein floor from the eating plan; the Sunday check-in counts these days", "from": "eating plan", "on": "2026-03-02" } },
+    { "id": "flossing", "kind": "tick", "name": "Flossing", "when": "evening", "schedule": { "kind": "daily" }, "reminder": { "at": "21:30" }, "start": "2026-03-02", "source": { "by": "user", "from": "Habit Nudges", "on": "2026-03-02" } },
+    { "id": "water", "kind": "amount", "name": "Water", "amount": { "target": 2500, "unit": "mL", "quick": [250, 500] }, "when": "day", "schedule": { "kind": "daily" }, "reminder": { "every": 120, "from": "09:00", "to": "21:00" }, "habit": "water", "start": "2026-03-02", "source": { "by": "coach", "why": "From your eating plan: about 30 mL per kg", "from": "eating plan", "on": "2026-03-02" }, "note": "A glass is 250; the bottle 500.", "earlier": [{ "until": "2026-03-15", "amount": { "target": 2000, "unit": "mL", "quick": [250] } }] },
+    { "id": "stand-ups", "kind": "standup", "name": "Stand-ups", "schedule": { "kind": "weekdays", "days": ["mon", "tue", "wed", "thu", "fri"] }, "start": "2026-03-02", "source": { "by": "coach", "why": "Desk job, 8 to 9 hours sitting, from your intake", "from": "intake", "on": "2026-03-02" }, "standup": { "sitMinutes": 30, "standMinutes": 20, "snoozeMinutes": 10, "targetMinutes": 120, "hours": ["09:00", "17:30"], "pauseCalls": true, "helper": "5-System/Scripts/standup/devices-in-use", "activeOnly": true, "activeSeconds": 120, "awayMinutes": 30, "standAwayMinutes": 5 } },
+    { "id": "sitting", "kind": "sitting", "name": "Sitting time", "schedule": { "kind": "daily" }, "reminder": { "atMinutes": 330, "stretch": true }, "start": "2026-03-02", "source": { "by": "coach", "why": "Desk job, 8 h a day; from your intake", "from": "intake", "on": "2026-03-02" }, "sitting": { "limitMinutes": 360, "stretchMaxMinutes": 45, "awayMinutes": 5 }, "note": "Counted from keyboard and mouse; a call counts as sitting." },
+    { "id": "desk-breaks", "kind": "desk", "name": "Desk breaks", "schedule": { "kind": "weekdays", "days": ["mon", "tue", "wed", "thu", "fri"] }, "start": "2026-03-02", "source": { "by": "coach", "why": "From your plan: forward head and rounded shoulders in the photo assessment", "from": "plan", "on": "2026-03-02" }, "desk": { "followPlan": true, "every": 90, "from": "10:00", "to": "15:00", "minutes": 5 } }
+  ],
+  "days": {
+    "2026-04-06": {
+      "creatine": { "done": true, "at": "2026-04-06T09:03:00.000Z" },
+      "multivitamin": { "done": true },
+      "shake": { "done": true },
+      "magnesium": { "done": true },
+      "flossing": { "done": true },
+      "water": { "amount": 2750 },
+      "stand-ups": { "minutes": 120, "count": 6 },
+      "desk-breaks": { "count": 4 }
+    },
+    "2026-04-07": {
+      "creatine": { "done": true },
+      "multivitamin": { "done": true },
+      "magnesium": { "done": true },
+      "water": { "amount": 1500 },
+      "stand-ups": { "minutes": 60, "count": 3 },
+      "desk-breaks": { "count": 2 }
+    },
+    "2026-04-08": {
+      "creatine": { "done": true },
+      "shake": { "done": true },
+      "flossing": { "done": true },
+      "water": { "amount": 2500 },
+      "stand-ups": { "minutes": 140, "count": 7 },
+      "desk-breaks": { "count": 4 }
+    },
+    "2026-04-09": {
+      "creatine": { "done": true },
+      "multivitamin": { "done": true },
+      "magnesium": { "done": true },
+      "flossing": { "done": true },
+      "water": { "amount": 900 },
+      "stand-ups": { "minutes": 40, "count": 2 },
+      "desk-breaks": { "count": 1 }
+    },
+    "2026-04-10": {
+      "creatine": { "done": true, "at": "2026-04-10T09:04:00.000Z" },
+      "water": { "amount": 1250, "at": "2026-04-10T11:02:00.000Z" },
+      "stand-ups": { "minutes": 80, "count": 4, "at": "2026-04-10T11:50:00.000Z" },
+      "desk-breaks": { "count": 2, "at": "2026-04-10T11:31:00.000Z" }
+    }
+  },
+  "suggestions": [
+    { "id": "lights-out", "on": "2026-04-05", "state": "open", "item": { "id": "lights-out", "kind": "tick", "name": "Lights out by 23:00", "when": "bedtime", "schedule": { "kind": "weekdays", "days": ["sun", "mon", "tue", "wed", "thu"] }, "reminder": { "at": "22:30" }, "start": "2026-04-06", "source": { "by": "coach", "why": "Sleep averages 6.4 h; the focus of your last letter", "from": "letter" } } },
+    { "id": "vitamin-d", "on": "2026-03-08", "state": "dismissed", "decided": "2026-03-09", "item": { "id": "vitamin-d", "kind": "supplement", "name": "Vitamin D", "dose": "1000 IU", "when": "morning", "schedule": { "kind": "daily" }, "reminder": { "at": "09:00" }, "start": "2026-03-09", "source": { "by": "coach", "why": "Winter, little time outdoors", "from": "intake" } } }
+  ],
+  "morning": { "on": true, "at": "07:30" },
+  "bodyRecord": { "schedule": "plan" }
+}

@@ -1,0 +1,576 @@
+{
+  "_about": "Synthetic body log for tests.",
+  "days": {
+    "2026-02-20": {
+      "weight": 85.0,
+      "sleepH": 6.8,
+      "rhr": 56,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-20T07:10:00.000Z",
+      "steps": 6000,
+      "floors": 0
+    },
+    "2026-02-21": {
+      "weight": 85.3,
+      "sleepH": 6.9,
+      "rhr": 58,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-21T07:10:00.000Z",
+      "steps": 6733,
+      "floors": 3
+    },
+    "2026-02-22": {
+      "weight": 84.9,
+      "sleepH": 7.2,
+      "rhr": 60,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-22T07:10:00.000Z",
+      "steps": 7466,
+      "floors": 6
+    },
+    "2026-02-23": {
+      "weight": 84.6,
+      "sleepH": 7.0,
+      "rhr": 57,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-23T07:10:00.000Z",
+      "steps": 8199,
+      "floors": 2
+    },
+    "2026-02-24": {
+      "weight": 85.0,
+      "sleepH": 5.9,
+      "rhr": 59,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-24T07:10:00.000Z",
+      "steps": 8932,
+      "floors": 5
+    },
+    "2026-02-25": {
+      "weight": 85.1,
+      "sleepH": 5.9,
+      "rhr": 56,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-25T07:10:00.000Z",
+      "steps": 9665,
+      "floors": 1
+    },
+    "2026-02-26": {
+      "weight": 84.6,
+      "sleepH": 6.0,
+      "rhr": 58,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-26T07:10:00.000Z",
+      "steps": 6398,
+      "floors": 4
+    },
+    "2026-02-27": {
+      "weight": 84.6,
+      "sleepH": 6.3,
+      "rhr": 60,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-27T07:10:00.000Z",
+      "steps": 7131,
+      "floors": 0
+    },
+    "2026-02-28": {
+      "weight": 85.0,
+      "sleepH": 7.3,
+      "rhr": 57,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-02-28T07:10:00.000Z",
+      "steps": 7864,
+      "floors": 3
+    },
+    "2026-03-02": {
+      "weight": 84.4,
+      "sleepH": 6.7,
+      "rhr": 56,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-02T07:10:00.000Z",
+      "steps": 9330,
+      "floors": 2
+    },
+    "2026-03-03": {
+      "weight": 84.6,
+      "sleepH": 6.4,
+      "rhr": 58,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-03T07:10:00.000Z",
+      "steps": 6063,
+      "floors": 5
+    },
+    "2026-03-04": {
+      "weight": 84.9,
+      "sleepH": 5.6,
+      "rhr": 60,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-04T07:10:00.000Z",
+      "steps": 6796,
+      "floors": 1
+    },
+    "2026-03-05": {
+      "weight": 84.6,
+      "sleepH": 5.9,
+      "rhr": 57,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-05T07:10:00.000Z",
+      "steps": 7529,
+      "floors": 4
+    },
+    "2026-03-06": {
+      "weight": 84.3,
+      "sleepH": 6.7,
+      "rhr": 59,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-06T07:10:00.000Z",
+      "steps": 8262,
+      "floors": 0
+    },
+    "2026-03-07": {
+      "weight": 84.7,
+      "sleepH": 6.9,
+      "rhr": 56,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-07T07:10:00.000Z",
+      "steps": 8995,
+      "floors": 3
+    },
+    "2026-03-08": {
+      "weight": 84.8,
+      "sleepH": 7.4,
+      "rhr": 58,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-08T07:10:00.000Z",
+      "steps": 9728,
+      "floors": 6
+    },
+    "2026-03-09": {
+      "weight": 84.3,
+      "sleepH": 6.8,
+      "rhr": 60,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-09T07:10:00.000Z",
+      "steps": 6461,
+      "floors": 2
+    },
+    "2026-03-10": {
+      "weight": 84.2,
+      "sleepH": 5.9,
+      "rhr": 57,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-10T07:10:00.000Z",
+      "steps": 7194,
+      "floors": 5
+    },
+    "2026-03-11": {
+      "weight": 84.7,
+      "sleepH": 6.0,
+      "rhr": 59,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-11T07:10:00.000Z",
+      "steps": 7927,
+      "floors": 1
+    },
+    "2026-03-12": {
+      "weight": 84.6,
+      "sleepH": 5.8,
+      "rhr": 56,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-12T07:10:00.000Z",
+      "steps": 8660,
+      "floors": 4
+    },
+    "2026-03-13": {
+      "weight": 84.1,
+      "sleepH": 6.4,
+      "rhr": 58,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-13T07:10:00.000Z",
+      "steps": 9393,
+      "floors": 0
+    },
+    "2026-03-14": {
+      "weight": 84.3,
+      "sleepH": 7.3,
+      "rhr": 60,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-14T07:10:00.000Z",
+      "steps": 6126,
+      "floors": 3
+    },
+    "2026-03-16": {
+      "weight": 84.3,
+      "sleepH": 6.8,
+      "rhr": 59,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-16T07:10:00.000Z",
+      "steps": 7592,
+      "floors": 2
+    },
+    "2026-03-17": {
+      "weight": 84.0,
+      "sleepH": 6.3,
+      "rhr": 56,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-17T07:10:00.000Z",
+      "steps": 8325,
+      "floors": 5
+    },
+    "2026-03-18": {
+      "weight": 84.3,
+      "sleepH": 5.5,
+      "rhr": 58,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-18T07:10:00.000Z",
+      "steps": 9058,
+      "floors": 1
+    },
+    "2026-03-19": {
+      "weight": 84.5,
+      "sleepH": 6.1,
+      "rhr": 60,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-19T07:10:00.000Z",
+      "steps": 9791,
+      "floors": 4
+    },
+    "2026-03-20": {
+      "weight": 84.0,
+      "sleepH": 6.6,
+      "rhr": 57,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-20T07:10:00.000Z",
+      "steps": 6524,
+      "floors": 0
+    },
+    "2026-03-21": {
+      "weight": 83.9,
+      "sleepH": 6.9,
+      "rhr": 59,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-21T07:10:00.000Z",
+      "steps": 7257,
+      "floors": 3
+    },
+    "2026-03-22": {
+      "weight": 84.3,
+      "sleepH": 7.5,
+      "rhr": 56,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-22T07:10:00.000Z",
+      "steps": -50,
+      "floors": 6
+    },
+    "2026-03-23": {
+      "weight": 84.3,
+      "sleepH": 6.6,
+      "rhr": null,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-23T07:10:00.000Z",
+      "steps": 8723,
+      "floors": 2
+    },
+    "2026-03-24": {
+      "weight": 83.8,
+      "sleepH": 6.1,
+      "rhr": 60,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-24T07:10:00.000Z",
+      "steps": 9456,
+      "floors": 5,
+      "mood": 3
+    },
+    "2026-03-25": {
+      "weight": 83.9,
+      "sleepH": 6.0,
+      "rhr": 57,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-25T07:10:00.000Z",
+      "steps": 6189,
+      "floors": 1
+    },
+    "2026-03-26": {
+      "weight": 84.3,
+      "sleepH": 5.7,
+      "rhr": 59,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-26T07:10:00.000Z",
+      "steps": 6922,
+      "floors": 4
+    },
+    "2026-03-27": {
+      "weight": 84.0,
+      "sleepH": 6.7,
+      "rhr": 56,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-27T07:10:00.000Z",
+      "steps": 7655,
+      "floors": 0
+    },
+    "2026-03-28": {
+      "weight": 83.6,
+      "sleepH": 7.2,
+      "rhr": 58,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-28T07:10:00.000Z",
+      "steps": 8388,
+      "floors": 3
+    },
+    "2026-03-30": {
+      "weight": 84.2,
+      "sleepH": 7.0,
+      "rhr": 57,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-30T07:10:00.000Z",
+      "steps": 9854,
+      "floors": 2
+    },
+    "2026-03-31": {
+      "weight": 83.7,
+      "sleepH": 6.1,
+      "rhr": 59,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-03-31T07:10:00.000Z",
+      "steps": 6587,
+      "floors": 5
+    },
+    "2026-04-01": {
+      "weight": 83.5,
+      "sleepH": 5.6,
+      "rhr": 56,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-01T07:10:00.000Z",
+      "steps": 7320,
+      "floors": 1
+    },
+    "2026-04-02": {
+      "weight": 83.9,
+      "sleepH": 6.2,
+      "rhr": 58,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-02T07:10:00.000Z",
+      "steps": 8053,
+      "floors": 4
+    },
+    "2026-04-03": {
+      "weight": 84.0,
+      "sleepH": 6.4,
+      "rhr": 60,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-03T07:10:00.000Z",
+      "steps": 8786,
+      "floors": 0
+    },
+    "2026-04-04": {
+      "weight": 83.5,
+      "sleepH": 7.1,
+      "rhr": 57,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-04T07:10:00.000Z",
+      "steps": 9519,
+      "floors": 3
+    },
+    "2026-04-05": {
+      "weight": 83.5,
+      "sleepH": 7.4,
+      "rhr": 59,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-05T07:10:00.000Z",
+      "steps": 6252,
+      "floors": 6
+    },
+    "2026-04-06": {
+      "weight": 83.9,
+      "sleepH": 6.5,
+      "rhr": 56,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-06T07:10:00.000Z",
+      "steps": 6985,
+      "floors": 2
+    },
+    "2026-04-07": {
+      "weight": 83.7,
+      "sleepH": 6.2,
+      "rhr": 58,
+      "energy": 4,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-07T07:10:00.000Z",
+      "steps": 7718,
+      "floors": 5
+    },
+    "2026-04-08": {
+      "weight": 83.3,
+      "sleepH": 5.8,
+      "rhr": 60,
+      "energy": 3,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-08T07:10:00.000Z",
+      "steps": 8451,
+      "floors": 1
+    },
+    "2026-04-09": {
+      "weight": 83.5,
+      "sleepH": 5.7,
+      "rhr": 57,
+      "energy": 2,
+      "soreness": 1,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-09T07:10:00.000Z",
+      "steps": 9184,
+      "floors": 4
+    },
+    "2026-04-10": {
+      "weight": 83.8,
+      "sleepH": 5.5,
+      "rhr": 68,
+      "energy": 2,
+      "soreness": 3,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-10T07:10:00.000Z",
+      "steps": 9917,
+      "floors": 0,
+      "soreMuscles": {
+        "glutes": "sore",
+        "quadriceps": "mild"
+      }
+    },
+    "2026-04-11": {
+      "weight": 83.4,
+      "sleepH": 5.5,
+      "rhr": 69,
+      "energy": 2,
+      "soreness": 3,
+      "sleepQ": 2,
+      "checkedAt": "2026-04-11T07:10:00.000Z",
+      "soreMuscles": {
+        "glutes": "sore",
+        "hamstrings": "mild"
+      }
+    }
+  },
+  "tape": [
+    {
+      "date": "2026-02-24",
+      "waist": 96,
+      "hips": 98,
+      "chest": 101,
+      "arm": 33
+    },
+    {
+      "date": "2026-03-24",
+      "waist": 94.5,
+      "hips": 97,
+      "chest": 101,
+      "arm": 33
+    }
+  ],
+  "tests": [
+    {
+      "date": "2026-03-07",
+      "pushups": 12,
+      "pullups": 0,
+      "hollowS": 25,
+      "handstandS": 10,
+      "pistol": "box 4"
+    }
+  ],
+  "photos": [
+    {
+      "date": "2026-02-24",
+      "poses": [
+        "front",
+        "side",
+        "back"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "name": "d-conservative-bodyweight",
+  "about": "A made-up adult with a Conservative screening: 3 days x 30 min, bodyweight only.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "emphasis": [],
+      "trackingLevel": "standard",
+      "basics": {
+        "birthYear": 1978
+      },
+      "experience": "novice",
+      "goals": [
+        {
+          "id": "fitness",
+          "kind": "health",
+          "label": "Get fitter safely",
+          "importance": 9,
+          "confidence": 6
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 3,
+        "minutesPerSession": 30
+      },
+      "equipment": [],
+      "screening": {
+        "outcome": "conservative",
+        "date": "2026-03-28",
+        "limits": [
+          "RIR 4 or more"
+        ]
+      }
+    },
+    "today": "2026-04-01",
+    "options": {}
+  },
+  "expected": {
+    "templateId": "full-body-minimum-aba",
+    "liftingDays": 3,
+    "extraDays": 0,
+    "minutes": 30,
+    "weekdays": [
+      "mon",
+      "wed",
+      "fri"
+    ],
+    "modifier": "health",
+    "equipmentMode": "bodyweight",
+    "mainRule": "ladder",
+    "conservative": {
+      "minRir": 4
+    },
+    "intervals": false,
+    "deloadWeeks": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24
+    ],
+    "testWeeks": [
+      8,
+      16,
+      24
+    ],
+    "calibrationWeek": 1,
+    "start": "2026-04-06",
+    "why": "3 days x 30 min or less is the full-body minimum dose x3 in planning.md's table; the comparison picks its nearest option, the minimum dose as A/B/A, because a novice gains most from practising the same main lifts more often (1.5 times a week against once). Conservative: full body only, RIR 4 or more, no vigorous work, no max tests, no calibration sets to failure. Every fixture also asserts: all checks pass (volume bands, concurrent placement, schema, equipment, Ledger, time, constant main lifts), deloads every 4th week, a calibration week first, tests at each phase end, and identical output on a second run."
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "name": "load-foster",
+  "about": "Foster's session RPE x minutes. Week of 03-02: five sessions, two of them on the Saturday; monotony and strain from the 7 daily loads, rest days 0 (sample SD). Week of 03-09: one session has no RPE, so the week's load is unknown unless the check-in effort (6) stands in, as an estimate.",
+  "sessions": [
+    {
+      "id": "s1",
+      "date": "2026-03-02",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "a",
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": []
+      },
+      "rpe": 7,
+      "minutes": 60
+    },
+    {
+      "id": "s2",
+      "date": "2026-03-03",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "a",
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": []
+      },
+      "rpe": 6,
+      "minutes": 45
+    },
+    {
+      "id": "s3",
+      "date": "2026-03-05",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "a",
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": []
+      },
+      "rpe": 8,
+      "minutes": 50
+    },
+    {
+      "id": "s4",
+      "date": "2026-03-07",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "a",
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": []
+      },
+      "rpe": 5,
+      "minutes": 30
+    },
+    {
+      "id": "s5",
+      "date": "2026-03-07",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "b",
+      "plan": {
+        "weekKind": "loading",
+        "template": "b",
+        "kind": "lift",
+        "slots": []
+      },
+      "rpe": 3,
+      "minutes": 20
+    },
+    {
+      "id": "s6",
+      "date": "2026-03-09",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "a",
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": []
+      },
+      "rpe": 7,
+      "minutes": 60
+    },
+    {
+      "id": "s7",
+      "date": "2026-03-11",
+      "trackingLevel": "standard",
+      "exercises": [],
+      "template": "a",
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": []
+      },
+      "minutes": 40
+    }
+  ],
+  "expected": {
+    "sessionLoads": {
+      "s1": 420,
+      "s2": 270,
+      "s3": 400,
+      "s4": 150,
+      "s5": 60
+    },
+    "week1": {
+      "from": "2026-03-02",
+      "daily": [
+        420,
+        270,
+        0,
+        400,
+        0,
+        210,
+        0
+      ],
+      "load": 1300,
+      "monotony": 0.9880576252011016,
+      "strain": 1284.4749127614323
+    },
+    "week2": {
+      "from": "2026-03-09",
+      "load": null,
+      "knownLoad": 420,
+      "unknownSessions": 1
+    },
+    "week2WithEffort": {
+      "load": 660,
+      "estimatedSessions": 1
+    },
+    "typicalMinutesA": 50,
+    "plannedEffort": {
+      "lift": 7.5,
+      "liftDeload": 5.5,
+      "circuit": 8,
+      "cardio": 4,
+      "short": 6
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "habits": [
+    {
+      "id": "workout",
+      "name": "Workout",
+      "type": "binary",
+      "max": 1
+    },
+    {
+      "id": "protein",
+      "name": "Protein",
+      "type": "binary",
+      "max": 1
+    },
+    {
+      "id": "water",
+      "name": "Water (mL)",
+      "type": "numeric",
+      "max": 3000
+    }
+  ],
+  "checkins": {
+    "hab-workout-2026-W10-0": "1",
+    "hab-workout-2026-W10-1": "1",
+    "hab-workout-2026-W10-2": "1",
+    "hab-workout-2026-W10-4": "1",
+    "hab-workout-2026-W11-0": "1",
+    "hab-workout-2026-W11-2": "1",
+    "hab-workout-2026-W11-3": "1",
+    "hab-workout-2026-W11-5": "1",
+    "hab-workout-2026-W12-0": "1",
+    "hab-workout-2026-W12-1": "1",
+    "hab-workout-2026-W12-2": "1",
+    "hab-workout-2026-W12-4": "1",
+    "hab-workout-2026-W13-0": "1",
+    "hab-workout-2026-W13-2": "1",
+    "hab-workout-2026-W14-0": "1",
+    "hab-workout-2026-W14-1": "1",
+    "hab-workout-2026-W14-2": "1",
+    "hab-workout-2026-W14-4": "1",
+    "hab-workout-2026-W15-0": "1",
+    "hab-workout-2026-W15-1": "1",
+    "hab-workout-2026-W15-2": "1",
+    "hab-workout-2026-W15-4": "1",
+    "hab-workout-2026-W15-5": "1",
+    "hab-workout-2026-W15-3": "1",
+    "hab-workout-2026-W14-6": "0",
+    "hab-protein-2026-W15-0": "1",
+    "hab-protein-2026-W15-1": "1",
+    "hab-protein-2026-W15-2": "1",
+    "hab-protein-2026-W15-5": "1",
+    "hab-protein-2026-W14-0": "1",
+    "hab-water-2026-W15-2": "1500",
+    "hab-workout-2026-W60-1": "1"
+  }
+}

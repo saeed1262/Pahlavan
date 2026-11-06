@@ -1,0 +1,677 @@
+{
+  "_about": "Synthetic plan for tests. Shaped like the dashboard's plan-data.json.",
+  "weekTarget": {
+    "lift": 3,
+    "short": 1
+  },
+  "liftTypes": [
+    "A",
+    "B"
+  ],
+  "shortTypes": [
+    "S1",
+    "S3"
+  ],
+  "titles": {
+    "A": "Full Body A — Squat",
+    "B": "Full Body B — Hinge",
+    "S1": "Short 1 — Skills",
+    "S3": "Short 3 — Conditioning"
+  },
+  "shortNames": {
+    "S1": "Short 1 · Skills",
+    "S3": "Short 3 · Conditioning"
+  },
+  "focus": {
+    "A": "Squat",
+    "B": "Hinge"
+  },
+  "warmups": {
+    "lift": "3 min bike · band external rotation",
+    "short": "1 min jumping jacks"
+  },
+  "sessions": {
+    "A": [
+      {
+        "name": "Goblet Squat",
+        "table": "Goblet Squat",
+        "sr": "4 × 8–10",
+        "rest": "2 min",
+        "note": "until 2026-04-19: knee niggle, easing; the back squat returns after it. Replaces Barbell Back Squat. RIR 2. Elbows inside the knees.",
+        "label": "Goblet Squat",
+        "logged": true
+      },
+      {
+        "name": "Flat DB Bench Press",
+        "table": "Flat DB Bench Press",
+        "sr": "3 × 6–8",
+        "rest": "2 min",
+        "note": "2-s lowering.",
+        "label": "Bench",
+        "logged": true
+      },
+      {
+        "name": "Face Pull",
+        "table": "Face Pull (rope)",
+        "sr": "3 × 15",
+        "rest": "—",
+        "note": "Light.",
+        "label": "Face Pull"
+      },
+      {
+        "name": "Band External Rotation",
+        "table": "Band External Rotation",
+        "sr": "2 × 15",
+        "rest": "45 s",
+        "note": "Elbow at side.",
+        "label": "ER",
+        "pair": true
+      },
+      {
+        "name": "Zone 2 finisher",
+        "table": "Zone 2 finisher",
+        "sr": "5–10 min",
+        "rest": "—",
+        "note": "Bike or incline walk.",
+        "label": "Zone 2"
+      }
+    ],
+    "B": [
+      {
+        "name": "Romanian Deadlift",
+        "table": "Romanian Deadlift",
+        "sr": "3 × 8–10",
+        "rest": "2 min",
+        "note": "RIR 3. Hinge at the hips.",
+        "label": "RDL",
+        "logged": true
+      },
+      {
+        "name": "Seated Cable Row",
+        "table": "Seated Cable Row",
+        "sr": "3 × 10–12",
+        "rest": "90 s",
+        "note": "Chest up.",
+        "label": "Cable Row",
+        "logged": true
+      },
+      {
+        "name": "Bulgarian Split Squat",
+        "table": "Bulgarian Split Squat (DB)",
+        "sr": "3 × 8/leg",
+        "rest": "60–90 s",
+        "note": "",
+        "label": "BSS"
+      },
+      {
+        "name": "Side Plank",
+        "table": "Side Plank",
+        "sr": "3 × 20–40 s/side",
+        "rest": "—",
+        "note": "Straight line.",
+        "label": "Side Plank"
+      },
+      {
+        "name": "Zone 2 finisher",
+        "table": "Zone 2 finisher",
+        "sr": "5–10 min",
+        "rest": "—",
+        "note": "",
+        "label": "Zone 2"
+      }
+    ],
+    "S1": [
+      {
+        "name": "Handstand (your level)",
+        "table": "Handstand (your level)",
+        "sr": "6 min",
+        "rest": "as needed",
+        "note": "Skill work first.",
+        "label": "Handstand",
+        "ladder": "handstand"
+      },
+      {
+        "name": "Push-up (your level)",
+        "table": "Push-up (your level)",
+        "sr": "4 × 6–12",
+        "rest": "60–90 s",
+        "note": "See the push-up ladder.",
+        "label": "Push-up",
+        "ladder": "pushup"
+      },
+      {
+        "name": "Dead Bug",
+        "table": "Dead Bug",
+        "sr": "3 × 8/side",
+        "rest": "45 s",
+        "note": "Slow.",
+        "label": "Dead Bug",
+        "pair": true
+      }
+    ],
+    "S3": [
+      {
+        "name": "Circuit: squat jump · burpee",
+        "table": "Circuit: Squat Jump · Burpee",
+        "sr": "4 rounds, 40/20",
+        "rest": "20 s between moves",
+        "note": "4 rounds × (40 s on / 20 s off per move) = 8 min. Hard but steady.",
+        "label": "Circuit"
+      },
+      {
+        "name": "Cool-down walk or bike",
+        "table": "Cool-down",
+        "sr": "3 min",
+        "rest": "—",
+        "note": "Easy.",
+        "label": "Cool-down"
+      }
+    ]
+  },
+  "liftUnit": "lb",
+  "lifts": {
+    "Barbell Back Squat": {
+      "short": "Squat",
+      "unit": "kg",
+      "lo": 5,
+      "hi": 6,
+      "inc": 5,
+      "chart": true,
+      "step": 20
+    },
+    "Goblet Squat": {
+      "short": "Goblet squat",
+      "lo": 8,
+      "hi": 10,
+      "inc": 5,
+      "db": true
+    },
+    "Flat DB Bench Press": {
+      "short": "Bench",
+      "lo": 6,
+      "hi": 8,
+      "inc": 5,
+      "db": true,
+      "chart": true,
+      "step": 5
+    },
+    "Romanian Deadlift": {
+      "short": "RDL",
+      "unit": "kg",
+      "lo": 8,
+      "hi": 10,
+      "inc": 5
+    },
+    "Seated Cable Row": {
+      "short": "Row",
+      "lo": 10,
+      "hi": 12,
+      "inc": 10
+    }
+  },
+  "express": {
+    "warmup": "Warm-up: band external rotation + dislocates",
+    "mainSets": "2 working sets",
+    "secondSets": "2 sets",
+    "finish": {
+      "name": "Face Pull",
+      "sr": "2 × 15"
+    }
+  },
+  "deloadS3": [
+    {
+      "name": "Easy Zone 2 (bike or walk)",
+      "sr": "20 min",
+      "label": "Zone 2"
+    }
+  ],
+  "ladders": [
+    {
+      "id": "pushup",
+      "name": "Push-up",
+      "levels": [
+        {
+          "name": "Incline push-up",
+          "detail": "hands on a bench"
+        },
+        {
+          "name": "Floor push-up"
+        },
+        {
+          "name": "Tempo push-up",
+          "detail": "3 s down"
+        }
+      ]
+    },
+    {
+      "id": "handstand",
+      "name": "Handstand",
+      "levels": [
+        {
+          "name": "Pike hold on a bench"
+        },
+        {
+          "name": "Wall walk"
+        },
+        {
+          "name": "Chest-to-wall handstand"
+        }
+      ]
+    }
+  ],
+  "laddersFor": {
+    "S1": [
+      "handstand",
+      "pushup"
+    ]
+  },
+  "ladderNote": "Handstand levels are attempts, not sets.",
+  "guide": {
+    "Barbell Back Squat": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "hamstrings",
+          "lower-back",
+          "abs"
+        ]
+      }
+    },
+    "Goblet Squat": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "abs",
+          "upper-back",
+          "hamstrings"
+        ]
+      }
+    },
+    "Flat DB Bench Press": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "chest"
+        ],
+        "helps": [
+          "shoulders",
+          "triceps"
+        ]
+      }
+    },
+    "Face Pull": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "shoulders",
+          "upper-back"
+        ],
+        "helps": []
+      }
+    },
+    "Band External Rotation": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "shoulders"
+        ],
+        "helps": [
+          "upper-back"
+        ]
+      }
+    },
+    "Zone 2 finisher": {
+      "setup": "Bike.",
+      "do": "Easy.",
+      "avoid": "Hard.",
+      "q": "zone 2",
+      "muscles": {
+        "main": [],
+        "helps": [],
+        "kind": "cardio",
+        "areas": [
+          "quads",
+          "calves"
+        ]
+      }
+    },
+    "Romanian Deadlift": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "hamstrings",
+          "glutes"
+        ],
+        "helps": [
+          "lower-back",
+          "forearms"
+        ]
+      }
+    },
+    "Seated Cable Row": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "upper-back",
+          "lats"
+        ],
+        "helps": [
+          "biceps",
+          "shoulders",
+          "forearms"
+        ]
+      }
+    },
+    "Bulgarian Split Squat": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "hamstrings",
+          "abs"
+        ]
+      }
+    },
+    "DB Walking Lunge": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "hamstrings",
+          "calves"
+        ]
+      }
+    },
+    "Hamstring Curl": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "hamstrings"
+        ],
+        "helps": [
+          "calves"
+        ]
+      }
+    },
+    "Side Plank": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "obliques"
+        ],
+        "helps": [
+          "abs",
+          "shoulders",
+          "glutes"
+        ]
+      }
+    },
+    "Dead Bug": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "abs"
+        ],
+        "helps": [
+          "obliques"
+        ]
+      }
+    },
+    "Circuit: squat jump · burpee": {
+      "parts": [
+        "Squat jump",
+        "Burpee"
+      ],
+      "muscles": {
+        "main": [
+          "quads",
+          "chest"
+        ],
+        "helps": [
+          "glutes",
+          "shoulders"
+        ]
+      }
+    },
+    "Squat jump": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "calves"
+        ]
+      }
+    },
+    "Burpee": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "quads",
+          "chest"
+        ],
+        "helps": [
+          "shoulders",
+          "abs"
+        ]
+      }
+    },
+    "Cool-down walk or bike": {
+      "setup": "Walk.",
+      "do": "Easy.",
+      "avoid": "Rushing.",
+      "q": "cool down",
+      "muscles": {
+        "main": [],
+        "helps": [],
+        "kind": "cardio",
+        "areas": [
+          "quads"
+        ]
+      }
+    },
+    "Easy Zone 2 (bike or walk)": {
+      "setup": "Bike.",
+      "do": "Easy.",
+      "avoid": "Hard.",
+      "q": "zone 2",
+      "muscles": {
+        "main": [],
+        "helps": [],
+        "kind": "cardio",
+        "areas": [
+          "quads"
+        ]
+      }
+    },
+    "Incline push-up": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "chest"
+        ],
+        "helps": [
+          "triceps",
+          "shoulders",
+          "abs"
+        ]
+      }
+    },
+    "Floor push-up": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "chest"
+        ],
+        "helps": [
+          "triceps",
+          "shoulders",
+          "abs"
+        ]
+      }
+    },
+    "Tempo push-up": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "chest"
+        ],
+        "helps": [
+          "triceps",
+          "shoulders",
+          "abs"
+        ]
+      }
+    },
+    "Pike hold on a bench": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "shoulders"
+        ],
+        "helps": [
+          "triceps",
+          "abs"
+        ]
+      }
+    },
+    "Wall walk": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "shoulders"
+        ],
+        "helps": [
+          "triceps",
+          "abs",
+          "upper-back"
+        ]
+      }
+    },
+    "Chest-to-wall handstand": {
+      "setup": "Set up.",
+      "do": "Do it.",
+      "avoid": "Avoid that.",
+      "q": "how to",
+      "muscles": {
+        "main": [
+          "shoulders"
+        ],
+        "helps": [
+          "triceps",
+          "upper-back",
+          "abs"
+        ]
+      }
+    },
+    "Doorway chest stretch": {
+      "setup": "Door.",
+      "do": "Lean.",
+      "avoid": "Pain.",
+      "q": "stretch",
+      "muscles": {
+        "main": [],
+        "helps": [],
+        "kind": "mobility",
+        "areas": [
+          "chest"
+        ]
+      }
+    }
+  },
+  "muscles": {
+    "chest": "Chest",
+    "shoulders": "Shoulders",
+    "biceps": "Biceps",
+    "triceps": "Triceps",
+    "forearms": "Forearms",
+    "abs": "Abs",
+    "obliques": "Obliques",
+    "upper-back": "Upper back",
+    "lats": "Lats",
+    "lower-back": "Lower back",
+    "glutes": "Glutes",
+    "quads": "Quads",
+    "hamstrings": "Hamstrings",
+    "calves": "Calves"
+  },
+  "deskRoutine": [
+    {
+      "name": "Doorway chest stretch",
+      "dose": "2 × 30 s"
+    }
+  ]
+}

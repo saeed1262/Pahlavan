@@ -1,0 +1,119 @@
+{
+  "name": "b-intermediate-posture",
+  "about": "A made-up intermediate: 4 days x 60 min in a condo gym (dumbbells, barbell, bench, cable, machines), recomposition plus posture, with \"head forward, shoulders rounded\" and a Ledger entry ruling out high abdominal strain until 2026-05-10.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "emphasis": [
+        {
+          "area": "Posture",
+          "seen": "Head forward, shoulders rounded",
+          "confidence": "high",
+          "emphasis": "Pull:push about 2:1; face pulls, rear delts; chest stretch",
+          "kind": "forward-head-rounded-shoulders"
+        }
+      ],
+      "trackingLevel": "standard",
+      "basics": {
+        "birthYear": 1985,
+        "heightCm": 180,
+        "sex": "male"
+      },
+      "experience": "intermediate",
+      "goals": [
+        {
+          "id": "recomp",
+          "kind": "recomposition",
+          "label": "Recomposition",
+          "importance": 9,
+          "confidence": 7
+        },
+        {
+          "id": "posture",
+          "kind": "posture",
+          "label": "Posture capacity",
+          "importance": 8,
+          "confidence": 6
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 4,
+        "minutesPerSession": 60
+      },
+      "equipment": [
+        "dumbbells",
+        "barbell",
+        "bench",
+        "cable",
+        "machine"
+      ],
+      "screening": {
+        "outcome": "go",
+        "date": "2026-03-25"
+      }
+    },
+    "today": "2026-04-01",
+    "options": {
+      "ledger": [
+        {
+          "id": "abdominal-wall",
+          "area": "abdomen",
+          "noTags": [
+            "abdomen-high"
+          ],
+          "until": "2026-05-10"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "templateId": "full-body-abcd",
+    "liftingDays": 4,
+    "extraDays": 0,
+    "minutes": 60,
+    "weekdays": [
+      "mon",
+      "tue",
+      "thu",
+      "fri"
+    ],
+    "modifier": "muscle",
+    "equipmentMode": "gym",
+    "mainRule": "double",
+    "posture": true,
+    "pullPushMin": 1.8,
+    "finisher": true,
+    "ledger": {
+      "blockedInPhase1": [
+        "back-squat",
+        "deadlift",
+        "rdl",
+        "overhead-press",
+        "leg-press"
+      ],
+      "phase2Mains": [
+        "back-squat"
+      ]
+    },
+    "deloadWeeks": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24
+    ],
+    "testWeeks": [
+      8,
+      16,
+      24
+    ],
+    "calibrationWeek": 1,
+    "start": "2026-04-06",
+    "why": "4 days x 30-60 min is upper/lower x2 in planning.md's table (60 min sits in the 30-60 column), but the comparison picks full body A/B/C/D: the recomposition goal scores the heavy and lighter pairs, the posture emphasis scores pulling in every session, and an intermediate's week-to-week progress scores heavier and lighter days; A/B twice fails the back-to-back rule. The recomposition goal with no priority muscles in the profile makes upper back, lats (the posture emphasis) and quads the priorities, and the posture emphasis lets upper back and lats run past 16 sets to keep pull at about twice push, with rear-delt work in every session; the Ledger entry keeps the barbell squat, deadlift, RDL and standing press out of phase 1 (screened at the phase start), and they return in phase 2. Every fixture also asserts: all checks pass (volume bands, concurrent placement, schema, equipment, Ledger, time, constant main lifts), deloads every 4th week, a calibration week first, tests at each phase end, and identical output on a second run."
+  }
+}

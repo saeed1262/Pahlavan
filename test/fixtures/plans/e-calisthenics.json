@@ -1,0 +1,80 @@
+{
+  "name": "e-calisthenics",
+  "about": "A made-up intermediate calisthenics trainee: 3 days x 60 min at home with a pull-up bar and rings, skills first.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "emphasis": [],
+      "trackingLevel": "standard",
+      "basics": {
+        "birthYear": 1996
+      },
+      "experience": "intermediate",
+      "goals": [
+        {
+          "id": "skills",
+          "kind": "skill",
+          "label": "Handstand, L-sit, pull-ups",
+          "importance": 9,
+          "confidence": 8
+        },
+        {
+          "id": "strength",
+          "kind": "strength",
+          "label": "Get stronger",
+          "importance": 6,
+          "confidence": 7
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 3,
+        "minutesPerSession": 60
+      },
+      "equipment": [
+        "pull-up bar",
+        "rings"
+      ],
+      "screening": {
+        "outcome": "go",
+        "date": "2026-03-25"
+      }
+    },
+    "today": "2026-04-01",
+    "options": {}
+  },
+  "expected": {
+    "templateId": "full-body-undulating",
+    "liftingDays": 3,
+    "extraDays": 0,
+    "minutes": 60,
+    "weekdays": [
+      "mon",
+      "wed",
+      "fri"
+    ],
+    "modifier": "skill",
+    "equipmentMode": "calisthenics",
+    "mainRule": "ladder",
+    "skillFirst": true,
+    "deloadWeeks": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24
+    ],
+    "testWeeks": [
+      8,
+      16,
+      24
+    ],
+    "calibrationWeek": 1,
+    "start": "2026-04-06",
+    "why": "3 days x 30-60 min for an intermediate is undulating full body (heavy, moderate, volume days). The skill modifier opens every session with a skill block, a different skill each day; bodyweight lifts progress by ladder. Every fixture also asserts: all checks pass (volume bands, concurrent placement, schema, equipment, Ledger, time, constant main lifts), deloads every 4th week, a calibration week first, tests at each phase end, and identical output on a second run."
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "name": "soreness",
+  "about": "Glutes sore today and yesterday, quads mildly sore today, chest fine. The goblet squat (quads and glutes) swaps to a lighter variation when one is offered, else one set fewer and RIR +1; the RDL (glutes sore only today in the second case) is trimmed; the bench is untouched; a mildly sore main muscle only adds a note.",
+  "date": "2026-03-10",
+  "exercises": {
+    "goblet-squat": {
+      "name": "Goblet Squat",
+      "unit": "lb",
+      "increment": 5,
+      "muscles": {
+        "main": [
+          "quads",
+          "glutes"
+        ],
+        "helps": [
+          "abs"
+        ]
+      }
+    },
+    "db-bench": {
+      "name": "Flat DB Bench Press",
+      "unit": "lb",
+      "increment": 5,
+      "muscles": {
+        "main": [
+          "chest"
+        ],
+        "helps": [
+          "shoulders",
+          "triceps"
+        ]
+      }
+    },
+    "romanian-deadlift": {
+      "name": "Romanian Deadlift",
+      "unit": "kg",
+      "increment": 5,
+      "muscles": {
+        "main": [
+          "hamstrings",
+          "glutes"
+        ],
+        "helps": [
+          "lower-back"
+        ]
+      }
+    },
+    "face-pull": {
+      "name": "Face Pull",
+      "unit": "lb",
+      "increment": 5,
+      "muscles": {
+        "main": [
+          "shoulders",
+          "upper-back"
+        ],
+        "helps": []
+      }
+    }
+  },
+  "daily": [
+    {
+      "date": "2026-03-08",
+      "soreMuscles": {
+        "hamstrings": "mild"
+      }
+    },
+    {
+      "date": "2026-03-09",
+      "soreMuscles": {
+        "glutes": "sore"
+      }
+    },
+    {
+      "date": "2026-03-10",
+      "soreMuscles": {
+        "glutes": "sore",
+        "quads": "mild",
+        "shoulders": "mild"
+      }
+    }
+  ],
+  "cases": [
+    {
+      "slot": {
+        "exercise": "goblet-squat",
+        "sets": 4,
+        "repRange": [
+          8,
+          10
+        ],
+        "rir": 2
+      },
+      "lighter": {
+        "id": "heel-elevated-goblet-squat",
+        "name": "Heel-elevated goblet squat"
+      },
+      "expected": {
+        "action": "swap",
+        "exercise": "heel-elevated-goblet-squat",
+        "sets": 4,
+        "rir": 2
+      }
+    },
+    {
+      "slot": {
+        "exercise": "goblet-squat",
+        "sets": 4,
+        "repRange": [
+          8,
+          10
+        ],
+        "rir": 2
+      },
+      "lighter": null,
+      "expected": {
+        "action": "trim",
+        "exercise": "goblet-squat",
+        "sets": 3,
+        "rir": 3
+      }
+    },
+    {
+      "slot": {
+        "exercise": "db-bench",
+        "sets": 3,
+        "repRange": [
+          6,
+          8
+        ],
+        "rir": 2
+      },
+      "lighter": null,
+      "expected": {
+        "action": "none",
+        "exercise": "db-bench",
+        "sets": 3,
+        "rir": 2
+      }
+    },
+    {
+      "slot": {
+        "exercise": "face-pull",
+        "sets": 2,
+        "repRange": [
+          15,
+          15
+        ],
+        "rir": 2
+      },
+      "lighter": null,
+      "expected": {
+        "action": "note",
+        "exercise": "face-pull",
+        "sets": 2,
+        "rir": 2
+      }
+    },
+    {
+      "slot": {
+        "exercise": "romanian-deadlift",
+        "sets": 1,
+        "repRange": [
+          8,
+          10
+        ],
+        "rir": 2
+      },
+      "lighter": null,
+      "expected": {
+        "action": "trim",
+        "exercise": "romanian-deadlift",
+        "sets": 1,
+        "rir": 3
+      }
+    }
+  ],
+  "soreDays": {
+    "from": "2026-03-08",
+    "to": "2026-03-10",
+    "expected": {
+      "hamstrings": {
+        "mild": 1,
+        "sore": 0
+      },
+      "glutes": {
+        "mild": 0,
+        "sore": 2
+      },
+      "quads": {
+        "mild": 1,
+        "sore": 0
+      },
+      "shoulders": {
+        "mild": 1,
+        "sore": 0
+      }
+    }
+  }
+}
