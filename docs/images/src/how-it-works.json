@@ -1,0 +1,244 @@
+{
+  "about": "The README's 'How it works' diagram, drawn by the tutorial kit (render.py, dark and light) into docs/images/how-it-works-dark.png and -light.png.",
+  "diagrams": {
+    "how": {
+      "type": "map",
+      "viewBox": "0 0 900 404",
+      "lanes": [
+        {
+          "id": "plugin",
+          "label": "Obsidian",
+          "sub": "the Pahlavan plugin",
+          "x": 6,
+          "y": 6,
+          "w": 280,
+          "h": 300,
+          "color": "teal"
+        },
+        {
+          "id": "vault",
+          "label": "Your vault",
+          "sub": "plain files you own",
+          "x": 310,
+          "y": 6,
+          "w": 280,
+          "h": 300,
+          "color": "amber"
+        },
+        {
+          "id": "coach",
+          "label": "Claude Code",
+          "sub": "the coach",
+          "x": 614,
+          "y": 6,
+          "w": 280,
+          "h": 300,
+          "color": "violet"
+        },
+        {
+          "id": "engine",
+          "label": "The engine",
+          "sub": "shared by both",
+          "x": 6,
+          "y": 322,
+          "w": 888,
+          "h": 76,
+          "color": "slate"
+        }
+      ],
+      "kinds": {
+        "files": {
+          "color": "amber",
+          "label": "reads and writes files"
+        },
+        "numbers": {
+          "color": "slate",
+          "dash": "4 4",
+          "label": "numbers, with their reasons"
+        }
+      },
+      "nodes": [
+        {
+          "id": "today",
+          "lane": "plugin",
+          "x": 20,
+          "y": 62,
+          "w": 252,
+          "h": 54,
+          "t": "Today",
+          "s": "session · log · checklist",
+          "d": "The session to do, with targets, swaps and a checklist; the log."
+        },
+        {
+          "id": "progress",
+          "lane": "plugin",
+          "x": 20,
+          "y": 142,
+          "w": 252,
+          "h": 54,
+          "t": "Progress · Plan",
+          "s": "body map · trends · weeks",
+          "d": "Sets per muscle, strength and weight trends, the 24-week plan."
+        },
+        {
+          "id": "checkin",
+          "lane": "plugin",
+          "x": 20,
+          "y": 222,
+          "w": 252,
+          "h": 54,
+          "t": "Check-in · Habits",
+          "s": "morning · Sunday · reminders",
+          "d": "The morning check-in, the Sunday questions, habits and their reminder cards."
+        },
+        {
+          "id": "plan",
+          "lane": "vault",
+          "x": 324,
+          "y": 62,
+          "w": 252,
+          "h": 54,
+          "t": "Plan and log",
+          "s": "plan · sessions · body record",
+          "d": "plan-data.json, fitness-log-data.json, body-data.json."
+        },
+        {
+          "id": "habits",
+          "lane": "vault",
+          "x": 324,
+          "y": 222,
+          "w": 252,
+          "h": 54,
+          "t": "Habits",
+          "s": "tracked items · check-ins",
+          "d": "Coach/tracking.json and habits-data.json."
+        },
+        {
+          "id": "notes",
+          "lane": "vault",
+          "x": 324,
+          "y": 142,
+          "w": 252,
+          "h": 54,
+          "t": "Coach notes",
+          "s": "profile · letters · decisions",
+          "d": "Your profile, the Sunday letters, every plan change with its reason."
+        },
+        {
+          "id": "intake",
+          "lane": "coach",
+          "x": 628,
+          "y": 62,
+          "w": 252,
+          "h": 54,
+          "t": "Intake and plan",
+          "s": "/fitness-coach intake, plan",
+          "d": "A safety screen and interview, then a plan designed for you."
+        },
+        {
+          "id": "letter",
+          "lane": "coach",
+          "x": 628,
+          "y": 142,
+          "w": 252,
+          "h": 54,
+          "t": "Sunday letter",
+          "s": "/fitness-coach checkin",
+          "d": "Reads your week and writes one focus for the next."
+        },
+        {
+          "id": "reviews",
+          "lane": "coach",
+          "x": 628,
+          "y": 222,
+          "w": 252,
+          "h": 54,
+          "t": "Reviews and food",
+          "s": "progress · eating plan",
+          "d": "Block reviews, progress reports and an eating plan."
+        },
+        {
+          "id": "engine",
+          "lane": "engine",
+          "x": 20,
+          "y": 334,
+          "w": 860,
+          "h": 52,
+          "t": "Every rule, with its reason",
+          "s": "progression · volume · readiness · light weeks · 79 linked sources",
+          "d": "One tested engine gives both sides their numbers."
+        }
+      ],
+      "edges": [
+        {
+          "f": "today",
+          "to": "plan",
+          "kind": "files",
+          "label": "logs and ticks"
+        },
+        {
+          "f": "checkin",
+          "to": "habits",
+          "kind": "files",
+          "sa": "r",
+          "sb": "l",
+          "label": "check-ins and habits"
+        },
+        {
+          "f": "intake",
+          "to": "plan",
+          "kind": "files",
+          "sa": "l",
+          "sb": "r",
+          "label": "writes the plan"
+        },
+        {
+          "f": "letter",
+          "to": "notes",
+          "kind": "files",
+          "sa": "l",
+          "sb": "r",
+          "label": "writes the letter"
+        },
+        {
+          "f": "reviews",
+          "to": "habits",
+          "kind": "files",
+          "sa": "l",
+          "sb": "r",
+          "label": "suggests habits"
+        },
+        {
+          "f": "engine",
+          "to": "checkin",
+          "kind": "numbers",
+          "sa": "t",
+          "sb": "b",
+          "oa": -304,
+          "label": "numbers"
+        },
+        {
+          "f": "engine",
+          "to": "reviews",
+          "kind": "numbers",
+          "sa": "t",
+          "sb": "b",
+          "oa": 304,
+          "label": "numbers"
+        }
+      ],
+      "views": [
+        {
+          "id": "all",
+          "label": "Everything",
+          "kinds": null,
+          "badge": "How it works",
+          "color": "teal",
+          "t": "One set of files, one engine",
+          "d": "The plugin and the coach read and write the **same files in your vault**, and both take their numbers from **one engine**, so a number on a screen and a number in a letter always agree."
+        }
+      ],
+      "hint": "The plugin makes no network requests; the coach talks to you through Claude Code."
+    }
+  }
+}

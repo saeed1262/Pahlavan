@@ -1,6 +1,6 @@
 # Pahlavan
 
-**A training coach that lives in your Obsidian vault.** It plans your training from your own goals, time and equipment, shows you today's session, keeps the log and helps you look back each week. Everything sits in plain files in your vault, so your data stays yours.
+**A science-based AI fitness coach that lives in your Obsidian vault.** Pahlavan is an Obsidian plugin for strength training, workout logging and daily habits, with an AI coach in Claude Code that plans your training from your own goals, time and equipment, and looks back with you every week. Everything sits in plain files in your vault, so your data stays yours.
 
 [![Release](https://img.shields.io/github/v/release/saeed1262/pahlavan?label=release&color=0f766e)](../../releases/latest)
 [![License: Elastic 2.0](https://img.shields.io/badge/license-Elastic%202.0-0f766e)](LICENSE)
@@ -10,6 +10,10 @@
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png">
   <img alt="Pahlavan's Today screen: the week so far, your day, today's session with its targets and swaps, and what's due today" src="docs/images/today-light.png">
 </picture>
+
+<sub>Shown with <a href="https://community.obsidian.md/plugins/isfahan-look">Isfahan Look</a>, my free plugin for Obsidian's look: Persian tilework, palettes that follow the sun and a book-like page. Pahlavan works with any theme.</sub>
+
+**▶ [Watch the 97-second demo](https://youtu.be/X5PZv5TxVdM)**
 
 > [!NOTE]
 > **Pahlavan is a free beta.** I use it every day, and it may still change. Bug reports and ideas are welcome in [GitHub issues](../../issues).
@@ -26,15 +30,15 @@ The session to do, with how to do each movement and why it's in your plan, the s
 
 ### Progress: how it's going
 
-Your week, sets per muscle on a body map, your strength trend for each logged lift, your weight trend, your body record and progress photos, and your consistency over the months.
+A body map of the sets each muscle got this week against its target, your strength trend for each logged lift, your consistency over the months, your weight trend, your body record and progress photos.
 
-![Progress: the body map of weekly sets per muscle, readiness, consistency, strength trends and the weight trend](docs/images/progress.png)
+![Progress: the body map of weekly sets per muscle with the muscles below, in and over their target, the consistency grid and the strength trends](docs/images/progress.png)
 
-### Plan: the whole plan, with its reasons
+### Plan: 24 weeks, block by block, with its reasons
 
-The phases and their 4-week blocks, this block's sessions, what's coming up (light weeks, tests, check-ins), and the reason behind every exercise.
+Your plan as phases of 8 weeks, each made of 4-week **mesocycles**: three loading weeks and a light week, with tests at the end of each phase. Below it, this block's sessions with their sets, reps and effort, what's coming up, and the reason behind every exercise.
 
-![Plan: the phase and block, this mesocycle's lifting days with each exercise's sets, reps and effort, and what's coming up](docs/images/plan.png)
+![Plan: the 24-week timeline of phases, mesocycles, light weeks and tests, this mesocycle's lifting and short days, and what's coming up](docs/images/plan.png)
 
 ### Habits: the small daily things
 
@@ -52,17 +56,16 @@ The `/fitness-coach` skill in Claude Code:
 - **Reviews, progress reports, an eating plan and habit suggestions**, when you want them.
 - **Logging and questions:** tell it what you did, or ask how things are going.
 
+### Built on research, and honest about it
+
+The coach's rules live in one file, each with where it comes from: **79 linked sources**, most of them from 2020 or later, from meta-analyses and reviews to trials. The rules that shape a plan (volume per muscle, effort in reps in reserve, load, rest, exercise order, progression, light weeks, cardio alongside lifting) were checked against 62 sources, each one read. Rules are graded: **strong** (consistent meta-analyses), **moderate** or **weak**, and a rule that's only a sensible default is called a **heuristic**, not dressed up as science. When the coach proposes your plan, each major choice comes with its evidence and its grade.
+
 ## How it works
 
-```mermaid
-flowchart LR
-  you((You)) --> plugin["Pahlavan plugin<br/>Today, Progress, Plan,<br/>Check-in, Food, reminders"]
-  you --> coach["The coach<br/>/fitness-coach in Claude Code"]
-  plugin <--> vault[("Your vault<br/>plan, log, body record,<br/>habits, letters")]
-  coach <--> vault
-  engine["The engine<br/>every rule, with its reason"] -.-> plugin
-  engine -.-> coach
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/how-it-works-dark.png">
+  <img alt="How it works: the Pahlavan plugin in Obsidian and the coach in Claude Code both read and write plain files in your vault, and both take their numbers from one engine" src="docs/images/how-it-works-light.png">
+</picture>
 
 The plugin and the coach read and write the same files in your vault, and both get their numbers from one engine, so a number on a screen and a number in a letter always agree. Every number comes with its reason: why this weight, why a light week now, why this exercise is in your plan.
 
