@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25.2: Obsidian 1.7.2 or later
+
+- **Needs Obsidian 1.7.2 or later** (it was 1.5.0). Pahlavan opens its tab with Obsidian's `revealLeaf`, which since 1.7.2 waits for the tab to load; the directory's review asks the declared minimum to cover it. Obsidian 1.7.2 came out in October 2024.
+
 ## 0.25.1: Obsidian's review
 
 Changes from the community directory's automated review. Nothing you do in Pahlavan changes.

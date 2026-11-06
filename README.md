@@ -89,7 +89,7 @@ The plugin and the coach read and write the same files in your vault, and both g
 
 ## What you need
 
-- **Obsidian on a computer,** version 1.5.0 or later. Pahlavan is desktop only, built and tested on macOS. Sitting time from your keyboard and mouse, and turning dropped photos into JPEG, work only on a Mac.
+- **Obsidian on a computer,** version 1.7.2 or later. Pahlavan is desktop only, built and tested on macOS. Sitting time from your keyboard and mouse, and turning dropped photos into JPEG, work only on a Mac.
 - **For the coach:** Claude Code, which needs a Claude plan that includes it, and [Node.js](https://nodejs.org) 18 or later.
 
 ## Install
