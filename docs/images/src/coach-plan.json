@@ -1,0 +1,93 @@
+{
+  "title": "The coach designs a plan, recorded",
+  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach plan asks which priorities come first, compares five candidate plans with the engine, and proposes a 24-week plan with the reason behind every choice.",
+  "window": "Claude Code · a demo vault, a made-up athlete",
+  "steps": [
+    {
+      "user": "/fitness-coach plan"
+    },
+    {
+      "tool": "Read(.claude/skills/fitness-coach/references/planning.md)"
+    },
+    {
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs plan --json --profile Fitness/Coach/profile.json --ledger Fitness/Coach/ledger.json --weeks 24 --vault . …)"
+    },
+    {
+      "say": [
+        "Before I build the full proposal, I need four answers from you.",
+        "",
+        "1. **Priority muscles.** On 3 lifting days a week, there's room for **2** priority muscles (a heuristic). You named three: upper back, quads, shoulders. …",
+        "   - **Upper back and quads now, shoulders in phase 2** (recommended).",
+        "   - **All three now**, knowing the other muscles get less.",
+        "3. **What could derail this?** Picture week 6, and the plan has failed. …"
+      ],
+      "hold": 3
+    },
+    {
+      "user": "1: upper back and quads now, shoulders in phase 2. 2: start Mon 9 Nov. 3: the holidays in late December, and a packed gym on Monday evenings. …"
+    },
+    {
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs plan --json --pretty --profile <draft>/profile-tts.json --ledger Fitness/Coach/ledger.json --start 2026-11-09 --weeks 24 …)"
+    },
+    {
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs validate Fitness/Coach/profile.json --kind profile --json)"
+    },
+    {
+      "say": [
+        "**Your plan: 24 weeks, Mon 9 Nov 2026 to Sun 25 Apr 2027**",
+        "",
+        "**1. How your data shaped this plan**",
+        "Goal 1, build strength (9/8) · Main lifts in the 3–6 rep range · Load for strength, Strong",
+        "3 days × 60 min; Monday evenings packed · Lifting on Tue, Thu, Sat, with a rest day between sessions",
+        "Overhead reach: lower back arches · No overhead pressing yet: landmine and incline presses instead",
+        "",
+        "**Candidates compared** (engine scores, all on Tue/Thu/Sat):",
+        "Full body: heavy, moderate and volume days ✔ · 5 · all pass",
+        "Full body A/B/A · 1 · upper-back volume fails",
+        "Push/pull/legs · 0 · pass · Each muscle only once a week; 56 min"
+      ],
+      "hold": 4
+    },
+    {
+      "say": [
+        "**2. Phases**",
+        "1 Accumulation (more sets, 6–10 reps on accessories) · 9 Nov – 3 Jan · 30 Nov, 28 Dec · Sat 2 Jan",
+        "2 Intensification (3–5 reps on main lifts, fewer sets) · 4 Jan – 28 Feb · 25 Jan, 22 Feb · Sat 27 Feb",
+        "3 Realization (heavy work and tests) · 1 Mar – 25 Apr · 22 Mar, 19 Apr · Sat 24 Apr",
+        "Each mesocycle (a 4-week block) is 3 normal weeks and then a **light week**: 2 sets of everything at about 10% lighter.",
+        "",
+        "**A: Heavy day (Tue), about 50 min plus the finisher**",
+        "Back squat (logged) · 3 × 3–5 · Goal 1 (squat 100 × 5); you like squats; easy sit-to-stand",
+        "Barbell row · 3 × 6–10 · Upper-back priority; you like rows",
+        "Face pull · 3 × 10–15 · Posture goal: rear-delt work every session"
+      ],
+      "hold": 4.5
+    },
+    {
+      "user": "Yes, go with it as it is."
+    },
+    {
+      "tool": "Bash(node <draft>/build-plan.cjs <draft>/plandata.json <draft>/plan-data.final.json)"
+    },
+    {
+      "tool": "Bash(cp <draft>/plan-data.final.json Fitness/plan-data.json)"
+    },
+    {
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs log ladder --vault . --json --id pullup --level 6 --date 2026-11-09 --write)"
+    },
+    {
+      "tool": "Write(Fitness/6-Month Roadmap.md)"
+    },
+    {
+      "say": [
+        "I've written your plan. It starts **Tue 10 Nov**, the first session of week 1 (Mon 9 Nov is a rest day), and lifting is on Tue, Thu and Sat.",
+        "",
+        "**What I wrote**",
+        "- **`Fitness/plan-data.json`**: three full-body sessions (A Heavy, B Moderate, C Volume), each ending with an 8-min finisher on the bike or incline walk.",
+        "- **Fitness/6-Month Roadmap**: how your answers shaped the plan, the five candidates compared, phases, check-ins, targets and the pre-mortem.",
+        "- **Fitness/Coach/Decisions**: the plan Decision, to be reviewed on Sun 6 Dec."
+      ],
+      "hold": 4.5
+    }
+  ]
+}

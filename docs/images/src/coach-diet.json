@@ -1,0 +1,47 @@
+{
+  "title": "The coach writes an eating plan, recorded",
+  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach diet screens first, asks how much to count and what a normal day looks like, then proposes an eating plan built around the athlete's own meals, with its sources.",
+  "window": "Claude Code · a demo vault, a made-up athlete",
+  "steps": [
+    { "user": "/fitness-coach diet" },
+    { "say": [
+      "Before any numbers, two quick screening questions. Your answers decide what kind of eating plan I can safely set up.",
+      "1. **Have you ever had a hard time with food or eating?** …",
+      "2. **Has a clinician given you a diet, or is food part of managing a condition?** …"
+    ], "hold": 2 },
+    { "user": "1 no, 2 no." },
+    { "say": [
+      "Thanks. Neither answer rules anything out, so you get the normal plan.",
+      "1. **How much do you want to count?**",
+      "   - **Nothing** (hand portions and meal templates). This is the default.",
+      "   - **Protein and calories**, from labels or an app.",
+      "4. **How's your appetite, and which meal of the day is hardest to get right?**"
+    ], "hold": 2 },
+    { "user": "1: nothing, hand portions. … 4: good appetite; lunch at work is the hardest, I often grab whatever is there." },
+    { "note": "⋯ one more round: a normal day, foods and meal times ⋯" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs review --vault . --json --date 2026-11-06 | …)" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs eating --vault . --json --file <draft>/eating-plan.json | …)" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs track add --vault . --json --file <draft>/protein-item.json | …)" },
+    { "say": [
+      "**Your eating plan: hand portions (no counting)**",
+      "",
+      "Protein · **131–180 g a day**, ticked at **131 g** · 1.6–2.2 g/kg for lifting goals at 82.0 kg (Morton 2018, Strong)",
+      "Per meal · About 33–45 g",
+      "Fiber · About 40 g a day",
+      "",
+      "2. **Lunch from home.** You said lunch at work is the hardest meal and you often grab whatever's there. So cook double at dinner and box half.",
+      "",
+      "12:30 · **Lunch** (the hardest meal) · Last night's dinner, boxed: 2 palms protein + the plate above (about 40–55 g)",
+      "16:00 · **Snack**: swap the crisps or chocolate · Greek yoghurt with fruit, 2 eggs and an apple, or milk and nuts (about 20–25 g)",
+      "",
+      "**Shall I write it?**"
+    ], "hold": 4 },
+    { "user": "Yes, write it." },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs eating --vault . --json --file <draft>/eating-plan.json --write | …)" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs food --vault . --json --date 2026-11-06 | …)" },
+    { "say": [
+      "Your eating plan is written, and Pahlavan's Food tab reads it with no errors.",
+      "**You're fully set up.** … Your first session is Tue 10 Nov, and your first letter comes on Sun 15 Nov (`/fitness-coach checkin`)."
+    ], "hold": 4.5 }
+  ]
+}

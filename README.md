@@ -56,6 +56,22 @@ The `/fitness-coach` skill in Claude Code:
 - **Reviews, progress reports, an eating plan and habit suggestions**, when you want them.
 - **Logging and questions:** tell it what you did, or ask how things are going.
 
+### The coach in action
+
+Recorded from real sessions in a demo vault, with a made-up athlete: Sam, 34, at a desk all day, three gym days a week. Everything the coach says is its own words; long answers are cut where you see "…", and the notes between rounds (⋯ ⋯) are mine.
+
+**Intake:** a safety screen, goals, priority muscles and a movement self-check, then a profile the engine has checked.
+
+![The coach's intake in Claude Code: the screening questions, goals and priority muscles, the movement self-check, and the profile written on a yes](docs/images/coach-intake.svg)
+
+**Plan:** which priorities come first, five candidate plans compared by the engine, then 24 weeks with the reason behind every choice.
+
+![The coach's plan in Claude Code: how the athlete's data shaped the plan, the candidates compared, the phases and mesocycles, and the first session's exercises with their reasons](docs/images/coach-plan.svg)
+
+**Eating plan:** a screen first, then a plan built around the athlete's own meals and day.
+
+![The coach's eating plan in Claude Code: the screening, how much to count, then targets with their sources and the athlete's own day reworked](docs/images/coach-diet.svg)
+
 ### Built on research, and honest about it
 
 The coach's rules live in one file, each with where it comes from: **79 linked sources**, most of them from 2020 or later, from meta-analyses and reviews to trials. The rules that shape a plan (volume per muscle, effort in reps in reserve, load, rest, exercise order, progression, light weeks, cardio alongside lifting) were checked against 62 sources, each one read. Rules are graded: **strong** (consistent meta-analyses), **moderate** or **weak**, and a rule that's only a sensible default is called a **heuristic**, not dressed up as science. When the coach proposes your plan, each major choice comes with its evidence and its grade.

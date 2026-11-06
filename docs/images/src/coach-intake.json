@@ -1,0 +1,69 @@
+{
+  "title": "The coach's intake, recorded",
+  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach intake asks a safety screen, goals, priority muscles and a movement self-check, drafts the profile with the engine, and writes it on a yes.",
+  "window": "Claude Code · a demo vault, a made-up athlete",
+  "steps": [
+    { "user": "/fitness-coach intake" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs folders --vault . --json)" },
+    { "tool": "Read(.claude/skills/fitness-coach/references/intake.md)" },
+    { "say": [
+      "Welcome. This is a fresh start: I won't look at any old logs or body data until the end, and then only if you choose to.",
+      "",
+      "**Round 1: screening**",
+      "1. **Regular exercise.** In the last 3 months, have you done planned exercise at least 3 days a week, about 30 minutes each time, at moderate effort or harder?",
+      "2. **Known conditions.** Has a doctor ever told you that you have a heart condition, a metabolic condition (for example a blood-sugar condition) or a kidney condition?",
+      "3. **Warning signs.** In the last few months, have you had any of these? Pick all that apply, or say None. …",
+      "4. **The rest.** Do any of these apply? …",
+      "A short reply is fine, for example \"1 yes, 2 no, 3 none, 4 none\"."
+    ], "hold": 3 },
+    { "user": "1 yes, 2 no, 3 none, 4 none" },
+    { "say": [
+      "You're cleared to train normally (screening result: **Go**).",
+      "",
+      "**Round 2: basics and goals**",
+      "2. **Age, height, morning weight, and your waist at the navel**, if you can measure it. …",
+      "3. **Which goals matter for the next 6 months?** Pick up to 3, and put them in order if you pick more than one: …"
+    ], "hold": 2.5 },
+    { "user": "Male. 34, 178 cm, 82 kg, waist 89 cm. Goals in order: 1 build strength, 2 build muscle, 3 posture and mobility capacity." },
+    { "say": [
+      "5. **Is there a muscle or a look you care about most?** Up to 3, most important first: …",
+      "   - **Back:** upper back (rows, posture) or lats (width, pull-ups)",
+      "   - **Legs:** quads or hamstrings",
+      "Each pick becomes one priority muscle, which means 10 to 16 direct sets a week for it. So every one you add makes your sessions a bit longer."
+    ], "hold": 3 },
+    { "user": "Build strength: 9 / 8. Build muscle: 8 / 7. Posture and mobility: 7 / 6. Priorities: 1 back, upper back; 2 legs, quads; 3 shoulders." },
+    { "say": [ "Got it. Your priority muscles, in order: **upper back, quads, shoulders**." ], "hold": 1.5 },
+    { "note": "⋯ three more rounds: the week, equipment and history ⋯" },
+    { "say": [
+      "**Movement self-check.** Type the results back in one reply. Stop any test that hurts and tell me which one it was.",
+      "3. **Hang and pull:** dead hang for as long as you can (seconds), then max strict pull-ups.",
+      "6. **Overhead reach:** back and head against a wall, arms straight up. Do your thumbs touch the wall without your lower back arching?",
+      "7. **Wall test:** heels, hips and shoulders on the wall. How big is the gap behind your head, in cm?"
+    ], "hold": 2.5 },
+    { "user": "I'll skip the photos for now. Self-check: 1 easy, heels down. 2: 22 push-ups. 3: 45 s hang, then 6 strict pull-ups. …" },
+    { "note": "⋯ one more round: desk hours, sleep and supplements ⋯" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs baseline --vault . --json --date 2026-11-06)" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs validate <draft>/profile.json --kind profile --json)" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs body --vault . --json --file <draft>/body-2026-11-06.json)" },
+    { "say": [
+      "Everything is drafted and the engine accepts it. Here's your profile before I write anything.",
+      "",
+      "**Your profile (intake, Fri 2026-11-06)**",
+      "**Screening:** Go. Regular exerciser, no known conditions, no warning signs.",
+      "**Goals** · Build strength (sets the plan's approach) · Build muscle · Posture and mobility capacity",
+      "Hang and pull · 45 s hang, 6 strict pull-ups · Pull-up ladder level 6: pull-ups are the main vertical pull",
+      "Overhead reach · Thumbs touch, lower back arches a little · Landmine or incline pressing first",
+      "Wall test · 4 cm · Baseline for goal 3",
+      "Balance · 30 s each side · Single-leg work from week 1 (level 3)"
+    ], "hold": 3.5 },
+    { "user": "Yes, write it." },
+    { "tool": "Write(Fitness/Coach/Athlete profile.md)" },
+    { "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs body --vault . --json --file <draft>/body-2026-11-06.json --write)" },
+    { "say": [
+      "Done. Everything from the summary is written:",
+      "- Fitness/Coach/Athlete profile and `profile.json`",
+      "- Fitness/Coach/Ledger and `ledger.json` (both empty: no injuries)",
+      "- Your first body log entries for Fri 2026-11-06: weight 82.0 kg, waist 89 cm, push-ups 22, pull-ups 6, hollow hold 30 s, wall gap 4 cm."
+    ], "hold": 4.5 }
+  ]
+}
