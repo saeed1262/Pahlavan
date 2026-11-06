@@ -210,7 +210,7 @@ function matchesChain(el: FakeElement, sel: string, root: FakeElement): boolean 
 /** Installs the fake as the global `document` (and a few window bits); returns a function that restores what was there. */
 export function installFakeDom(): () => void {
   const g = globalThis as Record<string, unknown>;
-  const names = ['document', 'window', 'HTMLElement', 'SVGElement', 'Element', 'Node', 'Text'] as const;
+  const names = ['document', 'activeDocument', 'window', 'HTMLElement', 'SVGElement', 'Element', 'Node', 'Text'] as const;
   const before = Object.fromEntries(names.map((n) => [n, g[n]]));
   // The builders check `instanceof HTMLElement` (and Node): the fake answers for all of them.
   for (const n of ['HTMLElement', 'SVGElement', 'Element'] as const) g[n] = FakeElement;
@@ -226,7 +226,8 @@ export function installFakeDom(): () => void {
     createTextNode: (t: string) => new FakeText(t),
     body: new FakeElement('body'),
   };
-  if (!g['window']) g['window'] = { innerWidth: 1440, innerHeight: 900, addEventListener() {}, removeEventListener() {} };
+  g['activeDocument'] = g['document'];
+  if (!g['window']) g['window'] = { innerWidth: 1440, innerHeight: 900, addEventListener() {}, removeEventListener() {}, setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout };
   return () => {
     for (const n of names) g[n] = before[n];
   };

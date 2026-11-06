@@ -30,19 +30,19 @@ export type PhotoFiles = Record<string, Record<string, string>>;
 
 export interface MoreContext extends ProgressContext {
   sessionsView: 'weeks' | 'months';
-  onSessionsView(v: 'weeks' | 'months'): void;
+  onSessionsView: (v: 'weeks' | 'months') => void;
   health: 'rhr' | 'sleep' | 'steps';
-  onHealth(k: 'rhr' | 'sleep' | 'steps'): void;
+  onHealth: (k: 'rhr' | 'sleep' | 'steps') => void;
   photo: { a: string | null; b: string | null; pose: string; mode: 'side' | 'slider' | 'overlay'; pos: number; opacity: number };
-  onPhoto(): void;
+  onPhoto: () => void;
   photoFiles: PhotoFiles;
   /** The image's URL for a vault path (null in the preview: placeholder figures). */
   resourcePath: ((p: string) => string) | null;
-  onMoveLadder?(id: string, level: number): void;
+  onMoveLadder?: (id: string, level: number) => void;
   /** The movement guide for a ladder level, and which are open. */
   guide?(name: string): import('../../../src/report/dashboard.ts').GuideEntry[];
   openGuides?: Set<string>;
-  onToggleGuide?(key: string): void;
+  onToggleGuide?: (key: string) => void;
 }
 
 const inner = (w: number) => w - 46;
@@ -63,7 +63,7 @@ const sw = (cls: string, shape: 'rect' | 'circle' | 'line' = 'rect') => s('svg',
 export interface RangeSwitch {
   scope: Scope;
   cycle: ScopeInfo;
-  onScope(next: Scope): void;
+  onScope: (next: Scope) => void;
 }
 
 /** What a range covers, in words: "This cycle, since 2 Nov", "All, earlier cycles too". */
@@ -361,8 +361,8 @@ function photos(b: BodyM, ctx: MoreContext): HTMLElement {
       }
     }
     const range = P.mode === 'side' ? null : (() => {
-      const r = h('input', { type: 'range', min: 0, max: 100, value: P.mode === 'slider' ? P.pos : P.opacity, 'aria-label': P.mode === 'slider' ? 'Slider position' : 'After photo opacity' }) as HTMLInputElement;
-      r.addEventListener('input', () => { if (P.mode === 'slider') P.pos = Number(r.value); else P.opacity = Number(r.value); const t = stage.querySelector('.pv-ph-layer.is-top') as HTMLElement | null; if (t) { if (P.mode === 'slider') t.style.clipPath = `inset(0 0 0 ${P.pos}%)`; else t.style.opacity = String(P.opacity / 100); } const hd = stage.querySelector('.pv-ph-handle') as HTMLElement | null; if (hd) hd.style.left = `${P.pos}%`; });
+      const r = h('input', { type: 'range', min: 0, max: 100, value: P.mode === 'slider' ? P.pos : P.opacity, 'aria-label': P.mode === 'slider' ? 'Slider position' : 'After photo opacity' });
+      r.addEventListener('input', () => { if (P.mode === 'slider') P.pos = Number(r.value); else P.opacity = Number(r.value); const t = stage.querySelector<HTMLElement>('.pv-ph-layer.is-top'); if (t) { if (P.mode === 'slider') t.style.clipPath = `inset(0 0 0 ${P.pos}%)`; else t.style.opacity = String(P.opacity / 100); } const hd = stage.querySelector<HTMLElement>('.pv-ph-handle'); if (hd) hd.style.left = `${P.pos}%`; });
       return h('label', { class: 'pv-ph-ctl' }, r, h('span', {}, P.mode === 'slider' ? 'Drag across the photo' : 'Fade between the two'));
     })();
     const pick = (k: 'a' | 'b') => h('div', { class: 'pv-ph-pick' }, h('span', { class: `pv-ph-cap is-${k}` }, k === 'a' ? 'Before' : 'After'), h('div', { class: 'pv-lg-pills' }, sets.map((x) => h('button', { class: `pv-lg-pill${(k === 'a' ? a.date : bb.date) === x.date ? ' is-on' : ''}`, onclick: () => { P[k] = x.date; ctx.onPhoto(); } }, fmt.day(x.date)))));
@@ -550,7 +550,7 @@ export function bodyIn(b: BodyM, units: BodyUnits | undefined): BodyM {
     const n = (v: number | null | undefined) => (v === null || v === undefined ? v : f(v));
     return { ...r, unit: r.unit === 'cm' ? F.l : F.w, ...(r.lo !== undefined ? { lo: f(r.lo) } : {}), ...(r.hi !== undefined ? { hi: f(r.hi) } : {}), ...(r.goal !== undefined ? { goal: f(r.goal) } : {}), base: n(r.base) ?? null, cur: n(r.cur) ?? null, ...(r.drop !== undefined ? { drop: n(r.drop) ?? null } : {}) };
   });
-  return { ...b, tape: { ...b.tape, measures }, targets } as BodyM;
+  return { ...b, tape: { ...b.tape, measures }, targets };
 }
 
 export function renderMore(grid: HTMLElement, section: ProgressSection, m: MoreModel, total: number, ctx: MoreContext, baseline: (k: string) => { mean: number; sd: number; days: number } | null): void {
@@ -566,7 +566,7 @@ export function renderMore(grid: HTMLElement, section: ProgressSection, m: MoreM
     const b = bodyIn(m.body, ctx.units);
     cards.push(...columns([[tape(b, w(7), ctx), 'left'], [targets(b, w(5), ctx), 'right']]), photos(b, ctx));
   }
-  if (section === 'health' && m.health) cards.push(...(['rhr', 'sleep', 'steps'] as const).map((k) => healthTile(k, m.health!, w(4), ctx)), healthDetail(m.health, w(12), ctx, baseline(ctx.health === 'sleep' ? 'sleepH' : ctx.health)));
+  if (section === 'health' && m.health) cards.push(...(['rhr', 'sleep', 'steps'] as const).map((k) => healthTile(k, m.health, w(4), ctx)), healthDetail(m.health, w(12), ctx, baseline(ctx.health === 'sleep' ? 'sleepH' : ctx.health)));
   if (section === 'skills' && m.skills) cards.push(skills(m.skills, ctx));
   grid.replaceChildren(...[head, ...cards].filter((c): c is HTMLElement => c instanceof HTMLElement));
 }

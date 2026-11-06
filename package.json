@@ -1,6 +1,6 @@
 {
   "name": "pahlavan",
-  "version": "0.25.0",
+  "version": "0.25.1",
   "description": "Pahlavan fitness-coach engine: pure, tested coaching rules with reasons.",
   "private": true,
   "license": "Elastic-2.0",
@@ -22,8 +22,9 @@
   "scripts": {
     "test": "node --test \"test/**/*.test.ts\" \"plugin/test/**/*.test.ts\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p plugin",
-    "build": "node tools/build.mjs",
+    "build": "node tools/build-plugin.mjs",
     "build-plugin": "node tools/build-plugin.mjs",
+    "build-engine": "node tools/build.mjs",
     "preview": "node tools/build-preview.mjs",
     "ship-skill": "node tools/ship-skill.mjs",
     "ship-plugin": "node tools/ship-plugin.mjs"

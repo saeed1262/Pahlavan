@@ -114,7 +114,7 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   // Exercises the session may use: the program's, plus the catalogue's (for swaps).
   const all: Record<string, Exercise> = { ...data.program.exercises };
   const unit = data.plan.liftUnit;
-  const catalogueOf = (id: string): CatalogueEntry | null => CATALOGUE_BY_ID.get(id) ?? (data.catalogueMatch[id] ? (CATALOGUE_BY_ID.get(data.catalogueMatch[id]!) ?? null) : null);
+  const catalogueOf = (id: string): CatalogueEntry | null => CATALOGUE_BY_ID.get(id) ?? (data.catalogueMatch[id] ? (CATALOGUE_BY_ID.get(data.catalogueMatch[id]) ?? null) : null);
   const addCatalogue = (id: string) => {
     const e = CATALOGUE_BY_ID.get(id);
     if (e && !all[id]) all[id] = toExercise(e, unit);
@@ -147,7 +147,7 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     if (finisherSlot) {
       const f = finisherSlot as ExerciseSlot & SlotExtras;
       const fsr = srOf(f);
-      finisherSlot = { ...f, sets: Math.max(1, Math.ceil(f.sets / 2)), ...(f._item ? { _item: { ...f._item, ...(fsr ? { sr: halveSr(fsr) } : {}) } } : {}) } as ExerciseSlot;
+      finisherSlot = { ...f, sets: Math.max(1, Math.ceil(f.sets / 2)), ...(f._item ? { _item: { ...f._item, ...(fsr ? { sr: halveSr(fsr) } : {}) } } : {}) };
     }
   } else if (mode === 'express') {
     const block = data.plan.express ? { warmup: data.plan.express.warmup ?? undefined, mainSets: data.plan.express.mainSets, secondSets: data.plan.express.secondSets, ...(data.plan.express.finish ? { finish: { exercise: data.plan.express.finish.exercise, sets: data.plan.express.finish.sets, repRange: data.plan.express.finish.repRange } } : {}) } : null;
@@ -251,8 +251,10 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
             : `${name(exercise)}: no logged loads; pick a weight for ${reps} reps at RIR ${rir}.`,
       }).reason);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
     const item = (own as (ExerciseSlot & SlotExtras) | undefined)?._item;
     // The plan's own line for this item (a hotel swap keeps the line it replaces): the log's checklist names it.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
     const planItem = item ?? (v.replaces ? (planned.get(v.replaces) as (ExerciseSlot & SlotExtras) | undefined)?._item : undefined);
     const asPlanned = !replaces && own && sets === own.sets && rir === own.rir && v.repRange === own.repRange;
     const planWhy = parseNote(planItem?.note).why;

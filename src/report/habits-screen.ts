@@ -14,7 +14,6 @@ import type { BodyPart } from '../core/body-schedule.ts';
 import { addDays, daysBetween, type IsoDate } from '../core/dates.ts';
 import { deskHours, deskRoutine, deskTimes, planDeskBreaks, WORKDAYS, type DeskRoutine } from '../core/desk-breaks.ts';
 import { bodyParts } from '../core/nudges.ts';
-import type { Reason } from '../core/reason.ts';
 import { WEEKDAYS, type ItemKind, type Program, type TrackedItem, type Weekday } from '../core/schema.ts';
 import { pauseNow, scheduleText } from '../core/tracking.ts';
 import { scopeInfo } from './cycle.ts';
@@ -157,7 +156,7 @@ export function entryText(part: BodyPart, e: Obj | null, units: BodyUnits = METR
     const n = Array.isArray(e['poses']) ? (e['poses'] as unknown[]).filter((p) => POSES.some((x) => x.id === p)).length : 0;
     return n ? `${n} of ${POSES.length} poses` : 'a dated folder';
   }
-  const vals = TEST_FIELDS.map((f) => f.id).filter((k) => e[k] !== undefined && e[k] !== null && e[k] !== '').slice(0, 3).map((k) => (k === 'wallGapCm' && typeof e[k] === 'number' ? `wall test ${len(e[k] as number)} ${units.length}` : `${TEST_SHORT[k]![0]} ${String(e[k])}${TEST_SHORT[k]![1]}`));
+  const vals = TEST_FIELDS.map((f) => f.id).filter((k) => e[k] !== undefined && e[k] !== null && e[k] !== '').slice(0, 3).map((k) => (k === 'wallGapCm' && typeof e[k] === 'number' ? `wall test ${len(e[k])} ${units.length}` : `${TEST_SHORT[k]![0]} ${String(e[k])}${TEST_SHORT[k]![1]}`));
   return vals.join(', ') || 'no results';
 }
 
@@ -206,7 +205,7 @@ export function buildBodyRecord(read: VaultRead, tr: TrackingRead, date: IsoDate
       inDays: p.inDays,
       last: lastDate ? { date: lastDate, text: e ? entryText(part, e, units) : part === 'photos' ? 'a dated folder' : '' } : null,
       schedule: { source: p.schedule.source, text: p.schedule.text, next: p.schedule.next },
-      reason: parts[part].reason as Reason,
+      reason: parts[part].reason,
     };
   });
   return {

@@ -1,6 +1,7 @@
 // Small DOM builders for the view: elements, SVG and icons, without markup
-// strings. Standard DOM only, so the same code runs in Obsidian and in the
-// static preview harness.
+// strings. Standard DOM only, on Obsidian's `activeDocument` (the focused
+// window's, for popouts), so the same code runs in Obsidian, in the static
+// preview harness and in the tests, which both define `activeDocument`.
 
 import { ICONS } from './icons.ts';
 
@@ -14,7 +15,7 @@ function append(el: Element, children: readonly Child[]): void {
   for (const c of children) {
     if (c === null || c === undefined || c === false) continue;
     if (Array.isArray(c)) append(el, c);
-    else if (typeof c === 'string' || typeof c === 'number') el.appendChild(document.createTextNode(String(c)));
+    else if (typeof c === 'string' || typeof c === 'number') el.appendChild(activeDocument.createTextNode(String(c)));
     else el.appendChild(c as Node);
   }
 }
@@ -23,14 +24,14 @@ function setAttrs(el: Element, attrs: Attrs | undefined): void {
   if (!attrs) return;
   for (const [k, v] of Object.entries(attrs)) {
     if (v === null || v === undefined || v === false) continue;
-    if (typeof v === 'function') el.addEventListener(k.replace(/^on/, '').toLowerCase(), v as EventListener);
+    if (typeof v === 'function') el.addEventListener(k.replace(/^on/, '').toLowerCase(), v);
     else el.setAttribute(k, v === true ? '' : String(v));
   }
 }
 
 /** An HTML element with attributes (`onclick`: a listener; `class`, `data-*`, `aria-*`: attributes) and children. */
 export function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs?: Attrs, ...children: Child[]): HTMLElementTagNameMap[K] {
-  const el = document.createElement(tag);
+  const el = activeDocument.createElement(tag);
   setAttrs(el, attrs);
   append(el, children);
   return el;
@@ -38,7 +39,7 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs?: Attrs, 
 
 /** An SVG element. */
 export function s(tag: string, attrs?: Attrs, ...children: Child[]): SVGElement {
-  const el = document.createElementNS(SVG_NS, tag) as SVGElement;
+  const el = activeDocument.createElementNS(SVG_NS, tag);
   setAttrs(el, attrs);
   append(el, children);
   return el;

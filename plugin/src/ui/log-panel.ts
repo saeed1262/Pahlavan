@@ -36,16 +36,16 @@ export interface LogPanelCtx {
   plan: unknown;
   log: unknown;
   today: string;
-  onChange(): void;
-  onClose(): void;
+  onChange: () => void;
+  onClose: () => void;
   /** A new log only: another session or version (rebuilt from the engine). */
-  onRebuild(type: string, mode: SessionMode): void;
+  onRebuild: (type: string, mode: SessionMode) => void;
   /** Another date: a new log is rebuilt from that date's plan (an edit just moves). */
-  onDate(date: string): void;
-  onSave(force?: boolean): void;
-  onDelete(): void;
-  onEditExisting(entry: Obj): void;
-  onUseDisk(entry: Obj): void;
+  onDate: (date: string) => void;
+  onSave: (force?: boolean) => void;
+  onDelete: () => void;
+  onEditExisting: (entry: Obj) => void;
+  onUseDisk: (entry: Obj) => void;
   /** The movement guide for a name (plan-data's guide). */
   guide?(name: string): GuideEntry[];
 }
@@ -72,7 +72,7 @@ function seg(opts: [string, Child][], on: string, click: (v: string) => void, at
 }
 
 function stepper(value: number | null, unit: string, label: string, ph: string, set: (v: number | null) => void, step: number, changedFrom?: number | null): Child[] {
-  const input = h('input', { class: 'pv-lg-stp-in', inputmode: 'decimal', value: value ?? '', placeholder: ph, 'aria-label': label }) as HTMLInputElement;
+  const input = h('input', { class: 'pv-lg-stp-in', inputmode: 'decimal', value: value ?? '', placeholder: ph, 'aria-label': label });
   input.addEventListener('change', () => set(input.value.trim() === '' ? null : Number(input.value)));
   const bump = (d: number) => set(Math.max(0, Math.round(((value ?? 0) + d * step) * 10) / 10));
   return [
@@ -249,7 +249,7 @@ function sessionField(ctx: LogPanelCtx): HTMLElement {
 /** The custom session's label (required, as fitness_log.py add asks); typing does not redraw, so the focus stays. */
 function labelField(ctx: LogPanelCtx): HTMLElement {
   const f = ctx.form;
-  const input = h('input', { class: 'pv-lg-label', type: 'text', value: f.label ?? '', placeholder: 'Easy hike, yoga, a match…', 'aria-label': 'What it was', disabled: f.edit }) as HTMLInputElement;
+  const input = h('input', { class: 'pv-lg-label', type: 'text', value: f.label ?? '', placeholder: 'Easy hike, yoga, a match…', 'aria-label': 'What it was', disabled: f.edit });
   input.addEventListener('input', () => {
     f.label = input.value;
     f.typeName = input.value.trim() || 'Something else';
@@ -279,7 +279,7 @@ export function renderLogPanel(layer: HTMLElement, ctx: LogPanelCtx): void {
     ),
     h('button', { class: 'pv-lg-close', 'aria-label': 'Close', onclick: () => ctx.onClose() }, icon('x')),
   );
-  const dateInput = h('input', { class: 'pv-lg-date', type: 'date', value: f.date, max: ctx.today, 'aria-label': 'Date' }) as HTMLInputElement;
+  const dateInput = h('input', { class: 'pv-lg-date', type: 'date', value: f.date, max: ctx.today, 'aria-label': 'Date' });
   dateInput.addEventListener('change', () => { if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) && dateInput.value !== f.date) ctx.onDate(dateInput.value); });
   const what = h('section', { class: 'pv-lg-sec pv-lg-what' },
     h('label', { class: 'pv-lg-field' }, h('span', {}, 'Date'), h('span', { class: 'pv-lg-pick is-date' }, icon('calendar'), fmt.wd(f.date), f.date === ctx.today ? h('em', {}, 'today') : null, dateInput)),
@@ -312,14 +312,14 @@ export function renderLogPanel(layer: HTMLElement, ctx: LogPanelCtx): void {
       f.cardioMode && !CARDIO_MODES.includes(f.cardioMode.toLowerCase()) ? h('button', { class: 'pv-lg-pill is-on', onclick: () => { f.cardioMode = null; change(); } }, f.cardioMode) : null,
       CARDIO_MODES.map((m) => h('button', { class: `pv-lg-pill${f.cardioMode?.toLowerCase() === m ? ' is-on' : ''}`, onclick: () => { f.cardioMode = f.cardioMode?.toLowerCase() === m ? null : m; change(); } }, cap(m))))),
   );
-  const sev = h('input', { type: 'range', min: 0, max: 10, value: f.pain.severity, 'aria-label': 'Pain, 0 to 10' }) as HTMLInputElement;
+  const sev = h('input', { type: 'range', min: 0, max: 10, value: f.pain.severity, 'aria-label': 'Pain, 0 to 10' });
   const sevOut = h('b', {}, `${f.pain.severity}/10`);
   sev.addEventListener('input', () => { f.pain.severity = Number(sev.value); sevOut.textContent = `${f.pain.severity}/10`; });
   const soreList = Object.entries(f.sore);
-  const notes = h('textarea', { class: 'pv-lg-ta', placeholder: 'Anything worth remembering: how a lift felt, the gym, sleep.' }) as HTMLTextAreaElement;
+  const notes = h('textarea', { class: 'pv-lg-ta', placeholder: 'Anything worth remembering: how a lift felt, the gym, sleep.' });
   notes.value = f.notes;
   notes.addEventListener('input', () => { f.notes = notes.value; });
-  const posture = h('input', { type: 'checkbox' }) as HTMLInputElement;
+  const posture = h('input', { type: 'checkbox' });
   posture.checked = f.posture;
   posture.addEventListener('change', () => { f.posture = posture.checked; });
   const went = h('section', { class: 'pv-lg-sec' },

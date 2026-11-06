@@ -16,8 +16,8 @@ import { tip } from './progress.ts';
 import { commandChip } from './coach.ts';
 
 export interface HelpMenuContext {
-  onGuide(): void;
-  onTips(): void;
+  onGuide: () => void;
+  onTips: () => void;
   /** Your routine from the files as last read (built when it opens, so it follows the plan and the items); absent: not offered. */
   routine?(): Result<Routine> | null;
 }
@@ -111,13 +111,13 @@ export function helpMenu(ctx: HelpMenuContext): HTMLElement {
 
 export interface WelcomeContext {
   welcome: Welcome;
-  onGuide(): void;
-  onTour(): void;
-  onHide(): void;
+  onGuide: () => void;
+  onTour: () => void;
+  onHide: () => void;
   /** The coach skill in this vault, as the first step: 'checking' until Pahlavan has looked; `node` false when Node 18 or later wasn't found. */
   coach?: { state: 'checking' | 'missing' | 'old' | 'ok'; node: boolean | null; onSetUp(): void };
   /** Copies a step's command (the chips' Copy); absent: the command shows without it. */
-  onCopy?(text: string): void;
+  onCopy?: (text: string) => void;
 }
 
 /** The safety line: the welcome card, the settings and the README say it the same way. */
@@ -170,8 +170,8 @@ export interface TipContext {
   /** Its place among the tips not seen yet (1-based) and how many there are. */
   n: number;
   total: number;
-  onGot(): void;
-  onSkip(): void;
+  onGot: () => void;
+  onSkip: () => void;
 }
 
 /** One tip's bubble; the view puts it beside the tip's element. */

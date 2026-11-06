@@ -101,7 +101,7 @@ The plugin and the coach read and write the same files in your vault, and both g
 
 ![The welcome card: six first steps, from setting up the coach to the first Sunday check-in, each with its command](docs/images/welcome.png)
 
-1. Open Pahlavan from the ribbon or the command palette (**Open Pahlavan**). Today shows a welcome card with your first steps.
+1. Open Pahlavan from the ribbon or the command palette (**Pahlavan: Open**). Today shows a welcome card with your first steps.
 2. **Set up the coach:** the first step's button copies the coach into your vault (`.claude/skills/fitness-coach/`). It's also under **Settings → Pahlavan → Coach**.
 3. Open Claude Code in your vault's folder and type `/fitness-coach intake`. Answer its questions; it writes your profile.
 4. Type `/fitness-coach plan`. The coach designs your plan and, once you say yes, writes it. Today shows your first session.

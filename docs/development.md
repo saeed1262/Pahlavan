@@ -24,7 +24,8 @@ You need Node.js 23.6 or later for development (the tests run TypeScript directl
 npm install
 npm run typecheck      # both projects: the engine and the plugin
 npm test               # every test, engine and plugin
-npm run build-plugin   # plugin/dist: main.js, manifest.json, styles.css
+npm run build          # the plugin: plugin/dist (main.js, manifest.json, styles.css), main.js and styles.css also at the root
+npm run build-engine   # the engine alone: dist/pahlavan.js and dist/engine.cjs
 npm run preview        # the plugin's screens in a browser, on the made-up vault
 ```
 
@@ -48,4 +49,4 @@ npm run ship-skill -- <vault>/.claude/skills/fitness-coach
 
 ## Releasing
 
-Bump the version in `src/core/version.ts`, `package.json` (and `package-lock.json`), `manifest.json` (at the root, where Obsidian's directory reads it), `versions.json`, and the line near the top of `docs/user-guide.md`; add the release to `CHANGELOG.md`, then run the type check and the tests. A release carries `main.js`, `manifest.json` and `styles.css` from `plugin/dist`.
+Bump the version in `src/core/version.ts`, `package.json` (and `package-lock.json`), `manifest.json` (at the root, where Obsidian's directory reads it), `versions.json`, and the line near the top of `docs/user-guide.md`; add the release to `CHANGELOG.md`, then run the type check and the tests. A release carries `main.js`, `manifest.json` and `styles.css` from `plugin/dist`: Obsidian's review runs `npm ci` and `npm run build` on a clean checkout and compares the result with them, so build a release from a clean tree.

@@ -26,18 +26,18 @@ import { COACH_COMMANDS } from '../../../src/core/coach-steps.ts';
 /** The Plan's context: Progress's, plus the movement guide and the plan's notes. */
 export interface PlanContext extends ProgressContext {
   /** Copies a command (the empty card's Copy); absent: the command shows without it. */
-  onCopy?(text: string): void;
+  onCopy?: (text: string) => void;
   guide?(name: string): GuideEntry[];
   openGuides?: Set<string>;
-  onToggleGuide?(key: string): void;
+  onToggleGuide?: (key: string) => void;
   links?: { label: string; path: string; icon: string }[];
-  onOpenNote?(path: string): void;
+  onOpenNote?: (path: string) => void;
   hero: PlanHero;
   /** The Desk breaks card (absent: not drawn). */
   desk?: DeskCardContext | null;
   /** Which sessions' Why panels are open ("plan:<type>:<name>"), and the toggle. */
   openWhy?: Set<string>;
-  onToggleWhy?(key: string): void;
+  onToggleWhy?: (key: string) => void;
   /** Which sections are folded (At a glance): given, a wide page packs them in two columns. */
   folded?: (id: string) => boolean;
 }
@@ -74,15 +74,15 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   const wk = (W - left - 14) / weeks.length;
   const x = (d: string) => left + (daysBetween(start, d) / 7) * wk;
   const xEnd = left + weeks.length * wk;
-  const spans = [...m.ledger!.map((c) => ({ kind: 'ledger' as const, label: `${c.area}: ${c.noTags.length ? 'no high-strain lifts' : c.noMovements.length ? `no ${c.noMovements.join(', ')}` : 'limit'}`, until: c.until, tip: tip(`Ledger · ${c.area}`, c.noTags.length ? `Ruled out: ${c.noTags.join(', ')}` : c.noMovements.length ? `Ruled out: ${c.noMovements.join(', ')}` : null, c.note, c.until ? `Until ${fmt.wd(c.until)}` : 'No end date', 'In force before the plan began (the Ledger keeps no start date)') })),
-    ...m.temporary!.map((t) => ({ kind: 'change' as const, label: temporaryLabel(t), until: t.until, tip: tip(`Temporary change · ${t.session}`, t.wayBack ? `${t.item} in place of ${t.wayBack}` : null, clean(t.reason), `Until ${fmt.wd(t.until)}`, 'From the plan’s "until" note') }))];
+  const spans = [...m.ledger.map((c) => ({ kind: 'ledger' as const, label: `${c.area}: ${c.noTags.length ? 'no high-strain lifts' : c.noMovements.length ? `no ${c.noMovements.join(', ')}` : 'limit'}`, until: c.until, tip: tip(`Ledger · ${c.area}`, c.noTags.length ? `Ruled out: ${c.noTags.join(', ')}` : c.noMovements.length ? `Ruled out: ${c.noMovements.join(', ')}` : null, c.note, c.until ? `Until ${fmt.wd(c.until)}` : 'No end date', 'In force before the plan began (the Ledger keeps no start date)') })),
+    ...m.temporary.map((t) => ({ kind: 'change' as const, label: temporaryLabel(t), until: t.until, tip: tip(`Temporary change · ${t.session}`, t.wayBack ? `${t.item} in place of ${t.wayBack}` : null, clean(t.reason), `Until ${fmt.wd(t.until)}`, 'From the plan’s "until" note') }))];
   const Y = { today: 2, phase: 22, meso: 58, weeks: 84, num: 132, month: 148, dec: 172, busy: 200, ledger: 228 };
   const H = Y.ledger + 22 * Math.max(1, spans.length) + 4;
   const out: Child[] = [];
   const lane = (y: number, t: string, tipText?: string) => out.push(s('text', { class: 'pv-lane-label', x: 0, y, ...(tipText ? { 'data-tip': tipText } : {}) }, t));
   out.push(s('defs', {}, s('pattern', { id: 'pvBusyHatch', width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, s('rect', { width: 5, height: 5, class: 'pv-hatch-bg' }), s('line', { x1: 0, y1: 0, x2: 0, y2: 5, class: 'pv-hatch-line' }))));
   lane(Y.phase + 19, 'Phases');
-  for (const ph of m.phases!) {
+  for (const ph of m.phases) {
     const x0 = x(ph.from) + 1;
     const x1 = x(addDays(ph.to, 1)) - 2;
     const title = phaseTitle(ph.index, ph.name);
@@ -92,7 +92,7 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   const today = m.date;
   const tx = x(today) + wk / 14;
   const mesoTexts: Child[] = [];
-  for (const mc of m.mesocycles!) {
+  for (const mc of m.mesocycles) {
     const x0 = x(mc.from) + 1;
     const x1 = x(addDays(mc.to, 1)) - 2;
     out.push(s('rect', { class: `pv-tl-meso${m.now?.meso === mc.index ? ' is-now' : ''}`, x: x0, y: Y.meso, width: x1 - x0, height: 18, rx: 5, 'data-tip': tip(`Mesocycle ${mc.index}`, range(mc.from, mc.to)) }));
@@ -108,7 +108,7 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
     const cw = wk - 3;
     const when = w.end < today ? 'is-past' : m.now?.index === w.index ? 'is-now' : 'is-future';
     const st = stepOf.get(w.end);
-    out.push(s('rect', { class: `pv-tl-week is-${w.kind}${w.calibration ? ' is-calibration' : ''} ${when}`, x: x0, y: Y.weeks, width: cw, height: 34, rx: 4, 'data-tip': tip(`Week ${w.index} · ${range(w.start, w.end)}`, [w.kind === 'deload' ? 'Light week' : 'Loading', w.calibration && 'calibration', w.tests && 'tests'].filter(Boolean).join(', '), `${phaseTitle(w.phase, m.phases!.find((p) => p.index === w.phase)?.name)}, mesocycle ${w.meso}, week ${w.weekInMeso}`, w.calibration ? 'Calibration: find working weights at RIR 3; no progression or stall checks' : null, w.tests ? 'Tests at the end of the phase (the generator’s rule)' : null, st ? `Sunday: ${st.title} · ${st.command}` : null) }));
+    out.push(s('rect', { class: `pv-tl-week is-${w.kind}${w.calibration ? ' is-calibration' : ''} ${when}`, x: x0, y: Y.weeks, width: cw, height: 34, rx: 4, 'data-tip': tip(`Week ${w.index} · ${range(w.start, w.end)}`, [w.kind === 'deload' ? 'Light week' : 'Loading', w.calibration && 'calibration', w.tests && 'tests'].filter(Boolean).join(', '), `${phaseTitle(w.phase, m.phases.find((p) => p.index === w.phase)?.name)}, mesocycle ${w.meso}, week ${w.weekInMeso}`, w.calibration ? 'Calibration: find working weights at RIR 3; no progression or stall checks' : null, w.tests ? 'Tests at the end of the phase (the generator’s rule)' : null, st ? `Sunday: ${st.title} · ${st.command}` : null) }));
     const letter = w.calibration ? 'C' : w.kind === 'deload' ? 'L' : '';
     if (letter) out.push(s('text', { class: `pv-tl-letter ${when}`, x: x0 + (w.tests ? cw / 2 - 6 : cw / 2), y: Y.weeks + 21 }, letter));
     if (w.tests) out.push(iconGroup('flag', `translate(${x0 + cw / 2 + 1},${Y.weeks + 11}) scale(0.5)`, `pv-tl-flag ${when}`));
@@ -124,14 +124,14 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   });
   lane(Y.dec + 4, 'Decisions');
   out.push(s('line', { class: 'pv-lane-line', x1: left, x2: xEnd, y1: Y.dec, y2: Y.dec }));
-  for (const d of m.decisions!) {
+  for (const d of m.decisions) {
     if (d.date < start || d.date > weeks.at(-1)!.end) continue;
     const cx = x(d.date) + wk / 14;
     out.push(s('rect', { class: `pv-tl-dec${d.status === 'declined' ? ' is-declined' : ''}`, x: cx - 5, y: Y.dec - 5, width: 10, height: 10, transform: `rotate(45 ${cx} ${Y.dec})`, 'data-tip': tip(`${fmt.wd(d.date)} · ${d.title}`, d.status ? `Status: ${d.status}` : null, d.trigger ? `Trigger: ${d.trigger}` : null, d.rule ? `Rule: ${d.rule}` : null, d.change ? `Change: ${d.change}` : null, d.effect ? `Expected: ${d.effect}` : null, d.review ? `Review: ${fmt.wd(d.review)}` : null, d.outcome ? `Outcome: ${d.outcome}` : null) }));
   }
   lane(Y.busy + 4, 'Busy weeks');
   out.push(s('line', { class: 'pv-lane-line', x1: left, x2: xEnd, y1: Y.busy, y2: Y.busy }));
-  for (const b of m.busy!) {
+  for (const b of m.busy) {
     const x0 = Math.max(left, x(b.from));
     const x1 = Math.min(xEnd, x(addDays(b.to, 1)));
     if (x1 <= x0) continue;
@@ -155,13 +155,13 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
     const ev = [
       // The reviews: the weekly letter is every Sunday, so only these are named here.
       ...(st && st.kind !== 'letter' ? [`${st.title} · ${st.command}`] : []),
-      ...m.decisions!.filter((d) => d.date >= w.start && d.date <= w.end).map((d) => `Decision: ${d.title}`),
-      ...m.busy!.filter((b) => b.from <= w.end && b.to >= w.start).map((b) => `Busy: ${clean(b.label)}`),
+      ...m.decisions.filter((d) => d.date >= w.start && d.date <= w.end).map((d) => `Decision: ${d.title}`),
+      ...m.busy.filter((b) => b.from <= w.end && b.to >= w.start).map((b) => `Busy: ${clean(b.label)}`),
       ...spans.filter((c) => c.until && c.until >= w.start && c.until <= w.end).map((c) => `Ends: ${clean(c.label)}`),
     ];
     return [`${w.index}${m.now?.index === w.index ? ' (now)' : ''}`, range(w.start, w.end), String(w.phase), String(w.meso), [w.kind === 'deload' ? 'Light week' : 'Loading', w.calibration && 'calibration', w.tests && 'tests'].filter(Boolean).join(', '), h('span', { class: 'pv-faint' }, ev.join('; '))] as Child[];
   });
-  const phase = m.phases!.find((p) => p.index === m.now?.phase);
+  const phase = m.phases.find((p) => p.index === m.now?.phase);
   return card('timeline', 'pv-span-12', ctx, cardHead('timeline', `The plan, ${weeks.length} weeks`, phase ? `${phaseTitle(phase.index, phase.name)}${phase.goal ? `: ${clean(phase.goal)}` : ''}. Week ${m.now?.index} of ${weeks.length}.` : `From ${fmt.day(start)}`, ctx),
     [s('svg', { class: 'pv-chart', viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'The plan, week by week' }, out),
       h('div', { class: 'pv-chart-key' }, keySw('pv-tl-week is-loading is-past', 'Loading', 'week'), keySw('pv-tl-week is-deload is-past', 'Light week', 'week'), keySw('pv-tl-week is-loading is-calibration is-past', 'Calibration', 'week'), keySw('pv-tl-week is-loading is-future', 'Ahead', 'week'), h('span', {}, icon('flag'), 'Tests'), keySw('pv-tl-dec', 'Decision', 'dec'), keySw('pv-tl-busy', 'Busy week'), keySw('pv-tl-ledger', 'Ledger limit'), keySw('pv-tl-ledger is-change', 'Temporary change'))],
@@ -170,7 +170,7 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
 
 // ================================================================ this mesocycle
 function sessions(m: Ok, ctx: PlanContext): HTMLElement {
-  const meso = m.mesocycles!.find((x) => x.index === m.now?.meso);
+  const meso = m.mesocycles.find((x) => x.index === m.now?.meso);
   const mw = m.weeks.filter((w) => w.meso === m.now?.meso);
   const strip = h('div', { class: 'pv-meso-strip' }, mw.map((w) => h('span', { class: `pv-meso-wk${m.now?.index === w.index ? ' is-now' : ''}${w.end < m.date ? ' is-past' : ''}` }, h('b', {}, `Week ${w.index}`), ` ${range(w.start, w.end)} · ${w.kind === 'deload' ? 'light' : 'loading'}${w.tests ? ', tests' : ''}`)));
   const dose = (sl: Ok['templates'][number]['slots'][number]): Child => {
@@ -213,10 +213,10 @@ function sessions(m: Ok, ctx: PlanContext): HTMLElement {
     })),
   );
   const groups = ([['lift', 'Lifting days'], ['short', 'Short days']] as const).map(([kind, label]) => {
-    const ts = m.templates!.filter((t) => (t.kind === 'lift') === (kind === 'lift'));
+    const ts = m.templates.filter((t) => (t.kind === 'lift') === (kind === 'lift'));
     return ts.length ? h('div', { class: `pv-tpl-group is-${kind}` }, h('div', { class: 'pv-tpl-group-h' }, label), h('div', { class: 'pv-tpl-grid' }, ts.map(block))) : null;
   });
-  return h('section', { class: 'pv-card pv-span-8', 'data-sec': 'meso' }, headNoTable('This mesocycle', meso ? `Mesocycle ${meso.index}: ${range(meso.from, meso.to)}, a 4-week block of three normal weeks and a light week. The sessions as planned this week.` : 'The session templates as planned this week.'), m.templates!.length ? [strip, ...groups] : calm('No sessions planned this week.'));
+  return h('section', { class: 'pv-card pv-span-8', 'data-sec': 'meso' }, headNoTable('This mesocycle', meso ? `Mesocycle ${meso.index}: ${range(meso.from, meso.to)}, a 4-week block of three normal weeks and a light week. The sessions as planned this week.` : 'The session templates as planned this week.'), m.templates.length ? [strip, ...groups] : calm('No sessions planned this week.'));
 }
 
 // ================================================================ planned sets
@@ -229,7 +229,7 @@ export function directLine(b: Pick<VolumeRow, 'priority' | 'hardDirect' | 'unkno
 }
 
 function volume(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
-  const v = m.volume!;
+  const v = m.volume;
   const bands = [...v.muscles].sort((a, b) => b.sets - a.sets);
   const W = inner(width);
   const lab = 92;
@@ -284,7 +284,7 @@ export function pullPushLine(pp: NonNullable<Ok['volume']>['pullPush'] | undefin
 // ================================================================ targets
 interface TRow { name: string; sub: string; heuristic?: boolean; unit: string; base?: number | null; baseWhen?: string | null; lo?: number; hi?: number; by?: string | null; cur?: number | null; curWhen?: string | null; status: ['in' | 'below' | 'neutral', string]; dom?: [number, number]; predictedText?: string; curText?: string; f?: (v: number) => string; note?: string }
 function targetRows(m: Ok, units?: BodyUnits): TRow[] {
-  const t = m.targets!;
+  const t = m.targets;
   const st = t.standing;
   const rows: TRow[] = [];
   // Waist (cm) and weight (kg) rows in the body units: the values scale, so differences convert the same way.
@@ -311,10 +311,10 @@ function targetRows(m: Ok, units?: BodyUnits): TRow[] {
     const f = cv(r.unit);
     if (!f) continue;
     r.unit = lab(r.unit);
-    for (const k of ['base', 'lo', 'hi', 'cur'] as const) if (typeof r[k] === 'number') r[k] = f(r[k] as number);
+    for (const k of ['base', 'lo', 'hi', 'cur'] as const) if (typeof r[k] === 'number') r[k] = f(r[k]);
     if (r.dom) r.dom = [f(r.dom[0]), f(r.dom[1])];
   }
-  for (const p of st.priority) rows.push({ name: `${m.volume!.labels[p.muscle]?.label ?? p.muscle} sets a week`, sub: 'Priority muscle, average of the last 4 weeks', unit: 'sets', lo: 10, hi: 16, cur: p.sets, curWhen: m.date, status: p.status === 'in' ? ['in', 'In the band'] : p.status === 'above' ? ['below', 'Above the band'] : ['below', 'Below the band'], dom: [0, 24], f: (v) => fmt.sets(v) });
+  for (const p of st.priority) rows.push({ name: `${m.volume.labels[p.muscle]?.label ?? p.muscle} sets a week`, sub: 'Priority muscle, average of the last 4 weeks', unit: 'sets', lo: 10, hi: 16, cur: p.sets, curWhen: m.date, status: p.status === 'in' ? ['in', 'In the band'] : p.status === 'above' ? ['below', 'Above the band'] : ['below', 'Below the band'], dom: [0, 24], f: (v) => fmt.sets(v) });
   return rows;
 }
 function miniRange(r: TRow): Child {
@@ -334,8 +334,8 @@ function miniRange(r: TRow): Child {
 function targets(m: Ok, ctx: ProgressContext): HTMLElement {
   const rows = targetRows(m, ctx.units);
   const f = (r: TRow, v: number | null | undefined) => (v == null ? '–' : r.f ? r.f(v) : fmt.num(v));
-  const phase = m.phases!.find((p) => p.index === m.now?.phase);
-  const noProfile = !m.targets!.generated && !m.targets!.profile;
+  const phase = m.phases.find((p) => p.index === m.now?.phase);
+  const noProfile = !m.targets.generated && !m.targets.profile;
   const lines = rows.map((r) => h('div', { class: 'pv-tg-row' },
     h('div', { class: 'pv-tg-name' }, h('b', {}, r.name), r.heuristic ? h('span', { class: 'pv-tag is-heur' }, 'Heuristic') : null, h('div', { class: 'pv-tg-sub' }, r.sub)),
     h('div', { class: 'pv-tg-num' }, h('span', { class: 'pv-tg-l' }, 'Baseline'), r.base != null ? [`${f(r, r.base)} ${r.unit}`, r.baseWhen ? h('small', {}, fmt.day(r.baseWhen)) : null] : h('span', { class: 'pv-faint' }, '–')),
@@ -352,7 +352,7 @@ function targets(m: Ok, ctx: ProgressContext): HTMLElement {
 
 // ================================================================ load
 function load(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
-  const L = m.load!;
+  const L = m.load;
   const groups = [...L.weeks.map((w) => ({ label: w.current ? 'This week' : fmt.day(w.from), from: w.from, daily: w.daily, total: w.load, mono: w.current ? null : w.monotony, planned: false, unknown: w.unknown, future: w.current ? Array.from({ length: 7 }, (_, d) => addDays(w.from, d) > m.date) : Array(7).fill(false) as boolean[], tips: Array.from({ length: 7 }, (_, d) => w.sessions.filter((x) => x.date === addDays(w.from, d)).map((x) => `${x.minutes ?? '?'} min × RPE ${x.rpe ?? '?'} = ${x.load ?? 'unknown'}`)) })),
     { label: 'Next week', from: L.next.from, daily: L.next.daily, total: L.next.knownLoad, mono: L.nextMonotony, planned: true, unknown: L.next.unknown, future: Array(7).fill(false) as boolean[], tips: Array.from({ length: 7 }, (_, d) => L.next.sessions.filter((x) => x.day === d).map((x) => `${clean(x.name)}: ${x.minutes ?? '?'} min × RPE ${fmt.num(x.rpe)} = ${x.load ?? '?'}`)) }];
   const W = inner(width);
@@ -374,7 +374,7 @@ function load(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
         const hh = y(0) - y(v);
         out.push(s('path', { class: g.planned ? 'pv-ld-plan' : 'pv-ld-bar', d: `M${bx},${y(0)}v${-(Math.max(0, hh - 4))}a4,4 0 0 1 4,-4h${Math.max(0, bw - 8)}a4,4 0 0 1 4,4v${Math.max(0, hh - 4)}z`, 'data-tip': t }));
       } else out.push(s('rect', { class: `pv-ld-zero${g.future[di] ? ' is-future' : ''}`, x: bx, y: y(0) - 2, width: bw, height: 2, 'data-tip': t }));
-      out.push(s('text', { class: 'pv-ax mid', x: bx + bw / 2, y: y(0) + 12 }, 'MTWTFSS'[di]!));
+      out.push(s('text', { class: 'pv-ax mid', x: bx + bw / 2, y: y(0) + 12 }, 'MTWTFSS'[di]));
     });
     const cx = gx + (7 * (bw + 3)) / 2 - 1.5;
     // Three short lines per week: a group is under 100 px wide at 1100, so the long forms live in the table.
@@ -404,7 +404,7 @@ const EVENT: Record<string, [string, string, string]> = {
 };
 /** Coming up: each Sunday's check-in names the coach step after it and its command; the phase review says what it plans. */
 function upcoming(m: Ok): HTMLElement {
-  const items = m.upcoming!.map((u) => {
+  const items = m.upcoming.map((u) => {
     const e = EVENT[u.kind] ?? ['calendar', u.kind, ''];
     const x = u as { item?: string; wayBack?: string; coach?: { kind: string; title: string; command: string; nextCycle: boolean } };
     const c = x.coach;
@@ -420,7 +420,7 @@ function upcoming(m: Ok): HTMLElement {
     last = it.date;
     return [head, h('div', { class: 'pv-up-item' }, h('span', { class: 'pv-rem-icon' }, icon(it.ic)), h('div', {}, h('b', {}, it.title), it.sub ? h('div', { class: 'pv-tg-sub' }, it.sub) : null))];
   });
-  const phase = m.phases!.find((p) => p.index === m.now?.phase);
+  const phase = m.phases.find((p) => p.index === m.now?.phase);
   return h('section', { class: 'pv-card pv-span-5', 'data-sec': 'upcoming' }, headNoTable('Coming up', phase ? `To the end of phase ${phase.index}, ${fmt.day(phase.to)}` : null),
     items.length ? [h('div', { class: 'pv-up' }, list), items.length > shown.length ? h('div', { class: 'pv-foot-note' }, `And ${items.length - shown.length} more by ${fmt.day(phase?.to ?? items.at(-1)!.date)}.`) : null] : calm('Nothing scheduled before the phase ends.'));
 }

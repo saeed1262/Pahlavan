@@ -116,7 +116,7 @@ export function recoveryTrigger(records: readonly WeeklyCheckin[], date: IsoDate
   return explain(fired, 'checkin.early-deload', { date, checkins: [a, b].filter(Boolean).map((w) => ({ date: checkinDate(w!), recovery: w!.recovery ?? null, jointAches: jointAchesOf(w).fatigue })) }, {
     threshold: { checkins: 2, poorRecovery: CHECKIN.poorRecovery, acheSeverity: CHECKIN.acheSeverity },
     note: fired
-      ? `Poor recovery and joint aches at two check-ins running (${checkinDate(a!)}, ${checkinDate(b!)}): offer an early light week (heuristic); the user decides.`
+      ? `Poor recovery and joint aches at two check-ins running (${checkinDate(a)}, ${checkinDate(b)}): offer an early light week (heuristic); the user decides.`
       : undefined,
   });
 }

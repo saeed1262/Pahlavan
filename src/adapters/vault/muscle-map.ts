@@ -28,7 +28,7 @@ export function vaultMuscleMap(guide: Readonly<Record<string, PlanDataGuide>>, c
   const out: Record<string, MuscleMapEntry> = {};
   const rank: Record<string, number> = {};
   const offer = (id: string, key: string, muscles: MuscleMapEntry['muscles'], r: number) => {
-    if (rank[id] !== undefined && rank[id]! <= r) return;
+    if (rank[id] !== undefined && rank[id] <= r) return;
     out[id] = { guide: key, muscles };
     rank[id] = r;
   };

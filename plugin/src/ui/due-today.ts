@@ -38,15 +38,15 @@ export interface DueTodayContext {
   canWrite: boolean;
   /** Item ids with a write on the way (their buttons wait). */
   busy: ReadonlySet<string>;
-  onTick(id: string, done: boolean): void;
-  onAdd(id: string, delta: number): void;
+  onTick: (id: string, done: boolean) => void;
+  onAdd: (id: string, delta: number) => void;
   /** Opens a card by its reminder key (morning, slot:09:00, amount:water, desk:desk-breaks, sitting:sitting, train, tape, photos, tests). */
-  onOpen(key: string): void;
-  onStanding(on: boolean): void;
+  onOpen: (key: string) => void;
+  onStanding: (on: boolean) => void;
   /** Progress, Habits. */
-  onHabits(): void;
+  onHabits: () => void;
   /** The Settings tab (absent: not offered). */
-  onSettings?(): void;
+  onSettings?: () => void;
   /** A moment as local HH:MM (the morning's saved time, the Standing now line). */
   clock?(ms: number): string;
   /** The phone's entries the import refused (Coach/Inbox/refused.json): they wait in the inbox for a look. */

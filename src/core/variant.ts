@@ -205,7 +205,7 @@ export function hotelVariant(input: HotelInput): Result<{ slots: VariantSlot[]; 
           // Most main muscles shared, the same kind of load, then the variation furthest along its
           // own progression (light equipment needs the harder one), then the lower level, then id.
           .sort((a, b) => {
-            const main = (ex?.muscles?.main ?? entry?.muscles.main ?? []) as string[];
+            const main = (ex?.muscles?.main ?? entry?.muscles.main ?? []);
             return (
               shared(b.muscles.main, main) - shared(a.muscles.main, main) ||
               Number(b.load === (entry?.load ?? 'external')) - Number(a.load === (entry?.load ?? 'external')) ||

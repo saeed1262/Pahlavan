@@ -93,7 +93,7 @@ export function soreDays(daily: readonly DailyCheckin[], from: IsoDate, to: IsoD
     days++;
     for (const [m, level] of Object.entries(d.soreMuscles)) {
       out[m] ??= { mild: 0, sore: 0 };
-      out[m]![level]++;
+      out[m][level]++;
     }
   }
   const worst = Object.entries(out).sort((a, b) => b[1].sore - a[1].sore || b[1].mild - a[1].mild)[0];

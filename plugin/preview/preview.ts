@@ -68,9 +68,10 @@ import { loadPluginData } from '../src/settings.ts';
 import { PahlavanSettingTab } from '../src/settings-tab.ts';
 import { PahlavanView, type Section } from '../src/view.ts';
 import { HelpStore } from '../src/help.ts';
+import { h, s as svg } from '../src/ui/dom.ts';
 import { findFolders, useFolders } from '../../src/adapters/vault/layout.ts';
 import { WorkspaceLeaf } from './obsidian-stub.ts';
-import { applyFoodState, type FoodState } from '../../test/fixtures/food/food-state.ts';
+import { applyFoodState } from '../../test/fixtures/food/food-state.ts';
 import { applySupersets } from '../../test/fixtures/supersets.ts';
 import { applyAbWork } from '../../test/fixtures/ab-work.ts';
 
@@ -78,8 +79,8 @@ const params = new URLSearchParams(location.search);
 const isfahan = params.get('isfahan') !== '0';
 const phase = params.get('phase') ?? 'workday';
 const dark = isfahan ? phase === 'evening' || phase === 'night' : params.get('mode') === 'dark';
-document.body.classList.add(dark ? 'theme-dark' : 'theme-light');
-if (isfahan) document.body.classList.add('isfahan', `isfahan-${phase}`);
+activeDocument.body.classList.add(dark ? 'theme-dark' : 'theme-light');
+if (isfahan) activeDocument.body.classList.add('isfahan', `isfahan-${phase}`);
 
 const fixture = (window as unknown as { PAHLAVAN_FIXTURE: Record<string, string> }).PAHLAVAN_FIXTURE;
 // [&vault=empty]: a vault Pahlavan was just installed in (no fitness files at all), as a new user first sees it;
@@ -269,12 +270,14 @@ if (params.get('coach') === 'saved') {
   d.checkins = [...d.checkins.filter((c: { date: string }) => c.date !== sunday), { date: sunday, weekStart: new Date(Date.parse(`${sunday}T00:00:00Z`) - 6 * 864e5).toISOString().slice(0, 10) }];
   files[p] = JSON.stringify(d);
 }
+/** A fixture file's JSON as JSON.parse gives it: the made-up edits below know each file's shape. */
+type FixtureJson = ReturnType<typeof JSON.parse>;
 const YD = new Set((params.get('yourday') ?? '').split(',').filter(Boolean));
 if (YD.size) {
   // MADE UP, preview only: Your day's states on the date (in memory only).
   const fit = '3-Personal/Fitness';
   const day = params.get('today') ?? '2026-04-10';
-  const edit = (path: string, fn: (d: Record<string, any>) => void) => {
+  const edit = (path: string, fn: (d: FixtureJson) => void) => {
     const d = JSON.parse(files[path]!);
     fn(d);
     files[path] = JSON.stringify(d, null, 2);
@@ -306,7 +309,7 @@ if (YD.size) {
   if (YD.has('nofood')) edit(`${fit}/Coach/tracking.json`, (d) => void (d['items'].find((x: { id: string }) => x.id === 'protein').pauses = [{ from: '2026-03-02' }]));
 }
 const FOOD = params.get('food');
-const foodToday = FOOD === 'early' || FOOD === 'later' || FOOD === 'empty' ? applyFoodState(files, FOOD as FoodState, '', params.get('plan') === 'plain' ? 'plain' : 'day').today : null;
+const foodToday = FOOD === 'early' || FOOD === 'later' || FOOD === 'empty' ? applyFoodState(files, FOOD, '', params.get('plan') === 'plain' ? 'plain' : 'day').today : null;
 if (foodToday && params.get('checks') === '1') {
   // The light checks of the last week, as the Food tab keeps them in Coach/help.json: vegetables at both meals on
   // most days (so Sunday’s pattern starts as met), at lunch on one, fruit once a day; today vegetables at lunch.
@@ -320,7 +323,7 @@ if (foodToday && params.get('checks') === '1') {
 const SCENE = CARD ? scenario(CARD) : null;
 function scenario(card: string): { date: string; time: string; key: string; stand?: boolean } {
   const fit = '3-Personal/Fitness';
-  const edit = (path: string, fn: (d: Record<string, any>) => void) => {
+  const edit = (path: string, fn: (d: FixtureJson) => void) => {
     const d = JSON.parse(files[path]!);
     fn(d);
     files[path] = JSON.stringify(d, null, 2);
@@ -440,14 +443,14 @@ const reminders = new Reminders({
     },
   },
   notifyMac: () => {},
-  notice: (message) => console.log(`[notice] ${message}`),
+  notice: (message) => console.debug(`[notice] ${message}`),
   focusApp: () => {},
   holdFront: () => {},
   chime: () => {},
   convertPhoto: async (p) => ({ data: p.data, ext: 'jpeg' }),
   git: new GitSync({ git: () => null, settings: () => pluginData.sync, now: () => now, ...timers }),
   checkin: new CheckinWriter(adapter),
-  openLog: () => console.log('[open] the log'),
+  openLog: () => console.debug('[open] the log'),
   openSection: (sec) => view.showSection(sec),
   copy: async (text) => {
     (window as unknown as { PAHLAVAN_COPIED?: string }).PAHLAVAN_COPIED = text;
@@ -458,9 +461,11 @@ const reminders = new Reminders({
 
 // [&skill=missing|old|ok] [&node=0]: the coach skill as the welcome card's first step finds it (made up; Set up only says so).
 const SKILL = params.get('skill');
+// The fixture vault's config folder, as its files have it (the dot-folder holding plugins/).
+const CONFIG_DIR = Object.keys(fixture).find((k) => /^\.[^/]+\/plugins\//.test(k))?.split('/')[0] ?? '';
 let skillNow = SKILL;
 const view = new PahlavanView(new WorkspaceLeaf() as never, {
-  data: new PahlavanData(adapter, '', { configDir: '.obsidian' }),
+  data: new PahlavanData(adapter, '', { configDir: CONFIG_DIR }),
   ...(SKILL ? {
     coach: {
       state: async () => ({ installed: skillNow === 'missing' ? null : skillNow === 'old' ? '0.19.0' : '0.20.1', bundled: '0.20.1', missing: [], differ: skillNow === 'old' ? ['scripts/engine.cjs'] : [], node: params.get('node') === '0' ? null : { path: '/opt/homebrew/bin/node', version: 'v22.11.0' } }),
@@ -474,35 +479,35 @@ const view = new PahlavanView(new WorkspaceLeaf() as never, {
   saveSettings: () => {},
   today: () => TODAY,
   hour: () => Number(params.get('hour') ?? 11),
-  bodyClasses: () => document.body.classList,
+  bodyClasses: () => activeDocument.body.classList,
   writer: new LogWriter(adapter),
   checkinWriter: new CheckinWriter(adapter),
   nowIso: () => `${TODAY}T07:30:00.000Z`,
   copy: async (text) => {
     (window as unknown as { PAHLAVAN_COPIED?: string }).PAHLAVAN_COPIED = text;
   },
-  openNote: (path) => console.log(`[open] ${path}`),
+  openNote: (path) => console.debug(`[open] ${path}`),
   reminders,
   trackingWriter: new TrackingWriter(adapter),
   offsetMinutes: () => 0,
   openSettings: () => openSettings(),
   clockText: (ms) => new Date(ms).toISOString().slice(11, 16),
   notify: (message) => {
-    console.log(`[notice] ${message}`);
-    const n = document.createElement('div');
+    console.debug(`[notice] ${message}`);
+    const n = activeDocument.createElement('div');
     n.className = 'preview-notice';
     n.textContent = message;
-    document.body.append(n);
-    setTimeout(() => n.remove(), 6000);
+    activeDocument.body.append(n);
+    window.setTimeout(() => n.remove(), 6000);
   },
   requestReload: () => void view.reload(),
   help: new HelpStore(adapter),
-  openGuide: () => console.log('[open] the user guide'),
+  openGuide: () => console.debug('[open] the user guide'),
 });
-document.querySelector('.preview-leaf')!.append(view.containerEl);
+activeDocument.querySelector('.preview-leaf')!.append(view.containerEl);
 // open() is View's internal start method (not in obsidian.d.ts); the stub mirrors it.
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const click = (sel: string) => (document.querySelector(sel) as HTMLElement | null)?.click();
+const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+const click = (sel: string) => activeDocument.querySelector<HTMLElement>(sel)?.click();
 void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).then(async () => {
   const edit = params.get('edit');
   if (edit) {
@@ -523,13 +528,13 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
     else click('.pv-btn-go');
     await wait(80);
     const st = params.get('logstate');
-    const row = (n: number) => document.querySelectorAll('.pv-lg-item')[n] as HTMLElement | undefined;
+    const row = (n: number) => activeDocument.querySelectorAll('.pv-lg-item')[n] as HTMLElement | undefined;
     if (st === 'full') click('.pv-lg-track .pv-lg-seg button:last-child');
     if (st === 'skip') (row(4)?.querySelector('.pv-lg-seg button:last-child') as HTMLElement | null)?.click();
     if (st === 'swap') (row(3)?.querySelector('.pv-lg-item-foot .pv-lg-link') as HTMLElement | null)?.click();
     const logDate = params.get('logdate');
     if (logDate) {
-      const input = document.querySelector('.pv-lg-date') as HTMLInputElement | null;
+      const input = activeDocument.querySelector<HTMLInputElement>('.pv-lg-date');
       if (input) {
         input.value = logDate;
         input.dispatchEvent(new Event('change'));
@@ -557,7 +562,7 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
   if (WHYOPEN) {
     await wait(30);
     const name = WHYOPEN.slice(WHYOPEN.indexOf(':') + 1);
-    const li = [...document.querySelectorAll('.pv-tpl-list li')].find((x) => x.querySelector('.pv-tpl-ex')?.textContent?.startsWith(name));
+    const li = [...activeDocument.querySelectorAll('.pv-tpl-list li')].find((x) => x.querySelector('.pv-tpl-ex')?.textContent?.startsWith(name));
     (li?.querySelector('.pv-tag-why') as HTMLElement | null)?.click();
     await wait(30);
   }
@@ -565,7 +570,7 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
   if (WHY) {
     await wait(30);
     // Hover cannot be shot: one Why opened by a made-up pointer at the element.
-    const el = document.querySelector(`[data-why="${CSS.escape(WHY)}"]`);
+    const el = activeDocument.querySelector(`[data-why="${CSS.escape(WHY)}"]`);
     if (el) {
       const r = el.getBoundingClientRect();
       el.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.bottom }));
@@ -573,7 +578,7 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
   }
   const HAND = params.get('hand');
   if (!CARD && (HAND === 'tape' || HAND === 'photos' || HAND === 'tests')) await reminders.openCard(HAND);
-  document.body.setAttribute('data-ready', '1');
+  activeDocument.body.setAttribute('data-ready', '1');
 });
 
 /** Obsidian's settings window, with Pahlavan's tab drawn by the real PahlavanSettingTab (saves stay in memory). */
@@ -583,20 +588,23 @@ function openSettings(): void {
   const device = new Map<string, string>();
   const tab = new PahlavanSettingTab({} as never, {} as never, {
     data,
-    save: () => console.log(`[settings] ${JSON.stringify(data)}`),
+    save: () => console.debug(`[settings] ${JSON.stringify(data)}`),
     remindHere: () => device.get('pahlavan-remind-here') !== 'off',
     setRemindHere: (on) => void device.set('pahlavan-remind-here', on ? 'on' : 'off'),
     gitSynced: params.get('git') !== '0',
-    openSection: (s) => console.log(`[open] ${s}`),
-    openGuide: () => console.log('[open] the user guide'),
-    resetTips: () => console.log('[help] the tips again'),
+    openSection: (s) => console.debug(`[open] ${s}`),
+    openGuide: () => console.debug('[open] the user guide'),
+    resetTips: () => console.debug('[help] the tips again'),
   });
-  const side = (group: string, tabs: string[]) => [`<div class="preview-st-group">${group}</div>`, ...tabs.map((x) => `<div class="preview-st-tab${x === 'Pahlavan' ? ' is-on' : ''}">${x}</div>`)].join('');
-  const overlay = document.createElement('div');
-  overlay.className = 'preview-st-overlay';
-  overlay.innerHTML = `<div class="preview-st-modal"><aside class="preview-st-side">${side('Options', ['General', 'Editor', 'Files and links', 'Appearance', 'Hotkeys', 'Core plugins', 'Community plugins'])}${side('Community plugins', ['Calendar', 'Dataview', 'Habit Nudges', 'Isfahan', 'Pahlavan', 'Spaced Repetition'])}</aside><div class="preview-st-main"></div><div class="preview-st-x">×</div></div>`;
-  overlay.querySelector('.preview-st-main')!.append(tab.containerEl);
-  document.body.append(overlay);
+  const side = (group: string, tabs: string[]) => [h('div', { class: 'preview-st-group' }, group), ...tabs.map((x) => h('div', { class: `preview-st-tab${x === 'Pahlavan' ? ' is-on' : ''}` }, x))];
+  const overlay = h('div', { class: 'preview-st-overlay' },
+    h('div', { class: 'preview-st-modal' },
+      h('aside', { class: 'preview-st-side' },
+        side('Options', ['General', 'Editor', 'Files and links', 'Appearance', 'Hotkeys', 'Core plugins', 'Community plugins']),
+        side('Community plugins', ['Calendar', 'Dataview', 'Habit Nudges', 'Isfahan', 'Pahlavan', 'Spaced Repetition'])),
+      h('div', { class: 'preview-st-main' }, tab.containerEl),
+      h('div', { class: 'preview-st-x' }, '×')));
+  activeDocument.body.append(overlay);
   tab.display();
 }
 
@@ -634,12 +642,15 @@ async function warmUp(): Promise<void> {
 }
 
 function banner(title: string, body: string): void {
-  document.querySelector('.preview-banner')?.remove();
-  const b = document.createElement('div');
-  b.className = 'preview-banner';
-  b.setAttribute('role', 'status');
-  b.innerHTML = '<div><span class="pb-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5l6.5 4.2-1.3 9.6L12 21.5l-5.2-5.2-1.3-9.6z" fill="#fff" opacity=".92"/><path d="M12 2.5v19M6.8 16.3L12 11l5.2 5.3" stroke="#7a5ae8" stroke-width="1.1" fill="none"/></svg></span></div><div><div class="pb-head"><b>Obsidian</b><span>now</span></div><div class="pb-title"></div><div class="pb-sub">Pahlavan</div><div class="pb-body"></div></div>';
-  b.querySelector('.pb-title')!.textContent = title;
-  b.querySelector('.pb-body')!.textContent = body;
-  document.body.append(b);
+  activeDocument.querySelector('.preview-banner')?.remove();
+  const b = h('div', { class: 'preview-banner', role: 'status' },
+    h('div', {}, h('span', { class: 'pb-icon' }, svg('svg', { viewBox: '0 0 24 24' },
+      svg('path', { d: 'M12 2.5l6.5 4.2-1.3 9.6L12 21.5l-5.2-5.2-1.3-9.6z', fill: '#fff', opacity: '.92' }),
+      svg('path', { d: 'M12 2.5v19M6.8 16.3L12 11l5.2 5.3', stroke: '#7a5ae8', 'stroke-width': '1.1', fill: 'none' })))),
+    h('div', {},
+      h('div', { class: 'pb-head' }, h('b', {}, 'Obsidian'), h('span', {}, 'now')),
+      h('div', { class: 'pb-title' }, title),
+      h('div', { class: 'pb-sub' }, 'Pahlavan'),
+      h('div', { class: 'pb-body' }, body)));
+  activeDocument.body.append(b);
 }

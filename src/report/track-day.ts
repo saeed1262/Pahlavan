@@ -107,8 +107,8 @@ export function buildTrackDay(data: VaultData, tr: TrackingRead, date: IsoDate) 
   });
   const entry = (key: string) => tr.nudges?.days[date]?.[key] ?? null;
   const train = entry('train');
-  const day = isObj(tr.body) && isObj(tr.body['days']) && isObj(tr.body['days'][date]) ? (tr.body['days'][date] as Obj) : {};
-  const mark = day['mark'] === 'rest' || day['mark'] === 'missed' ? (day['mark'] as 'rest' | 'missed') : null;
+  const day = isObj(tr.body) && isObj(tr.body['days']) && isObj(tr.body['days'][date]) ? (tr.body['days'][date]) : {};
+  const mark = day['mark'] === 'rest' || day['mark'] === 'missed' ? (day['mark']) : null;
   const checked = checkedIn(tr.body, date);
   const morningEntry = entry('morning');
   const morning = tr.tracking?.morning ?? null;

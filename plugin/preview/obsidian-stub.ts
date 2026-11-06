@@ -34,11 +34,11 @@ export class ItemView extends Component {
     super();
     this.leaf = leaf;
     this.app = leaf.app;
-    this.containerEl = document.createElement('div');
+    this.containerEl = activeDocument.createElement('div');
     this.containerEl.className = 'workspace-leaf-content';
-    const header = document.createElement('div');
+    const header = activeDocument.createElement('div');
     header.className = 'view-header';
-    this.contentEl = document.createElement('div');
+    this.contentEl = activeDocument.createElement('div');
     this.contentEl.className = 'view-content';
     this.containerEl.append(header, this.contentEl);
   }
@@ -71,7 +71,7 @@ export type TAbstractFile = { path: string };
 // plugin's Settings tab draws in the preview as it does in the app.
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, parent?: HTMLElement): HTMLElementTagNameMap[K] => {
-  const e = document.createElement(tag);
+  const e = activeDocument.createElement(tag);
   if (cls) e.className = cls;
   parent?.appendChild(e);
   return e;
@@ -183,7 +183,7 @@ class ButtonComponent {
 /** A notice: logged in the preview (Obsidian shows a toast). */
 export class Notice {
   constructor(message: string) {
-    console.info(`Notice: ${message}`);
+    console.debug(`Notice: ${message}`);
   }
 }
 
@@ -270,12 +270,12 @@ export class Modal {
     this.contentEl = el('div', 'modal-content', this.modalEl);
   }
   open(): void {
-    document.body.appendChild(this.containerEl);
-    document.addEventListener('keydown', this.keyHandler);
+    activeDocument.body.appendChild(this.containerEl);
+    activeDocument.addEventListener('keydown', this.keyHandler);
     this.onOpen();
   }
   close(): void {
-    document.removeEventListener('keydown', this.keyHandler);
+    activeDocument.removeEventListener('keydown', this.keyHandler);
     this.containerEl.remove();
     this.onClose();
   }

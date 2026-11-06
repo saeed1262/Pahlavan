@@ -75,7 +75,7 @@ export function parseDecisions(md: string): Decision[] {
     const status = /Status:(?:\*\*)?\s*([a-z-]+)/i.exec(statusLine)?.[1]?.toLowerCase() ?? null;
     const review = /review:(?:\*\*)?\s*(\d{4}-\d{2}-\d{2})/i.exec(block)?.[1] ?? null;
     const outcome = /outcome:(?:\*\*)?\s*([^\n]+)/i.exec(statusLine)?.[1]?.trim() ?? null;
-    out.push({ date: m[1] as IsoDate, title: m[2]!, status, review: review as IsoDate | null, outcome: outcome && !/^\(filled at review\)$/i.test(outcome) ? outcome : null, trigger: field('Trigger'), data: field('Data'), rule: field('Rule'), change: field('Change'), effect: field('Expected effect') });
+    out.push({ date: m[1], title: m[2]!, status, review: review, outcome: outcome && !/^\(filled at review\)$/i.test(outcome) ? outcome : null, trigger: field('Trigger'), data: field('Data'), rule: field('Rule'), change: field('Change'), effect: field('Expected effect') });
   }
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }

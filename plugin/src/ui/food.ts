@@ -15,7 +15,7 @@
 // its section id (`data-sec`), for At a glance and its fold. Standard DOM only.
 
 import { bodyFmt } from './units.ts';
-import type { FoodDayRow, FoodReport, Why } from '../../../src/report/food.ts';
+import type { FoodDayRow, FoodReport } from '../../../src/report/food.ts';
 import { goingStatus, type Run } from '../../../src/report/glance.ts';
 import { banner, phaseLabel, type BannerPhase, type RingSeg } from './banner.ts';
 import { h, icon, s, type Child } from './dom.ts';
@@ -36,7 +36,7 @@ export interface FoodContext {
   /** The page's width, for the charts. */
   width: number;
   tables: Set<string>;
-  onTable(id: string): void;
+  onTable: (id: string) => void;
   /** Ticks or unticks today's protein through the reminders (absent: read only). */
   onTick?: (done: boolean) => void;
   /** A tick on its way. */
@@ -65,12 +65,12 @@ const runs = (xs: readonly Run[]): Child[] => xs.map((r) => (typeof r === 'strin
 
 /** A number with its Why: the dotted underline, the tooltip, the rule id on the element. */
 function whyEl(m: Food, key: string, child: Child, tag: 'b' | 'span' = 'b', cls = ''): HTMLElement {
-  const w = (m.why as Record<string, Why>)[key];
+  const w = (m.why)[key];
   return h(tag, { class: `pv-fd-why${cls ? ` ${cls}` : ''}`, 'data-tip': whyTip(w), 'data-rule': w?.rule, 'data-why': key }, child);
 }
 /** The Why's attributes for an element that is not a number (a bar segment, a ring mark, a day). */
 const whyAttrs = (m: Food, key: string) => {
-  const w = (m.why as Record<string, Why>)[key];
+  const w = (m.why)[key];
   return w ? { 'data-tip': whyTip(w), 'data-rule': w.rule, 'data-why': key } : {};
 };
 /** The icon the plan names, or a plain one for a name the tab does not draw. */
@@ -93,17 +93,17 @@ function hero(m: Food, ctx: FoodContext): HTMLElement {
       title: 'Food',
       sub: `${fmt.dayLong(m.date)} · no eating plan yet`,
       chips: [
-        { icon: 'tape', label: 'Waist', value: last ? `${F.len(last.waist)} ${F.l}, ${fmt.day(last.date)}` : 'no tape yet', tip: whyTip((m.why as Record<string, Why>)['waist']) },
-        { icon: 'trend', label: 'Weight trend', value: tl ? `${F.wv(tl.trend).toFixed(1)} ${F.w}` : 'no weigh-in yet', tip: whyTip((m.why as Record<string, Why>)['trend']) },
+        { icon: 'tape', label: 'Waist', value: last ? `${F.len(last.waist)} ${F.l}, ${fmt.day(last.date)}` : 'no tape yet', tip: whyTip((m.why)['waist']) },
+        { icon: 'trend', label: 'Weight trend', value: tl ? `${F.wv(tl.trend).toFixed(1)} ${F.w}` : 'no weigh-in yet', tip: whyTip((m.why)['trend']) },
       ],
       ring: { segs: [{ kind: 'empty' }], n: '–', label: 'NO PLAN', aria: 'No eating plan yet' },
       key: [],
     });
   }
-  const p = m as Planned;
-  const plan = p.plan!;
+  const p = m;
+  const plan = p.plan;
   const wk = p.protein.week.value;
-  const segs: RingSeg[] = wk.days.map((d) => ({ kind: d.state === 'ticked' ? 'lift' : 'empty', now: d.state === 'open', future: d.state === 'future', tip: whyTip((m.why as Record<string, Why>)[`day-${d.date}`]) }));
+  const segs: RingSeg[] = wk.days.map((d) => ({ kind: d.state === 'ticked' ? 'lift' : 'empty', now: d.state === 'open', future: d.state === 'future', tip: whyTip((m.why)[`day-${d.date}`]) }));
   const check = p.adjust?.value.next ?? plan.review;
   return banner({
     phase: ctx.phase,
@@ -111,8 +111,8 @@ function hero(m: Food, ctx: FoodContext): HTMLElement {
     title: 'Food',
     sub: `${fmt.dayLong(m.date)} · your eating plan of ${fmt.day(plan.updated)}`,
     chips: [
-      { sw: 'lift', label: 'Protein days', value: `${wk.ticked} of 7`, tip: whyTip((m.why as Record<string, Why>)['weekdays']) },
-      { icon: 'review', label: m.date === check ? 'Check' : 'Next check', value: m.date === check ? 'today' : fmt.wd(check), tip: whyTip((m.why as Record<string, Why>)[p.adjust?.value.next ? 'check' : 'review']) },
+      { sw: 'lift', label: 'Protein days', value: `${wk.ticked} of 7`, tip: whyTip((m.why)['weekdays']) },
+      { icon: 'review', label: m.date === check ? 'Check' : 'Next check', value: m.date === check ? 'today' : fmt.wd(check), tip: whyTip((m.why)[p.adjust?.value.next ? 'check' : 'review']) },
     ],
     ring: { segs, n: `${wk.ticked}/7`, label: 'PROTEIN DAYS', aria: `${wk.ticked} of 7 protein days this week` },
     key: [{ kind: 'lift', label: 'Ticked' }, { kind: 'empty', label: 'Not yet' }],
@@ -122,7 +122,7 @@ function hero(m: Food, ctx: FoodContext): HTMLElement {
 // ---------------------------------------------------------------- 1. your plan in a minute
 
 function planCard(m: Planned): HTMLElement {
-  const plan = m.plan!;
+  const plan = m.plan;
   const pr = plan.protein;
   const W = m.words;
   const e = plan.energy;
@@ -161,7 +161,7 @@ function planCard(m: Planned): HTMLElement {
 
 /** A meal's hand portions inline: the hands drawn (a maybe hand open), the count, the foods. */
 function handsRow(m: Planned, meal: Meal): HTMLElement | null {
-  const plan = m.plan!;
+  const plan = m.plan;
   const por = meal.portions ? plan.portions?.[meal.portions] : undefined;
   const groups = plan.groups ?? [];
   if (!por || !groups.length) return null;
@@ -182,7 +182,7 @@ function ideaBox(m: Planned, meal: Meal, row: Extract<FoodDayRow, { kind: 'meal'
   const n = ideas.length;
   const k = (((row.idea.index + (ctx.ideaSteps?.[meal.id] ?? 0)) % n) + n) % n;
   const idea = ideas[k]!;
-  const names = (idea.counts ?? []).map((c) => m.plan!.pattern?.find((x) => x.id === c)?.name).filter((x): x is string => Boolean(x));
+  const names = (idea.counts ?? []).map((c) => m.plan.pattern?.find((x) => x.id === c)?.name).filter((x): x is string => Boolean(x));
   return h('div', { class: 'pv-fd-idea' },
     h('div', { class: 'pv-fd-idea-main' },
       h('span', { class: 'pv-fd-idea-k' }, k === row.idea.index ? 'Today’s idea' : 'Another idea'),
@@ -193,7 +193,7 @@ function ideaBox(m: Planned, meal: Meal, row: Extract<FoodDayRow, { kind: 'meal'
 }
 
 function fallbacks(m: Planned, meal: Meal): HTMLElement | null {
-  const fb = m.plan!.fallbacks;
+  const fb = m.plan.fallbacks;
   if (!fb || fb.meal !== meal.id) return null;
   return h('div', { class: 'pv-fd-fb' },
     h('div', { class: 'pv-fd-fb-h' }, icon('alert'), h('b', {}, `If ${lower(meal.name)} is hard`)),
@@ -206,7 +206,7 @@ function fallbacks(m: Planned, meal: Meal): HTMLElement | null {
 }
 
 function mealRow(m: Planned, row: Extract<FoodDayRow, { kind: 'meal' }>, ctx: FoodContext): HTMLElement | null {
-  const meal = m.plan!.meals.find((x) => x.id === row.id);
+  const meal = m.plan.meals.find((x) => x.id === row.id);
   if (!meal) return null;
   const hands = handsRow(m, meal);
   const idea = ideaBox(m, meal, row, ctx);
@@ -239,7 +239,7 @@ function markRow(at: string, ic: string, label: string, sub: string | null): HTM
 const minutesText = (n: number | null) => (n === null ? '' : n === 60 ? ', about an hour' : n === 90 ? ', about an hour and a half' : `, ${n} minutes`);
 
 function dayCard(m: Planned, ctx: FoodContext): HTMLElement {
-  const plan = m.plan!;
+  const plan = m.plan;
   const D = m.day;
   const P = m.protein.planned.value;
   const about = Math.round((P.lo + P.hi) / 2 / 5) * 5;
@@ -269,7 +269,7 @@ function dayCard(m: Planned, ctx: FoodContext): HTMLElement {
 // ---------------------------------------------------------------- 3. today
 
 function todayCard(m: Planned, ctx: FoodContext): HTMLElement {
-  const pr = m.plan!.protein;
+  const pr = m.plan.protein;
   const on = m.protein.today?.state === 'ticked';
   const item = m.protein.item;
   const canTick = Boolean(ctx.onTick && item);
@@ -297,7 +297,7 @@ function todayCard(m: Planned, ctx: FoodContext): HTMLElement {
 // ---------------------------------------------------------------- 4. coach's tips
 
 function tipsCard(m: Planned): HTMLElement | null {
-  const tips = m.plan!.tips ?? [];
+  const tips = m.plan.tips ?? [];
   if (!tips.length) return null;
   return h('section', { class: 'pv-card pv-fd-tips-card', 'data-sec': 'tips' },
     h('div', { class: 'pv-kicker' }, 'Coach’s tips'),
@@ -362,7 +362,7 @@ function weightSvg(m: Planned, W: number): SVGElement {
   const creatine = m.creatine?.start ?? null;
   hit.addEventListener('mousemove', (ev) => {
     const box = (svg as SVGSVGElement).getBoundingClientRect();
-    const px = ((ev as MouseEvent).clientX - box.left) * (W / box.width);
+    const px = ((ev).clientX - box.left) * (W / box.width);
     let best = pts[0]!;
     for (const p of pts) if (Math.abs(x(p.date) - px) < Math.abs(x(best.date) - px)) best = p;
     cross.setAttribute('x1', String(x(best.date)));
@@ -389,7 +389,7 @@ function waistSvg(m: Planned, W: number): SVGElement {
   const show = (v: number) => (F.l === 'cm' ? String(v) : v.toFixed(1));
   const tapes = m.trend.waist.value.points.map((t) => ({ ...t, waist: F.lv(t.waist) }));
   const base = tapes[0]!.waist;
-  const flat = F.lv(m.plan!.adjust?.flatCm ?? m.trend.waist.value.flatCm);
+  const flat = F.lv(m.plan.adjust?.flatCm ?? m.trend.waist.value.flatCm);
   const lo = Math.min(base - F.lv(1.4), ...tapes.map((t) => t.waist - F.lv(0.4)));
   const hi = Math.max(base + F.lv(1), ...tapes.map((t) => t.waist + F.lv(0.4)));
   const x = (d: string) => scale(ms(m.trend.from), ms(m.trend.to), mg.l, W - mg.r)(ms(d));
@@ -427,12 +427,12 @@ function proteinSec(m: Planned): HTMLElement {
     h('div', { class: 'pv-fd-week' }, wk.days.map((d) => h('div', { class: `pv-fd-wd${d.date === m.date ? ' is-today' : ''}`, ...whyAttrs(m, `day-${d.date}`) },
       h('span', { class: `pv-day-mark is-${d.state === 'before' ? 'none' : d.state}` }, MARK[d.state] ? icon(MARK[d.state]!) : null),
       h('span', {}, fmt.dow(d.date))))),
-    h('div', { class: 'pv-fd-sec-note' }, `A day counts at ${m.plan!.protein.floorG} g or more, ticked in the evening.`, past.length ? [' Weeks before: ', past.map((w, i) => [i ? ', ' : '', `W${w.n} `, whyEl(m, `week-${w.n}`, String(w.checkin ?? w.ticked))]), '.'] : null),
+    h('div', { class: 'pv-fd-sec-note' }, `A day counts at ${m.plan.protein.floorG} g or more, ticked in the evening.`, past.length ? [' Weeks before: ', past.map((w, i) => [i ? ', ' : '', `W${w.n} `, whyEl(m, `week-${w.n}`, String(w.checkin ?? w.ticked))]), '.'] : null),
   );
 }
 
 function trendSec(m: Planned, ctx: FoodContext, W: number): HTMLElement {
-  const plan = m.plan!;
+  const plan = m.plan;
   const want = WANT[plan.goal] ?? { waist: null, weight: 'as the goal says' };
   const tr = m.trend.weight.trend.value;
   const tl = tr.latest;
@@ -471,7 +471,7 @@ function patternSec(m: Planned): HTMLElement | null {
   const pt = m.pattern;
   if (!pt) return null;
   const P = pt.value;
-  const plan = m.plan!;
+  const plan = m.plan;
   const answered = P.records.filter(Boolean).length;
   const head = answered ? `Answered on ${answered} Sunday${answered === 1 ? '' : 's'}` : `First answer ${fmt.wd(P.sundays.at(-1)!)}`;
   return h('div', { class: 'pv-fd-sec' },
@@ -488,7 +488,7 @@ function patternSec(m: Planned): HTMLElement | null {
 }
 
 function checkSec(m: Planned): HTMLElement | null {
-  const plan = m.plan!;
+  const plan = m.plan;
   const A = plan.adjust;
   const adj = m.adjust;
   if (!A || !adj) return null;
@@ -562,7 +562,7 @@ export function renderFood(root: HTMLElement, m: Food, ctx: FoodContext): void {
     root.replaceChildren(hero(m, ctx), ...(calm ? [calm] : []), h('div', { class: 'pv-fd-grid' }, h('div', { class: 'pv-fd-wide' }, emptyCard(ctx))));
     return;
   }
-  const p = m as Planned;
+  const p = m;
   const total = ctx.width || 1000;
   const narrow = total < 760;
   const gap = 18;

@@ -60,7 +60,7 @@ export interface PlannedSplit extends VolumeSplit {
 }
 
 /** The exercise has muscle tags, so its sets count. */
-const tagged = (exercises: Catalogue, id: string) => Boolean(exercises[id]?.muscles && (exercises[id]!.muscles!.main.length > 0 || exercises[id]!.muscles!.helps.length > 0));
+const tagged = (exercises: Catalogue, id: string) => Boolean(exercises[id]?.muscles && (exercises[id].muscles.main.length > 0 || exercises[id].muscles.helps.length > 0));
 
 /** Adds one exercise's sets to the tally (and its split); returns false when it has no muscle tags. */
 function add(tally: Record<string, number>, exercises: Catalogue, id: string, sets: number, split?: Record<string, VolumeSplit>): boolean {
@@ -255,7 +255,7 @@ export function holdBests(
   if (core && core.seconds > 0) {
     const kind: HoldKind = core.kind === 'plank' ? 'plank' : 'hollow';
     const prior = out[kind];
-    if (!prior || (prior.date ?? '') <= selfCheck!.date) out[kind] = { seconds: core.seconds, date: selfCheck!.date, source: 'self-check', field: 'coreHold' };
+    if (!prior || (prior.date ?? '') <= selfCheck.date) out[kind] = { seconds: core.seconds, date: selfCheck.date, source: 'self-check', field: 'coreHold' };
   }
   return out;
 }

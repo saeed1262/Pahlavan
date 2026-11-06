@@ -24,10 +24,10 @@ export interface BodyRecordContext {
   model: BodyRecordModel;
   ui: BodyRecordUi;
   canWrite: boolean;
-  onChange(): void;
+  onChange: () => void;
   /** Opens the part's card (the tape, photos or tests form). */
-  onOpen(part: 'tape' | 'photos' | 'tests'): void;
-  onSchedule(next: BodyRecordSchedule): void;
+  onOpen: (part: 'tape' | 'photos' | 'tests') => void;
+  onSchedule: (next: BodyRecordSchedule) => void;
 }
 
 const ICON = { tape: 'tape', photos: 'camera', tests: 'flag' } as const;
@@ -54,8 +54,8 @@ export function bodyRecordCard(ctx: BodyRecordContext): HTMLElement {
   });
   const fx = m.fixed;
   const fixedRow = (label: string, every: number, from: string, set: (every: number, from: string) => void, k: string) => {
-    const n = h('input', { type: 'number', min: 1, value: every, disabled: plan || !ctx.canWrite || ui.busy, 'aria-label': `${label} every`, ...kb(`${k}-n`) }) as HTMLInputElement;
-    const d = h('input', { type: 'date', value: from, disabled: plan || !ctx.canWrite || ui.busy, 'aria-label': `${label} from`, ...kb(`${k}-from`) }) as HTMLInputElement;
+    const n = h('input', { type: 'number', min: 1, value: every, disabled: plan || !ctx.canWrite || ui.busy, 'aria-label': `${label} every`, ...kb(`${k}-n`) });
+    const d = h('input', { type: 'date', value: from, disabled: plan || !ctx.canWrite || ui.busy, 'aria-label': `${label} from`, ...kb(`${k}-from`) });
     const commit = () => {
       const v = Math.round(Number(n.value));
       if (v >= 1 && /^\d{4}-\d{2}-\d{2}$/.test(d.value)) set(v, d.value);
@@ -102,7 +102,7 @@ export function morningBell(o: { current: MorningReminder | null; ui: MorningBel
   const label = cur?.on ? cur.at : 'Off';
   const btn = h('button', { class: `pv-btn-quiet${ui.open ? ' is-on' : ''}`, onclick: () => { ui.open = !ui.open; ui.on = cur?.on ?? true; ui.at = cur?.at ?? '07:30'; o.onChange(); }, 'data-tip': tip('Reminder', cur?.on ? `A card at ${cur.at} on each Mac with reminders on` : 'No morning card', 'Click to change the time'), ...kb('m-bell') }, icon('bell'), label);
   if (!ui.open) return h('span', { class: 'pv-bell' }, btn);
-  const time = h('input', { type: 'time', value: ui.at, disabled: !ui.on, 'aria-label': 'Reminder time', ...kb('m-bell-at') }) as HTMLInputElement;
+  const time = h('input', { type: 'time', value: ui.at, disabled: !ui.on, 'aria-label': 'Reminder time', ...kb('m-bell-at') });
   time.addEventListener('input', () => { ui.at = time.value; });
   return h('span', { class: 'pv-bell' }, btn,
     h('div', { class: 'pv-bell-pop', role: 'dialog', 'aria-label': 'The morning reminder' },

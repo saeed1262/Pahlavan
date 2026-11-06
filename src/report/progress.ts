@@ -77,7 +77,7 @@ export function volumeViews(ctx: Ctx, review: Review, date: IsoDate, since: IsoD
       const ex = data.program.exercises[slot.exercise];
       if (!ex?.muscles) continue;
       const add = (m: string, f: number) => {
-        (contrib[m] ??= {})[ex.name] = (contrib[m]![ex.name] ?? 0) + slot.sets * f * (weights[t.id] ?? 1);
+        (contrib[m] ??= {})[ex.name] = (contrib[m][ex.name] ?? 0) + slot.sets * f * (weights[t.id] ?? 1);
       };
       for (const m of ex.muscles.main) add(m, 1);
       for (const m of ex.muscles.helps) add(m, VOLUME.indirect);
@@ -195,7 +195,7 @@ function weight(ctx: Ctx, review: Review, date: IsoDate) {
   // The scoped data's trend start: the cycle start, or (All) every weigh-in.
   const since = ctx.data.plan.cycleStart ?? undefined;
   const points = weightTrend(ctx.data.body.weights, since ? { through: date, since } : { through: date }).value.points.map((p) => ({ date: p.date, weight: r2(p.weight), trend: r2(p.trend) }));
-  const rate = review.weight.rate.value as { kgPerWeek: number; pctPerWeek: number; spanDays: number; weighIns: number; trend: number } | null;
+  const rate = review.weight.rate.value;
   const bandSection = review.weight.band as { source: string; value: { band: { unit: string; lo: number; hi: number }; value: number; status: string } | null };
   const band = bandSection.value?.band ?? null;
   // The goal band as a wedge from the trend where the rate's 28 days begin, in kg a week.

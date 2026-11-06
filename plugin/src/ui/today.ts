@@ -30,29 +30,29 @@ export interface TodayContext {
   open: Set<string>;
   /** Today's pick of session (a plan session type), or null for the suggestion. */
   pick: string | null;
-  onMode(mode: SessionMode): void;
+  onMode: (mode: SessionMode) => void;
   /** Choose a session for today; null goes back to the suggestion. */
-  onPick(type: string | null): void;
-  onToggleWhy(id: string): void;
+  onPick: (type: string | null) => void;
+  onToggleWhy: (id: string) => void;
   /** Opens the Log panel for today's session (the pick, if any). */
-  onLog(): void;
+  onLog: () => void;
   /** Opens the Log panel on a logged session, to edit it. */
   onEditSession(date: string, s: { type: string; label?: string }): void;
   /** Today's checklist (its lines and ticks, kept in the log's todayChecklist); null when nothing is planned. */
   checklist?: { lines: (ChecklistLine & { steps: string[] })[]; checked: boolean[]; targets: ReturnType<typeof checklistTargets>; canTick: boolean } | null;
-  onTick?(i: number): void;
+  onTick?: (i: number) => void;
   /** The movement guide for a name, and which guides are open. */
   guide?(name: string): GuideEntry[];
   openGuides?: Set<string>;
-  onToggleGuide?(key: string): void;
+  onToggleGuide?: (key: string) => void;
   /** Copies today's plan as plain text. */
-  onCopy?(): void;
+  onCopy?: () => void;
   month?: { name: string; count: number };
   recent?: ReturnType<typeof recentSessions>;
   totalSessions?: number;
   /** The dashboard's For today rules that Pahlavan adds to its own (pressing, lifting days left, short sessions to go). */
   dashReminders?: DashReminder[];
-  onOpenNote?(path: string): void;
+  onOpenNote?: (path: string) => void;
   /** The vault has a Session History note (the link to it shows only then). */
   historyNote?: boolean;
   /** The Due today card (ui/due-today.ts), drawn under Readiness; absent without the reminder machinery. */
@@ -64,9 +64,9 @@ export interface TodayContext {
   /** Today's swaps chosen on the chips, by the plan's item; the Log panel starts with them. */
   swaps?: Readonly<Record<string, string>>;
   /** Chooses a swap for the plan's item today (null undoes it); absent: the chips are read only. */
-  onSwap?(item: string, to: string | null): void;
+  onSwap?: (item: string, to: string | null) => void;
   /** Copies a coach command ("Ask the coach"); absent: the command shows without Copy. */
-  onCopyCommand?(text: string): void;
+  onCopyCommand?: (text: string) => void;
 }
 
 type Review = NonNullable<TodayModel['review']>;
@@ -110,7 +110,7 @@ function ring(m: TodayModel, r: Review): BannerOptions['ring'] {
   for (let i = 0; i < tw.lifting.target; i++) segs.push({ kind: 'lift', s: lifts[i] ?? null, i });
   for (let i = 0; i < tw.short.target; i++) segs.push({ kind: 'short', s: shorts[i] ?? null, i });
   const filled = segs.filter((x) => x.s).length;
-  const next = r.nextInRotation as { lift: string | null; short: string | null };
+  const next = r.nextInRotation;
   return {
     segs: segs.map((x) => {
       const label = x.kind === 'lift' ? `Lifting ${x.i + 1} of ${tw.lifting.target}` : `Short ${x.i + 1} of ${tw.short.target}`;
@@ -281,12 +281,12 @@ function reminders(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
     items.push({ icon: 'alert', tone: 'below', lead: `${l.short} has stalled`, text: `(e1RM ${ch === null ? '' : `${fmt.signed(ch * 100, 1)} % `}over 3 sessions).${step ? ` Triage step ${step.value.step}: ${clean(step.value.suggestion)}` : ''}` });
   }
   const sleep = r.weight.last7.sleepH;
-  if (sleep && sleep.value < 7) items.push({ icon: 'moon', tone: 'below', lead: `Sleep ${fmt.num(sleep.value)} h a night`, text: `over the last ${sleep.days} days, under 7 h.` });
+  if (sleep && sleep.value < 7) items.push({ icon: 'moon', tone: 'below', lead: `Sleep ${fmt.num(sleep.value)} h a night`, text: `over the last ${sleep.days} days, under 7\u00a0h.` });
   const d = r.deload?.value;
   if (d && !d.deload && d.weeksToScheduled && r.week.planWeek !== null && r.week.planStart) {
     const weekNo = r.week.planWeek + d.weeksToScheduled;
     const from = addDays(r.week.planStart, (weekNo - 1) * 7);
-    items.push({ icon: 'deload', tone: '', lead: `Light week in ${d.weeksToScheduled} week${d.weeksToScheduled === 1 ? '' : 's'}`, text: `from ${fmt.wd(from)}, plan week ${weekNo}: two sets of everything, about 10 % lighter.` });
+    items.push({ icon: 'deload', tone: '', lead: `Light week in ${d.weeksToScheduled} week${d.weeksToScheduled === 1 ? '' : 's'}`, text: `from ${fmt.wd(from)}, plan week\u00a0${weekNo}: two sets of everything, about 10 % lighter.` });
   } else if (d?.deload) items.push({ icon: 'deload', tone: '', lead: 'Light week', text: 'two sets of everything, about 10 % lighter, so your body catches up.' });
   for (const t of [...r.temporaryChanges.due, ...r.temporaryChanges.active]) {
     items.push({ icon: 'clock', tone: t.due ? 'below' : '', lead: `${t.item} until ${fmt.day(t.until)}`, text: `in ${t.session}: ${clean(t.reason)}.` });
@@ -509,7 +509,7 @@ function sessionCard(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
   const picked = sess.session.picked;
   // A short day as planned says when it runs over the profile's short day (the time check's reason in the tip).
   const over = pl?.time?.value.over ?? 0;
-  const meta = [sess.session.logged ? 'Logged today' : picked ? null : 'Next in the rotation', pl?.minutes ? `about ${Math.round(pl.minutes)} min${over > 0 ? `, ${over} over your ${pl!.time!.value.limit}-minute short day` : ''}` : null, pl ? `planned effort ${fmt.num(pl.rpe)}/10` : null].filter(Boolean).join(' · ');
+  const meta = [sess.session.logged ? 'Logged today' : picked ? null : 'Next in the rotation', pl?.minutes ? `about ${Math.round(pl.minutes)} min${over > 0 ? `, ${over} over your ${pl.time!.value.limit}-minute short day` : ''}` : null, pl ? `planned effort ${fmt.num(pl.rpe)}/10` : null].filter(Boolean).join(' · ');
   const flags = sess.flags.filter((f) => !f.rule.startsWith('readiness.'));
   return h('section', { class: 'pv-card pv-session', 'data-sec': 'session' },
     h('div', { class: 'pv-card-head' },
@@ -522,8 +522,8 @@ function sessionCard(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
       ),
       seg,
     ),
-    flags.map((f) => h('div', { class: 'pv-lite is-flag' }, icon('info'), h('span', {}, h('b', {}, f.title ?? 'Note'), `  ${clean(f.note ?? '')}`))),
-    sess.warmup || lineFor(ctx, 'warmup') >= 0 ? h('div', { class: 'pv-lite' }, icon('flame'), h('span', {}, h('b', {}, 'Warm-up'), `  ${clean(sess.warmup ?? ctx.checklist?.lines[lineFor(ctx, 'warmup')]?.steps.join(' · ') ?? '')}`), tick(lineFor(ctx, 'warmup'), 'Warm-up', ctx)) : null,
+    flags.map((f) => h('div', { class: 'pv-lite is-flag' }, icon('info'), h('span', {}, h('b', {}, f.title ?? 'Note'), `\u00a0 ${clean(f.note ?? '')}`))),
+    sess.warmup || lineFor(ctx, 'warmup') >= 0 ? h('div', { class: 'pv-lite' }, icon('flame'), h('span', {}, h('b', {}, 'Warm-up'), `\u00a0 ${clean(sess.warmup ?? ctx.checklist?.lines[lineFor(ctx, 'warmup')]?.steps.join(' · ') ?? '')}`), tick(lineFor(ctx, 'warmup'), 'Warm-up', ctx)) : null,
     h('ol', { class: 'pv-ex-list' }, sess.items.map((it, k) => row(it, k, r, sess, ctx))),
     sess.finisher ? finisherRow(sess.finisher, ctx) : null,
     checklistFoot(ctx),
@@ -586,7 +586,7 @@ function weekStrip(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
         cell.append(h('div', { class: 'pv-menu pv-day-menu', role: 'menu' }, h('div', { class: 'pv-menu-head' }, `Edit ${fmt.wd(d.date)}`), d.sessions.map((x) => h('button', { class: 'pv-menu-item', role: 'menuitem', onclick: () => ctx.onEditSession(d.date, x) }, h('span', { class: 'pv-menu-check' }, icon('pencil')), h('span', { class: 'pv-menu-name' }, clean(x.label ?? x.name))))));
       };
       cell.addEventListener('click', open);
-      cell.addEventListener('keydown', (ev) => { if ((ev as KeyboardEvent).key === 'Enter') open(ev); });
+      cell.addEventListener('keydown', (ev) => { if ((ev).key === 'Enter') open(ev); });
     }
     return cell;
   });

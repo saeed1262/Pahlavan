@@ -16,7 +16,7 @@
 import { hhmm, minutesAt, msAt, parseTs, toMinutes, toTs, type Moment } from './clock.ts';
 import type { CoachNow } from './coach-steps.ts';
 import { addDays, dayText, type IsoDate } from './dates.ts';
-import { bodyRecordView, bodySchedule, partStatus, resolveSchedule, skipKey, type BodyPart, type PartStatus } from './body-schedule.ts';
+import { bodyRecordView, bodySchedule, partStatus, resolveSchedule, skipKey, type BodyPart, type Occurrence, type PartStatus } from './body-schedule.ts';
 import { deskRoutine, type DeskRoutine } from './desk-breaks.ts';
 import { isMorningDone } from './morning.ts';
 import { explain, type Reason, type Result } from './reason.ts';
@@ -130,7 +130,7 @@ export interface DueCard {
   /** The morning card on a tape day. */
   tape?: boolean;
   /** Periodic cards: the occurrence it is for. */
-  occurrence?: IsoDate | 'baseline';
+  occurrence?: Occurrence;
   /** Desk breaks: which break of the day, of how many, and the next one's time. */
   break?: { n: number; of: number; next: string | null };
   /** The sitting stretch card: the stretch's start. */

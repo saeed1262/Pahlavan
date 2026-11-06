@@ -9,5 +9,5 @@ export function keepPlace(scroller: HTMLElement, page: HTMLElement, draw: () => 
   const focused = (scroller.ownerDocument?.activeElement as HTMLElement | null | undefined)?.getAttribute?.('data-k') ?? null;
   draw();
   scroller.scrollTop = top;
-  if (focused) (page.querySelector(`[data-k="${CSS.escape(focused)}"]`) as HTMLElement | null)?.focus({ preventScroll: true });
+  if (focused) page.querySelector<HTMLElement>(`[data-k="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
 }

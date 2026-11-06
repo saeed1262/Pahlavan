@@ -242,7 +242,7 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
         // A superset partner that competes with the new movement is done as straight sets instead.
         if (s.pair === true && !competing(t.slots[at - 1]!.entry, repl.entry)) repl.pair = true;
         t.slots[at] = repl;
-        if (nextPaired && competing(next!.entry, repl.entry)) delete next!.pair;
+        if (nextPaired && competing(next.entry, repl.entry)) delete next.pair;
         const after = bandsNow();
         const kept = [...after].every(([x, a]) => {
           const b = before.get(x) ?? { lo: 0, soft: -Infinity, hard: -Infinity };
@@ -263,7 +263,7 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
           return true;
         }
         t.slots[at] = s;
-        if (nextPaired) next!.pair = true;
+        if (nextPaired) next.pair = true;
       }
     }
     return false;

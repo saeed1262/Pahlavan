@@ -16,15 +16,15 @@ import { tip } from './progress.ts';
 export interface YourDayContext {
   day: Result<YourDay>;
   /** Opens the morning card. */
-  onMorning(): void;
+  onMorning: () => void;
   /** Opens the Log panel on today's session. */
-  onLog(): void;
+  onLog: () => void;
   /** Goes to Due today. */
-  onDue(): void;
-  onFood(): void;
-  onCheckin(): void;
+  onDue: () => void;
+  onFood: () => void;
+  onCheckin: () => void;
   /** Copies a coach command; absent: the command shows without Copy. */
-  onCopyCommand?(text: string): void;
+  onCopyCommand?: (text: string) => void;
 }
 
 function actionEl(a: DayAction, step: DayStep, ctx: YourDayContext): HTMLElement {

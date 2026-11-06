@@ -13,7 +13,7 @@ import { tip } from './progress.ts';
 export interface DeskCardContext {
   model: DeskCardModel;
   /** Progress, Habits, with the desk-break item's form open (or the Add form for a new one). */
-  onChange(itemId: string | null): void;
+  onChange: (itemId: string | null) => void;
 }
 
 /** The working day as a line, 08:00 to 18:00 (wider, by whole 2 hours, for a window outside it): the window shaded, a dot per break. */

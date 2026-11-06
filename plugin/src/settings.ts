@@ -171,7 +171,7 @@ export function loadPluginData(raw: unknown, env: SettingsEnv): { data: PluginDa
   d.sync = { pullBefore: bool(sync['pullBefore'], d.sync.pullBefore), syncAfter: bool(sync['syncAfter'], d.sync.syncAfter) };
   const phone = isObj(r['phone']) ? r['phone'] : {};
   d.phone = { import: bool(phone['import'], d.phone.import) };
-  if (isWebAddress(r['guideUrl'])) d.guideUrl = (r['guideUrl'] as string).trim();
+  if (isWebAddress(r['guideUrl'])) d.guideUrl = (r['guideUrl']).trim();
   const folders = foldersOf(r);
   if (folders) d.folders = folders;
   return { data: d, migrated: JSON.stringify(canonical(raw)) !== JSON.stringify(canonical(d)) };

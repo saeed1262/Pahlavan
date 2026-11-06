@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.25.1: Obsidian's review
+
+Changes from the community directory's automated review. Nothing you do in Pahlavan changes.
+
+- **Popout windows:** the screens are built on the window in use (Obsidian's `activeDocument`) and their timers run on it, as Obsidian's guidelines ask.
+- **The open command** is now **Pahlavan: Open** in the command palette (it was "Pahlavan: Open Pahlavan").
+- **For developers:** `npm run build` builds the plugin, the same on any system (the engine alone is `npm run build-engine`); `package-lock.json` lists every dependency, so `npm ci` works; the preview builds from the public repository; the code passes Obsidian's lint rules, with two exceptions: the coach's command-line engine runs outside Obsidian, where `Vault#configDir` doesn't exist, and the settings don't yet use Obsidian 1.13's settings search.
+
 ## 0.25.0: the first public beta
 
 The first public version of Pahlavan, free while it's in beta. It was built and used in private before this, from 0.1 to 0.24.

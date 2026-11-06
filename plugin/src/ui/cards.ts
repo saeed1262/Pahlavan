@@ -99,7 +99,7 @@ export class CardController {
   }
 
   focus(): void {
-    (this.el.querySelector('.pv-btn-primary, .pv-nv-choice') as HTMLElement | null)?.focus();
+    this.el.querySelector<HTMLElement>('.pv-btn-primary, .pv-nv-choice')?.focus();
   }
 
   /** Enter on the card: the main button. */
@@ -323,7 +323,7 @@ export class CardController {
 
   private pose(p: { id: string; name: string }): HTMLElement {
     const pick = this.draft.photos[p.id];
-    const input = h('input', { type: 'file', accept: 'image/*,.heic,.heif', class: 'pv-nv-file', 'aria-label': `${p.name} photo` }) as HTMLInputElement;
+    const input = h('input', { type: 'file', accept: 'image/*,.heic,.heif', class: 'pv-nv-file', 'aria-label': `${p.name} photo` });
     input.addEventListener('change', () => {
       const f = input.files?.[0];
       if (f) this.put(p.id, f);
@@ -409,7 +409,7 @@ export class CardController {
       this.msg = { text: errors.join('; '), conflict: false };
       this.draw();
       for (const id of ids) this.el.querySelector(`[data-field="${id}"]`)?.classList.add('is-bad');
-      (this.el.querySelector(`[data-field="${ids[0]}"] input`) as HTMLInputElement | null)?.focus();
+      this.el.querySelector<HTMLInputElement>(`[data-field="${ids[0]}"] input`)?.focus();
       return null;
     };
     switch (b.kind) {

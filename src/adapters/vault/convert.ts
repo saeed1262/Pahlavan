@@ -54,7 +54,6 @@ import {
   type Program,
   type RepRange,
   type Session,
-  type SessionKind,
   type SessionPain,
   type SkipReason,
   type SorenessLevel,
@@ -228,7 +227,7 @@ function readPlan(raw: unknown, notes: Notes): PlanData | null {
     return null;
   }
   const p = raw as unknown as PlanData;
-  const sessions = raw['sessions'] as Obj;
+  const sessions = raw['sessions'];
   const types = (v: unknown, kind: string) => {
     if (!Array.isArray(v)) {
       notes.warn('plan-data', `plan-data.json has no "${kind}" list; none assumed.`);
@@ -256,10 +255,10 @@ function readPlan(raw: unknown, notes: Notes): PlanData | null {
 
 export function ladderHistory(log: unknown): Record<string, { level: number; date: IsoDate }[]> {
   const out: Record<string, { level: number; date: IsoDate }[]> = {};
-  const l = isObj(log) && isObj(log['ladders']) ? (log['ladders'] as Obj) : {};
+  const l = isObj(log) && isObj(log['ladders']) ? (log['ladders']) : {};
   for (const [id, h] of Object.entries(l)) {
     if (!Array.isArray(h)) continue;
-    out[id] = h.filter((x): x is { level: number; date: string } => isObj(x) && isNum(x['level']) && isIsoDate(x['date'])) as { level: number; date: IsoDate }[];
+    out[id] = h.filter((x): x is { level: number; date: string } => isObj(x) && isNum(x['level']) && isIsoDate(x['date']));
   }
   return out;
 }
@@ -298,7 +297,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     guide: {},
     muscles: {},
     deskRoutine: [],
-  } as PlanData);
+  });
   const liftUnit = plan.liftUnit;
   const ladders = ladderHistory(files.log);
   const guideKeys = new Map(Object.keys(plan.guide).map((k) => [k.toLowerCase(), k]));
@@ -586,7 +585,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
         program: 'vault-plan',
         weekKind: deloadWeek ? 'deload' : 'loading',
         template: templateId(type),
-        kind: (express ? 'express' : lifting ? 'lift' : 'short') as SessionKind,
+        kind: (express ? 'express' : lifting ? 'lift' : 'short'),
         slots,
       };
       if (week !== null && week > 0) {
@@ -642,7 +641,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     const lift = lk ? plan.lifts[lk] : undefined;
     const u = usage.get(id);
     const ex: Exercise & ExerciseExtras = { name: gk ?? name };
-    const gm = isObj(guide?.muscles) ? (guide!.muscles as { main?: unknown; helps?: unknown; kind?: unknown }) : null;
+    const gm = isObj(guide?.muscles) ? (guide.muscles as { main?: unknown; helps?: unknown; kind?: unknown }) : null;
     const tagKind = gm?.kind === 'cardio' || gm?.kind === 'mobility' ? gm.kind : null;
     const timedOnly = u && !u.sets && (u.minutes || u.rounds);
     if (tagKind) ex.kind = tagKind;
@@ -742,7 +741,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
   // Body days, habits, tape, tests, photos.
   const rawBody = isObj(files.body) ? files.body : {};
   if (files.body !== undefined && !isObj(files.body)) notes.error('body', 'body-data.json is not a JSON object.');
-  const days = isObj(rawBody['days']) ? (rawBody['days'] as Obj) : {};
+  const days = isObj(rawBody['days']) ? (rawBody['days']) : {};
   const daily = new Map<IsoDate, DailyCheckin>();
   const weights: WeighIn[] = [];
   const RANGES: Record<string, [number, number, boolean]> = {
@@ -791,7 +790,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     }
     daily.set(date, c);
   }
-  const habits = isObj(files.habits) && isObj(files.habits['checkins']) ? (files.habits['checkins'] as Obj) : {};
+  const habits = isObj(files.habits) && isObj(files.habits['checkins']) ? (files.habits['checkins']) : {};
   if (files.habits !== undefined && !isObj(files.habits)) notes.error('habits', 'habits-data.json is not a JSON object.');
   for (const [k, v] of Object.entries(habits)) {
     const m = /^hab-(workout|protein)-(\d{4})-W(\d{1,2})-(\d)$/.exec(k);
@@ -983,7 +982,7 @@ export function plannedWork(
   deloadWeek: boolean,
   ladderName: (id: string) => string | null,
 ): { name: string; sets: number }[] {
-  const items = ((plan.sessions[type] ?? []) as PlanDataItem[]).filter((x) => isObj(x) && isStr(x.name) && isStr(x.sr));
+  const items = ((plan.sessions[type] ?? [])).filter((x) => isObj(x) && isStr(x.name) && isStr(x.sr));
   if (express) {
     const logged = items.filter((i) => i.logged);
     const ex = plan.express;

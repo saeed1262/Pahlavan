@@ -7,7 +7,7 @@
 
 import { daysBetween, isIsoDate, mondayOf } from '../../core/dates.ts';
 import { MUSCLE_IDS, MUSCLES } from '../../core/data/muscles.ts';
-import { dashboardSets, deloadSr, type PlanData, type PlanDataItem } from '../../core/plan-data.ts';
+import { dashboardSets, deloadSr, type PlanData } from '../../core/plan-data.ts';
 import type { IsoDate, SorenessLevel } from '../../core/schema.ts';
 import { habitCheckinKey } from '../../core/tracking.ts';
 import { ladderHistory, ladderNameAt, plannedWork, readPlanData } from './convert.ts';
@@ -106,7 +106,7 @@ export const sessionKey = (s: { date?: unknown; type?: unknown; label?: unknown 
 /** A lift's unit: its own in plan-data's lifts, else liftUnit (the script's lift_unit, by the done exercise's name). */
 export function liftUnit(plan: Obj, name: string): unknown {
   const lifts = isObj(plan['lifts']) ? plan['lifts'] : {};
-  const own = isObj(lifts[name]) ? (lifts[name] as Obj)['unit'] : undefined;
+  const own = isObj(lifts[name]) ? (lifts[name])['unit'] : undefined;
   return truthy(own) ? own : plan['liftUnit'];
 }
 
@@ -133,7 +133,7 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
   const sessions = isObj(plan['sessions']) ? plan['sessions'] : {};
 
   if (!isIsoDate(raw.date)) return fail('date must be YYYY-MM-DD');
-  const date = raw.date as IsoDate;
+  const date = raw.date;
   if (date > ctx.today) return fail(`${date} is in the future`);
   const t = raw.type;
   const allowed = [...liftTypes, ...shortTypes, 'custom'];
@@ -148,7 +148,7 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
     for (let i = 0; i < Math.min(keys.length, logged.length); i++) {
       const k = keys[i]!;
       // An edit keeps the lift the session logged, even when the plan has changed since.
-      const was = ctx.original && isObj(ctx.original[k]) ? (ctx.original[k] as Obj) : null;
+      const was = ctx.original && isObj(ctx.original[k]) ? (ctx.original[k]) : null;
       const wasPlanned = was ? String(truthy(was['planned']) ? was['planned'] : was['name']) : null;
       const li0 = raw[k];
       const keeps = was && isObj(li0) && (truthy(li0.planned) ? li0.planned : String(li0.name ?? '').trim()) === wasPlanned;
@@ -194,7 +194,7 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
   const orig = ctx.original ?? null;
   const keepList = orig && Array.isArray(orig['exercises']) && orig['type'] === t && orig['date'] === date && Boolean(orig['express']) === Boolean(entry['express']);
   const pd = readPlanData(ctx.plan);
-  if (keepList) entry['exercises'] = orig!['exercises'];
+  if (keepList) entry['exercises'] = orig['exercises'];
   else if (pd && Array.isArray(pd.sessions[t])) {
     const history = ladderHistory(ctx.log);
     const week = planWeekAt(pd, ctx.log, date);
@@ -237,7 +237,7 @@ export function checklistLines(rawPlan: unknown, type: string, express: boolean,
   if (!plan || !Array.isArray(plan.sessions[type])) return [];
   const lifting = plan.liftTypes.includes(type);
   if (express && lifting) {
-    const logged = (plan.sessions[type] as PlanDataItem[]).filter((i) => i.logged);
+    const logged = (plan.sessions[type]).filter((i) => i.logged);
     const ex = plan.express;
     return [
       { name: ex.warmup, sr: '3 min', parts: [ex.warmup] },
@@ -248,7 +248,7 @@ export function checklistLines(rawPlan: unknown, type: string, express: boolean,
   }
   if (deloadWeek && type === 'S3' && plan.deloadS3.length) return plan.deloadS3.map((x) => ({ name: x.name, sr: x.sr, parts: [x.name] }));
   const lines: ChecklistLine[] = [{ name: 'Warm-up', sr: lifting ? '6 min' : '3 min', parts: [], warmup: true }];
-  for (const it of plan.sessions[type] as PlanDataItem[]) {
+  for (const it of plan.sessions[type]) {
     const sr = deloadWeek ? deloadSr(it.sr) : it.sr;
     const prev = lines.at(-1)!;
     if (it.pair && lines.length > 1) lines[lines.length - 1] = { name: `${prev.name} + ${it.name}`, sr: `${prev.sr} / ${sr}`, parts: [...prev.parts, it.name] };
@@ -410,7 +410,7 @@ export function mergeSoreMuscles(text: string | null, date: IsoDate, changes: Re
   }
   if (!isObj(doc)) return { result: 'unreadable', error: 'body-data.json is not a JSON object' };
   const days = isObj(doc['days']) ? doc['days'] : (doc['days'] = {});
-  const day = isObj(days[date]) ? (days[date] as Obj) : {};
+  const day = isObj(days[date]) ? (days[date]) : {};
   if (!applySore(day, changes)) return { result: 'unchanged' };
   days[date] = day;
   return { result: 'merged', text: pretty(doc) };
@@ -419,7 +419,7 @@ export function mergeSoreMuscles(text: string | null, date: IsoDate, changes: Re
 /** One day's `soreMuscles` changed in place, muscle by muscle (see mergeSoreMuscles); true when it changed. */
 export function applySore(day: Obj, changes: Readonly<Record<string, SorenessLevel | null>>): boolean {
   const before = JSON.stringify(day['soreMuscles'] ?? null);
-  const sore: Obj = isObj(day['soreMuscles']) ? { ...(day['soreMuscles'] as Obj) } : {};
+  const sore: Obj = isObj(day['soreMuscles']) ? { ...(day['soreMuscles']) } : {};
   for (const [k, level] of Object.entries(changes)) {
     const id = muscleId(k);
     if (!id) continue;
@@ -468,7 +468,7 @@ export function mergeLadder(logText: string | null, rawPlan: unknown, id: string
   const name = String(levels[level - 1]?.['name'] ?? '');
   const last = hist.at(-1);
   if (isObj(last) && last['level'] === level) return { result: 'already', ladder: id, level, name };
-  (hist as Obj[]).push({ level, date });
+  (hist).push({ level, date });
   return { result: 'set', text: pretty(doc), ladder: id, level, name };
 }
 
@@ -521,7 +521,7 @@ export function mergeFix(logText: string | null, rawPlan: unknown, req: FixReque
   if (req.clearPlanned) {
     if (!('planned' in li)) return { result: 'invalid', error: `${req.lift} (${String(li['name'])}) has no "planned" to clear` };
     // Cleared, the lift stands for itself: its name must be the plan's logged lift, as add checks.
-    const items = isObj(rawPlan) && isObj(rawPlan['sessions']) && Array.isArray((rawPlan['sessions'] as Obj)[req.type]) ? ((rawPlan['sessions'] as Obj)[req.type] as unknown[]) : [];
+    const items = isObj(rawPlan) && isObj(rawPlan['sessions']) && Array.isArray((rawPlan['sessions'])[req.type]) ? ((rawPlan['sessions'])[req.type] as unknown[]) : [];
     const logged = items.filter((x): x is Obj => isObj(x) && Boolean(x['logged'])).map((x) => String(x['name']));
     const planned = logged[req.lift === 'lift1' ? 0 : 1];
     if (li['name'] !== planned) return { result: 'invalid', error: `${req.lift} of ${req.type} is ${planned ?? 'unset'} in the plan, not ${pyRepr(li['name'])}: "planned" stays` };

@@ -13,6 +13,9 @@ import type { BodyRecordSchedule, Program } from './schema.ts';
 export const BODY_PARTS = ['tape', 'photos', 'tests'] as const;
 export type BodyPart = (typeof BODY_PARTS)[number];
 
+/** A periodic part's occurrence: its due date (an IsoDate), or "baseline" for a cycle's first tests. A plain string, since an IsoDate is one. */
+export type Occurrence = string;
+
 /** Every N days when nothing says otherwise: the tape and photos every 14, the tests every 28 (Habit Nudges'). */
 export const BODY_DEFAULTS = { tapeEvery: 14, testsEvery: 28 } as const;
 
@@ -30,7 +33,7 @@ export interface PartSchedule {
   part: BodyPart;
   source: 'plan' | 'fixed';
   /** The occurrence holding the date: the latest on or before it; "baseline" for the first tests; null before the first. */
-  current: IsoDate | 'baseline' | null;
+  current: Occurrence | null;
   /** The first occurrence after the date. */
   next: IsoDate | null;
   /** The first occurrence after the current one (what "Skip this photo day" moves to). */
@@ -158,7 +161,7 @@ export function bodySchedule(rs: ResolvedSchedule, program: Pick<Program, 'macro
       ...out.tests,
       current: 'baseline',
       afterCurrent: out.tests.next,
-      reason: explain<IsoDate | 'baseline'>('baseline', 'settings.body-record', { part: 'tests', date, tests: 0 }, { note: 'No tests on record yet: the first ones are this cycle\'s baseline, due now.' }).reason,
+      reason: explain<Occurrence>('baseline', 'settings.body-record', { part: 'tests', date, tests: 0 }, { note: 'No tests on record yet: the first ones are this cycle\'s baseline, due now.' }).reason,
     };
   }
   return out;
@@ -179,20 +182,20 @@ export function bodyRecordView(body: unknown, photoFolders: readonly string[] = 
 }
 
 /** Whether the occurrence is done: an entry (or, for photos, a dated folder) on or after it. */
-export function partDone(view: BodyRecordView, part: BodyPart, occurrence: IsoDate | 'baseline'): boolean {
+export function partDone(view: BodyRecordView, part: BodyPart, occurrence: Occurrence): boolean {
   if (occurrence === 'baseline') return view.tests.length > 0;
   const list = part === 'photos' ? [...view.photos, ...view.photoFolders] : view[part];
   return list.some((d) => d >= occurrence);
 }
 
 /** The key a skip of this occurrence is stored under in Coach/nudges.json. */
-export const skipKey = (part: BodyPart, occurrence: IsoDate | 'baseline'): string => `${part}:${occurrence}`;
+export const skipKey = (part: BodyPart, occurrence: Occurrence): string => `${part}:${occurrence}`;
 
 /** One part on the date: due (not done, not skipped), and when next. */
 export interface PartStatus {
   part: BodyPart;
   due: boolean;
-  occurrence: IsoDate | 'baseline' | null;
+  occurrence: Occurrence | null;
   done: boolean;
   skipped: boolean;
   /** The next date to show: the occurrence while due, else the next one. */
@@ -214,6 +217,6 @@ export function partStatus(sch: PartSchedule, view: BodyRecordView, skipped: Rea
     { part: sch.part, due, occurrence: occ, done, skipped: isSkipped, nextDate, inDays: nextDate ? daysBetween(date, nextDate) : null, last, schedule: sch },
     sch.reason.rule,
     { ...sch.reason.inputs, done, skipped: isSkipped, last },
-    { note: `${due ? (occ === 'baseline' ? 'Due now (the baseline).' : `Due since ${dayText(occ as IsoDate)}.`) : done ? 'Done for this round.' : isSkipped ? 'Skipped this round.' : 'Not due yet.'} ${sch.reason.note ?? ''}`.trim() },
+    { note: `${due ? (occ === 'baseline' ? 'Due now (the baseline).' : `Due since ${dayText(occ)}.`) : done ? 'Done for this round.' : isSkipped ? 'Skipped this round.' : 'Not due yet.'} ${sch.reason.note ?? ''}`.trim() },
   );
 }

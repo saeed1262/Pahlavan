@@ -14,7 +14,7 @@
 
 import { mergeDayMark, mergePhotoIndex, mergeTape, mergeTests, photoPath, POSES, type RecordChange, type RecordConflict } from '../../../src/adapters/vault/body-write.ts';
 import { habitsLanded, mergeHabitChanges, type HabitChange } from '../../../src/adapters/vault/habits-write.ts';
-import { landed, mergeNudges, mergeSitting, mergeTracking, type Conflict, type Landed, type SittingChange, type TrackingOp } from '../../../src/adapters/vault/tracking-write.ts';
+import { landed, mergeNudges, mergeSitting, mergeTracking, type Conflict, type SittingChange, type TrackingOp } from '../../../src/adapters/vault/tracking-write.ts';
 import type { NudgeChange } from '../../../src/core/nudges.ts';
 import type { IsoDate } from '../../../src/core/schema.ts';
 import type { MkdirAdapter } from '../checkin-writer.ts';
@@ -143,7 +143,7 @@ export class ReminderWriter {
       if (m.result === 'conflict') return { end: { status: 'conflict', conflicts: m.conflicts } };
       if (m.result === 'invalid') return { end: { status: 'failed', error: `Coach/tracking.json: ${m.errors.join('; ')}` } };
       if (m.result === 'unreadable') return { end: { status: 'failed', error: `${m.error}: fix it first; nothing was written` } };
-      return { write: m.text, check: (back) => landed(back, m.check as Landed[]), done: { status: 'saved', changed: m.changed, retried } };
+      return { write: m.text, check: (back) => landed(back, m.check), done: { status: 'saved', changed: m.changed, retried } };
     }, (error) => ({ status: 'failed', error }));
   }
 

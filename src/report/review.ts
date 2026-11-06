@@ -100,7 +100,7 @@ export function context(data: VaultData, date: IsoDate): Ctx {
 /** The names an exercise goes by: its id, plan name, short name and catalogue id. */
 function aliasesOf(ctx: Ctx, exercise: string): string[] {
   const info = ctx.data.plan.lifts.find((l) => l.exercise === exercise);
-  return [exercise, nameOf(ctx, exercise), ...(info?.short ? [info.short] : []), ...(ctx.data.catalogueMatch[exercise] ? [ctx.data.catalogueMatch[exercise]!] : [])];
+  return [exercise, nameOf(ctx, exercise), ...(info?.short ? [info.short] : []), ...(ctx.data.catalogueMatch[exercise] ? [ctx.data.catalogueMatch[exercise]] : [])];
 }
 
 const effective = (t: SessionTemplate, date: IsoDate): SessionTemplate => ({ ...t, slots: t.slots.map((s) => effectiveSlot(s, date).value) });
@@ -431,7 +431,7 @@ export function buildReview(data: VaultData, date: IsoDate) {
 
   // The week reviewed.
   const inWeek = ctx.sessions.filter((s) => s.date >= from && s.date <= to);
-  const vaultOf = (s: Session) => ((s as Session & { _vault?: Record<string, unknown> })._vault ?? {}) as Record<string, unknown>;
+  const vaultOf = (s: Session) => ((s as Session & { _vault?: Record<string, unknown> })._vault ?? {});
   const kindOf = (s: Session) => (s.plan?.kind === 'lift' || s.plan?.kind === 'express' ? 'lift' : s.plan ? 'short' : 'custom');
   const daysIn = ctx.daily.filter((d) => d.date >= from && d.date <= to);
   const thisWeek = {

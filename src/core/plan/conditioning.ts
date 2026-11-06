@@ -122,6 +122,7 @@ export function userLayoutDays(ctx: PlanContext, liftingDays: number, extraDays:
   const fromLog = spreadPick(daysOfKind('lift'), Math.min(liftingDays, daysOfKind('lift').length));
   const all = [0, 1, 2, 3, 4, 5, 6];
   const fill = fromLog.length ? spreadPick(all.filter((d) => !fromLog.includes(d)), liftingDays - fromLog.length, fromLog, base.lifting) : base.lifting;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
   const lift = [...fromLog.map((d) => ({ d, s: 'log' as DaySource })), ...fill.map((d) => ({ d, s: base.lifting.includes(d) ? baseSource : ('default' as DaySource) }))].sort((a, b) => a.d - b.d);
   const lifting = lift.map((x) => x.d);
 

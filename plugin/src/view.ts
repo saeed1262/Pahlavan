@@ -30,7 +30,7 @@ import { h, icon, placeFixed } from './ui/dom.ts';
 import { clean, fmt, weekOfText } from './ui/format.ts';
 import { renderPlan, type PlanModel } from './ui/plan.ts';
 import { renderProgress, type VolumeView } from './ui/progress.ts';
-import { photoSetDates, POSES, renderMore, sectionNav, type MoreContext, type PhotoFiles, type ProgressSection } from './ui/progress-more.ts';
+import { photoSetDates, POSES, renderMore, sectionNav, type MoreContext, type PhotoFiles } from './ui/progress-more.ts';
 import { keepPlace } from './ui/scroll.ts';
 import { renderToday } from './ui/today.ts';
 import type { TrackingWriter } from './tracking-writer.ts';
@@ -212,7 +212,7 @@ export class PahlavanView extends ItemView {
     console.error(`[Pahlavan] ${title}`, e);
     const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     const stack = e instanceof Error && e.stack ? e.stack.split('\n').slice(0, 6).join('\n') : '';
-    const box = document.createElement('div');
+    const box = activeDocument.createElement('div');
     box.className = 'pv-error';
     box.textContent = `${title}\n\n${msg}${stack ? `\n\n${stack}` : ''}`;
     target.replaceChildren(box);
@@ -256,11 +256,11 @@ export class PahlavanView extends ItemView {
     const help = helpMenu({ onGuide: () => this.openGuide(), onTips: () => void this.resetTips(), routine: () => this.deps.data.routine(this.date, this.dueModel ? { on: this.dueModel.train.on, at: this.dueModel.train.at } : undefined) });
     root.append(h('div', { class: 'pv' }, h('div', { class: 'pv-top' }, tabs, h('div', { class: 'pv-top-r' }, help, this.meta)), this.page));
     this.register(attachTooltip(root));
-    this.registerDomEvent(document, 'keydown', (ev: KeyboardEvent) => this.photoKey(ev));
+    this.registerDomEvent(activeDocument, 'keydown', (ev: KeyboardEvent) => this.photoKey(ev));
 
     this.phase = phaseNow(this.deps.bodyClasses(), this.deps.hour());
     const observer = new MutationObserver(() => this.syncPhase());
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(activeDocument.body, { attributes: true, attributeFilter: ['class'] });
     this.register(() => observer.disconnect());
     this.registerInterval(window.setInterval(() => this.tick(), 60_000));
     // The reminder machinery's changes (a count, a write, Standing now, sitting every 30 s) patch Due today
@@ -362,7 +362,7 @@ export class PahlavanView extends ItemView {
         const focused = (this.contentEl.ownerDocument.activeElement as HTMLElement | null)?.getAttribute?.('data-k') ?? null;
         this.drawProgress();
         this.contentEl.scrollTop = top;
-        if (focused) (this.page.querySelector(`[data-k="${CSS.escape(focused)}"]`) as HTMLElement | null)?.focus({ preventScroll: true });
+        if (focused) this.page.querySelector<HTMLElement>(`[data-k="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
       } catch (e) {
         this.showError('The Progress screen could not be drawn', e, this.page);
       }
@@ -469,7 +469,7 @@ export class PahlavanView extends ItemView {
       },
       ...(rem && item ? { onTick: (done: boolean) => void this.foodTick(item.id, done) } : {}),
       tickBusy: this.foodBusy,
-      ...(this.deps.copy ? { onCopy: () => this.deps.copy!('/fitness-coach diet').then(() => this.deps.notify('Copied: /fitness-coach diet'), () => this.deps.notify('Couldn’t copy the command')) } : {}),
+      ...(this.deps.copy ? { onCopy: () => void this.deps.copy!('/fitness-coach diet').then(() => this.deps.notify('Copied: /fitness-coach diet'), () => this.deps.notify('Couldn’t copy the command')) } : {}),
       checks: this.helpState?.foodChecks?.[this.date] ?? {},
       ...(this.deps.help ? { onCheck: (id: string, slot: number) => void this.foodCheck(id, slot) } : {}),
       ideaSteps: this.ideaSteps(),
@@ -547,7 +547,7 @@ export class PahlavanView extends ItemView {
       ...(this.deps.copy ? { onCopy: (text: string) => this.copyCommand(text) } : {}),
     });
     scroller.scrollTop = top;
-    if (focused) (this.page.querySelector(`[data-k="${CSS.escape(focused)}"]`) as HTMLElement | null)?.focus({ preventScroll: true });
+    if (focused) this.page.querySelector<HTMLElement>(`[data-k="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
   }
 
   /**
@@ -933,10 +933,10 @@ export class PahlavanView extends ItemView {
     this.logState = freshPanelState();
     this.logState.habitTicked = this.deps.writer ? await this.deps.writer.habitTicked(form.date) : null;
     if (!this.logLayer) {
-      this.logLayer = document.createElement('div');
+      this.logLayer = activeDocument.createElement('div');
       this.logLayer.className = 'pv-log-layer';
       this.contentEl.appendChild(this.logLayer);
-      this.registerDomEvent(document, 'keydown', (ev: KeyboardEvent) => {
+      this.registerDomEvent(activeDocument, 'keydown', (ev: KeyboardEvent) => {
         if (ev.key !== 'Escape' || !this.logForm) return;
         if (this.logState.menu) this.logState.menu = null;
         else this.logForm = null;
@@ -1512,7 +1512,7 @@ export class PahlavanView extends ItemView {
       if (!pm) return null;
       const dm = this.deps.data.deskCard(this.date);
       const p = dm?.plan ?? null;
-      const rows = 'templates' in pm ? targetRows(pm as never, this.bodyUnits()) : [];
+      const rows = 'templates' in pm ? targetRows(pm, this.bodyUnits()) : [];
       const targets = rows.length ? { ok: rows.filter((r) => r.status[0] === 'in').length, total: rows.length, others: rows.filter((r) => r.status[0] !== 'in').map((r) => ({ name: r.name, status: r.status[1] })) } : null;
       const desk = dm ? (p ? `${p.times.length} a day, every ${p.every} min from ${p.from} to ${p.to}, ${p.daysText}` : 'None in this plan') : null;
       return { glance: planGlance(pm, { weekTarget: this.model?.review?.adherence.value.target ?? null, targets, desk, links: planLinks(this.deps.data.fitnessFiles).length }), heading: 'What’s on this tab', prefix: null, views: null };
@@ -1543,7 +1543,7 @@ export class PahlavanView extends ItemView {
     const rows: (PanelRow & { card: HTMLElement })[] = [];
     for (const sp of g.glance.sections) {
       const key = g.prefix && sp.id.startsWith(`${g.prefix}.`) ? sp.id.slice(g.prefix.length + 1) : sp.id;
-      const card = page.querySelector(`[data-sec="${CSS.escape(key)}"]`) as HTMLElement | null;
+      const card = page.querySelector<HTMLElement>(`[data-sec="${CSS.escape(key)}"]`);
       if (!card) continue;
       const folded = sectionFolded(this.helpState, tab, sp, this.date);
       foldCard(card, { id: sp.id, title: sp.title, status: sp.status, folded, onToggle: (fold) => this.setFolds(tab, { [sp.id]: fold }, fold ? null : sp.id) });

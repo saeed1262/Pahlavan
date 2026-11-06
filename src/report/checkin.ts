@@ -6,7 +6,7 @@
 import { planWeekOf, type VaultData, type VaultWarning } from '../adapters/vault/convert.ts';
 import { checkinDate, checkinsThrough, fullLoadWeeks, jointAchesOf, liftMatches, triageStart } from '../core/checkins.ts';
 import { toMinutes } from '../core/clock.ts';
-import { addDays, dayText, daysBetween, mondayOf } from '../core/dates.ts';
+import { addDays, dayText, mondayOf } from '../core/dates.ts';
 import { DELOAD } from '../core/deload.ts';
 import { proteinWeek } from '../core/diet.ts';
 import { painText } from '../core/pain.ts';
@@ -56,7 +56,7 @@ function ordered(r: Record<string, unknown>): WeeklyCheckin {
   const out: Record<string, unknown> = {};
   for (const k of RECORD_ORDER) if (r[k] !== undefined) out[k] = r[k];
   for (const k of Object.keys(r)) if (!(k in out) && r[k] !== undefined) out[k] = r[k];
-  return out as WeeklyCheckin;
+  return out;
 }
 
 /** A date for people: "Mon 6 Apr" (core/dates.ts, kept here for the existing imports). */
@@ -473,7 +473,7 @@ export function addCheckins(input: { existingText: string | null; answers: unkno
     }
     const prev = merged[i]!;
     const next: Record<string, unknown> = { ...prev, ...r };
-    if (prev.deload && r['deload']) next['deload'] = { ...prev.deload, ...(r['deload'] as object) };
+    if (prev.deload && r['deload']) next['deload'] = { ...prev.deload, ...(r['deload']) };
     const rec = ordered(next);
     const same = JSON.stringify(rec) === JSON.stringify(ordered(prev as Record<string, unknown>));
     merged[i] = rec;

@@ -16,7 +16,6 @@ import type { buildCheckin } from './checkin-screen.ts';
 import type { buildFood } from './food.ts';
 import type { buildPlan } from './plan-screen.ts';
 import type { buildProgress } from './progress.ts';
-import type { buildProgressMore } from './progress-more.ts';
 import type { buildSession } from './session.ts';
 import type { buildToday } from './today.ts';
 import type { YourDay } from './your-day.ts';
@@ -74,12 +73,11 @@ const asking = (c: CoachNow | null | undefined): CoachNow | null => (c && (c.sta
 // ================================================================ Food
 
 type Food = ReturnType<typeof buildFood>;
-type FoodPlanned = Extract<Food, { level: object }>;
 
 /** How it's going in a line: the check's outcome, or how early it is, and the next check. */
 export function goingStatus(m: Food): Run[] {
   if (!m.plan) return [];
-  const p = m as FoodPlanned;
+  const p = m;
   const X = p.adjust?.value ?? null;
   const rate = p.trend.weight.rate.value;
   const waist = p.trend.waist.value;
@@ -98,7 +96,7 @@ export function goingStatus(m: Food): Run[] {
 /** The Food tab: the protein days, the day, the next check; Your plan in a minute open on the first visits (`early`). */
 export function foodGlance(m: Food, opts: { early: boolean }): Glance {
   if (!m.plan) return { sums: [{ icon: 'info', text: ['No eating plan yet: run ', { b: '/fitness-coach diet' }, ' to make one.'] }], sections: [] };
-  const p = m as FoodPlanned;
+  const p = m;
   const plan = p.plan;
   const wk = p.protein.week.value;
   const today = p.protein.today?.state ?? null;
@@ -112,7 +110,7 @@ export function foodGlance(m: Food, opts: { early: boolean }): Glance {
   const checks = p.checks;
   const sums: GlanceLine[] = [
     { icon: 'target', text: ['Protein ', { b: `${plan.protein.floorG} g` }, ' or more: ', { b: `${wk.ticked} of 7` }, ` days ticked this week${today === 'ticked' ? ', today too' : today === 'open' ? ', today open' : ''}.`] },
-    { icon: 'bowl', text: [kindWord ? `${weekday(p.date)}, ` : '', ...(kindWord ? [{ b: kindWord }] : []), kindWord ? ': ' : '', train && train.kind === 'training' ? `${train.session === 'lift' ? 'lift' : 'the short session'} at ${train.at}, ` : '', `about ${about} g of protein planned over ${plural(plan.meals.length, 'meal')}.`].filter(Boolean) as Run[] },
+    { icon: 'bowl', text: [kindWord ? `${weekday(p.date)}, ` : '', ...(kindWord ? [{ b: kindWord }] : []), kindWord ? ': ' : '', train && train.kind === 'training' ? `${train.session === 'lift' ? 'lift' : 'the short session'} at ${train.at}, ` : '', `about ${about} g of protein planned over ${plural(plan.meals.length, 'meal')}.`].filter(Boolean) },
     { icon: 'review', text: [X?.status === 'due' ? 'The check is due: ' : 'Next check ', { b: dayText(next) }, ': the tape and the weight trend decide, never one day.'] },
   ];
   const kc = plan.energy ? `about ${nfmt(plan.energy.maintenanceKcal)} kcal` : null;
@@ -243,7 +241,6 @@ export function todayGlance(m: Today, x: TodayExtras): Glance {
 // ================================================================ Progress
 
 type Progress = ReturnType<typeof buildProgress>;
-type ProgressMore = ReturnType<typeof buildProgressMore>;
 
 /** The Progress views, each with what it shows: the panel's other views. */
 export const PROGRESS_VIEWS: readonly { id: string; label: string; line: string }[] = [
@@ -346,7 +343,6 @@ export function moreSections(view: string, cards: readonly { id: string; title: 
 // ================================================================ Plan
 
 type Plan = ReturnType<typeof buildPlan>;
-type PlanOk = Extract<Plan, { templates: unknown }>;
 
 export interface PlanExtras {
   weekTarget: { lift: number; short: number } | null;
@@ -363,7 +359,7 @@ const UPCOMING: Readonly<Record<string, string>> = { tape: 'Tape', checkin: 'Sun
 /** The Plan: This mesocycle and Coming up open, the rest folded. */
 export function planGlance(pm: Plan, x: PlanExtras): Glance {
   if (!('templates' in pm) || !pm.weeks?.length) return { sums: [], sections: [] };
-  const m = pm as PlanOk;
+  const m = pm;
   const now = m.now;
   const phases = m.phases ?? [];
   const ph = now ? phases.find((p) => p.index === now.phase) ?? null : null;
@@ -441,7 +437,7 @@ export function checkinGlance(c: Checkin, x: CheckinExtras): Glance {
   const letter = c.letter;
   const focus = letter?.focus ? clean(letter.focus).split(/(?<=\.)\s/)[0]!.replace(/\.$/, '') : '';
   const sections: GlanceSection[] = [
-    { id: 'morning', title: 'Morning check-in', line: 'Energy, soreness, sleep and weight, each morning', status: done ? [{ b: 'Done today' }, c.morning.values.sleepH !== null ? ` · sleep ${Math.round(c.morning.values.sleepH! * 10) / 10} h` : '', c.morning.values.energy !== null ? `, energy ${c.morning.values.energy} of 5` : ''] : [{ b: 'Not done yet' }, ' · about 30 seconds'], start: done ? 'folded' : 'open', due: !done },
+    { id: 'morning', title: 'Morning check-in', line: 'Energy, soreness, sleep and weight, each morning', status: done ? [{ b: 'Done today' }, c.morning.values.sleepH !== null ? ` · sleep ${Math.round(c.morning.values.sleepH * 10) / 10} h` : '', c.morning.values.energy !== null ? `, energy ${c.morning.values.energy} of 5` : ''] : [{ b: 'Not done yet' }, ' · about 30 seconds'], start: done ? 'folded' : 'open', due: !done },
     ...(x.body ? [{
       id: 'body', title: 'Body record', line: 'Tape, photos and tests: when each is due, the last entry',
       status: parts.length ? parts.map((p, i): Run[] => (i ? [` · ${lower(p.title)} ${shortDay(p.nextDate!)}`] : p.due ? [{ b: `${p.title} due` }] : [{ b: `${p.title} ${dayText(p.nextDate!)}` }, `, ${inDays(date, p.nextDate!)}`])).flat() : ['Nothing scheduled'],

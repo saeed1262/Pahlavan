@@ -221,7 +221,7 @@ export function personalization(ctx: PlanContext, plan: AuditPlan): Result<Input
       // The sit-to-stand also picks the single-leg ladder's level when balance holds 30 s.
       const legs = plan.proposal.ladders.find((l) => l.id === 'legs');
       const legsUse = t === 'sitToStand' && legs?.level !== null && legs?.level !== 1 && legs !== undefined;
-      if (legsUse) notes.push(`With balance at 30 s, it sets the single-leg ladder's level (${legs!.level}).`);
+      if (legsUse) notes.push(`With balance at 30 s, it sets the single-leg ladder's level (${legs.level}).`);
       const wallUse = t === 'wallGapCm' && plan.proposal.targets.some((x) => x.baseline !== undefined);
       const withSc = own.flatMap((e) => (e.asEmphasis ? p.emphasis.filter((x) => x.kind === e.asEmphasis).map((x) => `emphasis.${x.kind}`) : []));
       const used = changes.length > 0 || (lad !== undefined && lad.level !== null) || legsUse || wallUse;

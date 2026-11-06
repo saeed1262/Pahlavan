@@ -37,7 +37,7 @@ export function welcomeSteps(read: VaultRead, date: IsoDate): Result<Welcome> {
   const { data } = read;
   const since = scopeInfo(data, date).since;
   const inCycle = (d: string) => d <= date && (!since || d >= since);
-  const days = isObj(read.raw?.body) && isObj((read.raw!.body as Obj)['days']) ? ((read.raw!.body as Obj)['days'] as Obj) : {};
+  const days = isObj(read.raw?.body) && isObj((read.raw.body)['days']) ? ((read.raw.body)['days']) : {};
   // The one rule for a morning check-in (core/morning.ts): the intake's first entries (weight, the tape) and Health's numbers are not one.
   const morning = Object.entries(days).some(([d, v]) => inCycle(d) && isMorningDone(v));
   const steps: WelcomeStep[] = [

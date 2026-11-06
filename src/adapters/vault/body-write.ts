@@ -44,7 +44,7 @@ export function validateMorning(values: MorningValues): string[] {
 /** The morning fields as body-data.json holds them for `date` (steps from yesterday). */
 export function morningFrom(doc: unknown, date: IsoDate): { values: Record<MorningKey, number | null>; checkedAt: string | null } {
   const days = isObj(doc) && isObj(doc['days']) ? doc['days'] : {};
-  const at = (d: IsoDate): Obj => (isObj(days[d]) ? (days[d] as Obj) : {});
+  const at = (d: IsoDate): Obj => (isObj(days[d]) ? (days[d]) : {});
   const values = {} as Record<MorningKey, number | null>;
   for (const k of MORNING_KEYS) {
     const v = at(dayOfField(k, date))[k];
@@ -120,7 +120,7 @@ export function mergeMorning(text: string | null, date: IsoDate, change: Morning
 
   const touched = new Map<IsoDate, Obj>();
   const dayObj = (d: IsoDate): Obj => {
-    if (!touched.has(d)) touched.set(d, isObj(days[d]) ? { ...(days[d] as Obj) } : {});
+    if (!touched.has(d)) touched.set(d, isObj(days[d]) ? { ...(days[d]) } : {});
     return touched.get(d)!;
   };
   const changed: MorningKey[] = [];
@@ -358,7 +358,7 @@ export function mergeDayMark(text: string | null, date: IsoDate, mark: 'rest' | 
   const doc = r.doc;
   if (doc['days'] !== undefined && !isObj(doc['days'])) return { result: 'unreadable', error: 'body-data.json has a "days" that is not an object' };
   const days = isObj(doc['days']) ? doc['days'] : (doc['days'] = {});
-  const day: Obj = isObj(days[date]) ? { ...(days[date] as Obj) } : {};
+  const day: Obj = isObj(days[date]) ? { ...(days[date]) } : {};
   if ((day['mark'] ?? null) === mark) return { result: 'unchanged' };
   if (mark === null) delete day['mark'];
   else day['mark'] = mark;

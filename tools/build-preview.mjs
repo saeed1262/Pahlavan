@@ -19,7 +19,7 @@ const walk = (dir) => {
 };
 walk(vault);
 // Made-up samples the preview's &rich=1 mode copies into the Coach folder in memory (the fixture has none).
-const samples = { decisions: readFileSync(join(root, 'mockups/data/Decisions.md'), 'utf8'), letter: readFileSync(join(root, 'mockups/data/Letter-2026-04-05.md'), 'utf8') };
+const samples = { decisions: readFileSync(join(root, 'test/fixtures/decisions-sample.md'), 'utf8'), letter: readFileSync(join(root, 'test/fixtures/letter-sample.md'), 'utf8') };
 mkdirSync(join(root, 'plugin/preview/dist'), { recursive: true });
 writeFileSync(join(root, 'plugin/preview/dist/fixture-files.js'), `window.PAHLAVAN_FIXTURE = ${JSON.stringify(files)};\nwindow.PAHLAVAN_SAMPLES = ${JSON.stringify(samples)};\n`);
 
@@ -33,6 +33,8 @@ await build({
   target: 'es2020',
   alias: { obsidian: './plugin/preview/obsidian-stub.ts' },
   legalComments: 'none',
+  // Obsidian's globals for the page: the view's DOM builders draw on activeDocument.
+  banner: { js: 'window.activeDocument = document; window.activeWindow = window;' },
   logLevel: 'warning',
 });
 console.log(`built plugin/preview/dist (${Object.keys(files).length} fixture files)`);

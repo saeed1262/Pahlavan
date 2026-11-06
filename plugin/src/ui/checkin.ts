@@ -85,9 +85,9 @@ export interface CheckinHero {
 export interface CheckinContext {
   canWrite: boolean;
   hero: CheckinHero;
-  onChange(): void;
-  onSaveMorning(force?: boolean): void;
-  onSaveSunday(record: Record<string, unknown>): void;
+  onChange: () => void;
+  onSaveMorning: (force?: boolean) => void;
+  onSaveSunday: (record: Record<string, unknown>) => void;
   onOpenNote?: (path: string) => void;
   /** The Body record card (absent: the tracking files are not read here). */
   bodyRecord?: BodyRecordContext | null;
@@ -98,7 +98,7 @@ export interface CheckinContext {
   /** The pattern lines the Food tab's light checks counted this week: the days met of the week's, the days tapped, and a pre-fill. */
   patternChecks?: Readonly<Record<string, { met: true | null; days: number; of: number; tapped: number }>>;
   /** Copies the coach's command (after the save); absent: the command shows without Copy. */
-  onCopy?(text: string): void;
+  onCopy?: (text: string) => void;
 }
 
 // ---------------------------------------------------------------- small parts
@@ -195,7 +195,7 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
     const unit = f.key === 'weight' ? F.w : f.unit;
     // Sleep reads as the card reads it: "7:20", "7h20" or "7.3" (a text field, so the colon types).
     const sleep = f.key === 'sleepH';
-    const input = h('input', { type: sleep ? 'text' : 'number', ...(sleep ? { placeholder: '7:20 or 7.3' } : { step: f.step }), inputmode: 'decimal', value: shownOf(f.key, m.values[f.key] ?? null) ?? '', 'aria-label': f.label, ...kb(`m-${f.key}`) }) as HTMLInputElement;
+    const input = h('input', { type: sleep ? 'text' : 'number', ...(sleep ? { placeholder: '7:20 or 7.3' } : { step: f.step }), inputmode: 'decimal', value: shownOf(f.key, m.values[f.key] ?? null) ?? '', 'aria-label': f.label, ...kb(`m-${f.key}`) });
     input.addEventListener('change', () => {
       const t = input.value.trim();
       const v = t === '' ? null : sleep ? parseHours(t) : Number(t);
@@ -253,7 +253,7 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
 
 // ---------------------------------------------------------------- sunday
 
-const ask = (sun: Sunday, topic: string) => sun.template.ask.find((a) => a.topic === topic) as (AskItem & { options?: { option: string; value: unknown }[]; known?: Record<string, unknown> | null; answer?: string }) | undefined;
+const ask = (sun: Sunday, topic: string): (AskItem & { options?: { option: string; value: unknown }[]; known?: Record<string, unknown> | null; answer?: string }) | undefined => sun.template.ask.find((a) => a.topic === topic);
 
 function sundayCard(c: CheckinScreen, sun: Sunday, st: CheckinState, ctx: CheckinContext): HTMLElement {
   const ss = st.sunday!;
@@ -314,7 +314,7 @@ function sundayCard(c: CheckinScreen, sun: Sunday, st: CheckinState, ctx: Checki
         h('div', { class: 'pv-pain-side' }, h('h4', {}, 'Where, and how bad'),
           a.pain.areas.length ? a.pain.areas.map((x, i) => {
             const out = h('b', {}, `${x.severity}/10`);
-            const range = h('input', { type: 'range', min: 0, max: 10, step: 1, value: x.severity, 'aria-label': `${x.area}, 0 to 10`, ...kb(`s-sev-${i}`) }) as HTMLInputElement;
+            const range = h('input', { type: 'range', min: 0, max: 10, step: 1, value: x.severity, 'aria-label': `${x.area}, 0 to 10`, ...kb(`s-sev-${i}`) });
             range.addEventListener('input', () => { x.severity = Number(range.value); out.textContent = `${x.severity}/10`; ss.dirty = true; refresh(); });
             return h('div', { class: 'pv-sev-row' }, h('span', {}, x.area.charAt(0).toUpperCase() + x.area.slice(1)), range, out);
           }) : h('p', { class: 'pv-faint' }, 'Tap where it hurts.')),
@@ -390,7 +390,7 @@ function sundayCard(c: CheckinScreen, sun: Sunday, st: CheckinState, ctx: Checki
   if (decQ) {
     const focus = c.letter?.focus ?? null;
     const question = c.letter?.sections.find((x) => /question/i.test(x.heading))?.text ?? null;
-    const notes = h('textarea', { class: 'pv-ta', placeholder: question ? 'Your answer, and anything worth keeping, in a line' : 'Anything worth keeping for the coach, in a line', 'aria-label': 'Notes for the coach', ...kb('s-notes') }) as HTMLTextAreaElement;
+    const notes = h('textarea', { class: 'pv-ta', placeholder: question ? 'Your answer, and anything worth keeping, in a line' : 'Anything worth keeping for the coach, in a line', 'aria-label': 'Notes for the coach', ...kb('s-notes') });
     notes.value = a.notes;
     notes.addEventListener('input', () => { a.notes = notes.value; ss.dirty = true; refresh(); });
     qs.push(q(num(), focus ? `Last letter’s focus: ${focus}. Followed?` : 'Anything for the coach?', [
@@ -401,7 +401,7 @@ function sundayCard(c: CheckinScreen, sun: Sunday, st: CheckinState, ctx: Checki
   }
   const delQ = ask(sun, 'deload');
   if (delQ) {
-    const reason = h('input', { class: 'pv-ci-text', type: 'text', placeholder: 'Why, in a few words', value: a.deload.reason, 'aria-label': 'Why cancel the light week', ...kb('s-del-reason') }) as HTMLInputElement;
+    const reason = h('input', { class: 'pv-ci-text', type: 'text', placeholder: 'Why, in a few words', value: a.deload.reason, 'aria-label': 'Why cancel the light week', ...kb('s-del-reason') });
     reason.addEventListener('input', () => { a.deload.reason = reason.value; ss.dirty = true; refresh(); });
     const k = (delQ.known ?? {}) as { cancelOnlyIf?: string };
     qs.push(q(num(), clean(delQ.question), [h('div', { class: 'pv-pills' }, pill('Keep it', a.deload.cancelled === false, () => { a.deload.cancelled = a.deload.cancelled === false ? null : false; change(); }, 's-del-keep'), pill('Cancel it', a.deload.cancelled === true, () => { a.deload.cancelled = a.deload.cancelled === true ? null : true; change(); }, 's-del-cancel')), a.deload.cancelled ? reason : null],
@@ -526,7 +526,7 @@ function hero(c: CheckinScreen, o: CheckinHero, toSunday: () => void): HTMLEleme
 
 /** Builds the Check-in screen into `root` (its children are replaced). */
 export function renderCheckin(root: HTMLElement, c: CheckinScreen, st: CheckinState, ctx: CheckinContext): void {
-  const toSunday = () => (root.querySelector('[data-card="sunday"]') as HTMLElement | null)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const toSunday = () => root.querySelector<HTMLElement>('[data-card="sunday"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   root.replaceChildren(...h('div', {},
     hero(c, ctx.hero, toSunday),
     c.notes.filter((x) => x.code !== 'no-letter').length ? h('div', { class: 'pv-notes' }, c.notes.filter((x) => x.code !== 'no-letter').map((x) => h('div', { class: 'pv-note' }, icon('info'), h('span', {}, x.text)))) : null,

@@ -13,15 +13,15 @@ export interface BodyFmt {
   w: string;
   l: string;
   /** A kg value in the body unit (unrounded), a cm value likewise. */
-  wv(kg: number): number;
-  lv(cm: number): number;
+  wv: (kg: number) => number;
+  lv: (cm: number) => number;
   /** A typed value back to kg and cm. */
-  kg(v: number): number;
-  cm(v: number): number;
+  kg: (v: number) => number;
+  cm: (v: number) => number;
   /** A stored length as shown: as written in cm, to one decimal in inches. */
-  len(cm: number): number;
+  len: (cm: number) => number;
   /** A stored weight as shown: as written in kg, to one decimal in lb. */
-  wt(kg: number): number;
+  wt: (kg: number) => number;
 }
 
 const dp1 = (n: number) => Math.round(n * 10) / 10;

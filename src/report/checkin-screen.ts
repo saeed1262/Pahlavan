@@ -59,7 +59,7 @@ export function parseLetter(path: string, text: string): Letter {
   const field = (k: string) => new RegExp(`^${k}:\\s*(.+?)\\s*(?:#.*)?$`, 'm').exec(front)?.[1]?.trim() ?? null;
   const body = fm ? text.slice(fm[0].length) : text;
   const fileDate = /(\d{4}-\d{2}-\d{2})\.md$/.exec(path)?.[1] ?? null;
-  const date = (field('date') && /^\d{4}-\d{2}-\d{2}$/.test(field('date')!) ? field('date') : fileDate) as IsoDate | null;
+  const date = (field('date') && /^\d{4}-\d{2}-\d{2}$/.test(field('date')!) ? field('date') : fileDate);
   const title = /^#\s+(.+)$/m.exec(body)?.[1]?.trim() ?? null;
   const sections: Letter['sections'] = [];
   for (const part of body.split(/^##\s+/m).slice(1)) {
@@ -111,14 +111,14 @@ export function patternLines(t: CheckinTemplate): { id: string; name: string; ta
 /** The days question 1 asks about, the template's and those the record already answers. */
 export function gapDays(t: CheckinTemplate): IsoDate[] {
   const k = knownOf(t, 'gaps') ?? {};
-  const r = t.record as WeeklyCheckin;
+  const r = t.record;
   const days = new Set<string>([...((k['tickedNotLogged'] as string[]) ?? []), ...((k['noSessionNoTick'] as string[]) ?? []), ...(r.confirmedUnlogged ?? []).map((c) => c.date), ...(r.restDays ?? []), ...(r.missedDays ?? [])]);
-  return [...days].sort() as IsoDate[];
+  return [...days].sort();
 }
 
 /** The form's starting answers: the record's (an existing check-in), else blank with the template's pre-fills. */
 export function answersFromRecord(t: CheckinTemplate): SundayAnswers {
-  const r = t.record as WeeklyCheckin;
+  const r = t.record;
   const gaps: SundayAnswers['gaps'] = {};
   for (const d of gapDays(t)) {
     const u = (r.confirmedUnlogged ?? []).find((c) => c.date === d);
@@ -180,12 +180,12 @@ export function recordFromAnswers(t: CheckinTemplate, a: SundayAnswers): Record<
     r['pattern'] = Object.keys(met).length ? met : null;
   }
   r['enjoyment'] = a.enjoyment;
-  const known = (t.record as WeeklyCheckin).knownBusy ?? [];
+  const known = (t.record).knownBusy ?? [];
   const kind = a.busy.option !== null ? BUSY_KIND[a.busy.option] : undefined;
   const added = kind && a.busy.from && a.busy.to ? [{ from: a.busy.from, to: a.busy.to, kind, ...(kind === 'crunch' && a.busy.sessions !== null ? { sessions: a.busy.sessions } : {}), ...(a.busy.note.trim() ? { note: a.busy.note.trim() } : {}) }] : [];
   r['knownBusy'] = [...known.filter((b) => !added.some((n) => n.from === b.from && n.to === b.to)), ...added];
   const asked = new Set(Object.keys(a.fullLoad));
-  const prevDeload = ((t.record as WeeklyCheckin).deload ?? {}) as Obj;
+  const prevDeload = ((t.record).deload ?? {}) as Obj;
   r['deload'] = {
     ...prevDeload,
     cancelled: a.deload.cancelled,
@@ -208,7 +208,7 @@ export function sundaySummary(t: CheckinTemplate, a: SundayAnswers, sessionName:
   const items: string[] = [];
   const open: string[] = [];
   for (const [d, g] of Object.entries(a.gaps).sort(([x], [y]) => (x < y ? -1 : 1))) {
-    const day = dayText(d as IsoDate);
+    const day = dayText(d);
     if (!g.choice) open.push(`${day}: trained, rest or missed`);
     else items.push(`${day}: ${g.choice === 'trained' ? `a session done but not logged${g.session ? ` (${sessionName(g.session)})` : ', which one not said'}` : g.choice === 'rest' ? 'a planned rest day' : 'a missed session'}`);
   }
@@ -249,7 +249,7 @@ export function sundaySummary(t: CheckinTemplate, a: SundayAnswers, sessionName:
     const o = optionsOf(t, 'availability')[a.busy.option ?? -1];
     if (o && (a.busy.option === 1 || a.busy.option === 2)) items.push(`Weeks ahead: ${lower(o.option)}${a.busy.from && a.busy.to ? `, ${dayText(a.busy.from)} to ${dayText(a.busy.to)}` : ', dates not set (not saved)'}`);
     else if (o) items.push(`Weeks ahead: ${lower(o.option)}`);
-    for (const b of (t.record as WeeklyCheckin).knownBusy ?? []) items.push(`Already noted: ${b.kind}, ${dayText(b.from)} to ${dayText(b.to)}${b.note ? ` (${b.note})` : ''}`);
+    for (const b of (t.record).knownBusy ?? []) items.push(`Already noted: ${b.kind}, ${dayText(b.from)} to ${dayText(b.to)}${b.note ? ` (${b.note})` : ''}`);
   }
   if (askOf(t, 'decisions')) {
     if (a.focus !== null) items.push(`Last focus: ${a.focus ? 'followed' : 'not followed'}`);
@@ -260,8 +260,8 @@ export function sundaySummary(t: CheckinTemplate, a: SundayAnswers, sessionName:
     else items.push(a.deload.cancelled ? `Next week’s light week: cancelled${a.deload.reason.trim() ? ` (${a.deload.reason.trim()})` : ''}` : 'Next week’s light week: kept');
   }
   for (const [m, v] of Object.entries(a.fullLoad)) {
-    if (v === null) open.push(`Was the week of ${dayText(m as IsoDate)} trained at full load?`);
-    else items.push(`The week of ${dayText(m as IsoDate)}: ${v ? 'trained at full load' : 'a light week, as counted'}`);
+    if (v === null) open.push(`Was the week of ${dayText(m)} trained at full load?`);
+    else items.push(`The week of ${dayText(m)}: ${v ? 'trained at full load' : 'a light week, as counted'}`);
   }
   for (const [lift, n] of Object.entries(a.triage)) items.push(n > 0 ? `${lift}: triage ${lower(TRIAGE_STEP[n])}` : `${lift}: no triage step on record`);
   return { items, open };
@@ -334,9 +334,9 @@ export function buildCheckin(read: VaultRead, date: IsoDate, letter: { path: str
   const notes: { code: string; text: string }[] = [];
   const body = read.raw?.body;
   const m = morningFrom(body ?? null, date);
-  const day = isObj(body) && isObj(body['days']) && isObj(body['days'][date]) ? (body['days'][date] as Obj) : {};
+  const day = isObj(body) && isObj(body['days']) && isObj(body['days'][date]) ? (body['days'][date]) : {};
   const sore: Record<string, SorenessLevel> = {};
-  for (const [id, v] of Object.entries(isObj(day['soreMuscles']) ? (day['soreMuscles'] as Obj) : {})) {
+  for (const [id, v] of Object.entries(isObj(day['soreMuscles']) ? (day['soreMuscles']) : {})) {
     const slug = SLUG_OF.get(id) ?? (MUSCLES.some((x) => x.highlighter === id) ? id : null);
     if (slug && (v === 'mild' || v === 'sore')) sore[slug] = v;
   }

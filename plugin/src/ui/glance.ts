@@ -28,9 +28,9 @@ export interface PanelContext {
   heading: string;
   /** Progress's other views, a click away. */
   views?: { label: string; items: readonly { id: string; label: string; line: string }[]; onView(id: string): void } | null;
-  onPanel(open: boolean): void;
-  onAll(fold: boolean): void;
-  onGo(id: string): void;
+  onPanel: (open: boolean) => void;
+  onAll: (fold: boolean) => void;
+  onGo: (id: string) => void;
 }
 
 /** The panel; folded, it is the kicker and the first summary line, and a click anywhere opens it. */
@@ -80,7 +80,7 @@ export interface FoldOptions {
   status: readonly Run[];
   folded: boolean;
   /** Folds (true) or opens (false) the section. */
-  onToggle(fold: boolean): void;
+  onToggle: (fold: boolean) => void;
 }
 
 /**
@@ -104,5 +104,5 @@ export function flash(card: HTMLElement): void {
   card.classList.remove('is-flash');
   void card.offsetWidth;
   card.classList.add('is-flash');
-  setTimeout(() => card.classList.remove('is-flash'), 1200);
+  window.setTimeout(() => card.classList.remove('is-flash'), 1200);
 }

@@ -208,9 +208,9 @@ export const SORE_AREAS: readonly { id: string; label: string; muscles: string[]
 
 /** This morning's sore muscles in the body log (by engine id), as the quick pick's areas: an area shows its sorest muscle. */
 export function soreAreas(body: unknown, date: IsoDate): SoreArea[] {
-  const days = isObj(body) && isObj(body['days']) ? (body['days'] as Obj) : {};
-  const day = isObj(days[date]) ? (days[date] as Obj) : {};
-  const raw = isObj(day['soreMuscles']) ? (day['soreMuscles'] as Obj) : {};
+  const days = isObj(body) && isObj(body['days']) ? (body['days']) : {};
+  const day = isObj(days[date]) ? (days[date]) : {};
+  const raw = isObj(day['soreMuscles']) ? (day['soreMuscles']) : {};
   const byId: Record<string, SorenessLevel> = {};
   for (const [k, v] of Object.entries(raw)) {
     const id = muscleId(k);

@@ -12,8 +12,7 @@ import type { PhotoIn } from './writer.ts';
 type Req = (id: string) => unknown;
 /** Obsidian's desktop `require` (Node's, in Electron), or null in a browser. */
 export function nodeRequire(): Req | null {
-  const w = globalThis as unknown as { require?: Req; window?: { require?: Req } };
-  const r = w.window?.require ?? w.require;
+  const r = (window as unknown as { require?: Req }).require;
   return typeof r === 'function' ? r : null;
 }
 
@@ -69,7 +68,7 @@ function remote(): Remote | null {
 
 /** The platform Obsidian runs on ("darwin" on a Mac), or null in a browser. */
 export function platform(): string | null {
-  const p = (globalThis as unknown as { process?: { platform?: unknown } }).process?.platform;
+  const p = (window as unknown as { process?: { platform?: unknown } }).process?.platform;
   return typeof p === 'string' ? p : null;
 }
 
@@ -223,7 +222,7 @@ export function holdObsidianFront(on: boolean): void {
 /** A macOS notification (Obsidian asks macOS for permission once); the click runs `onClick`. */
 export function notifyMac(title: string, body: string, onClick: () => void): void {
   try {
-    const N = (globalThis as unknown as { Notification?: new (t: string, o: { body: string }) => { onclick: (() => void) | null } }).Notification;
+    const N = (window as unknown as { Notification?: new (t: string, o: { body: string }) => { onclick: (() => void) | null } }).Notification;
     if (!N) return;
     const n = new N(title, { body });
     n.onclick = () => onClick();
@@ -235,7 +234,7 @@ export function notifyMac(title: string, body: string, onClick: () => void): voi
 /** Two soft notes when a stand is done (Habit Nudges' chime). */
 export function chime(): void {
   try {
-    const Ctx = (globalThis as unknown as { AudioContext?: new () => AudioContext }).AudioContext;
+    const Ctx = (window as unknown as { AudioContext?: new () => AudioContext }).AudioContext;
     if (!Ctx) return;
     const ctx = new Ctx();
     for (const [f, at] of [[660, 0], [880, 0.2]] as const) {

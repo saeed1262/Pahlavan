@@ -542,7 +542,7 @@ export function toPlanData(program: Program, opts: PlanDataExportOptions = {}): 
   // Units.
   const strength = Object.values(program.exercises).filter((e) => (e.kind ?? 'strength') === 'strength' && e.unit);
   const counts = { kg: strength.filter((e) => e.unit === 'kg').length, lb: strength.filter((e) => e.unit === 'lb').length };
-  const liftUnit: Unit = opts.liftUnit ?? (top.liftUnit as Unit | undefined) ?? base?.liftUnit ?? (counts.kg > counts.lb ? 'kg' : 'lb');
+  const liftUnit: Unit = opts.liftUnit ?? top.liftUnit ?? base?.liftUnit ?? (counts.kg > counts.lb ? 'kg' : 'lb');
 
   // Sessions, lifts and guide.
   const nameOf = (id: string) => program.exercises[id]?.name ?? id;
@@ -556,7 +556,9 @@ export function toPlanData(program: Program, opts: PlanDataExportOptions = {}): 
     const name = nameOf(id);
     if (guide[name] || usedNames.includes(name.toLowerCase())) return;
     usedNames.push(name.toLowerCase());
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
     const own = (ex as (Exercise & ExerciseExtras) | undefined)?._guide;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
     const fromBase = (ex as (Exercise & ExerciseExtras) | undefined)?._guideKey ?? baseGuideKey(name);
     const muscles = ex?.muscles ? toPlanDataMuscles(ex.muscles) : null;
     if (muscles && muscles.approximated.length) {
@@ -652,7 +654,9 @@ export function toPlanData(program: Program, opts: PlanDataExportOptions = {}): 
       if (item.logged) {
         const eff = effectiveSlot(slot, date).value;
         const e = program.exercises[eff.exercise];
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
         const own = (e as (Exercise & ExerciseExtras) | undefined)?._lift;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
         const key = (e as (Exercise & ExerciseExtras) | undefined)?._liftKey ?? item.name;
         const unit = e?.unit ?? liftUnit;
         const inc = e?.increment ?? (unit === 'kg' ? 2.5 : 5);
@@ -714,7 +718,7 @@ export function toPlanData(program: Program, opts: PlanDataExportOptions = {}): 
   }
 
   // Assemble, carrying over what the program cannot express.
-  const pick = <K extends keyof PlanData>(k: K, fallback: PlanData[K]): PlanData[K] => (top[k] as PlanData[K] | undefined) ?? base?.[k] ?? fallback;
+  const pick = <K extends keyof PlanData>(k: K, fallback: PlanData[K]): PlanData[K] => top[k] ?? base?.[k] ?? fallback;
   const firstLift = sessions[liftTypes[0] ?? '']?.filter((i) => i.logged) ?? [];
   const planData: PlanData = {
     _about: pick('_about', DEFAULT_ABOUT),
@@ -749,7 +753,7 @@ export function toPlanData(program: Program, opts: PlanDataExportOptions = {}): 
   };
   // The phases' names: a generated plan writes its own (Foundation, Build, Peak); a plan the adapter
   // read keeps the file's (none when it had none, so it reads back the same).
-  const phaseNames = extras ? (top['phases'] as PlanDataPhase[] | undefined) : program.macrocycle.phases.map((p) => ({ name: p.name, ...(p.goal ? { goal: p.goal } : {}) }));
+  const phaseNames = extras ? top['phases'] : program.macrocycle.phases.map((p) => ({ name: p.name, ...(p.goal ? { goal: p.goal } : {}) }));
   if (phaseNames) planData.phases = phaseNames;
   // A generated plan's length; a plan the adapter read keeps the file's (carried over with its other keys).
   if (!extras) planData.weeks = weeks.length;

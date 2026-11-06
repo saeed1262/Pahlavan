@@ -15,7 +15,7 @@ import { planWeekOf, type VaultWarning } from '../adapters/vault/convert.ts';
 import { type VaultRead } from '../adapters/vault/read.ts';
 import type { TrackingRead } from '../adapters/vault/tracking-read.ts';
 import { bodyRecordView, planOccurrences, resolveSchedule } from '../core/body-schedule.ts';
-import { addDays, dayText, daysBetween, mondayOf, type IsoDate } from '../core/dates.ts';
+import { addDays, dayText, daysBetween, type IsoDate } from '../core/dates.ts';
 import { adjustCheck, DIET, DIRECTION, LEVEL_LABEL, plannedProtein, proteinWeek, proteinWeeks, patternWeeks, shortDay, waistTrend, weightDirection, type ProteinDayState } from '../core/diet.ts';
 import { proteinItemOf } from '../core/protein.ts';
 import { explain } from '../core/reason.ts';

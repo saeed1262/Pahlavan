@@ -116,7 +116,7 @@ export function readChanges(v: unknown, as?: 'suggest' | 'add' | 'decline'): { c
   if (!isObj(v)) return { changes: null, errors: [{ code: 'changes', message: `the changes file must be an object with any of: ${CHANGE_KEYS.join(', ')}` }] };
   const unknown = Object.keys(v).filter((k) => !(CHANGE_KEYS as readonly string[]).includes(k) && !k.startsWith('_'));
   if (unknown.length) return { changes: null, errors: [{ code: 'changes', message: `unknown keys in the changes file: ${unknown.join(', ')} (known: ${CHANGE_KEYS.join(', ')})` }] };
-  return { changes: v as TrackChanges, errors: [] };
+  return { changes: v, errors: [] };
 }
 
 /**
@@ -413,7 +413,7 @@ function buildItem(input: ItemInput, base: TrackedItem | null, edit: boolean, ct
   const known = new Set<string>(['id', 'kind', 'name', ...INPUT_ONLY, ...ITEM_FIELDS]);
   const unknown = Object.keys(input).filter((k) => !known.has(k));
   if (unknown.length) bad(`unknown fields: ${unknown.join(', ')}`);
-  const kind = (input.kind ?? base?.kind) as ItemKind;
+  const kind = (input.kind ?? base?.kind);
   if (!ITEM_KINDS.includes(kind)) bad(`kind must be one of ${ITEM_KINDS.join(', ')}`);
   if (base && base.kind !== kind) bad(`${base.id} is a ${base.kind}: the kind stays once an item exists`);
   const name = typeof input.name === 'string' ? input.name.trim() : '';

@@ -1,6 +1,6 @@
 // The plan generator's inputs and the context every step reads.
 
-import { CATALOGUE, type CatalogueEntry, type Equipment, type Pattern } from '../data/exercises.ts';
+import { CATALOGUE, type CatalogueEntry, type Equipment } from '../data/exercises.ts';
 import { LOWER_BODY, MUSCLES } from '../data/muscles.ts';
 import { addDays, mondayOf } from '../dates.ts';
 import { explain, joinNotes, type Result } from '../reason.ts';

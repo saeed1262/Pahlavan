@@ -15,7 +15,7 @@ import { REFERRAL } from '../data/red-flags.ts';
 import { applyScreening, screenExercise, screeningCaps, type Prescription } from '../safety.ts';
 import type { ExerciseSlot, IsoDate, Mesocycle, Phase, Program, SessionKind, SessionTemplate, Week, Weekday } from '../schema.ts';
 import { validateProgram } from '../validate.ts';
-import { checkVolume, plannedSetsPerMuscle, PULL_PUSH, pullPushSets, setEffort, volumeTier, type EffortContext, type PlannedSplit, type VolumeTier } from '../volume.ts';
+import { checkVolume, plannedSetsPerMuscle, pullPushSets, setEffort, volumeTier, type EffortContext, type PlannedSplit, type VolumeTier } from '../volume.ts';
 import { conditioningPlan, plannedWeek, userLayoutDays, type ConditioningPlan } from './conditioning.ts';
 import { buildContext, priorityOverRoom, toExercise, type PlanContext, type PlanInput, type PrioritySource } from './context.ts';
 import { baseRir, DOSE, estimatedMinutes, fitTime, ladderFor, pairNotes, progressionRule, repRange, slotNote, warmUpMinutes, type BuiltSlot, type BuiltTemplate } from './dose.ts';
@@ -281,7 +281,7 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
       });
       conditioningByPhase[phase] = conditioningPlan(ctx, days, tpl.minutes, phase, macro.phases.length, heavyLower, size.value.shortMinutes).value;
     }
-    const finisher = conditioningByPhase[phase]!.finisher;
+    const finisher = conditioningByPhase[phase].finisher;
     const built: BuiltTemplate[] = tpl.blueprints.map((b) => {
       const used = new Set([...(mains.get(b.id) ?? [])].filter((x): x is Pick => x !== null).map((x) => x.id));
       const slots: BuiltSlot[] = [];

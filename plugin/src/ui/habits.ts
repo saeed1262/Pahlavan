@@ -63,27 +63,27 @@ export interface HabitsContext {
   ui: HabitsUi;
   canWrite: boolean;
   /** Redraw after a change of the form or the toggles. */
-  onChange(): void;
-  onSave(force?: boolean): void;
-  onCancel(): void;
-  onEdit(id: string): void;
-  onAdd(): void;
-  onPause(): void;
-  onResume(id: string): void;
-  onRemove(): void;
-  onAccept(id: string): void;
-  onDismiss(id: string): void;
-  onBring(): void;
-  onBringLater(): void;
+  onChange: () => void;
+  onSave: (force?: boolean) => void;
+  onCancel: () => void;
+  onEdit: (id: string) => void;
+  onAdd: () => void;
+  onPause: () => void;
+  onResume: (id: string) => void;
+  onRemove: () => void;
+  onAccept: (id: string) => void;
+  onDismiss: (id: string) => void;
+  onBring: () => void;
+  onBringLater: () => void;
   /** "Start fresh instead": the offer recorded as answered with nothing, so it does not come back. */
-  onBringNever(): void;
-  onAmount(id: string, delta: number): void;
+  onBringNever: () => void;
+  onAmount: (id: string, delta: number) => void;
   /** "see the card": a reminder card by its key. */
-  onOpenKey?(key: string): void;
+  onOpenKey?: (key: string) => void;
   /** The live sitting minutes from this Mac (the list's sitting row follows them between reads). */
   sittingLive?: { minutes: number; longest: number } | null;
   /** A moment as local HH:MM (a tick's time, the morning's saved time). */
-  clock?(ms: number): string;
+  clock?: (ms: number) => string;
 }
 
 let clockText: (ms: number) => string = (ms) => {
@@ -406,22 +406,22 @@ function sw(on: boolean, label: string, onclick: () => void, k: string): HTMLEle
   return h('button', { class: `pv-sw${on ? ' is-on' : ''}`, role: 'switch', 'aria-checked': on ? 'true' : 'false', 'aria-label': label, onclick, ...kb(k) });
 }
 function numIn(value: number, unit: string, set: (v: number) => void, k: string, opt: { step?: number; disabled?: boolean } = {}): HTMLElement {
-  const input = h('input', { type: 'number', value: Number.isFinite(value) ? value : '', step: opt.step ?? 1, min: 0, disabled: opt.disabled, 'aria-label': unit, ...kb(k) }) as HTMLInputElement;
+  const input = h('input', { type: 'number', value: Number.isFinite(value) ? value : '', step: opt.step ?? 1, min: 0, disabled: opt.disabled, 'aria-label': unit, ...kb(k) });
   input.addEventListener('input', () => set(input.value.trim() === '' ? NaN : Number(input.value)));
   return h('span', { class: `pv-field-in pv-sf-n${opt.disabled ? ' is-off' : ''}` }, input, h('em', {}, unit));
 }
 function timeIn(value: string, set: (v: string) => void, k: string, opt: { disabled?: boolean } = {}): HTMLElement {
-  const input = h('input', { type: 'time', value, disabled: opt.disabled, ...kb(k) }) as HTMLInputElement;
+  const input = h('input', { type: 'time', value, disabled: opt.disabled, ...kb(k) });
   input.addEventListener('input', () => set(input.value));
   return h('span', { class: `pv-field-in pv-sf-time${opt.disabled ? ' is-off' : ''}` }, input);
 }
 function textIn(value: string, set: (v: string) => void, k: string, placeholder = '', cls = ''): HTMLElement {
-  const input = h('input', { type: 'text', value, placeholder, ...kb(k) }) as HTMLInputElement;
+  const input = h('input', { type: 'text', value, placeholder, ...kb(k) });
   input.addEventListener('input', () => set(input.value));
   return h('span', { class: `pv-field-in${cls ? ` ${cls}` : ''}` }, input);
 }
 function select(options: readonly { value: string; label: string }[], value: string, set: (v: string) => void, k: string, cls = 'pv-sel'): HTMLElement {
-  const el = h('select', { class: cls, ...kb(k) }, options.map((o) => h('option', { value: o.value, ...(o.value === value ? { selected: true } : {}) }, o.label))) as HTMLSelectElement;
+  const el = h('select', { class: cls, ...kb(k) }, options.map((o) => h('option', { value: o.value, ...(o.value === value ? { selected: true } : {}) }, o.label)));
   el.addEventListener('change', () => set(el.value));
   return el;
 }
@@ -457,9 +457,9 @@ function kindSettings(f: ItemForm, ctx: HabitsContext): HTMLElement | null {
     return h('div', { class: 'pv-sf-q' }, h('div', { class: 'pv-sf-label' }, 'Desk breaks'),
       h('div', { class: 'pv-sf-opt' }, sw(f.followPlan, 'Follow the plan', () => { f.followPlan = !f.followPlan; redraw(); }, 'f-follow'),
         h('div', {}, h('b', {}, 'Follow the plan'), h('div', { class: 'pv-faint' }, plan ? 'The routine and the times come from your plan and change with it. Off: they stay as you set them.' : 'Your plan has no desk breaks yet: these times and steps apply until it has.'))),
-      h('div', { class: `pv-sf-line${follow ? ' is-off' : ''}` }, 'Every', numIn(follow ? plan!.every : f.deskEvery, 'min', (v) => { f.deskEvery = v; }, 'f-every', { disabled: follow }), 'from', timeIn(follow ? plan!.from : f.deskFrom, (v) => { f.deskFrom = v; }, 'f-dfrom', { disabled: follow }), 'to', timeIn(follow ? plan!.to : f.deskTo, (v) => { f.deskTo = v; }, 'f-dto', { disabled: follow })),
+      h('div', { class: `pv-sf-line${follow ? ' is-off' : ''}` }, 'Every', numIn(follow ? plan.every : f.deskEvery, 'min', (v) => { f.deskEvery = v; }, 'f-every', { disabled: follow }), 'from', timeIn(follow ? plan.from : f.deskFrom, (v) => { f.deskFrom = v; }, 'f-dfrom', { disabled: follow }), 'to', timeIn(follow ? plan.to : f.deskTo, (v) => { f.deskTo = v; }, 'f-dto', { disabled: follow })),
       follow
-        ? [h('ol', { class: 'pv-sf-steps is-off' }, plan!.steps.map((x) => h('li', {}, h('b', {}, x.name), ' ', h('span', { class: 'pv-faint' }, x.dose)))), hint('layers', `From your plan: ${plan!.steps.length} step${plan!.steps.length === 1 ? '' : 's'}, about ${plan!.minutes} minutes.`)]
+        ? [h('ol', { class: 'pv-sf-steps is-off' }, plan.steps.map((x) => h('li', {}, h('b', {}, x.name), ' ', h('span', { class: 'pv-faint' }, x.dose)))), hint('layers', `From your plan: ${plan.steps.length} step${plan.steps.length === 1 ? '' : 's'}, about ${plan.minutes} minutes.`)]
         : stepsEditor(f, ctx),
     );
   }
@@ -478,7 +478,7 @@ function reminderControl(f: ItemForm, ctx: HabitsContext): Child {
   if (f.kind === 'standup' || f.kind === 'desk') return h('span', { class: 'pv-faint' }, f.kind === 'standup' ? 'The stand-up card is the reminder.' : 'A card at each break.');
   if (f.kind === 'sitting') {
     const atText = `${Math.floor(f.limitAt / 60)}:${String(f.limitAt % 60).padStart(2, '0')}`;
-    const input = h('input', { type: 'text', value: atText, 'aria-label': 'Hours of sitting', ...kb('f-limitat') }) as HTMLInputElement;
+    const input = h('input', { type: 'text', value: atText, 'aria-label': 'Hours of sitting', ...kb('f-limitat') });
     input.addEventListener('input', () => {
       const m = /^(\d{1,2})(?::(\d{1,2}))?$/.exec(input.value.trim());
       if (m) f.limitAt = Number(m[1]) * 60 + Number(m[2] ?? 0);
@@ -507,22 +507,22 @@ function editorCard(ctx: HabitsContext): HTMLElement {
   const what = f.kind === 'supplement'
     ? h('div', { class: 'pv-field' }, h('span', {}, 'Dose'), h('div', { class: 'pv-sf-dose' }, textIn(f.doseAmount, (v) => { f.doseAmount = v; }, 'f-dose', '5'), select([...new Set([...DOSE_UNITS, f.doseUnit])].map((u) => ({ value: u, label: u })), f.doseUnit, (v) => { f.doseUnit = v; }, 'f-doseunit')))
     : f.kind === 'amount'
-      ? h('div', { class: 'pv-field' }, h('span', {}, 'Daily target'), h('div', { class: 'pv-sf-dose' }, h('span', { class: 'pv-field-in' }, (() => { const i = h('input', { type: 'number', value: f.target, min: 0, ...kb('f-amt') }) as HTMLInputElement; i.addEventListener('input', () => { f.target = Number(i.value); }); return i; })()), select([...new Set([...AMOUNT_UNITS, f.unit])].map((u) => ({ value: u, label: u })), f.unit, (v) => { f.unit = v; redraw(); }, 'f-unit')))
+      ? h('div', { class: 'pv-field' }, h('span', {}, 'Daily target'), h('div', { class: 'pv-sf-dose' }, h('span', { class: 'pv-field-in' }, (() => { const i = h('input', { type: 'number', value: f.target, min: 0, ...kb('f-amt') }); i.addEventListener('input', () => { f.target = Number(i.value); }); return i; })()), select([...new Set([...AMOUNT_UNITS, f.unit])].map((u) => ({ value: u, label: u })), f.unit, (v) => { f.unit = v; redraw(); }, 'f-unit')))
       : f.kind === 'tick'
         ? h('div', { class: 'pv-field' }, h('span', {}, 'Done means ', h('em', { class: 'pv-sf-vault' }, 'optional')), textIn(f.means, (v) => { f.means = v; }, 'f-means', 'e.g. all teeth'))
         : h('div', {});
   const nameIn = textIn(f.name, (v) => {
     f.name = v;
-    const t = ctx.ui.form === f ? document.querySelector('[data-card="editor"] .pv-card-title') : null;
+    const t = ctx.ui.form === f ? activeDocument.querySelector('[data-card="editor"] .pv-card-title') : null;
     if (t) t.textContent = v || 'New item';
   }, 'f-name', { amount: 'e.g. Water', tick: 'e.g. Flossing', supplement: 'e.g. Creatine', standup: 'Stand-ups', desk: 'Desk breaks', sitting: 'Sitting time' }[f.kind]);
   const quick = f.kind === 'amount'
     ? h('div', { class: 'pv-sf-q' }, h('div', { class: 'pv-sf-label' }, 'Quick amounts ', h('span', { class: 'pv-faint' }, '(the buttons on its card)')),
         h('div', { class: 'pv-sf-chips' }, f.quick.map((q, i) => h('span', { class: 'pv-sf-chip' }, `+${nfmt(q)} ${f.unit}`, h('button', { class: 'pv-icon-btn', 'aria-label': `Remove ${q}`, onclick: () => { f.quick.splice(i, 1); redraw(); }, ...kb(`quick-x-${q}`) }, icon('x')))),
           (() => {
-            const i = h('input', { type: 'number', min: 0, placeholder: 'amount', 'aria-label': 'A quick amount', ...kb('quick-in') }) as HTMLInputElement;
+            const i = h('input', { type: 'number', min: 0, placeholder: 'amount', 'aria-label': 'A quick amount', ...kb('quick-in') });
             const add = () => { const v = Number(i.value); if (v > 0 && !f.quick.includes(v)) { f.quick.push(v); f.quick.sort((a, b) => a - b); redraw(); } };
-            i.addEventListener('keydown', (ev) => { if ((ev as KeyboardEvent).key === 'Enter') add(); });
+            i.addEventListener('keydown', (ev) => { if ((ev).key === 'Enter') add(); });
             return [h('span', { class: 'pv-field-in pv-sf-n' }, i, h('em', {}, f.unit)), h('button', { class: 'pv-btn-quiet', onclick: add, ...kb('quick-add') }, icon('plus'), 'Add')];
           })()))
     : null;
@@ -565,11 +565,11 @@ function editorCard(ctx: HabitsContext): HTMLElement {
       oftenQ,
       h('div', { class: 'pv-sf-q' }, h('div', { class: 'pv-sf-label' }, 'Reminder'), h('div', { class: 'pv-sf-remind' }, reminderControl(f, ctx))),
       h('div', { class: 'pv-sf-row pv-sf-2' },
-        h('label', { class: 'pv-field' }, h('span', {}, 'Start date'), (() => { const i = h('input', { type: 'date', value: f.start, ...kb('f-start') }) as HTMLInputElement; i.addEventListener('input', () => { f.start = i.value; }); return h('span', { class: 'pv-field-in' }, i); })()),
+        h('label', { class: 'pv-field' }, h('span', {}, 'Start date'), (() => { const i = h('input', { type: 'date', value: f.start, ...kb('f-start') }); i.addEventListener('input', () => { f.start = i.value; }); return h('span', { class: 'pv-field-in' }, i); })()),
         linkable ? h('label', { class: 'pv-field' }, h('span', {}, 'Linked habit ', h('em', { class: 'pv-sf-vault' }, 'this vault')), select([{ value: '', label: 'Not linked' }, ...m.homepage!.map((x) => ({ value: x.id, label: x.name }))], f.habit, (v) => { f.habit = v; redraw(); }, 'f-habit', 'pv-sel pv-sf-sel')) : h('div', {}),
       ),
       linkable ? hint('link', habitName ? ['Ticks also go to the linked habit ', h('b', {}, habitName), '; its ticks count here from this item’s start, not before.'] : 'Not linked: only Pahlavan keeps its ticks.') : null,
-      h('label', { class: 'pv-field' }, h('span', {}, 'Note'), (() => { const t = h('textarea', { class: 'pv-ta', rows: 2, placeholder: 'Anything to remember: with food, before bed…', ...kb('f-note') }, f.note) as HTMLTextAreaElement; t.addEventListener('input', () => { f.note = t.value; }); return t; })()),
+      h('label', { class: 'pv-field' }, h('span', {}, 'Note'), (() => { const t = h('textarea', { class: 'pv-ta', rows: 2, placeholder: 'Anything to remember: with food, before bed…', ...kb('f-note') }, f.note); t.addEventListener('input', () => { f.note = t.value; }); return t; })()),
       editing
         ? h('div', { class: 'pv-sf-foot' },
             ui.confirmRemove

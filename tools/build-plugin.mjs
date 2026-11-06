@@ -1,7 +1,12 @@
 // Builds the Obsidian plugin: plugin/dist/main.js (CommonJS, `obsidian`
 // external) from plugin/src/main.ts and the engine's TypeScript sources,
 // with manifest.json (at the repository's root, where Obsidian's directory
-// reads it) and plugin/styles.css copied beside it.
+// reads it) and plugin/styles.css copied beside it. `npm run build` runs it,
+// as the community directory's review does on a clean checkout, and compares
+// the result with the release: main.js and styles.css are also copied to the
+// repository's root (git ignores them there), the sample plugin's layout.
+// The output is the same on any system: the coach's files go in sorted by
+// path, not in the order the file system lists them.
 
 import { build } from 'esbuild';
 import { spawnSync } from 'node:child_process';
@@ -24,7 +29,8 @@ const engineFile = join(root, 'dist', 'engine.cjs');
 const ver = JSON.parse(spawnSync(process.execPath, [engineFile, '--version', '--json'], { encoding: 'utf8' }).stdout);
 const coachFiles = {};
 (function walk(dir) {
-  for (const e of readdirSync(join(root, 'skill', dir), { withFileTypes: true })) {
+  const entries = readdirSync(join(root, 'skill', dir), { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const e of entries) {
     const rel = dir ? `${dir}/${e.name}` : e.name;
     if (e.isDirectory()) walk(rel);
     else coachFiles[rel] = readFileSync(join(root, 'skill', rel), 'utf8');
@@ -67,4 +73,5 @@ await build({
 });
 copyFileSync(new URL('../manifest.json', import.meta.url), new URL('../plugin/dist/manifest.json', import.meta.url));
 copyFileSync(new URL('../plugin/styles.css', import.meta.url), new URL('../plugin/dist/styles.css', import.meta.url));
-console.log(`built plugin/dist (pahlavan ${manifest.version})`);
+for (const f of ['main.js', 'styles.css']) copyFileSync(new URL(`../plugin/dist/${f}`, import.meta.url), new URL(`../${f}`, import.meta.url));
+console.log(`built plugin/dist (pahlavan ${manifest.version}), main.js and styles.css also at the root`);

@@ -93,11 +93,11 @@ export function checkinWeek(read: VaultRead, date: IsoDate) {
   const to = addDays(from, 6);
   const since = scopeInfo(read.data, date).since;
   const body = read.raw?.body;
-  const days = isObj(body) && isObj(body['days']) ? (body['days'] as Obj) : {};
+  const days = isObj(body) && isObj(body['days']) ? (body['days']) : {};
   const mornings: CheckinDay[] = Array.from({ length: 7 }, (_, i) => {
     const d = addDays(from, i);
     if (since && d < since) return { date: d, done: false, future: false, before: true };
-    const day = isObj(days[d]) ? (days[d] as Obj) : {};
+    const day = isObj(days[d]) ? (days[d]) : {};
     const done = d <= date && isMorningDone(day);
     return { date: d, done, future: d > date };
   });

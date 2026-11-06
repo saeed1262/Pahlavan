@@ -132,11 +132,11 @@ const plain = (s: string | null | undefined) => (s ?? '').replace(/\s*—\s*/g, 
 const rangeText = (r: [number, number]) => (r[0] === r[1] ? `${r[0]}` : `${r[0]}–${r[1]}`);
 
 function planOf(read: VaultRead): Obj {
-  return isObj(read.raw?.plan) ? (read.raw!.plan as Obj) : {};
+  return isObj(read.raw?.plan) ? (read.raw.plan) : {};
 }
 function liftInfo(plan: Obj, name: string): { unit?: string; inc?: number } {
   const lifts = isObj(plan['lifts']) ? plan['lifts'] : {};
-  return isObj(lifts[name]) ? (lifts[name] as { unit?: string; inc?: number }) : {};
+  return isObj(lifts[name]) ? (lifts[name]) : {};
 }
 function unitStep(plan: Obj, name: string, planned: string | null, unit?: string | null): { unit: 'lb' | 'kg'; step: number } {
   const own = liftInfo(plan, name);
@@ -145,7 +145,7 @@ function unitStep(plan: Obj, name: string, planned: string | null, unit?: string
   return { unit: u, step: isNum(inc) ? inc : u === 'kg' ? 2.5 : 5 };
 }
 function catalogueEntry(read: VaultRead, id: string): CatalogueEntry | null {
-  return CATALOGUE_BY_ID.get(id) ?? (read.data.catalogueMatch[id] ? (CATALOGUE_BY_ID.get(read.data.catalogueMatch[id]!) ?? null) : null);
+  return CATALOGUE_BY_ID.get(id) ?? (read.data.catalogueMatch[id] ? (CATALOGUE_BY_ID.get(read.data.catalogueMatch[id]) ?? null) : null);
 }
 function kindOf(read: VaultRead, id: string, name: string, sr: string): RowKind {
   const ex = read.data.program.exercises[id];
@@ -211,7 +211,7 @@ export function logFormFor(read: VaultRead, session: Session, date: IsoDate): Lo
   const lifting = Array.isArray(plan['liftTypes']) && (plan['liftTypes'] as string[]).includes(type);
   const express = session.mode === 'express' && lifting;
   const lines = checklistLines(plan, type, express, isDeloadDate(plan, read.raw?.log, date));
-  const loggedNames = (isObj(plan['sessions']) && Array.isArray((plan['sessions'] as Obj)[type]) ? ((plan['sessions'] as Obj)[type] as Obj[]) : []).filter((x) => x['logged']).map((x) => String(x['name']));
+  const loggedNames = (isObj(plan['sessions']) && Array.isArray((plan['sessions'])[type]) ? ((plan['sessions'])[type] as Obj[]) : []).filter((x) => x['logged']).map((x) => String(x['name']));
   const used = new Set<number>();
   const find = (part: string) => {
     const i = session.items.findIndex((it, k) => !used.has(k) && (it.planName === part || it.replaces?.name === part || it.name === part));
@@ -383,14 +383,14 @@ export function customLogForm(read: VaultRead, date: IsoDate, label = '', choice
 export function logFormFromEntry(read: VaultRead, entry: Obj): LogForm {
   const plan = planOf(read);
   const type = String(entry['type']);
-  const date = String(entry['date']) as IsoDate;
+  const date = String(entry['date']);
   const lifting = Array.isArray(plan['liftTypes']) && (plan['liftTypes'] as string[]).includes(type);
   const express = entry['express'] === true && lifting;
   // The session's own frozen list when it has one (the plan may have changed since); else today's plan lines.
   const frozen = Array.isArray(entry['exercises']) ? (entry['exercises'] as Obj[]).filter((x) => isObj(x) && typeof x['name'] === 'string') : null;
   const lines = type === 'custom' ? [] : frozen ? frozen.map((x) => ({ name: String(x['name']), sr: `${Number(x['sets']) || 1} sets`, parts: [String(x['name'])], warmup: false })) : checklistLines(plan, type, express, isDeloadDate(plan, read.raw?.log, date));
-  const liftOf = (k: 'lift1' | 'lift2') => (isObj(entry[k]) ? String((entry[k] as Obj)['planned'] || (entry[k] as Obj)['name']) : null);
-  const planLogged = (isObj(plan['sessions']) && Array.isArray((plan['sessions'] as Obj)[type]) ? ((plan['sessions'] as Obj)[type] as Obj[]) : []).filter((x) => x['logged']).map((x) => String(x['name']));
+  const liftOf = (k: 'lift1' | 'lift2') => (isObj(entry[k]) ? String((entry[k])['planned'] || (entry[k])['name']) : null);
+  const planLogged = (isObj(plan['sessions']) && Array.isArray((plan['sessions'])[type]) ? ((plan['sessions'])[type] as Obj[]) : []).filter((x) => x['logged']).map((x) => String(x['name']));
   const loggedNames = lifting && (liftOf('lift1') || liftOf('lift2')) ? [liftOf('lift1') ?? planLogged[0] ?? '', liftOf('lift2') ?? planLogged[1] ?? ''] : planLogged;
   const checklist = isObj(entry['checklist']) ? entry['checklist'] : {};
   // A paired line ("Face Pull + Band External Rotation") names each of its parts.
@@ -434,7 +434,7 @@ export function logFormFromEntry(read: VaultRead, entry: Obj): LogForm {
       rows: own.map((s) => ({ weight: isNum(s['weight']) ? s['weight'] : null, reps: isNum(s['reps']) ? s['reps'] : null, rir: isNum(s['rir']) ? s['rir'] : null })),
     };
   });
-  const pain = Array.isArray(entry['pain']) && isObj(entry['pain'][0]) ? (entry['pain'][0] as Obj) : null;
+  const pain = Array.isArray(entry['pain']) && isObj(entry['pain'][0]) ? (entry['pain'][0]) : null;
   const titles = isObj(plan['titles']) ? (plan['titles'] as Record<string, string>) : {};
   const choice = read.data.plan.types.find((t) => t.type === type);
   return {
@@ -611,7 +611,7 @@ export function frozenList(read: VaultRead, opts: { date: IsoDate; type: string;
   const lines = checklistLines(plan, opts.type, expressMode, deload);
   const skipped = skippedLines(read, opts.type, lines, opts.date, opts.skip ?? []);
   if (!skipped.ok) return skipped;
-  const logged = (isObj(plan['sessions']) && Array.isArray((plan['sessions'] as Obj)[opts.type]) ? ((plan['sessions'] as Obj)[opts.type] as Obj[]) : []).filter((x) => isObj(x) && x['logged']).map((x) => String(x['name']));
+  const logged = (isObj(plan['sessions']) && Array.isArray((plan['sessions'])[opts.type]) ? ((plan['sessions'])[opts.type] as Obj[]) : []).filter((x) => isObj(x) && x['logged']).map((x) => String(x['name']));
   // Each logged lift as the Log panel sends it: the done name, with the plan's as `planned` when it differs.
   const lift = (i: 0 | 1) => {
     const planned = logged[i];
@@ -631,7 +631,7 @@ export function frozenList(read: VaultRead, opts: { date: IsoDate; type: string;
   const built = buildLogEntry(input, { plan: read.raw?.plan, log: read.raw?.log, today });
   if (!built.ok) return built;
   const e = built.entry;
-  const named = (k: 'lift1' | 'lift2') => (isObj(e[k]) ? { name: String((e[k] as Obj)['name']), ...((e[k] as Obj)['planned'] ? { planned: String((e[k] as Obj)['planned']) } : {}) } : null);
+  const named = (k: 'lift1' | 'lift2') => (isObj(e[k]) ? { name: String((e[k])['name']), ...((e[k])['planned'] ? { planned: String((e[k])['planned']) } : {}) } : null);
   const exercises = Array.isArray(e['exercises']) ? (e['exercises'] as { name: string; sets: number }[]) : [];
   const deloadWeek = deload;
   const checklist = (isObj(e['checklist']) ? e['checklist'] : { done: 0, total: 0, skipped: [] }) as FrozenList['checklist'];

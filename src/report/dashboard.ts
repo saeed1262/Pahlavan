@@ -253,7 +253,7 @@ export function levelsText(rawPlan: unknown, log: unknown, type: string): string
     const l = ladders.find((x) => x['id'] === id);
     const hist = asObj(asObj(log)['ladders'])[id];
     const cur = Array.isArray(hist) && hist.length ? (hist.at(-1) as { level: number }) : null;
-    const levels = Array.isArray(l?.['levels']) ? (l!['levels'] as Obj[]).map((v) => String(v['name'])) : [];
+    const levels = Array.isArray(l?.['levels']) ? (l['levels'] as Obj[]).map((v) => String(v['name'])) : [];
     return cur ? `${String(l?.['name'] ?? id)} L${cur.level} · ${levels[cur.level - 1] ?? ''}` : `${String(l?.['name'] ?? id)}: not set`;
   });
   return `Your levels: ${parts.join(' · ')}`;
@@ -335,10 +335,10 @@ export function guideFor(rawPlan: unknown, log: unknown, name: string, depth = 0
   if (item && typeof item['ladder'] === 'string') {
     const ladders = Array.isArray(plan['ladders']) ? (plan['ladders'] as Obj[]) : [];
     const l = ladders.find((x) => x['id'] === item['ladder']);
-    const hist = asObj(asObj(log)['ladders'])[item['ladder'] as string];
+    const hist = asObj(asObj(log)['ladders'])[item['ladder']];
     const cur = Array.isArray(hist) && hist.length ? (hist.at(-1) as { level: number }) : null;
     const n = cur ? cur.level : 1;
-    const levels = Array.isArray(l?.['levels']) ? (l!['levels'] as Obj[]).map((v) => String(v['name'])) : [];
+    const levels = Array.isArray(l?.['levels']) ? (l['levels'] as Obj[]).map((v) => String(v['name'])) : [];
     const lvl = levels[n - 1];
     if (!lvl) return [];
     return guideFor(rawPlan, log, lvl, depth + 1).map((e) => ({ ...e, title: `${String(l?.['name'] ?? '')} · L${n} ${lvl}`, unset: !cur }));
@@ -401,7 +401,7 @@ export function sessionName(rawPlan: unknown, s: { type: string; label?: string;
 /** The recent list: the last `n` sessions, newest first, with the checklist count and the minutes. */
 export function recentSessions(log: unknown, rawPlan: unknown, n = 4) {
   return sorted(log).slice(-n).reverse().map((s) => ({
-    date: s.date as IsoDate,
+    date: s.date,
     type: s.type,
     label: s.label,
     name: sessionName(rawPlan, s),

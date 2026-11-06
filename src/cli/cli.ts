@@ -798,7 +798,7 @@ function trackChanges(action: TrackAction, flags: Record<string, string | true>,
       }
       const missing = fixed.filter((f) => typeof flags[f] !== 'string');
       if (missing.length) throw new Usage(`--schedule fixed needs ${missing.map((f) => `--${f}`).join(', ')}`);
-      for (const f of ['tape-from', 'tests-from']) if (!isIsoDate(flags[f] as string)) throw new Usage(`--${f} must be a date as YYYY-MM-DD`);
+      for (const f of ['tape-from', 'tests-from']) if (!isIsoDate(flags[f])) throw new Usage(`--${f} must be a date as YYYY-MM-DD`);
       const n = (f: string) => {
         const v = Number(flags[f]);
         if (!Number.isInteger(v) || v < 1) throw new Usage(`--${f} must be a whole number of days`);
@@ -945,7 +945,7 @@ function cmdLog(action: LogAction, flags: Record<string, string | true>, io: Cli
       const skipped = input.skipped;
       if (skipped !== undefined && (!Array.isArray(skipped) || !skipped.every((x) => typeof x === 'string'))) return fail('invalid', '"skipped" lists the checklist lines skipped, by name');
       const swapOf = (l: unknown) => (typeof l === 'object' && l !== null && (l as Obj)['planned'] ? String((l as Obj)['name']) : null);
-      const fz = frozenList(read, { date: String(entry['date']), type: String(entry['type']), mode: entry['express'] ? 'express' : 'full', lifts: [swapOf(entry['lift1']), swapOf(entry['lift2'])], skip: (skipped as string[] | undefined) ?? [] }, today);
+      const fz = frozenList(read, { date: String(entry['date']), type: String(entry['type']), mode: entry['express'] ? 'express' : 'full', lifts: [swapOf(entry['lift1']), swapOf(entry['lift2'])], skip: (skipped) ?? [] }, today);
       if (!fz.ok) return fail('invalid', fz.error);
       const checklist = (fz.list.value as unknown as Obj)['checklist'];
       if (checklist) {

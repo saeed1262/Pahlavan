@@ -100,7 +100,7 @@ export function readBodyInput(raw: unknown, today: IsoDate): { input: BodyInput 
     if (!Object.keys(v).length) errors.push({ code: 'record', message: `"${p}" is empty` });
   }
   if (errors.length) return { input: null, errors };
-  return { input: { date: date as IsoDate, ...Object.fromEntries(parts.map((p) => [p, raw[p]])) } as BodyInput, errors: [] };
+  return { input: { date: date as IsoDate, ...Object.fromEntries(parts.map((p) => [p, raw[p]])) }, errors: [] };
 }
 
 const show = (v: unknown) => (v === null || v === undefined ? 'nothing' : String(v));

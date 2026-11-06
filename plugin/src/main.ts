@@ -43,7 +43,6 @@ import { PahlavanSettingTab } from './settings-tab.ts';
 import { HelpStore } from './help.ts';
 import { importNotice, InboxImporter, type InboxAdapter, type ImportSummary } from './inbox.ts';
 import { ReminderWriter } from './reminders/writer.ts';
-import type { MkdirAdapter } from './checkin-writer.ts';
 import { TrackingWriter } from './tracking-writer.ts';
 import { renderStatus } from './ui/status.ts';
 import { PahlavanView, VIEW_TYPE } from './view.ts';
@@ -105,7 +104,7 @@ export default class PahlavanPlugin extends Plugin {
     }
     this.source = new PahlavanData(this.app.vault.adapter, '', { configDir: this.app.vault.configDir });
     // The help's memory, in a vault file both Macs share (Coach/help.json).
-    const help = new HelpStore(this.app.vault.adapter as unknown as MkdirAdapter);
+    const help = new HelpStore(this.app.vault.adapter);
     const device = this.deviceStore();
     this.addSettingTab(new PahlavanSettingTab(this.app, this, {
       data: this.settings,
@@ -118,7 +117,7 @@ export default class PahlavanPlugin extends Plugin {
       resetTips: () => void this.resetTips(help),
       importPhone: () => void this.refresh(),
       // A new folder: every read and write follows it from now on, and the open tabs read the vault again.
-      coach: { state: () => this.coachState(), setUp: () => setUpCoach(this.app.vault.adapter as unknown as MkdirAdapter, COACH_FILES) },
+      coach: { state: () => this.coachState(), setUp: () => setUpCoach(this.app.vault.adapter, COACH_FILES) },
       habitNudges: () => this.source.tracking?.files.nudgesSettings === 'found',
       setFolders: (f) => {
         useFolders(f);
@@ -134,7 +133,7 @@ export default class PahlavanPlugin extends Plugin {
     this.registerView(VIEW_TYPE, (leaf: WorkspaceLeaf) => new PahlavanView(leaf, {
       data: this.source,
       settings: this.settings,
-      coach: { state: () => this.coachState(), setUp: () => setUpCoach(this.app.vault.adapter as unknown as MkdirAdapter, COACH_FILES) },
+      coach: { state: () => this.coachState(), setUp: () => setUpCoach(this.app.vault.adapter, COACH_FILES) },
       saveSettings: () => void this.saveData(this.settings),
       today: () => localToday(),
       hour: () => new Date().getHours(),
@@ -142,7 +141,7 @@ export default class PahlavanPlugin extends Plugin {
         const d = new Date();
         return d.getHours() * 60 + d.getMinutes();
       },
-      bodyClasses: () => document.body.classList,
+      bodyClasses: () => activeDocument.body.classList,
       writer: new LogWriter(this.app.vault.adapter),
       notify: (message) => new Notice(message, 6000),
       requestReload: () => this.scheduleReload(),
@@ -165,7 +164,7 @@ export default class PahlavanPlugin extends Plugin {
 
     addIcon(PAHLAVAN_ICON_ID, PAHLAVAN_ICON);
     this.addRibbonIcon(PAHLAVAN_ICON_ID, 'Open Pahlavan', () => void this.activate());
-    this.addCommand({ id: 'open', name: 'Open Pahlavan', callback: () => void this.activate() });
+    this.addCommand({ id: 'open', name: 'Open', callback: () => void this.activate() });
     this.addCommand({ id: 'open-guide', name: 'Open the user guide', callback: () => void this.openGuide() });
     // "Open check-in" is what Isfahan's new-tab Check-in row runs: the morning card until today's is in, then the Check-in screen.
     this.addCommand({ id: 'open-checkin', name: 'Open check-in', callback: () => void reminders.openCheckin() });
@@ -182,7 +181,7 @@ export default class PahlavanPlugin extends Plugin {
         if (st.installed === st.bundled && !st.missing.length && !st.differ.length) return void new Notice(`The coach is set up and up to date (version ${st.bundled}).`);
         // Files that differ may be the user's own edits: the settings tab asks before replacing them.
         if (st.differ.length) return void new Notice(`${st.differ.length} of the coach's files differ from this Pahlavan's: update it from Pahlavan's settings, Coach.`);
-        const r = await setUpCoach(this.app.vault.adapter as unknown as MkdirAdapter, COACH_FILES);
+        const r = await setUpCoach(this.app.vault.adapter, COACH_FILES);
         new Notice(r.ok ? `The coach is set up (${r.written.length} files). In Claude Code, open this vault and run /fitness-coach.` : `The coach was not set up: ${r.error}`);
         if (!nodeOk(st.node?.version ?? null)) new Notice('The coach’s engine needs Node 18 or later: install it from nodejs.org.');
       },
@@ -217,8 +216,7 @@ export default class PahlavanPlugin extends Plugin {
 
   /** The reminder machinery with this Mac's pieces: the clock, idle seconds, the call helper, sips, notifications, git. */
   private startReminders(device: DeviceStore, checkin: CheckinWriter): Reminders {
-    const adapter = this.app.vault.adapter as unknown as ReminderAdapter & { getBasePath?: () => string; basePath?: string };
-    const base = typeof adapter.getBasePath === 'function' ? adapter.getBasePath() : (adapter.basePath ?? null);
+    const adapter = this.app.vault.adapter as unknown as ReminderAdapter;
     let mac = device.get(MAC_NAME_KEY);
     if (!mac) {
       mac = macName(hostName());
@@ -240,9 +238,9 @@ export default class PahlavanPlugin extends Plugin {
       mac: () => name,
       device,
       idleSeconds: systemIdleSeconds,
-      focused: () => document.hasFocus(),
-      visible: () => document.visibilityState !== 'hidden',
-      otherCardOpen: () => document.querySelector('.modal.isfahan-card') !== null,
+      focused: () => activeDocument.hasFocus(),
+      visible: () => activeDocument.visibilityState !== 'hidden',
+      otherCardOpen: () => activeDocument.querySelector('.modal.isfahan-card') !== null,
       ui: modalCards(this.app),
       notifyMac,
       notice: (message) => new Notice(message, 8000),
@@ -377,7 +375,7 @@ export default class PahlavanPlugin extends Plugin {
 
   /** The coach skill in this vault (what setting it up would write) and Node, for the settings tab and the command. */
   private async coachState(): Promise<CoachState & { node: { path: string; version: string } | null }> {
-    const st = await coachState(this.app.vault.adapter as unknown as MkdirAdapter, COACH_FILES);
+    const st = await coachState(this.app.vault.adapter, COACH_FILES);
     return { ...st, node: await findNode(runProgram, homeDir()) };
   }
 

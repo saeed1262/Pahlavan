@@ -2,7 +2,7 @@
 
 Pahlavan is a training coach that lives in your Obsidian vault. It has two parts that work on the same files. The **plugin** is a tab in Obsidian with five screens (Today, Progress, Plan, Check-in and Food) and reminder cards that pop up through the day. The **coach** is an AI skill you run in Claude Code with `/fitness-coach`: it interviews you, designs your plan, reviews your week and writes you a letter every Sunday. You use the plugin by hand every day; the coach does the thinking and makes the plan changes. Everything stays in your vault as plain files, with no account and no server.
 
-This guide covers plugin 0.25.0 and engine 0.25.0. The screenshots come from a practice vault with made-up data, so your numbers will differ.
+This guide covers plugin 0.25.1 and engine 0.25.1. The screenshots come from a practice vault with made-up data, so your numbers will differ.
 
 > [!WARNING] Safety
 > Pahlavan is a general fitness tool for adults 18 and over, not medical advice. If you have a health condition, check with a doctor before you start, and stop any exercise that hurts.
@@ -42,7 +42,7 @@ Pahlavan isn't in Obsidian's community plugin list yet, so you install it by han
 1. In your vault, create the folder `.obsidian/plugins/pahlavan/`.
 2. Copy the plugin's three files into it: `main.js`, `manifest.json` and `styles.css`. From the project folder, `npm run ship-plugin -- <your vault>/.obsidian/plugins/pahlavan` builds the files and copies them there.
 3. In Obsidian, open **Settings**, then **Community plugins**, and turn on **Pahlavan**. If Obsidian asks, turn on community plugins first.
-4. Click the dumbbell in the left ribbon, or run **Pahlavan: Open Pahlavan** from the command palette. Pahlavan opens in a tab and remembers the screen you used last.
+4. Click Pahlavan's icon in the left ribbon (two crossed clubs), or run **Pahlavan: Open** from the command palette. Pahlavan opens in a tab and remembers the screen you used last.
 
 To install the coach, copy the `fitness-coach` skill folder into `.claude/skills/` in your vault. Run `npm run ship-skill -- <the skill folder>` from the project to put the current engine in the skill's `scripts/` folder.
 
@@ -505,7 +505,7 @@ Open the command palette and type "Pahlavan":
 
 | Command | What it does |
 |---|---|
-| Open Pahlavan | Opens the Pahlavan tab |
+| Open | Opens the Pahlavan tab |
 | Open the user guide | This guide: your vault's copy when there is one, else the published page |
 | Open check-in | The morning card until today's is saved, then the Check-in screen |
 | Open the morning check-in | The morning check-in card |

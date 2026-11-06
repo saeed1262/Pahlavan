@@ -80,7 +80,7 @@ const slug = (name: string) => name.toLowerCase().replace(/\([^)]*\)/g, '').repl
 /** Habit Nudges' settings over its defaults, as it loads them. */
 function settingsOf(raw: unknown) {
   const d = isObj(raw) ? raw : {};
-  const sec = <K extends keyof typeof HN_DEFAULTS>(k: K) => ({ ...HN_DEFAULTS[k], ...(isObj(d[k]) ? (d[k] as Obj) : {}) }) as (typeof HN_DEFAULTS)[K] & Obj;
+  const sec = <K extends keyof typeof HN_DEFAULTS>(k: K) => ({ ...HN_DEFAULTS[k], ...(isObj(d[k]) ? (d[k]) : {}) }) as (typeof HN_DEFAULTS)[K] & Obj;
   const assign = isObj(d['assign']) ? (d['assign'] as Record<string, unknown>) : {};
   return { times: sec('times'), water: sec('water'), desk: sec('desk'), body: sec('body'), stand: sec('stand'), deskTime: sec('deskTime'), assign };
 }

@@ -285,7 +285,7 @@ export function buildProgressMore(read: VaultRead, date: IsoDate, root = '', opt
   const typeKind = new Map(data.plan.types.map((t) => [t.type, t.kind as SessionKindOf]));
   const sessions = ctx.sessions.filter((s) => s.date <= date).map((s) => {
     const v = (s as { _vault?: { type?: string; cardioMin?: number; cardioMode?: string } })._vault ?? {};
-    return { date: s.date, kind: (typeKind.get(v.type ?? '') ?? 'custom') as SessionKindOf, cardioMin: Number(v.cardioMin) || 0, cardioMode: v.cardioMode ?? null };
+    return { date: s.date, kind: (typeKind.get(v.type ?? '') ?? 'custom'), cardioMin: Number(v.cardioMin) || 0, cardioMode: v.cardioMode ?? null };
   });
   const sessionDays = new Set(sessions.map((s) => s.date));
   const unlogged = data.checkins.daily.filter((d) => d.date <= date && !sessionDays.has(d.date) && dayStateOf(d.date, date, 0, d) === 'unlogged').map((d) => d.date);

@@ -19,8 +19,8 @@ export type VolumeView = 'week' | 'four' | 'plan';
 export interface ProgressContext {
   view: VolumeView;
   tables: Set<string>;
-  onView(view: VolumeView): void;
-  onTable(id: string): void;
+  onView: (view: VolumeView) => void;
+  onTable: (id: string) => void;
   /** The profile's body units (kg and cm without them): weights and lengths are shown in them. */
   units?: BodyUnits;
 }
@@ -87,7 +87,7 @@ function hover<T extends { date: string }>(hit: SVGElement, svg: SVGElement, lis
   hit.addEventListener('mousemove', (ev) => {
     const box = (svg as SVGSVGElement).getBoundingClientRect();
     const vb = (svg as SVGSVGElement).viewBox.baseVal;
-    const px = ((ev as MouseEvent).clientX - box.left) * (vb.width / box.width);
+    const px = ((ev).clientX - box.left) * (vb.width / box.width);
     let best = list[0]!;
     for (const p of list) if (Math.abs(x(p.date) - px) < Math.abs(x(best.date) - px)) best = p;
     cross.setAttribute('x1', String(x(best.date)));
@@ -150,7 +150,7 @@ function bodyMap(m: ProgressModel, ctx: ProgressContext): HTMLElement {
     h('div', { class: 'pv-chart-area' },
       h('div', { class: 'pv-bodymap' },
         h('div', {}, figs,
-          h('div', { class: 'pv-ramp-legend' }, h('span', { class: 'title' }, 'Sets a week'), [0, 1, 2, 3, 4, 5].map((i) => h('span', {}, h('i', { class: `is-${i}` }), TIER_LABEL[i]!))),
+          h('div', { class: 'pv-ramp-legend' }, h('span', { class: 'title' }, 'Sets a week'), [0, 1, 2, 3, 4, 5].map((i) => h('span', {}, h('i', { class: `is-${i}` }), TIER_LABEL[i]))),
           h('div', { class: 'pv-status-legend' }, h('span', { class: 'title' }, 'Status'), (['below', 'in', 'above', 'over'] as const).map((k) => h('span', { class: `is-${k}` }, icon(STATUS[k][0]), STATUS[k][1]))),
         ),
         h('div', { class: 'pv-bm-side' },
@@ -274,7 +274,7 @@ function consistency(m: ProgressModel, width: number, ctx: ProgressContext): HTM
     [...c.weeks].filter((w) => !w.beforeCycle).reverse().map((w) => [`${fmt.day(w.from)}${w.beforeData ? ' (before the log)' : ''}`, String(w.trained), String(w.rest), String(w.unlogged), String(w.missed), String(w.none)]));
   return h('section', { class: `pv-card${ctx.tables.has('cal') ? ' is-table' : ''}`, 'data-sec': 'consistency' },
     cardHead('cal', 'Consistency', sub, ctx),
-    h('div', { class: 'pv-chart-area' }, svg, h('div', { class: 'pv-cal-legend' }, ['trained', 'rest', 'unlogged', 'missed', 'none'].map((st) => h('span', {}, sw(st), DAY_LABEL[st]!)))),
+    h('div', { class: 'pv-chart-area' }, svg, h('div', { class: 'pv-cal-legend' }, ['trained', 'rest', 'unlogged', 'missed', 'none'].map((st) => h('span', {}, sw(st), DAY_LABEL[st])))),
     h('div', { class: 'pv-table-area' }, tbl),
   );
 }

@@ -15,7 +15,7 @@ export interface StatusInput {
   standing: StandingNow;
   /** A sitting-time item counts today (on a computer that reads keyboard and mouse activity). */
   sitting: boolean;
-  onStanding(): void;
+  onStanding: () => void;
 }
 
 /** The stand-up part's text and tooltip. */
