@@ -1,0 +1,16 @@
+{
+  "times": { "morning": "08:30", "evening": "20:00", "last": "21:30" },
+  "assign": { "creatine": "morning", "protein": "morning", "workout": "evening" },
+  "water": { "habit": "water", "every": 90, "start": "08:30", "end": "20:00", "amounts": [250, 500] },
+  "desk": { "on": true, "every": 90, "start": "10:00", "end": "15:00", "weekdays": true },
+  "words": { "on": true, "every": 45, "start": "09:00", "end": "17:00", "weekdays": true, "decks": ["Learning/Words.md"], "review": true, "autoTickAt": 10 },
+  "body": { "on": true, "start": "06:30", "end": "21:00", "measureFrom": "2026-03-10", "measureEvery": 14, "testsFrom": "2026-03-07", "testsEvery": 28 },
+  "stand": { "on": true, "sitMinutes": 40, "standMinutes": 15, "snoozeMinutes": 10, "awayMinutes": 30, "standAwayMinutes": 5, "activeSeconds": 120, "habit": "stand" },
+  "deskTime": { "on": true, "idleMinutes": 5, "weekends": true, "goalHours": 8 },
+  "plan": { "on": true, "snoozeMinutes": 10 },
+  "idleMinutes": 5,
+  "snoozeMinutes": 30,
+  "catchUpUntil": "12:00",
+  "gitPullBefore": true,
+  "gitSyncAfter": true
+}
