@@ -1,0 +1,564 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-11-02",
+  "source": "Coach/Eating plan.md",
+  "level": "light",
+  "screened": "2026-11-02",
+  "counting": "allowed",
+  "goal": "recomposition",
+  "goalLabel": "Build muscle, lose a little fat",
+  "summary": "Eat about what you burn, keep protein high and let your hands set the portions. Nothing to weigh, nothing to count.",
+  "why": [
+    {
+      "id": "maintenance",
+      "icon": "target",
+      "title": "Eat about what you burn, protein high",
+      "text": "Lifting 4 days a week builds the muscle and protein feeds it. Eating what you burn, not dieting, lets a little fat come off slowly while you get stronger.",
+      "source": {
+        "kind": "intake",
+        "field": "goal",
+        "text": "your goal is to build muscle and lose a little fat"
+      }
+    },
+    {
+      "id": "hands",
+      "icon": "palm",
+      "title": "Hands, not numbers",
+      "text": "A palm of protein, a fist of vegetables, a cupped hand of carbs, a thumb of fat. Close enough is good enough, and a loose day changes nothing.",
+      "source": {
+        "kind": "said",
+        "field": "adherence",
+        "text": "following a diet exactly is hard, and you’ll have loose days"
+      }
+    },
+    {
+      "id": "heart",
+      "icon": "heart",
+      "title": "Heart-healthy foods",
+      "text": "Fish twice a week, legumes 3 times, lean lamb at most twice, olive or canola oil over butter, nuts most days, little added sugar and salt.",
+      "source": {
+        "kind": "said",
+        "field": "health",
+        "text": "your cholesterol is borderline",
+        "aside": "The numbers stay with your doctor."
+      }
+    }
+  ],
+  "review": "2026-11-29",
+  "basis": {
+    "trendKg": 83.5,
+    "date": "2026-11-02",
+    "weighIns": 1
+  },
+  "protein": {
+    "floorG": 134,
+    "rangeG": [
+      134,
+      184
+    ],
+    "gPerKg": [
+      1.6,
+      2.2
+    ],
+    "perMealG": [
+      33,
+      46
+    ],
+    "item": "protein",
+    "tickAt": "21:00",
+    "reason": {
+      "rule": "protein",
+      "title": "Protein a day",
+      "inputs": {
+        "goals": [
+          "recomposition",
+          "posture"
+        ],
+        "trendKg": 83.5,
+        "deficit": false
+      },
+      "threshold": {
+        "liftingGPerKg": [
+          1.6,
+          2.2
+        ]
+      },
+      "note": "Lifting goals: 1.6 to 2.2 g per kg a day (Morton 2018). At 83.5 kg that is 134 to 184 g; the tick is for days with at least 134 g."
+    }
+  },
+  "fiber": {
+    "g": 36,
+    "per1000kcal": 14,
+    "how": [
+      "vegetables at 2 meals",
+      "fruit twice a day",
+      "legumes 3 times a week",
+      "whole grains"
+    ]
+  },
+  "energy": {
+    "maintenanceKcal": 2800
+  },
+  "habits": {
+    "meals": 3,
+    "snacks": true,
+    "cooking": "daily",
+    "avoid": [
+      "pork",
+      "alcohol"
+    ]
+  },
+  "day": {
+    "wake": "07:00",
+    "work": [
+      "09:00",
+      "17:00"
+    ],
+    "bed": "23:30",
+    "training": {
+      "lift": {
+        "at": "17:30",
+        "minutes": 60
+      },
+      "short": {
+        "at": "17:30",
+        "minutes": 30
+      }
+    },
+    "drinks": {
+      "waterL": 2,
+      "milkGlasses": 2,
+      "coffees": [
+        2,
+        3
+      ],
+      "lastCoffee": "17:00"
+    }
+  },
+  "meals": [
+    {
+      "id": "breakfast",
+      "name": "Breakfast",
+      "tag": "As now",
+      "text": "Overnight oats with whey, made with milk or a big spoon of Greek yogurt.",
+      "proteinG": [
+        40,
+        40
+      ],
+      "at": "07:30",
+      "ideas": [
+        {
+          "text": "Oats, whey and milk with a grated apple, cinnamon and a few walnuts",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "Oats, whey and Greek yogurt with a handful of frozen berries",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "Oats, whey and milk with a sliced banana and a spoon of peanut butter",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "Oats, whey and Greek yogurt with a grated pear and a few almonds",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "Oats, whey and milk with 2 chopped dates and a few pistachios",
+          "counts": [
+            "fruit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lunch",
+      "name": "Lunch",
+      "tag": "The hardest meal",
+      "text": "Fish, chicken or lamb with vegetables, rice, bread or potatoes, and olive oil, nuts or avocado.",
+      "proteinG": [
+        45,
+        45
+      ],
+      "portions": "lunch",
+      "at": "12:30",
+      "foods": {
+        "protein": "fish, chicken or lamb",
+        "veg": "salad or cooked",
+        "carbs": "rice, bread or potatoes",
+        "fat": "olive oil, nuts or avocado"
+      },
+      "ideas": [
+        {
+          "text": "Tuna and white bean salad with red onion and parsley, wholegrain bread, olive oil",
+          "counts": [
+            "fish",
+            "legumes"
+          ]
+        },
+        {
+          "text": "Last night’s chicken and roast vegetables, boxed, with a wholegrain pitta",
+          "counts": []
+        },
+        {
+          "text": "Baked salmon, brown rice and a cucumber-tomato salad with olive oil",
+          "counts": [
+            "fish"
+          ]
+        },
+        {
+          "text": "Chicken kabab, rice and a cucumber, tomato and onion salad with olive oil and lemon",
+          "counts": []
+        },
+        {
+          "text": "Lean lamb and chickpea stew with spinach and a cupped hand of rice",
+          "counts": [
+            "lamb",
+            "legumes"
+          ]
+        },
+        {
+          "text": "Grilled trout, new potatoes, green beans and a few almonds",
+          "counts": [
+            "fish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snack",
+      "name": "Afternoon snack",
+      "tag": "Top-up",
+      "text": "Skyr or Greek yogurt, a handful of nuts with fruit, or a boiled egg or two.",
+      "proteinG": [
+        10,
+        15
+      ],
+      "at": "16:00",
+      "trainingNote": {
+        "lift": "A lifting day: have it 1 to 2 hours before you train."
+      },
+      "ideas": [
+        {
+          "text": "Skyr with a handful of berries",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "Two boiled eggs and a pear",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "A glass of milk, an apple and a handful of almonds",
+          "counts": [
+            "fruit"
+          ]
+        },
+        {
+          "text": "Greek yogurt with a few walnuts and cinnamon",
+          "counts": []
+        },
+        {
+          "text": "Cottage cheese with cucumber sticks and a wholegrain cracker",
+          "counts": []
+        }
+      ]
+    },
+    {
+      "id": "dinner",
+      "name": "Dinner",
+      "tag": "The salad becomes a full meal",
+      "text": "Protein, vegetables, a cupped hand of carbs and good fats, on a big salad or cooked.",
+      "proteinG": [
+        45,
+        45
+      ],
+      "portions": "dinner",
+      "at": "19:30",
+      "tip": "Cooking double? Box half for tomorrow’s lunch.",
+      "foods": {
+        "protein": "chicken, fish, eggs, legumes or cottage cheese",
+        "veg": "salad or cooked",
+        "carbs": "whole grains, bread or potatoes",
+        "fat": "olive oil, nuts or avocado"
+      },
+      "ideas": [
+        {
+          "text": "Chicken, chickpea and herb salad with bulgur, olive oil and lemon",
+          "counts": [
+            "legumes"
+          ]
+        },
+        {
+          "text": "Baked salmon on leaves with roast vegetables and new potatoes, olive oil",
+          "counts": [
+            "fish"
+          ]
+        },
+        {
+          "text": "Warm lentil salad with 2 boiled eggs, cottage cheese and roast peppers",
+          "counts": [
+            "legumes"
+          ]
+        },
+        {
+          "text": "Tuna, egg and green bean salad with tomatoes, new potatoes and a few olives",
+          "counts": [
+            "fish"
+          ]
+        },
+        {
+          "text": "Grilled chicken, a big cucumber and tomato salad, a cupped hand of rice, yogurt dip",
+          "counts": []
+        },
+        {
+          "text": "A 3-egg herb omelette with cottage cheese, a big salad and wholegrain bread",
+          "counts": []
+        }
+      ]
+    },
+    {
+      "id": "evening",
+      "name": "Evening milk",
+      "text": "A glass of milk. The other one fits with the snack or lunch.",
+      "proteinG": [
+        8,
+        8
+      ],
+      "at": "21:30"
+    }
+  ],
+  "portions": {
+    "lunch": {
+      "protein": [
+        2,
+        2
+      ],
+      "veg": [
+        2,
+        2
+      ],
+      "carbs": [
+        1,
+        2
+      ],
+      "fat": [
+        2,
+        2
+      ]
+    },
+    "dinner": {
+      "protein": [
+        2,
+        2
+      ],
+      "veg": [
+        2,
+        2
+      ],
+      "carbs": [
+        1,
+        1
+      ],
+      "fat": [
+        2,
+        2
+      ]
+    }
+  },
+  "groups": [
+    {
+      "id": "protein",
+      "name": "Protein",
+      "hand": "palm",
+      "hands": [
+        "palm",
+        "palms"
+      ],
+      "what": "Fish, chicken, lamb, eggs, lentils or chickpeas, cottage cheese"
+    },
+    {
+      "id": "veg",
+      "name": "Vegetables",
+      "hand": "fist",
+      "hands": [
+        "fist",
+        "fists"
+      ],
+      "what": "Salad or cooked vegetables"
+    },
+    {
+      "id": "carbs",
+      "name": "Carbs",
+      "hand": "cupped",
+      "hands": [
+        "cupped hand",
+        "cupped hands"
+      ],
+      "what": "Rice, bread or potatoes; whole grains for the fiber"
+    },
+    {
+      "id": "fat",
+      "name": "Fats",
+      "hand": "thumb",
+      "hands": [
+        "thumb",
+        "thumbs"
+      ],
+      "what": "Olive oil, nuts or avocado"
+    }
+  ],
+  "today": {
+    "optional": [
+      {
+        "id": "veg",
+        "label": "Vegetables at 2 meals",
+        "slots": [
+          "Lunch",
+          "Dinner"
+        ]
+      },
+      {
+        "id": "fruit",
+        "label": "Fruit twice",
+        "slots": [
+          "Once",
+          "Twice"
+        ]
+      }
+    ]
+  },
+  "fallbacks": {
+    "meal": "lunch",
+    "first": {
+      "name": "Cook double at dinner",
+      "text": "Box half for the next day’s lunch"
+    },
+    "quick": [
+      {
+        "name": "A tuna or chickpea wrap",
+        "text": "Tin, wrap, a handful of salad"
+      },
+      {
+        "name": "Rotisserie chicken",
+        "text": "With a bagged salad"
+      },
+      {
+        "name": "Skyr with fruit and nuts",
+        "text": "No cooking at all"
+      }
+    ],
+    "minutes": 5
+  },
+  "tips": [
+    {
+      "id": "double",
+      "icon": "history",
+      "for": "lunch",
+      "title": "Cook double at dinner",
+      "text": "Lunch is your hardest meal. Cook 4 palms of protein tonight and box half: tomorrow’s lunch is ready before you leave."
+    },
+    {
+      "id": "shelf",
+      "icon": "box",
+      "for": "lunch",
+      "title": "Keep a lunch shelf at work",
+      "text": "A tin of tuna, a tin of chickpeas, wholegrain wraps and a bag of nuts make a 5-minute lunch on any day."
+    },
+    {
+      "id": "fish",
+      "icon": "fish",
+      "for": "pattern.fish",
+      "title": "Give fish two fixed days",
+      "text": "Say Tuesday and Friday, so it happens without thinking. Oily fish such as salmon, trout or sardines are the best picks."
+    },
+    {
+      "id": "loose",
+      "icon": "fork",
+      "for": "looseDay",
+      "title": "Eating out, or a loose day",
+      "text": "Pick the plate that looks most like your hands: protein, vegetables, then carbs. Next meal, protein first and back to the template. Never skip a meal to make up."
+    }
+  ],
+  "pattern": [
+    {
+      "id": "fish",
+      "name": "Fish",
+      "target": "twice a week or more",
+      "min": 2,
+      "per": "week"
+    },
+    {
+      "id": "legumes",
+      "name": "Legumes",
+      "target": "3 times a week",
+      "min": 3,
+      "per": "week"
+    },
+    {
+      "id": "lamb",
+      "name": "Lamb",
+      "target": "at most twice a week, lean cuts",
+      "max": 2,
+      "per": "week"
+    },
+    {
+      "id": "veg",
+      "name": "Vegetables",
+      "target": "at 2 meals a day",
+      "min": 2,
+      "per": "day"
+    },
+    {
+      "id": "fruit",
+      "name": "Fruit",
+      "target": "twice a day",
+      "min": 2,
+      "per": "day"
+    }
+  ],
+  "patternAlso": "Olive or canola oil over butter, nuts most days, little added sugar and salt.",
+  "adjust": {
+    "windowWeeks": 4,
+    "flatCm": 0.5,
+    "steps": [
+      {
+        "id": "less",
+        "when": "Waist flat for 4 weeks and the trend not falling",
+        "then": "One cupped hand of carbs less a day"
+      },
+      {
+        "id": "back",
+        "when": "Losing faster than 1 % of body weight a week",
+        "then": "One cupped hand back",
+        "pctPerWeek": -0.01
+      }
+    ],
+    "waitWeeks": [
+      2,
+      3
+    ],
+    "creatineKg": [
+      1,
+      2
+    ],
+    "looseDay": "Protein first at the next meal and back to the template; never skip a meal to make up for it."
+  },
+  "history": [
+    {
+      "date": "2026-11-02",
+      "note": "Created, Light level, with the day, the meal ideas and the tips (the food-v2 mockup’s sample plan)."
+    }
+  ]
+}

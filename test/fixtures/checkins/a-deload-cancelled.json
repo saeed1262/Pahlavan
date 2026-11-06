@@ -1,0 +1,50 @@
+{
+  "name": "a-deload-cancelled",
+  "about": "The user cancels the week-4 deload at the 03-22 check-in; at the 04-19 check-in they try to cancel week 8 too, which is not applied (never two mesocycles running without one).",
+  "rule": "deload",
+  "programStart": "2026-03-02",
+  "checkins": [
+    {
+      "date": "2026-03-22",
+      "weekStart": "2026-03-16",
+      "recovery": 4,
+      "deload": {
+        "cancelled": true,
+        "reason": "Felt fresh; travel cut week 3 short anyway."
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "weekStart": "2026-04-13",
+      "recovery": 4,
+      "deload": {
+        "cancelled": true,
+        "reason": "Wants to keep going."
+      }
+    }
+  ],
+  "cases": [
+    {
+      "today": "2026-03-23",
+      "expected": {
+        "planWeek": 4,
+        "scheduled": true,
+        "weeksToScheduled": 0,
+        "triggers": [],
+        "deload": false,
+        "cancelled": true
+      }
+    },
+    {
+      "today": "2026-04-20",
+      "expected": {
+        "planWeek": 8,
+        "scheduled": true,
+        "weeksToScheduled": 0,
+        "triggers": [],
+        "deload": true,
+        "cancelled": false
+      }
+    }
+  ]
+}

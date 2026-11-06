@@ -1,0 +1,940 @@
+{
+  "name": "07-light-sparse",
+  "about": "A Light-tracking beginner (session done, minutes, RPE): five express sessions in seven weeks, a week of partial check-ins and weekly weigh-ins.",
+  "today": "2026-03-19",
+  "data": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "lb",
+        "body": "kg"
+      },
+      "goals": [
+        {
+          "id": "move-more",
+          "kind": "health",
+          "label": "Train twice a week without dreading it",
+          "importance": 9,
+          "confidence": 5
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 2,
+        "minutesPerSession": 30,
+        "note": "Evenings vary"
+      },
+      "equipment": [
+        "dumbbells"
+      ],
+      "trackingLevel": "light",
+      "screening": {
+        "outcome": "go-ramped",
+        "date": "2026-01-30",
+        "limits": [
+          "Build up over the first four weeks"
+        ]
+      },
+      "emphasis": []
+    },
+    "program": {
+      "schemaVersion": 1,
+      "id": "light-start",
+      "name": "Light start",
+      "exercises": {
+        "goblet-squat": {
+          "name": "Goblet squat",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "abs",
+              "upper-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "db-row": {
+          "name": "One-arm dumbbell row",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "lats",
+              "upper-back"
+            ],
+            "helps": [
+              "biceps"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "db-bench": {
+          "name": "Flat dumbbell bench press",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "plank": {
+          "name": "Plank",
+          "kind": "timed"
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Light start",
+        "start": "2026-02-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-02-02",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-02-09",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-02-16",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-02-23",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "meso-2",
+                "name": "Mesocycle 2",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "express",
+                        "name": "Express",
+                        "kind": "express",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 3
+                          },
+                          {
+                            "exercise": "plank",
+                            "sets": 2,
+                            "repRange": [
+                              1,
+                              1
+                            ],
+                            "rir": 2,
+                            "note": "30-45 s holds"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-02",
+        "sessions": [
+          {
+            "id": "2026-02-03-express",
+            "date": "2026-02-03",
+            "trackingLevel": "light",
+            "template": "express",
+            "minutes": 25,
+            "rpe": 6,
+            "exercises": [],
+            "plan": {
+              "weekKind": "loading",
+              "template": "express",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "plank",
+                  "sets": 2,
+                  "repRange": [
+                    1,
+                    1
+                  ],
+                  "rir": 2,
+                  "note": "30-45 s holds"
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-12-express",
+            "date": "2026-02-12",
+            "trackingLevel": "light",
+            "template": "express",
+            "minutes": 30,
+            "rpe": 7,
+            "exercises": [],
+            "plan": {
+              "weekKind": "loading",
+              "template": "express",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "plank",
+                  "sets": 2,
+                  "repRange": [
+                    1,
+                    1
+                  ],
+                  "rir": 2,
+                  "note": "30-45 s holds"
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-24-express",
+            "date": "2026-02-24",
+            "trackingLevel": "light",
+            "template": "express",
+            "minutes": 25,
+            "rpe": 6,
+            "exercises": [],
+            "skipped": [
+              "db-row"
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "express",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "plank",
+                  "sets": 2,
+                  "repRange": [
+                    1,
+                    1
+                  ],
+                  "rir": 2,
+                  "note": "30-45 s holds"
+                }
+              ],
+              "week": 4
+            }
+          }
+        ]
+      },
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-10-express",
+            "date": "2026-03-10",
+            "trackingLevel": "light",
+            "template": "express",
+            "minutes": 30,
+            "rpe": 7,
+            "exercises": [],
+            "plan": {
+              "weekKind": "loading",
+              "template": "express",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "plank",
+                  "sets": 2,
+                  "repRange": [
+                    1,
+                    1
+                  ],
+                  "rir": 2,
+                  "note": "30-45 s holds"
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-19-express",
+            "date": "2026-03-19",
+            "trackingLevel": "light",
+            "template": "express",
+            "minutes": 25,
+            "rpe": 6,
+            "exercises": [],
+            "plan": {
+              "weekKind": "loading",
+              "template": "express",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 3
+                },
+                {
+                  "exercise": "plank",
+                  "sets": 2,
+                  "repRange": [
+                    1,
+                    1
+                  ],
+                  "rir": 2,
+                  "note": "30-45 s holds"
+                }
+              ],
+              "week": 3
+            }
+          }
+        ]
+      }
+    ],
+    "checkins": {
+      "schemaVersion": 1,
+      "daily": [
+        {
+          "date": "2026-03-12",
+          "sleepH": 7.1,
+          "energy": 3
+        },
+        {
+          "date": "2026-03-13",
+          "sleepH": 6.8,
+          "energy": 4
+        },
+        {
+          "date": "2026-03-14",
+          "sleepH": 7.4,
+          "energy": 3
+        },
+        {
+          "date": "2026-03-15",
+          "sleepH": 6.5,
+          "energy": 3
+        },
+        {
+          "date": "2026-03-16",
+          "sleepH": 7.0,
+          "energy": 4
+        },
+        {
+          "date": "2026-03-17",
+          "sleepH": 7.2,
+          "energy": 4
+        },
+        {
+          "date": "2026-03-18",
+          "sleepH": 6.9,
+          "energy": 3
+        },
+        {
+          "date": "2026-03-19",
+          "sleepH": 6.5,
+          "energy": 3
+        }
+      ],
+      "weekly": []
+    },
+    "body": {
+      "schemaVersion": 1,
+      "weights": [
+        {
+          "date": "2026-02-03",
+          "weight": 68.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-10",
+          "weight": 68.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-17",
+          "weight": 68.3,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-24",
+          "weight": 67.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-03",
+          "weight": 67.8,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-10",
+          "weight": 67.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-17",
+          "weight": 67.5,
+          "unit": "kg"
+        }
+      ],
+      "tape": [],
+      "tests": [],
+      "photos": []
+    }
+  },
+  "expected": {
+    "e1rm": [
+      {
+        "exercise": "goblet-squat",
+        "unit": "lb",
+        "sessions": 0,
+        "ignored": 0,
+        "points": 0,
+        "e1rms": [],
+        "best": null,
+        "change": null,
+        "verdict": null,
+        "stallCandidate": false,
+        "unitFlag": null,
+        "why": "Light tracking logs no sets, so there are no top sets and no e1RM."
+      }
+    ],
+    "progression": [
+      {
+        "action": "no-data",
+        "weight": null,
+        "unit": "lb",
+        "reps": 8,
+        "rir": 3,
+        "assumedAllSets": false,
+        "exercise": "goblet-squat",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 3,
+        "deload": false,
+        "asOf": "2026-03-19",
+        "why": "Done five times (plan snapshots) but no loads logged: 'no-data'; the coach suggests a weight that leaves 3 in reserve at 8-12 reps."
+      },
+      {
+        "action": "start",
+        "weight": null,
+        "unit": "lb",
+        "reps": 8,
+        "rir": 2,
+        "assumedAllSets": false,
+        "exercise": "db-bench",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-19",
+        "why": "Never in a session: 'start', find a weight for 8-12 reps with 2 in reserve."
+      }
+    ],
+    "volume": [
+      {
+        "from": "2026-03-16",
+        "to": "2026-03-22",
+        "sessions": 1,
+        "estimated": true,
+        "perWeek": {
+          "quads": 2.0,
+          "glutes": 2.0,
+          "abs": 1.0,
+          "upper-back": 3.0,
+          "lats": 2.0,
+          "biceps": 1.0
+        },
+        "tiers": {
+          "chest": "below-minimum",
+          "shoulders": "below-minimum",
+          "biceps": "below-minimum",
+          "triceps": "below-minimum",
+          "abs": "below-minimum",
+          "upper-back": "below-minimum",
+          "lats": "below-minimum",
+          "lower-back": "below-minimum",
+          "glutes": "below-minimum",
+          "quads": "below-minimum",
+          "hamstrings": "below-minimum",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "One Light session (2026-03-19), counted from its snapshot: goblet squat 2 (quads, glutes 2; abs 1, upper back 1), row 2 (lats 2, upper back 2, biceps 1): upper back 3. The plank is a timed item and is skipped without a warning. An estimate."
+      },
+      {
+        "from": "2026-02-23",
+        "to": "2026-03-22",
+        "sessions": 3,
+        "estimated": true,
+        "perWeek": {
+          "quads": 1.5,
+          "glutes": 1.5,
+          "abs": 0.75,
+          "upper-back": 1.75,
+          "lats": 1.0,
+          "biceps": 0.5
+        },
+        "tiers": {
+          "chest": "below-minimum",
+          "shoulders": "below-minimum",
+          "biceps": "below-minimum",
+          "triceps": "below-minimum",
+          "abs": "below-minimum",
+          "upper-back": "below-minimum",
+          "lats": "below-minimum",
+          "lower-back": "below-minimum",
+          "glutes": "below-minimum",
+          "quads": "below-minimum",
+          "hamstrings": "below-minimum",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "Four weeks (2026-02-23 to 03-22) with three sessions, the row skipped on 2026-02-24: quads 6 over 4 weeks = 1.5 a week; lats 4 / 4 = 1."
+      }
+    ],
+    "readiness": {
+      "asOf": "2026-03-19",
+      "r": null,
+      "s": null,
+      "band": "unscored",
+      "signals": 0,
+      "scoredDays": 0,
+      "lowRun": 0,
+      "actions": {
+        "trim": false,
+        "early-deload": false,
+        "no-hard-training": false,
+        "no-tests": false
+      },
+      "why": "Eight check-ins, with sleep and energy only: no signal has 14 entries in the previous 28 days, so readiness is not scored and no action fires."
+    },
+    "weight": {
+      "since": null,
+      "weighIns": 7,
+      "seed": 68.4,
+      "trend": 67.698903,
+      "trendDate": "2026-03-17",
+      "rate": null,
+      "spanDays": 28,
+      "recentWeighIns": 5,
+      "goal": "maintenance",
+      "status": null,
+      "why": "Seven weekly weigh-ins. Trend 67.70 kg. The last 28 days hold only 5 weigh-ins (8 needed), so there is no rate yet."
+    }
+  }
+}

@@ -1,0 +1,1030 @@
+{
+  "name": "04-deload-week",
+  "about": "Three loading weeks, a deload week (2 sets, RIR +3, about 10 % lighter) and the first day of the next mesocycle, at Standard tracking.",
+  "today": "2026-03-30",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "block-with-deload",
+      "name": "Block with a deload",
+      "exercises": {
+        "back-squat": {
+          "name": "Barbell back squat",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings",
+              "lower-back",
+              "abs"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "db-bench": {
+          "name": "Flat dumbbell bench press",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "rdl": {
+          "name": "Romanian deadlift",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "hamstrings",
+              "glutes"
+            ],
+            "helps": [
+              "lower-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "lat-pulldown": {
+          "name": "Lat pulldown",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "lats"
+            ],
+            "helps": [
+              "biceps",
+              "upper-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Block with a deload",
+        "start": "2026-03-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "upper-a",
+                        "name": "A: squat and press",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower-b",
+                        "name": "B: hinge and pull",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "lat-pulldown",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "upper-a",
+                        "name": "A: squat and press",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower-b",
+                        "name": "B: hinge and pull",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "lat-pulldown",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "upper-a",
+                        "name": "A: squat and press",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower-b",
+                        "name": "B: hinge and pull",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "lat-pulldown",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "deload",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "upper-a",
+                        "name": "A: squat and press",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 2,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 5
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 5
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower-b",
+                        "name": "B: hinge and pull",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "rdl",
+                            "sets": 2,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 5
+                          },
+                          {
+                            "exercise": "lat-pulldown",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 5
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "meso-2",
+                "name": "Mesocycle 2",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-30",
+                    "sessions": [
+                      {
+                        "id": "upper-a",
+                        "name": "A: squat and press",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower-b",
+                        "name": "B: hinge and pull",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "lat-pulldown",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-02-upper-a",
+            "date": "2026-03-02",
+            "trackingLevel": "standard",
+            "template": "upper-a",
+            "minutes": 55,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper-a",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-05-lower-b",
+            "date": "2026-03-05",
+            "trackingLevel": "standard",
+            "template": "lower-b",
+            "minutes": 55,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "rdl",
+                "sets": [
+                  {
+                    "weight": 90,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "lat-pulldown",
+                "sets": [
+                  {
+                    "weight": 100,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower-b",
+              "slots": [
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "lat-pulldown",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-09-upper-a",
+            "date": "2026-03-09",
+            "trackingLevel": "standard",
+            "template": "upper-a",
+            "minutes": 55,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper-a",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-12-lower-b",
+            "date": "2026-03-12",
+            "trackingLevel": "standard",
+            "template": "lower-b",
+            "minutes": 55,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "rdl",
+                "sets": [
+                  {
+                    "weight": 90,
+                    "unit": "kg",
+                    "reps": 9
+                  }
+                ]
+              },
+              {
+                "exercise": "lat-pulldown",
+                "sets": [
+                  {
+                    "weight": 100,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower-b",
+              "slots": [
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "lat-pulldown",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-16-upper-a",
+            "date": "2026-03-16",
+            "trackingLevel": "standard",
+            "template": "upper-a",
+            "minutes": 55,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper-a",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-19-lower-b",
+            "date": "2026-03-19",
+            "trackingLevel": "standard",
+            "template": "lower-b",
+            "minutes": 55,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "rdl",
+                "sets": [
+                  {
+                    "weight": 90,
+                    "unit": "kg",
+                    "reps": 10
+                  }
+                ]
+              },
+              {
+                "exercise": "lat-pulldown",
+                "sets": [
+                  {
+                    "weight": 100,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower-b",
+              "slots": [
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "lat-pulldown",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-23-upper-a",
+            "date": "2026-03-23",
+            "trackingLevel": "standard",
+            "template": "upper-a",
+            "minutes": 35,
+            "rpe": 4,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 72.5,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 45,
+                    "unit": "lb",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "deload",
+              "template": "upper-a",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 2,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 5
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 5
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-03-26-lower-b",
+            "date": "2026-03-26",
+            "trackingLevel": "standard",
+            "template": "lower-b",
+            "minutes": 35,
+            "rpe": 4,
+            "exercises": [
+              {
+                "exercise": "rdl",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              },
+              {
+                "exercise": "lat-pulldown",
+                "sets": [
+                  {
+                    "weight": 90,
+                    "unit": "lb",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "deload",
+              "template": "lower-b",
+              "slots": [
+                {
+                  "exercise": "rdl",
+                  "sets": 2,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 5
+                },
+                {
+                  "exercise": "lat-pulldown",
+                  "sets": 2,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 5
+                }
+              ],
+              "week": 4
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "e1rm": [
+      {
+        "exercise": "back-squat",
+        "unit": "kg",
+        "sessions": 4,
+        "ignored": 0,
+        "points": 4,
+        "e1rms": [
+          96.0,
+          98.666667,
+          101.333333,
+          84.583333
+        ],
+        "best": 101.333333,
+        "change": 0.055556,
+        "verdict": "up",
+        "stallCandidate": false,
+        "unitFlag": null,
+        "why": "Squat e1RM points 96.00, 98.67, 101.33, then the deload set 72.5 x 5 = 84.58. Best-of-3 carries 101.33 through the deload, so the change over 3 sessions is +5.56 % (up), not a fall."
+      }
+    ],
+    "progression": [
+      {
+        "action": "deload",
+        "weight": 72.5,
+        "unit": "kg",
+        "reps": 5,
+        "rir": 5,
+        "assumedAllSets": true,
+        "exercise": "back-squat",
+        "repRange": [
+          5,
+          8
+        ],
+        "targetRir": 2,
+        "deload": true,
+        "asOf": "2026-03-22",
+        "why": "Planning the deload week (as of 2026-03-22): the dashboard's deload, about 10 % under the last loading top set at the bottom of the range: 80 x 0.9 = 72 rounds to 72.5 kg x 5, RIR 2 + 3 = 5. The logged deload set matches it."
+      },
+      {
+        "action": "deload",
+        "weight": 45,
+        "unit": "lb",
+        "reps": 8,
+        "rir": 5,
+        "assumedAllSets": true,
+        "exercise": "db-bench",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 2,
+        "deload": true,
+        "asOf": "2026-03-22",
+        "why": "Deload: 50 lb x 0.9 = 45, already on the 5 lb step: 45 x 8 at RIR 5."
+      },
+      {
+        "action": "increase",
+        "weight": 82.5,
+        "unit": "kg",
+        "reps": 5,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "back-squat",
+        "repRange": [
+          5,
+          8
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-30",
+        "why": "Week 1 of the next mesocycle: the deload sessions are skipped, so the last loading top set (80 x 8 on 2026-03-16) decides: top of 5-8, so 82.5 x 5. The dashboard, which cannot tell a deload session apart, would start from 72.5 x 5."
+      },
+      {
+        "action": "add-reps",
+        "weight": 50,
+        "unit": "lb",
+        "reps": 12,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "db-bench",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-30",
+        "why": "Last loading top set 50 x 11 is inside 8-12: 50 x 12."
+      },
+      {
+        "action": "increase",
+        "weight": 92.5,
+        "unit": "kg",
+        "reps": 6,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "rdl",
+        "repRange": [
+          6,
+          10
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-30",
+        "why": "Last loading top set 90 x 10 reached the top of 6-10: 92.5 x 6."
+      }
+    ],
+    "volume": [
+      {
+        "from": "2026-03-16",
+        "to": "2026-03-22",
+        "sessions": 2,
+        "estimated": true,
+        "perWeek": {
+          "quads": 3.0,
+          "glutes": 6.0,
+          "hamstrings": 4.5,
+          "lower-back": 3.0,
+          "abs": 1.5,
+          "chest": 3.0,
+          "triceps": 1.5,
+          "shoulders": 1.5,
+          "lats": 3.0,
+          "biceps": 1.5,
+          "upper-back": 1.5
+        },
+        "tiers": {
+          "chest": "below-minimum",
+          "shoulders": "below-minimum",
+          "biceps": "below-minimum",
+          "triceps": "below-minimum",
+          "abs": "below-minimum",
+          "upper-back": "below-minimum",
+          "lats": "below-minimum",
+          "lower-back": "below-minimum",
+          "glutes": "efficient",
+          "quads": "below-minimum",
+          "hamstrings": "efficient",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "Last loading week (2026-03-16 to 03-22): 3 sets of each of four lifts from the snapshots. Glutes 6 (squat 3 + RDL 3), quads 3, hamstrings 1.5 + 3 = 4.5, lats 3, chest 3."
+      },
+      {
+        "from": "2026-03-23",
+        "to": "2026-03-29",
+        "sessions": 2,
+        "estimated": true,
+        "perWeek": {
+          "quads": 2.0,
+          "glutes": 4.0,
+          "hamstrings": 3.0,
+          "lower-back": 2.0,
+          "abs": 1.0,
+          "chest": 2.0,
+          "triceps": 1.0,
+          "shoulders": 1.0,
+          "lats": 2.0,
+          "biceps": 1.0,
+          "upper-back": 1.0
+        },
+        "tiers": {
+          "chest": "below-minimum",
+          "shoulders": "below-minimum",
+          "biceps": "below-minimum",
+          "triceps": "below-minimum",
+          "abs": "below-minimum",
+          "upper-back": "below-minimum",
+          "lats": "below-minimum",
+          "lower-back": "below-minimum",
+          "glutes": "efficient",
+          "quads": "below-minimum",
+          "hamstrings": "below-minimum",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "Deload week: the snapshots hold 2 sets of each lift, so every muscle gets two thirds of the loading week (glutes 4, quads 2, hamstrings 3)."
+      }
+    ]
+  }
+}

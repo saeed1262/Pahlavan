@@ -1,0 +1,149 @@
+{
+  "name": "4-runner",
+  "about": "A made-up runner who wants strength on 3 days a week: a half marathon first, strength second; 5 days, 2 of them 40-min runs; a garage gym with a bar and bands; dislikes the back squat, liked full body before; sessions get cut short in a bad week.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "basics": {
+        "birthYear": 1990,
+        "heightCm": 178,
+        "sex": "male"
+      },
+      "goals": [
+        {
+          "id": "half",
+          "kind": "conditioning",
+          "label": "Run a half marathon",
+          "importance": 9,
+          "confidence": 8,
+          "measure": "10 km time"
+        },
+        {
+          "id": "strength",
+          "kind": "strength",
+          "label": "Get stronger for running",
+          "importance": 8,
+          "confidence": 7,
+          "measure": "squat and deadlift e1RM"
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 5,
+        "minutesPerSession": 60,
+        "shortSessions": {
+          "days": 2,
+          "minutes": 40
+        }
+      },
+      "equipment": [
+        "dumbbells",
+        "barbell",
+        "bench",
+        "pull-up bar",
+        "bands"
+      ],
+      "trackingLevel": "full",
+      "screening": {
+        "outcome": "go",
+        "date": "2026-09-15"
+      },
+      "emphasis": [],
+      "experience": "intermediate",
+      "preferences": {
+        "dislikes": [
+          "back-squat"
+        ],
+        "cardio": [
+          "easy-run",
+          "hill-intervals-4x4"
+        ],
+        "splits": {
+          "likes": [
+            "full-body"
+          ]
+        }
+      },
+      "badWeek": {
+        "usually": [
+          "shortens-sessions"
+        ]
+      },
+      "selfCheck": {
+        "date": "2026-09-15",
+        "sitToStand": {
+          "easy": true,
+          "heelsDown": true
+        },
+        "pushUps": 22,
+        "deadHangS": 45,
+        "pullUps": 2,
+        "coreHold": {
+          "kind": "plank",
+          "seconds": 90
+        },
+        "hingeFlatBack": true,
+        "overheadReach": {
+          "clean": true
+        },
+        "wallGapCm": 1,
+        "balanceS": {
+          "left": 30,
+          "right": 30
+        }
+      }
+    },
+    "today": "2026-11-04",
+    "options": {}
+  },
+  "expected": {
+    "templateId": "full-body-undulating",
+    "compared": [
+      "full-body-undulating",
+      "full-body-aba",
+      "upper-lower-full-x3",
+      "push-pull-legs-x1",
+      "upper-lower-rotating"
+    ],
+    "ladders": {
+      "pullup": 5,
+      "pushup": 3,
+      "hollow": 3,
+      "legs": 3
+    },
+    "laddersUsed": [
+      "pullup",
+      "hollow"
+    ],
+    "mustUse": [
+      "preferences.dislikes",
+      "preferences.cardio",
+      "selfCheck.pullUps",
+      "availability.shortSessions",
+      "goals.half",
+      "badWeek",
+      "experience"
+    ],
+    "includes": [
+      "assisted-pull-up",
+      "easy-run",
+      "hill-intervals-4x4"
+    ],
+    "excludes": [
+      "back-squat"
+    ],
+    "cardio": {
+      "modes": [
+        "easy-run",
+        "hill-intervals-4x4"
+      ],
+      "minutes": 40,
+      "intervals": true
+    },
+    "priority": [],
+    "why": "A half marathon first makes this hybrid endurance: 3 lifting days on the long days, the two 40-min short days as runs in the chosen modes (an easy run and hill intervals, the intervals never the day before a heavy leg day), and fewer sets per muscle than a muscle goal. The disliked back squat stays out. Two strict pull-ups give band-assisted pull-ups (ladder level 5) as the main vertical pull, since a garage gym has no pulldown. The full-body preference scores both 3-day options, so the pick is the same without it."
+  }
+}

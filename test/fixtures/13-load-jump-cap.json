@@ -1,0 +1,657 @@
+{
+  "name": "13-load-jump-cap",
+  "about": "A cable lateral raise on 1.25 kg steps and six proposed weights from outside progression (a plan edit, a hopeful user), each held to rules.md's cap: one increment per session, about 10 % a week, one big step at most per 7 days.",
+  "today": "2026-03-12",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "shoulders",
+      "name": "Shoulder block",
+      "exercises": {
+        "lateral-raise": {
+          "name": "Cable lateral raise",
+          "unit": "kg",
+          "increment": 1.25,
+          "muscles": {
+            "main": [
+              "shoulders"
+            ],
+            "helps": []
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "db-press": {
+          "name": "Seated dumbbell shoulder press",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "shoulders"
+            ],
+            "helps": [
+              "triceps"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "back-squat": {
+          "name": "Barbell back squat",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings",
+              "lower-back",
+              "abs"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Shoulder block",
+        "start": "2026-03-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "lateral-raise",
+                            "sets": 3,
+                            "repRange": [
+                              12,
+                              15
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-press",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-05-upper",
+            "date": "2026-03-05",
+            "trackingLevel": "full",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "lateral-raise",
+                "sets": [
+                  {
+                    "weight": 10,
+                    "unit": "kg",
+                    "reps": 15,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 10,
+                    "unit": "kg",
+                    "reps": 15,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 10,
+                    "unit": "kg",
+                    "reps": 15,
+                    "rir": 3
+                  }
+                ]
+              },
+              {
+                "exercise": "db-press",
+                "sets": [
+                  {
+                    "weight": 20,
+                    "unit": "lb",
+                    "reps": 10,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 20,
+                    "unit": "lb",
+                    "reps": 10,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 20,
+                    "unit": "lb",
+                    "reps": 10,
+                    "rir": 2
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "lateral-raise",
+                  "sets": 3,
+                  "repRange": [
+                    12,
+                    15
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-press",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                }
+              ]
+            }
+          },
+          {
+            "id": "2026-03-09-upper",
+            "date": "2026-03-09",
+            "trackingLevel": "full",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "lateral-raise",
+                "sets": [
+                  {
+                    "weight": 10,
+                    "unit": "kg",
+                    "reps": 15,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 10,
+                    "unit": "kg",
+                    "reps": 15,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 10,
+                    "unit": "kg",
+                    "reps": 15,
+                    "rir": 2
+                  }
+                ]
+              },
+              {
+                "exercise": "db-press",
+                "sets": [
+                  {
+                    "weight": 20,
+                    "unit": "lb",
+                    "reps": 11,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 20,
+                    "unit": "lb",
+                    "reps": 11,
+                    "rir": 2
+                  },
+                  {
+                    "weight": 20,
+                    "unit": "lb",
+                    "reps": 11,
+                    "rir": 2
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "lateral-raise",
+                  "sets": 3,
+                  "repRange": [
+                    12,
+                    15
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-press",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "progression": [
+      {
+        "exercise": "lateral-raise",
+        "asOf": "2026-03-12",
+        "repRange": [
+          12,
+          15
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "action": "increase",
+        "weight": 11.25,
+        "unit": "kg",
+        "reps": 12,
+        "rir": 2,
+        "assumedAllSets": false,
+        "loadCap": {
+          "proposed": 11.5,
+          "limit": 11.25,
+          "bigJump": true,
+          "binding": "session"
+        },
+        "why": "Every set reached 15 at RIR 2 or more: add the 1.25 kg step. The dashboard rounds base + step to 0.5 (11.5 kg, +15 %). The cap allows one increment per session; one 1.25 kg step is itself 12.5 % of 10 kg, so it is allowed once as a big jump (start at the bottom of the range), never twice within 7 days: 11.25 kg x 12."
+      },
+      {
+        "exercise": "db-press",
+        "asOf": "2026-03-12",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "action": "add-reps",
+        "weight": 20,
+        "unit": "lb",
+        "reps": 12,
+        "rir": 2,
+        "assumedAllSets": false,
+        "why": "20 lb x 11 on every set: one more rep. No extra weight, so the cap has nothing to do."
+      }
+    ],
+    "loadCap": [
+      {
+        "exercise": "back-squat",
+        "date": "2026-03-12",
+        "history": [
+          {
+            "date": "2026-03-10",
+            "weight": 60
+          }
+        ],
+        "proposed": 70,
+        "weight": 62.5,
+        "capped": true,
+        "limit": 62.5,
+        "bigJump": false,
+        "binding": "session",
+        "why": "60 kg to 70 kg is four increments of 2.5 kg; one per session is allowed: 62.5 kg."
+      },
+      {
+        "exercise": "db-press",
+        "date": "2026-03-12",
+        "history": [
+          {
+            "date": "2026-03-09",
+            "weight": 20
+          }
+        ],
+        "proposed": 30,
+        "weight": 25,
+        "capped": true,
+        "limit": 25,
+        "bigJump": true,
+        "binding": "session",
+        "why": "20 lb to 30 lb is two 5 lb steps. One step is 25 % of 20 lb, more than 10 %, so a single step is still allowed, flagged as a big jump: 25 lb."
+      },
+      {
+        "exercise": "back-squat",
+        "date": "2026-03-09",
+        "history": [
+          {
+            "date": "2026-03-02",
+            "weight": 100
+          }
+        ],
+        "proposed": 107.5,
+        "weight": 102.5,
+        "capped": true,
+        "limit": 102.5,
+        "bigJump": false,
+        "binding": "session",
+        "why": "100 kg to 107.5 kg is only 7.5 %, but three increments: one per session, so 102.5 kg. (Session 2's rule allowed it; rules.md does not.)"
+      },
+      {
+        "exercise": "back-squat",
+        "date": "2026-03-08",
+        "history": [
+          {
+            "date": "2026-03-02",
+            "weight": 60
+          },
+          {
+            "date": "2026-03-04",
+            "weight": 62.5
+          },
+          {
+            "date": "2026-03-06",
+            "weight": 65
+          }
+        ],
+        "proposed": 67.5,
+        "weight": 65,
+        "capped": true,
+        "limit": 66,
+        "bigJump": false,
+        "binding": "week",
+        "why": "Three sessions in a week already took 60 to 65 kg. 67.5 would be 12.5 % over 60 within 7 days; 10 % allows 66, which rounds down to 65: hold 65."
+      },
+      {
+        "exercise": "db-press",
+        "date": "2026-03-09",
+        "history": [
+          {
+            "date": "2026-03-02",
+            "weight": 15
+          },
+          {
+            "date": "2026-03-05",
+            "weight": 20
+          }
+        ],
+        "proposed": 25,
+        "weight": 20,
+        "capped": true,
+        "limit": 20,
+        "bigJump": false,
+        "binding": "big-jump-repeat",
+        "why": "15 to 20 lb on 2026-03-05 was already a big jump (33 %). Another within 7 days is not allowed: hold 20 lb."
+      },
+      {
+        "exercise": "db-press",
+        "date": "2026-03-12",
+        "history": [
+          {
+            "date": "2026-03-02",
+            "weight": 15
+          },
+          {
+            "date": "2026-03-05",
+            "weight": 20
+          }
+        ],
+        "proposed": 25,
+        "weight": 25,
+        "capped": false,
+        "limit": 25,
+        "bigJump": true,
+        "binding": "none",
+        "why": "Seven days after the last big jump, one more 5 lb step is allowed, again flagged: 25 lb."
+      }
+    ]
+  }
+}

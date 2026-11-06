@@ -1,0 +1,128 @@
+{
+  "name": "b-busy-week-moves-deload",
+  "about": "Travel in plan week 3 sits next to the week-4 deload: the deload moves onto the travel week. A crunch in week 9 pulls the week-8 deload a week later.",
+  "rule": "deload",
+  "programStart": "2026-03-02",
+  "checkins": [
+    {
+      "date": "2026-03-08",
+      "weekStart": "2026-03-02",
+      "knownBusy": [
+        {
+          "from": "2026-03-16",
+          "to": "2026-03-20",
+          "kind": "travel"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-12",
+      "weekStart": "2026-04-06",
+      "knownBusy": [
+        {
+          "from": "2026-04-27",
+          "to": "2026-04-30",
+          "kind": "crunch",
+          "sessions": 2
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "today": "2026-03-09",
+      "expected": {
+        "planWeek": 2,
+        "scheduled": false,
+        "weeksToScheduled": 1,
+        "triggers": [],
+        "deload": false,
+        "cancelled": false
+      }
+    },
+    {
+      "today": "2026-03-16",
+      "expected": {
+        "planWeek": 3,
+        "scheduled": false,
+        "weeksToScheduled": 0,
+        "triggers": [
+          "busy-week"
+        ],
+        "deload": true,
+        "cancelled": false,
+        "move": {
+          "from": 4,
+          "to": 3,
+          "busy": {
+            "from": "2026-03-16",
+            "to": "2026-03-20",
+            "kind": "travel"
+          }
+        }
+      }
+    },
+    {
+      "today": "2026-03-23",
+      "expected": {
+        "planWeek": 4,
+        "scheduled": true,
+        "weeksToScheduled": 4,
+        "triggers": [],
+        "deload": false,
+        "cancelled": false,
+        "move": {
+          "from": 4,
+          "to": 3,
+          "busy": {
+            "from": "2026-03-16",
+            "to": "2026-03-20",
+            "kind": "travel"
+          }
+        }
+      }
+    },
+    {
+      "today": "2026-04-20",
+      "expected": {
+        "planWeek": 8,
+        "scheduled": true,
+        "weeksToScheduled": 1,
+        "triggers": [],
+        "deload": false,
+        "cancelled": false,
+        "move": {
+          "from": 8,
+          "to": 9,
+          "busy": {
+            "from": "2026-04-27",
+            "to": "2026-04-30",
+            "kind": "crunch"
+          }
+        }
+      }
+    },
+    {
+      "today": "2026-04-27",
+      "expected": {
+        "planWeek": 9,
+        "scheduled": false,
+        "weeksToScheduled": 0,
+        "triggers": [
+          "busy-week"
+        ],
+        "deload": true,
+        "cancelled": false,
+        "move": {
+          "from": 8,
+          "to": 9,
+          "busy": {
+            "from": "2026-04-27",
+            "to": "2026-04-30",
+            "kind": "crunch"
+          }
+        }
+      }
+    }
+  ]
+}

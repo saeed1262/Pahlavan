@@ -1,0 +1,1681 @@
+{
+  "name": "01-novice-steady",
+  "about": "A novice on three full-body sessions a week at Standard tracking (top sets of squat and bench), adding a rep or a step every session for four weeks while losing weight slowly.",
+  "today": "2026-03-29",
+  "data": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "basics": {
+        "birthYear": 1990,
+        "heightCm": 178,
+        "sex": "male"
+      },
+      "goals": [
+        {
+          "id": "lose-fat",
+          "kind": "fat-loss",
+          "label": "Lose fat while learning the lifts",
+          "importance": 8,
+          "confidence": 7,
+          "measure": "Waist (tape)"
+        },
+        {
+          "id": "learn-lifts",
+          "kind": "strength",
+          "label": "Squat and bench with good form",
+          "importance": 7,
+          "confidence": 8
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 3,
+        "minutesPerSession": 60,
+        "fixedDays": [
+          "mon",
+          "wed",
+          "fri"
+        ]
+      },
+      "equipment": [
+        "barbell",
+        "rack",
+        "bench",
+        "dumbbells"
+      ],
+      "trackingLevel": "standard",
+      "screening": {
+        "outcome": "go",
+        "date": "2026-02-27"
+      },
+      "emphasis": [
+        {
+          "area": "Movement",
+          "seen": "Heels lift at the bottom of the squat",
+          "confidence": "medium",
+          "emphasis": "Ankle mobility; heel-elevated goblet squat as a warm-up",
+          "muscles": [
+            "quads"
+          ]
+        }
+      ]
+    },
+    "program": {
+      "schemaVersion": 1,
+      "id": "novice-start",
+      "name": "Novice start",
+      "exercises": {
+        "back-squat": {
+          "name": "Barbell back squat",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings",
+              "lower-back",
+              "abs"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "bench-press": {
+          "name": "Barbell bench press",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate",
+            "joint:shoulder"
+          ]
+        },
+        "db-row": {
+          "name": "One-arm dumbbell row",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "lats",
+              "upper-back"
+            ],
+            "helps": [
+              "biceps"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Novice start",
+        "start": "2026-03-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "mon",
+                        "name": "Full body (Mon)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "wed",
+                        "name": "Full body (Wed)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "fri",
+                        "name": "Full body (Fri)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "mon",
+                        "name": "Full body (Mon)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "wed",
+                        "name": "Full body (Wed)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "fri",
+                        "name": "Full body (Fri)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "mon",
+                        "name": "Full body (Mon)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "wed",
+                        "name": "Full body (Wed)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "fri",
+                        "name": "Full body (Fri)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "mon",
+                        "name": "Full body (Mon)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "wed",
+                        "name": "Full body (Wed)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "fri",
+                        "name": "Full body (Fri)",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-02-mon",
+            "date": "2026-03-02",
+            "trackingLevel": "standard",
+            "template": "mon",
+            "minutes": 59,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "mon",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-04-wed",
+            "date": "2026-03-04",
+            "trackingLevel": "standard",
+            "template": "wed",
+            "minutes": 58,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "wed",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-06-fri",
+            "date": "2026-03-06",
+            "trackingLevel": "standard",
+            "template": "fri",
+            "minutes": 57,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "fri",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-09-mon",
+            "date": "2026-03-09",
+            "trackingLevel": "standard",
+            "template": "mon",
+            "minutes": 60,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 52.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "mon",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-11-wed",
+            "date": "2026-03-11",
+            "trackingLevel": "standard",
+            "template": "wed",
+            "minutes": 59,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 52.5,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 42.5,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "wed",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-13-fri",
+            "date": "2026-03-13",
+            "trackingLevel": "standard",
+            "template": "fri",
+            "minutes": 54,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 52.5,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 42.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "fri",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-16-mon",
+            "date": "2026-03-16",
+            "trackingLevel": "standard",
+            "template": "mon",
+            "minutes": 53,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 42.5,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "mon",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-18-wed",
+            "date": "2026-03-18",
+            "trackingLevel": "standard",
+            "template": "wed",
+            "minutes": 57,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 42.5,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "wed",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-20-fri",
+            "date": "2026-03-20",
+            "trackingLevel": "standard",
+            "template": "fri",
+            "minutes": 54,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 45,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "fri",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-23-mon",
+            "date": "2026-03-23",
+            "trackingLevel": "standard",
+            "template": "mon",
+            "minutes": 52,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 57.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 45,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "mon",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-03-25-wed",
+            "date": "2026-03-25",
+            "trackingLevel": "standard",
+            "template": "wed",
+            "minutes": 57,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 57.5,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 45,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "skipped": [
+              "db-row"
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "wed",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-03-27-fri",
+            "date": "2026-03-27",
+            "trackingLevel": "standard",
+            "template": "fri",
+            "minutes": 53,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 57.5,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 45,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "fri",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          }
+        ]
+      }
+    ],
+    "body": {
+      "schemaVersion": 1,
+      "weights": [
+        {
+          "date": "2026-03-02",
+          "weight": 90.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-03",
+          "weight": 89.7,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-04",
+          "weight": 90.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-05",
+          "weight": 89.7,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-06",
+          "weight": 89.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-07",
+          "weight": 89.6,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-09",
+          "weight": 89.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-10",
+          "weight": 89.5,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-11",
+          "weight": 89.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-12",
+          "weight": 89.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-13",
+          "weight": 89.5,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-14",
+          "weight": 88.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-16",
+          "weight": 89.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-17",
+          "weight": 88.7,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-18",
+          "weight": 88.5,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-19",
+          "weight": 88.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-20",
+          "weight": 88.6,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-21",
+          "weight": 88.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-23",
+          "weight": 88.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-24",
+          "weight": 88.0,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-25",
+          "weight": 88.5,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-26",
+          "weight": 88.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-27",
+          "weight": 88.0,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-28",
+          "weight": 87.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-29",
+          "weight": 88.2,
+          "unit": "kg"
+        }
+      ],
+      "tape": [
+        {
+          "date": "2026-03-02",
+          "unit": "cm",
+          "waist": 98.5,
+          "hips": 104,
+          "chest": 106,
+          "arm": 34
+        },
+        {
+          "date": "2026-03-16",
+          "unit": "cm",
+          "waist": 97.8,
+          "hips": 103.5
+        }
+      ],
+      "tests": [
+        {
+          "date": "2026-03-02",
+          "results": {
+            "pushups": 18,
+            "wallGapCm": 5
+          }
+        }
+      ],
+      "photos": [
+        {
+          "date": "2026-03-02",
+          "poses": [
+            "front",
+            "side",
+            "back"
+          ],
+          "folder": "Progress Photos/2026-03-02"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "e1rm": [
+      {
+        "exercise": "back-squat",
+        "unit": "kg",
+        "sessions": 12,
+        "ignored": 0,
+        "points": 12,
+        "e1rms": [
+          60.0,
+          61.666667,
+          63.333333,
+          63.0,
+          64.75,
+          66.5,
+          66.0,
+          67.833333,
+          69.666667,
+          69.0,
+          70.916667,
+          72.833333
+        ],
+        "best": 72.833333,
+        "change": 0.045455,
+        "verdict": "up",
+        "stallCandidate": false,
+        "unitFlag": null,
+        "why": "Squat top sets climb 50 x 6 to 57.5 x 8 kg, one rep or one 2.5 kg step at a time. Epley best-of-3 goes from 69.67 (55 x 8) to 72.83 (57.5 x 8): +4.55 % over 3 sessions, above the 4 % noise band, so 'up'."
+      },
+      {
+        "exercise": "bench-press",
+        "unit": "kg",
+        "sessions": 12,
+        "ignored": 0,
+        "points": 12,
+        "e1rms": [
+          46.666667,
+          48.0,
+          49.333333,
+          50.666667,
+          49.583333,
+          51.0,
+          52.416667,
+          53.833333,
+          52.5,
+          54.0,
+          55.5,
+          55.5
+        ],
+        "best": 55.5,
+        "change": 0.03096,
+        "verdict": "noise",
+        "stallCandidate": false,
+        "unitFlag": null,
+        "why": "Bench best-of-3 55.50 against 53.83 three sessions back: +3.10 %, inside +-4 % (noise) but above 2 %, so not a stall candidate."
+      }
+    ],
+    "progression": [
+      {
+        "action": "increase",
+        "weight": 60.0,
+        "unit": "kg",
+        "reps": 5,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "back-squat",
+        "repRange": [
+          5,
+          8
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-29",
+        "why": "Last top set 57.5 x 8 reached the top of 5-8: add the 2.5 kg step and go back to 5 reps (60 x 5). Standard tracking: only the top set is logged, so the engine assumes every set reached 8 and says so."
+      },
+      {
+        "action": "add-reps",
+        "weight": 45,
+        "unit": "kg",
+        "reps": 8,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "bench-press",
+        "repRange": [
+          5,
+          8
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-29",
+        "why": "Last top set 45 x 7 is inside 5-8: same weight, one more rep (45 x 8)."
+      }
+    ],
+    "volume": [
+      {
+        "from": "2026-03-23",
+        "to": "2026-03-29",
+        "sessions": 3,
+        "estimated": true,
+        "perWeek": {
+          "quads": 9.0,
+          "glutes": 9.0,
+          "hamstrings": 4.5,
+          "lower-back": 4.5,
+          "abs": 4.5,
+          "chest": 9.0,
+          "triceps": 4.5,
+          "shoulders": 4.5,
+          "lats": 6.0,
+          "upper-back": 6.0,
+          "biceps": 3.0
+        },
+        "tiers": {
+          "chest": "efficient",
+          "shoulders": "efficient",
+          "biceps": "below-minimum",
+          "triceps": "efficient",
+          "abs": "efficient",
+          "upper-back": "efficient",
+          "lats": "efficient",
+          "lower-back": "efficient",
+          "glutes": "efficient",
+          "quads": "efficient",
+          "hamstrings": "efficient",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "Week of 2026-03-23: three Standard sessions, so sets come from the plan snapshot (3 x squat, bench, row each), minus the row skipped on 2026-03-25. Squat 9 sets: quads and glutes 9; bench 9: chest 9; rows 6: lats and upper back 6; half sets: hamstrings, lower back, abs 4.5, triceps and shoulders 4.5, biceps 3 (below the minimum dose of 4)."
+      }
+    ],
+    "weight": {
+      "since": "2026-03-02",
+      "weighIns": 25,
+      "seed": 89.783333,
+      "trend": 88.563224,
+      "trendDate": "2026-03-29",
+      "rate": {
+        "kgPerWeek": -0.334108,
+        "pctPerWeek": -0.003773,
+        "spanDays": 27,
+        "weighIns": 25
+      },
+      "spanDays": 27,
+      "recentWeighIns": 25,
+      "goal": "fat-loss",
+      "status": "above",
+      "why": "25 daily weigh-ins over 28 days (three Sundays missed). The readings drift down about 0.5 kg a week with +-0.4 kg noise, but the trend starts at the first week's mean (89.78) and lags behind them, so it ends at 88.56 kg with a slope of -0.334 kg/wk = -0.38 %/wk. Against the fat-loss band -1.0 to -0.5 %: above (falling slower than the band)."
+    }
+  }
+}

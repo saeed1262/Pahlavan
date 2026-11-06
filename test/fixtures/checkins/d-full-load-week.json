@@ -1,0 +1,152 @@
+{
+  "name": "d-full-load-week",
+  "about": "Week 4 (from 03-23) was a dashboard deload, but the user trained it at full load (65 kg x 8). Without the check-in, progression starts from the 03-16 loading session; with trainedAtFullLoad it starts from 03-23.",
+  "rule": "progression",
+  "exercise": {
+    "unit": "kg",
+    "increment": 2.5
+  },
+  "repRange": [
+    6,
+    8
+  ],
+  "targetRir": 2,
+  "today": "2026-03-30",
+  "sessions": [
+    {
+      "id": "2026-03-09-a",
+      "date": "2026-03-09",
+      "trackingLevel": "standard",
+      "template": "a",
+      "exercises": [
+        {
+          "exercise": "cable-chest-press",
+          "sets": [
+            {
+              "weight": 60,
+              "unit": "kg",
+              "reps": 7
+            }
+          ]
+        }
+      ],
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": [
+          {
+            "exercise": "cable-chest-press",
+            "sets": 3,
+            "repRange": [
+              6,
+              8
+            ],
+            "rir": 2,
+            "main": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "2026-03-16-a",
+      "date": "2026-03-16",
+      "trackingLevel": "standard",
+      "template": "a",
+      "exercises": [
+        {
+          "exercise": "cable-chest-press",
+          "sets": [
+            {
+              "weight": 60,
+              "unit": "kg",
+              "reps": 8
+            }
+          ]
+        }
+      ],
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": [
+          {
+            "exercise": "cable-chest-press",
+            "sets": 3,
+            "repRange": [
+              6,
+              8
+            ],
+            "rir": 2,
+            "main": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "2026-03-23-a",
+      "date": "2026-03-23",
+      "trackingLevel": "standard",
+      "template": "a",
+      "exercises": [
+        {
+          "exercise": "cable-chest-press",
+          "sets": [
+            {
+              "weight": 65,
+              "unit": "kg",
+              "reps": 8
+            }
+          ]
+        }
+      ],
+      "plan": {
+        "weekKind": "deload",
+        "template": "a",
+        "kind": "lift",
+        "slots": [
+          {
+            "exercise": "cable-chest-press",
+            "sets": 3,
+            "repRange": [
+              6,
+              8
+            ],
+            "rir": 2,
+            "main": true
+          }
+        ]
+      }
+    }
+  ],
+  "checkins": [
+    {
+      "date": "2026-03-29",
+      "weekStart": "2026-03-23",
+      "recovery": 4,
+      "deload": {
+        "trainedAtFullLoad": [
+          "2026-03-23"
+        ]
+      }
+    }
+  ],
+  "expected": {
+    "without": {
+      "action": "increase",
+      "weight": 62.5,
+      "reps": 6,
+      "deloadSessionsNotUsed": [
+        "2026-03-23"
+      ]
+    },
+    "with": {
+      "action": "increase",
+      "weight": 67.5,
+      "reps": 6,
+      "fullLoadSessions": [
+        "2026-03-23"
+      ]
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "name": "3-knee-62",
+  "about": "A made-up 62-year-old: health first and strength second, 4 days of 60 min in a commercial gym, an intermediate; a right knee in the Ledger (no loaded deep knee bending, no lunges), the right leg weaker on balance; travel breaks bad weeks.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "basics": {
+        "birthYear": 1964,
+        "heightCm": 176,
+        "sex": "male"
+      },
+      "goals": [
+        {
+          "id": "health",
+          "kind": "health",
+          "label": "Stay strong and independent",
+          "importance": 9,
+          "confidence": 8
+        },
+        {
+          "id": "strength",
+          "kind": "strength",
+          "label": "Get stronger",
+          "importance": 7,
+          "confidence": 7,
+          "measure": "deadlift e1RM"
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 4,
+        "minutesPerSession": 60
+      },
+      "equipment": [
+        "dumbbells",
+        "barbell",
+        "bench",
+        "cable",
+        "machines",
+        "pull-up bar"
+      ],
+      "trackingLevel": "standard",
+      "screening": {
+        "outcome": "go",
+        "date": "2026-10-20"
+      },
+      "emphasis": [],
+      "experience": "intermediate",
+      "preferences": {
+        "cardio": [
+          "zone2-bike",
+          "brisk-walk"
+        ]
+      },
+      "badWeek": {
+        "usually": [
+          "travel"
+        ]
+      },
+      "selfCheck": {
+        "date": "2026-10-20",
+        "sitToStand": {
+          "easy": true,
+          "heelsDown": true
+        },
+        "pushUps": 8,
+        "deadHangS": 25,
+        "pullUps": 0,
+        "coreHold": {
+          "kind": "plank",
+          "seconds": 45
+        },
+        "hingeFlatBack": true,
+        "overheadReach": {
+          "clean": true
+        },
+        "wallGapCm": 3,
+        "balanceS": {
+          "left": 30,
+          "right": 16
+        }
+      }
+    },
+    "today": "2026-11-04",
+    "options": {
+      "ledger": [
+        {
+          "id": "right-knee",
+          "area": "knee",
+          "noMovements": [
+            "back-squat",
+            "bulgarian-split-squat",
+            "reverse-lunge",
+            "split-squat",
+            "db-split-squat",
+            "step-up",
+            "box-pistol",
+            "pistol-squat",
+            "leg-extension"
+          ],
+          "note": "Right knee: no loaded deep knee bending, no lunges"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "templateId": "full-body-aba",
+    "compared": [
+      "full-body-undulating",
+      "full-body-aba"
+    ],
+    "ladders": {
+      "pullup": 2,
+      "pushup": 2,
+      "hollow": 2,
+      "legs": 1
+    },
+    "laddersUsed": [
+      "pullup",
+      "hollow"
+    ],
+    "mustUse": [
+      "ledger.right-knee",
+      "selfCheck.deadHangS",
+      "selfCheck.balanceS",
+      "badWeek",
+      "goals.health",
+      "goals.strength",
+      "experience"
+    ],
+    "includes": [
+      "lat-pulldown",
+      "scapular-pull-up"
+    ],
+    "excludes": [
+      "back-squat",
+      "reverse-lunge",
+      "split-squat",
+      "bulgarian-split-squat",
+      "db-split-squat",
+      "step-up",
+      "leg-extension"
+    ],
+    "cardio": {
+      "modes": [
+        "bike-intervals-4x4",
+        "zone2-bike"
+      ],
+      "minutes": null,
+      "intervals": true
+    },
+    "priority": [],
+    "why": "Health first caps the week at 3 full-body days with the fourth as conditioning, at 62 with no older-adult rules (those start at 65). The knee Ledger entry keeps the barbell squat, lunges and split squats out and the nearest allowed movements take their slots. A 25 s hang with no pull-up gives scapular pull-ups (ladder level 2) beside the lat pulldown, not in its place; balance 16 s on the right puts a balance hold in the warm-up; travel leads the pre-mortem with the hotel version."
+  }
+}

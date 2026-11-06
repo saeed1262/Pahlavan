@@ -1,0 +1,203 @@
+{
+  "name": "2-desk-recomp",
+  "about": "A made-up 42-year-old with the vault owner's shape: recomposition first and posture second, 4 days of 60 min and 3 of 30, a condo gym in lb, a novice; shoulders rounded, overhead reach limited, a low-back curve; 5 strict pull-ups, 30 push-ups, a 60 s plank, 30 s balance; skips sessions in a bad week; desk work.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "lb",
+        "body": "kg"
+      },
+      "basics": {
+        "birthYear": 1984,
+        "heightCm": 182,
+        "sex": "male"
+      },
+      "goals": [
+        {
+          "id": "recomp",
+          "kind": "recomposition",
+          "label": "Build muscle while losing fat",
+          "importance": 8,
+          "confidence": 8,
+          "measure": "waist (tape), photos"
+        },
+        {
+          "id": "posture",
+          "kind": "posture",
+          "label": "Posture and mobility capacity",
+          "importance": 8,
+          "confidence": 8,
+          "measure": "wall test, side photo"
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 7,
+        "minutesPerSession": 60,
+        "shortSessions": {
+          "days": 3,
+          "minutes": 30
+        }
+      },
+      "equipment": [
+        "dumbbells",
+        "bench",
+        "barbell",
+        "cable",
+        "machines",
+        "leg press",
+        "bands",
+        "pull-up bar",
+        "kettlebells"
+      ],
+      "trackingLevel": "standard",
+      "screening": {
+        "outcome": "go",
+        "date": "2026-11-02"
+      },
+      "emphasis": [
+        {
+          "area": "Shoulders and upper back",
+          "seen": "Shoulders rolled forward, upper back rounding",
+          "confidence": "medium",
+          "emphasis": "Pull:push about 2:1",
+          "kind": "forward-head-rounded-shoulders"
+        },
+        {
+          "area": "Overhead",
+          "seen": "Arms reach vertical only with the ribs flaring",
+          "confidence": "medium",
+          "emphasis": "Landmine or incline pressing",
+          "kind": "overhead-limited"
+        },
+        {
+          "area": "Lower back, standing",
+          "seen": "A moderate low-back curve",
+          "confidence": "low",
+          "emphasis": "Dead bugs, hollow holds, glute work",
+          "kind": "low-back-arch"
+        },
+        {
+          "area": "Where fat is carried",
+          "seen": "At the waist",
+          "confidence": "high",
+          "emphasis": "No change; the tape measures it",
+          "kind": "waist-fat"
+        }
+      ],
+      "experience": "novice",
+      "preferences": {
+        "likes": [],
+        "dislikes": [],
+        "cardio": [
+          "zone2-bike",
+          "brisk-walk",
+          "hill-intervals-4x4",
+          "bike-intervals-4x4"
+        ]
+      },
+      "useHistory": false,
+      "badWeek": {
+        "usually": [
+          "skips-sessions",
+          "eats-off-plan"
+        ],
+        "note": "I skip that session; food goes loose"
+      },
+      "work": {
+        "desk": true,
+        "sittingHours": 7
+      },
+      "selfCheck": {
+        "date": "2026-11-02",
+        "sitToStand": {
+          "easy": true,
+          "heelsDown": true
+        },
+        "pushUps": 30,
+        "deadHangS": 40,
+        "pullUps": 5,
+        "coreHold": {
+          "kind": "plank",
+          "seconds": 60
+        },
+        "hingeFlatBack": true,
+        "overheadReach": {
+          "clean": false,
+          "ribFlare": true,
+          "lowBackArch": true
+        },
+        "wallGapCm": 5,
+        "balanceS": {
+          "left": 30,
+          "right": 30
+        }
+      }
+    },
+    "today": "2026-11-04",
+    "options": {}
+  },
+  "expected": {
+    "templateId": "full-body-abcd",
+    "compared": [
+      "upper-lower-x2",
+      "full-body-ab-x2",
+      "full-body-abcd",
+      "torso-limbs-x2",
+      "upper-lower-full-x4",
+      "body-part-x4"
+    ],
+    "ladders": {
+      "pullup": 6,
+      "pushup": 4,
+      "hollow": 3,
+      "legs": 3
+    },
+    "laddersUsed": [
+      "pullup",
+      "hollow"
+    ],
+    "mustUse": [
+      "selfCheck.pullUps",
+      "selfCheck.coreHold",
+      "selfCheck.balanceS",
+      "selfCheck.overheadReach",
+      "selfCheck.wallGapCm",
+      "badWeek",
+      "availability.shortSessions",
+      "preferences.cardio",
+      "goals.recomp",
+      "goals.posture",
+      "emphasis.forward-head-rounded-shoulders",
+      "emphasis.overhead-limited",
+      "emphasis.low-back-arch",
+      "work"
+    ],
+    "includes": [
+      "pull-up",
+      "hollow-hold",
+      "bulgarian-split-squat",
+      "landmine-press"
+    ],
+    "excludes": [
+      "overhead-press",
+      "db-shoulder-press",
+      "machine-shoulder-press"
+    ],
+    "cardio": {
+      "modes": [
+        "brisk-walk",
+        "hill-intervals-4x4",
+        "zone2-bike"
+      ],
+      "minutes": 30,
+      "intervals": true
+    },
+    "priority": [
+      "upper-back",
+      "lats",
+      "quads"
+    ],
+    "why": "Four lifting days of 60 min: upper/lower, full body A/B twice and A/B/C/D are all built; A/B twice trains the same muscles hard on consecutive days, upper/lower misses the quads priority, and A/B/C/D wins on the recomposition goal, the posture emphasis and the skip risk. With no priority muscles in the profile, the recomposition goal makes upper back, lats (the posture emphasis) and quads the priorities. Five strict pull-ups put pull-ups in as the main vertical pull (ladder level 6), the 60 s plank starts the core ladder at hollow holds, 30 s balance brings rear-foot-elevated split squats in, the overhead reach keeps overhead pressing out, and the three 30-min short days carry the chosen cardio modes, intervals included."
+  }
+}

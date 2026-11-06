@@ -1,0 +1,155 @@
+{
+  "name": "1-beginner",
+  "about": "A made-up true beginner: no push-up yet, a short hang, a hard sit-to-stand and a rounding hinge; light dumbbells and bands at home, 3 days of 45 min.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "basics": {
+        "birthYear": 1991,
+        "heightCm": 165,
+        "sex": "female"
+      },
+      "goals": [
+        {
+          "id": "lose-fat",
+          "kind": "fat-loss",
+          "label": "Lose fat",
+          "importance": 8,
+          "confidence": 6,
+          "measure": "waist (tape)"
+        },
+        {
+          "id": "health",
+          "kind": "health",
+          "label": "Feel fitter",
+          "importance": 6,
+          "confidence": 8
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 3,
+        "minutesPerSession": 45
+      },
+      "equipment": [
+        "dumbbells",
+        "bands"
+      ],
+      "trackingLevel": "light",
+      "screening": {
+        "outcome": "go-ramped",
+        "date": "2026-11-01"
+      },
+      "emphasis": [
+        {
+          "area": "Where fat is carried",
+          "seen": "Mostly at the waist",
+          "confidence": "high",
+          "emphasis": "No change to exercise choice; the tape measures it",
+          "kind": "waist-fat"
+        }
+      ],
+      "experience": "novice",
+      "preferences": {
+        "cardio": [
+          "brisk-walk"
+        ]
+      },
+      "badWeek": {
+        "usually": [
+          "stops-for-a-while"
+        ],
+        "note": "If I miss one, I tend to stop for a week or two"
+      },
+      "work": {
+        "desk": false
+      },
+      "selfCheck": {
+        "date": "2026-11-01",
+        "sitToStand": {
+          "easy": false,
+          "heelsDown": true
+        },
+        "pushUps": 0,
+        "deadHangS": 8,
+        "pullUps": 0,
+        "coreHold": {
+          "kind": "plank",
+          "seconds": 20
+        },
+        "hingeFlatBack": false,
+        "overheadReach": {
+          "clean": true
+        },
+        "wallGapCm": 2,
+        "balanceS": {
+          "left": 18,
+          "right": 25
+        }
+      }
+    },
+    "today": "2026-11-04",
+    "options": {}
+  },
+  "expected": {
+    "templateId": "full-body-aba",
+    "compared": [
+      "full-body-aba",
+      "full-body-undulating",
+      "upper-lower-full-x3",
+      "push-pull-legs-x1",
+      "upper-lower-rotating"
+    ],
+    "ladders": {
+      "pullup": 1,
+      "pushup": 1,
+      "hollow": 1,
+      "legs": 1
+    },
+    "laddersUsed": [
+      "pushup",
+      "hollow",
+      "legs"
+    ],
+    "mustUse": [
+      "selfCheck.pushUps",
+      "selfCheck.sitToStand",
+      "selfCheck.hingeFlatBack",
+      "selfCheck.balanceS",
+      "selfCheck.coreHold",
+      "selfCheck.deadHangS",
+      "badWeek",
+      "goals.lose-fat",
+      "goals.lose-fat.confidence",
+      "equipment",
+      "screening.outcome",
+      "trackingLevel"
+    ],
+    "includes": [
+      "incline-push-up",
+      "box-squat",
+      "glute-bridge",
+      "dead-bug",
+      "split-squat"
+    ],
+    "excludes": [
+      "push-up",
+      "rdl",
+      "db-rdl",
+      "back-squat",
+      "single-leg-rdl",
+      "bulgarian-split-squat",
+      "hollow-hold"
+    ],
+    "cardio": {
+      "modes": [],
+      "minutes": null,
+      "intervals": false
+    },
+    "priority": [],
+    "why": "No push-up yet: the push-up ladder starts at level 1 and, with no bench for a dumbbell press, incline push-ups carry the pressing; floor push-ups wait. A hard sit-to-stand gives box squats, a back that rounds in the hinge gives glute bridges instead of Romanian deadlifts, an 8 s hang (and no bar) leaves the pull-up ladder at level 1, a 20 s plank starts the core ladder at dead bugs, and balance under 30 s on one side keeps split squats with both feet down and adds a balance hold to the warm-up. Go, ramped keeps the first mesocycle at RIR 3; confidence 6 and \"I stop for a while\" lead the pre-mortem."
+  }
+}

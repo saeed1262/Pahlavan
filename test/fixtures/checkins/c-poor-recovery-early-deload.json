@@ -1,0 +1,98 @@
+{
+  "name": "c-poor-recovery-early-deload",
+  "about": "Two check-ins running with poor recovery and joint aches over 3/10 (or lingering) offer an early deload in plan week 3. Mild aches, or check-ins two weeks apart, do not.",
+  "rule": "deload",
+  "programStart": "2026-03-02",
+  "checkins": [
+    {
+      "date": "2026-03-08",
+      "weekStart": "2026-03-02",
+      "recovery": 2,
+      "jointAches": [
+        {
+          "area": "knee",
+          "severity": 5,
+          "exercise": "goblet-squat"
+        }
+      ]
+    },
+    {
+      "date": "2026-03-15",
+      "weekStart": "2026-03-09",
+      "recovery": 1,
+      "jointAches": [
+        {
+          "area": "shoulder",
+          "severity": 3,
+          "lingered": true
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "today": "2026-03-16",
+      "expected": {
+        "planWeek": 3,
+        "scheduled": false,
+        "weeksToScheduled": 1,
+        "triggers": [
+          "recovery"
+        ],
+        "deload": true,
+        "cancelled": false
+      }
+    },
+    {
+      "today": "2026-03-10",
+      "expected": {
+        "planWeek": 2,
+        "scheduled": false,
+        "weeksToScheduled": 2,
+        "triggers": [],
+        "deload": false,
+        "cancelled": false
+      }
+    }
+  ],
+  "variants": {
+    "mildAches": [
+      {
+        "date": "2026-03-08",
+        "weekStart": "2026-03-02",
+        "recovery": 2,
+        "jointAches": [
+          {
+            "area": "knee",
+            "severity": 2
+          }
+        ]
+      },
+      {
+        "date": "2026-03-15",
+        "weekStart": "2026-03-09",
+        "recovery": 1,
+        "jointAches": [
+          {
+            "area": "knee",
+            "severity": 3
+          }
+        ]
+      }
+    ],
+    "notRunning": [
+      {
+        "date": "2026-03-01",
+        "weekStart": "2026-02-23",
+        "recovery": 2,
+        "jointAches": true
+      },
+      {
+        "date": "2026-03-15",
+        "weekStart": "2026-03-09",
+        "recovery": 2,
+        "jointAches": true
+      }
+    ]
+  }
+}

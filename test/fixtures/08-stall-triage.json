@@ -1,0 +1,1995 @@
+{
+  "name": "08-stall-triage",
+  "about": "Six weeks of an upper/lower strength block at Standard tracking: bench and squat flat for the last three exposures with 92 % adherence, good sleep, and a week that felt flat.",
+  "today": "2026-03-24",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "strength-block",
+      "name": "Strength block",
+      "exercises": {
+        "bench-press": {
+          "name": "Barbell bench press",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate",
+            "joint:shoulder"
+          ]
+        },
+        "db-row": {
+          "name": "One-arm dumbbell row",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "lats",
+              "upper-back"
+            ],
+            "helps": [
+              "biceps"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "back-squat": {
+          "name": "Barbell back squat",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings",
+              "lower-back",
+              "abs"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "rdl": {
+          "name": "Romanian deadlift",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "hamstrings",
+              "glutes"
+            ],
+            "helps": [
+              "lower-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Strength block",
+        "start": "2026-02-16",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-02-16",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-02-23",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "deload",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "meso-2",
+                "name": "Mesocycle 2",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-30",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "deload",
+                    "start": "2026-04-06",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-02",
+        "sessions": [
+          {
+            "id": "2026-02-16-upper",
+            "date": "2026-02-16",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 75,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-18-lower",
+            "date": "2026-02-18",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 100,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-20-upper",
+            "date": "2026-02-20",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 77.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-23-lower",
+            "date": "2026-02-23",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 100,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-25-upper",
+            "date": "2026-02-25",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 77.5,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-27-lower",
+            "date": "2026-02-27",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 102.5,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          }
+        ]
+      },
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-02-upper",
+            "date": "2026-03-02",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 77.5,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-04-lower",
+            "date": "2026-03-04",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 102.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-06-upper",
+            "date": "2026-03-06",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-09-lower",
+            "date": "2026-03-09",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 102.5,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-03-11-upper",
+            "date": "2026-03-11",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-03-16-upper",
+            "date": "2026-03-16",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 5
+            }
+          },
+          {
+            "id": "2026-03-18-lower",
+            "date": "2026-03-18",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 102.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 5
+            }
+          },
+          {
+            "id": "2026-03-20-upper",
+            "date": "2026-03-20",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 80,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 5
+            }
+          },
+          {
+            "id": "2026-03-23-lower",
+            "date": "2026-03-23",
+            "trackingLevel": "standard",
+            "template": "lower",
+            "minutes": 60,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "back-squat",
+                "sets": [
+                  {
+                    "weight": 102.5,
+                    "unit": "kg",
+                    "reps": 5
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "lower",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "back-squat",
+                  "sets": 3,
+                  "repRange": [
+                    5,
+                    8
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "rdl",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    10
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 6
+            }
+          }
+        ]
+      }
+    ],
+    "checkins": {
+      "schemaVersion": 1,
+      "daily": [
+        {
+          "date": "2026-02-16",
+          "sleepH": 7.3,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-17",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-18",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-19",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-20",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-21",
+          "sleepH": 7.1,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-22",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-23",
+          "sleepH": 7.6,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-24",
+          "sleepH": 7.6,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-25",
+          "sleepH": 7.3,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-26",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-27",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-28",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-01",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-02",
+          "sleepH": 7.3,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-03",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-04",
+          "sleepH": 7.6,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-05",
+          "sleepH": 7.1,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-06",
+          "sleepH": 7.1,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-07",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-08",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-09",
+          "sleepH": 7.7,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-10",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-11",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-12",
+          "sleepH": 7.3,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-13",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 2,
+          "trained": true
+        },
+        {
+          "date": "2026-03-14",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-15",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-16",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-17",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-18",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-19",
+          "sleepH": 7.6,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-20",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-21",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-22",
+          "sleepH": 7.7,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-23",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-24",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        }
+      ],
+      "weekly": [
+        {
+          "weekOf": "2026-03-16",
+          "recovery": 2,
+          "jointAches": false,
+          "note": "Legs and chest feel flat."
+        }
+      ]
+    }
+  },
+  "expected": {
+    "adherence": {
+      "target": {
+        "lift": 3,
+        "short": 0
+      },
+      "value": {
+        "from": "2026-02-23",
+        "to": "2026-03-22",
+        "target": {
+          "lift": 3,
+          "short": 0
+        },
+        "weeks": [
+          {
+            "weekOf": "2026-02-23",
+            "lift": 3,
+            "short": 0,
+            "custom": 0,
+            "days": 3,
+            "habitDays": 0,
+            "ticksWithoutLog": 0,
+            "gaps": {
+              "unlogged": 0,
+              "missed": 0,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          },
+          {
+            "weekOf": "2026-03-02",
+            "lift": 3,
+            "short": 0,
+            "custom": 0,
+            "days": 3,
+            "habitDays": 0,
+            "ticksWithoutLog": 0,
+            "gaps": {
+              "unlogged": 0,
+              "missed": 0,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          },
+          {
+            "weekOf": "2026-03-09",
+            "lift": 2,
+            "short": 0,
+            "custom": 0,
+            "days": 2,
+            "habitDays": 1,
+            "ticksWithoutLog": 1,
+            "gaps": {
+              "unlogged": 1,
+              "missed": 0,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          },
+          {
+            "weekOf": "2026-03-16",
+            "lift": 3,
+            "short": 0,
+            "custom": 0,
+            "days": 3,
+            "habitDays": 0,
+            "ticksWithoutLog": 0,
+            "gaps": {
+              "unlogged": 0,
+              "missed": 0,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          }
+        ],
+        "lifting": {
+          "done": 11,
+          "planned": 12,
+          "pct": 0.916667
+        },
+        "short": {
+          "done": 0,
+          "planned": 0,
+          "pct": null
+        },
+        "meanSessionsPerWeek": 2.75,
+        "meanTrainingDays": 2.75,
+        "gaps": {
+          "unlogged": 1,
+          "missed": 0,
+          "rest": 0
+        }
+      },
+      "why": "The 4 complete weeks 2026-02-23 to 2026-03-22 planned 12 lifting sessions; 11 are logged. The Friday 2026-03-13 session was ticked as trained but not logged and not marked, so it counts as unlogged: 11/12 = 92 %, a lower bound."
+    },
+    "stall": [
+      {
+        "exercise": "bench-press",
+        "unit": "kg",
+        "stalled": true,
+        "status": "stalled",
+        "kind": "plateau",
+        "change": 0.005093,
+        "why": "Bench best-of-3 e1RM 98.67 against 98.17 three exposures back: +0.51 %, at most 2 %, with 92 % adherence (80 % needed): a stall, inside the noise band (plateau)."
+      },
+      {
+        "exercise": "back-squat",
+        "unit": "kg",
+        "stalled": true,
+        "status": "stalled",
+        "kind": "plateau",
+        "change": 0.0,
+        "why": "Squat alternates 102.5 x 5 and x 6; best-of-3 stays at 123.0, a 0 % change: stalled."
+      }
+    ],
+    "triage": {
+      "exercise": "bench-press",
+      "input": {
+        "proteinGPerKg": 1.8,
+        "weeksToMesocycleEnd": 3,
+        "startAt": 1
+      },
+      "derived": {
+        "sleepH": "mean of the last 7 check-ins",
+        "readinessBand": "readiness on today",
+        "recovery": "weekly check-in for 2026-03-16",
+        "jointAches": "weekly check-in",
+        "weeksToDeload": "deload decision",
+        "muscle": "chest sets, week of 2026-03-16"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "applies": false,
+          "chosen": false
+        },
+        {
+          "step": 2,
+          "applies": true,
+          "chosen": true
+        },
+        {
+          "step": 3,
+          "applies": true,
+          "chosen": false
+        },
+        {
+          "step": 4,
+          "applies": true,
+          "chosen": false
+        }
+      ],
+      "why": "Step 1 does not apply: sleep 7.47 h a night over the last 7 days (7 needed), readiness normal, protein 1.8 g/kg. Step 2 applies and is chosen: recovery 2/5 last week is a fatigue sign and the scheduled deload is 2 weeks away. Step 3 (rep range or variation at the boundary) always applies; step 4 applies too (poor recovery: chest 6 sets down 2), but one step per check-in."
+    },
+    "deload": {
+      "input": {
+        "stalledMainLifts": [
+          "bench-press",
+          "back-squat"
+        ]
+      },
+      "planWeek": 6,
+      "scheduled": false,
+      "weeksToScheduled": 2,
+      "triggers": [
+        "stalls"
+      ],
+      "deload": true,
+      "cancelled": false,
+      "why": "Plan week 6 of a 4-week rhythm: the scheduled deload is week 8. Stalls on two main lifts (bench and squat) trigger an early deload offer this week."
+    }
+  }
+}

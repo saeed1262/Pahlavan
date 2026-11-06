@@ -1,0 +1,84 @@
+{
+  "name": "f-rir-calibration-bias",
+  "about": "Cable chest press reached the top of the range; the check-in reported RIR 1 against a target of 2, which holds the weight. The profile's calibration (predicted 2, actual 4: a bias of +2, the user stops early) corrects it to 3, so the weight goes up.",
+  "rule": "progression",
+  "exercise": {
+    "unit": "lb",
+    "increment": 10
+  },
+  "repRange": [
+    10,
+    12
+  ],
+  "targetRir": 2,
+  "today": "2026-03-30",
+  "sessions": [
+    {
+      "id": "2026-03-26-a",
+      "date": "2026-03-26",
+      "trackingLevel": "standard",
+      "template": "a",
+      "exercises": [
+        {
+          "exercise": "cable-chest-press",
+          "sets": [
+            {
+              "weight": 70,
+              "unit": "lb",
+              "reps": 12
+            }
+          ]
+        }
+      ],
+      "plan": {
+        "weekKind": "loading",
+        "template": "a",
+        "kind": "lift",
+        "slots": [
+          {
+            "exercise": "cable-chest-press",
+            "sets": 3,
+            "repRange": [
+              6,
+              8
+            ],
+            "rir": 2,
+            "main": true
+          }
+        ]
+      }
+    }
+  ],
+  "checkins": [
+    {
+      "date": "2026-03-29",
+      "weekStart": "2026-03-23",
+      "reportedRir": {
+        "Cable Chest Press": 1
+      }
+    }
+  ],
+  "profile": {
+    "rirCalibration": [
+      {
+        "exercise": "cable-chest-press",
+        "date": "2026-03-20",
+        "predicted": 2,
+        "actual": 4
+      }
+    ]
+  },
+  "expected": {
+    "reportedOnly": {
+      "action": "hold",
+      "weight": 70,
+      "reps": 12
+    },
+    "withBias": {
+      "action": "increase",
+      "weight": 80,
+      "reps": 10,
+      "bias": 2
+    }
+  }
+}

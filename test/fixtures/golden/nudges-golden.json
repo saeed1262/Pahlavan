@@ -1,0 +1,3498 @@
+{
+  "about": "Habit Nudges' own helpers (its main.js internals, loaded by tools/golden-nudges.mjs with the app stubbed) on made-up inputs, in a fixed UTC-5 zone. Regenerate when main.js changes.",
+  "main": "ffc0ba9b320f5246",
+  "tz": "Etc/GMT+5",
+  "t0": 1775829600000,
+  "standCfg": {
+    "on": true,
+    "sitMinutes": 30,
+    "standMinutes": 20,
+    "snoozeMinutes": 10,
+    "awayMinutes": 30,
+    "standAwayMinutes": 5,
+    "activeSeconds": 120,
+    "habit": "stand"
+  },
+  "deskCfg": {
+    "idleMinutes": 5
+  },
+  "stand": [
+    {
+      "name": "steady work: due after 30 minutes",
+      "start": {},
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 5,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 30000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 60000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 90000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 120000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 150000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 180000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 210000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 240000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 270000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 300000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 330000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 360000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 390000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 420000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 450000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 480000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 510000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 540000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 570000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 630000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 660000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 690000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 720000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 750000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 780000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 810000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 840000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 870000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 900000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 930000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 960000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 990000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1020000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1050000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1080000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1110000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1140000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1170000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1200000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1230000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1260000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1290000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1320000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1350000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1380000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1410000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1440000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1470000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1500000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1530000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1560000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1590000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1620000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1650000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1680000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1710000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1740000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1770000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "idle past the active window: those minutes do not count",
+      "start": {},
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 10,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 120,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 150,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 180,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 210,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 240,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 270,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 300,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 330,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 360,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 390,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 30000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 60000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 90000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 120000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 150000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 180000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 210000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 240000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 270000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 300000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 330000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 360000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 390000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 420000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 450000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 480000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 510000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 540000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 570000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 600000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 630000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 660000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 690000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 720000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 750000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 780000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 810000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 840000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 870000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 900000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 930000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 960000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 990000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1020000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1050000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1080000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1110000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1140000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1170000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1200000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1230000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1260000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1290000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1320000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1350000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1380000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1410000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1440000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1470000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1500000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1530000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1560000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1590000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1620000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1650000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1680000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1710000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1740000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1770000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "time away resets the count",
+      "start": {
+        "satMs": 1500000
+      },
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 1800,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 2,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 0,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 30000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "the Mac slept: a long gap resets",
+      "start": {
+        "satMs": 1500000
+      },
+      "ticks": [
+        {
+          "gapMs": 2400000,
+          "idleS": 0,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 0,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "a gap longer than two ticks counts as two",
+      "start": {
+        "satMs": 1680000
+      },
+      "ticks": [
+        {
+          "gapMs": 300000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1740000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1770000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "a call holds the count and takes a due card down",
+      "start": {
+        "satMs": 1770000
+      },
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 400,
+          "meeting": true
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": true
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1770000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1800000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1830000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "snoozed: due only once the snooze ends",
+      "start": {
+        "satMs": 1800000,
+        "snoozeUsed": true,
+        "snoozedUntil": 1775829720000
+      },
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1830000,
+            "stoodMs": 0,
+            "snoozedUntil": 1775829720000,
+            "snoozeUsed": true
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1860000,
+            "stoodMs": 0,
+            "snoozedUntil": 1775829720000,
+            "snoozeUsed": true
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 1890000,
+            "stoodMs": 0,
+            "snoozedUntil": 1775829720000,
+            "snoozeUsed": true
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1920000,
+            "stoodMs": 0,
+            "snoozedUntil": 1775829720000,
+            "snoozeUsed": true
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1920000,
+            "stoodMs": 0,
+            "snoozedUntil": 1775829720000,
+            "snoozeUsed": true
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "due",
+            "satMs": 1920000,
+            "stoodMs": 0,
+            "snoozedUntil": 1775829720000,
+            "snoozeUsed": true
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "standing: finished after 20 minutes",
+      "start": {
+        "phase": "standing"
+      },
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 20,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 30000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 60000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 90000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 120000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 150000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 180000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 210000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 240000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 270000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 300000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 330000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 360000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 390000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 420000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 450000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 480000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 510000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 540000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 570000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 600000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 630000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 660000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 690000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 720000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 750000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 780000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 810000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 840000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 870000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 900000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 930000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 960000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 990000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 1020000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 1050000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 1080000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 1110000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 1140000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 1170000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 0,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": "finished"
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 30000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 60000,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        }
+      ]
+    },
+    {
+      "name": "standing: away 5 minutes abandons it",
+      "start": {
+        "phase": "standing",
+        "stoodMs": 480000
+      },
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 299,
+          "meeting": false
+        },
+        {
+          "gapMs": 30000,
+          "idleS": 300,
+          "meeting": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "standing",
+            "satMs": 0,
+            "stoodMs": 510000,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": null
+        },
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 0,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": "abandoned"
+        }
+      ]
+    },
+    {
+      "name": "standing through a call still counts",
+      "start": {
+        "phase": "standing",
+        "stoodMs": 1170000
+      },
+      "ticks": [
+        {
+          "gapMs": 30000,
+          "idleS": 3,
+          "meeting": true
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "phase": "sitting",
+            "satMs": 0,
+            "stoodMs": 0,
+            "snoozedUntil": 0,
+            "snoozeUsed": false
+          },
+          "event": "finished"
+        }
+      ]
+    }
+  ],
+  "desk": [
+    {
+      "name": "opens on the first input, then follows the last one",
+      "start": null,
+      "inputs": [
+        {
+          "now": 1775829600000,
+          "idleS": 20,
+          "meeting": false,
+          "manual": false
+        },
+        {
+          "now": 1775829630000,
+          "idleS": 2,
+          "meeting": false,
+          "manual": false
+        },
+        {
+          "now": 1775829660000,
+          "idleS": 40,
+          "meeting": false,
+          "manual": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "start": 1775829580000,
+            "end": 1775829580000
+          },
+          "close": null,
+          "opened": true
+        },
+        {
+          "st": {
+            "start": 1775829580000,
+            "end": 1775829628000
+          },
+          "close": null,
+          "opened": false
+        },
+        {
+          "st": {
+            "start": 1775829580000,
+            "end": 1775829628000
+          },
+          "close": null,
+          "opened": false
+        }
+      ]
+    },
+    {
+      "name": "five quiet minutes end it at the last input",
+      "start": {
+        "start": 1775829600000,
+        "end": 1775833200000
+      },
+      "inputs": [
+        {
+          "now": 1775833500000,
+          "idleS": 300,
+          "meeting": false,
+          "manual": false
+        }
+      ],
+      "steps": [
+        {
+          "st": null,
+          "close": {
+            "start": 1775829600000,
+            "end": 1775833200000
+          },
+          "opened": false
+        }
+      ]
+    },
+    {
+      "name": "a call keeps it running",
+      "start": {
+        "start": 1775829600000,
+        "end": 1775833200000
+      },
+      "inputs": [
+        {
+          "now": 1775834400000,
+          "idleS": 1200,
+          "meeting": true,
+          "manual": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "start": 1775829600000,
+            "end": 1775834400000
+          },
+          "close": null,
+          "opened": false
+        }
+      ]
+    },
+    {
+      "name": "back after an unseen break starts a new one",
+      "start": {
+        "start": 1775829600000,
+        "end": 1775833200000
+      },
+      "inputs": [
+        {
+          "now": 1775836800000,
+          "idleS": 3,
+          "meeting": false,
+          "manual": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "start": 1775836797000,
+            "end": 1775836797000
+          },
+          "close": {
+            "start": 1775829600000,
+            "end": 1775833200000
+          },
+          "opened": true
+        }
+      ]
+    },
+    {
+      "name": "crossing local midnight splits it there",
+      "start": {
+        "start": 1775793600000,
+        "end": 1775797140000
+      },
+      "inputs": [
+        {
+          "now": 1775797320000,
+          "idleS": 10,
+          "meeting": false,
+          "manual": false
+        }
+      ],
+      "steps": [
+        {
+          "st": {
+            "start": 1775797200000,
+            "end": 1775797310000
+          },
+          "close": {
+            "start": 1775793600000,
+            "end": 1775797199999
+          },
+          "opened": true
+        }
+      ]
+    },
+    {
+      "name": "stopped (a timer by hand, or standing): closes",
+      "start": {
+        "start": 1775829600000,
+        "end": 1775831400000
+      },
+      "inputs": [
+        {
+          "now": 1775831430000,
+          "idleS": 3,
+          "meeting": false,
+          "manual": true
+        }
+      ],
+      "steps": [
+        {
+          "st": null,
+          "close": {
+            "start": 1775829600000,
+            "end": 1775831400000
+          },
+          "opened": false
+        }
+      ]
+    },
+    {
+      "name": "nothing running and away: nothing",
+      "start": null,
+      "inputs": [
+        {
+          "now": 1775829600000,
+          "idleS": 900,
+          "meeting": false,
+          "manual": false
+        }
+      ],
+      "steps": [
+        {
+          "st": null,
+          "close": null,
+          "opened": false
+        }
+      ]
+    }
+  ],
+  "periods": [
+    {
+      "from": "2026-09-30",
+      "every": 14,
+      "day": "2026-09-29",
+      "start": null
+    },
+    {
+      "from": "2026-09-30",
+      "every": 14,
+      "day": "2026-09-30",
+      "start": "2026-09-30"
+    },
+    {
+      "from": "2026-09-30",
+      "every": 14,
+      "day": "2026-10-13",
+      "start": "2026-09-30"
+    },
+    {
+      "from": "2026-09-30",
+      "every": 14,
+      "day": "2026-10-14",
+      "start": "2026-10-14"
+    },
+    {
+      "from": "2026-09-30",
+      "every": 14,
+      "day": "2026-11-02",
+      "start": "2026-10-28"
+    },
+    {
+      "from": "2026-10-21",
+      "every": 28,
+      "day": "2026-11-02",
+      "start": "2026-10-21"
+    },
+    {
+      "from": "2026-10-21",
+      "every": 28,
+      "day": "2026-11-18",
+      "start": "2026-11-18"
+    },
+    {
+      "from": "2026-10-21",
+      "every": 28,
+      "day": "2027-03-01",
+      "start": "2027-02-10"
+    },
+    {
+      "from": "2026-03-01",
+      "every": 7,
+      "day": "2026-03-29",
+      "start": "2026-03-29"
+    },
+    {
+      "from": "2026-03-08",
+      "every": 1,
+      "day": "2026-03-09",
+      "start": "2026-03-09"
+    },
+    {
+      "from": "2026-03-08",
+      "every": 0,
+      "day": "2026-03-09",
+      "start": null
+    },
+    {
+      "from": "2025-12-29",
+      "every": 28,
+      "day": "2026-01-26",
+      "start": "2026-01-26"
+    }
+  ],
+  "keys": [
+    {
+      "day": "2020-12-31",
+      "week": "2020-W53",
+      "key": "hab-water-2020-W53-3"
+    },
+    {
+      "day": "2021-01-01",
+      "week": "2020-W53",
+      "key": "hab-water-2020-W53-4"
+    },
+    {
+      "day": "2021-01-03",
+      "week": "2020-W53",
+      "key": "hab-water-2020-W53-6"
+    },
+    {
+      "day": "2021-01-04",
+      "week": "2021-W1",
+      "key": "hab-water-2021-W1-0"
+    },
+    {
+      "day": "2024-12-30",
+      "week": "2025-W1",
+      "key": "hab-water-2025-W1-0"
+    },
+    {
+      "day": "2025-12-29",
+      "week": "2026-W1",
+      "key": "hab-water-2026-W1-0"
+    },
+    {
+      "day": "2026-01-01",
+      "week": "2026-W1",
+      "key": "hab-water-2026-W1-3"
+    },
+    {
+      "day": "2026-04-10",
+      "week": "2026-W15",
+      "key": "hab-water-2026-W15-4"
+    },
+    {
+      "day": "2026-11-02",
+      "week": "2026-W45",
+      "key": "hab-water-2026-W45-0"
+    },
+    {
+      "day": "2026-12-28",
+      "week": "2026-W53",
+      "key": "hab-water-2026-W53-0"
+    },
+    {
+      "day": "2027-01-03",
+      "week": "2026-W53",
+      "key": "hab-water-2026-W53-6"
+    },
+    {
+      "day": "2027-01-04",
+      "week": "2027-W1",
+      "key": "hab-water-2027-W1-0"
+    }
+  ],
+  "names": [
+    {
+      "name": "Water (mL)",
+      "label": "Water",
+      "unit": "mL"
+    },
+    {
+      "name": "Stand (minutes)",
+      "label": "Stand",
+      "unit": "min"
+    },
+    {
+      "name": "Work (hours)",
+      "label": "Work",
+      "unit": "h"
+    },
+    {
+      "name": "Reading (Minutes)",
+      "label": "Reading",
+      "unit": "min"
+    },
+    {
+      "name": "Creatine",
+      "label": "Creatine",
+      "unit": ""
+    },
+    {
+      "name": "Steps (k)",
+      "label": "Steps",
+      "unit": "k"
+    },
+    {
+      "name": "",
+      "label": "",
+      "unit": ""
+    }
+  ],
+  "checkins": {
+    "hab-water-2026-W15-4": "1250",
+    "hab-protein-2026-W15-4": "1",
+    "hab-floss-2026-W15-4": "0"
+  },
+  "values": [
+    {
+      "id": "water",
+      "type": "numeric",
+      "value": 1250
+    },
+    {
+      "id": "protein",
+      "type": "binary",
+      "value": 1
+    },
+    {
+      "id": "floss",
+      "type": "binary",
+      "value": 1
+    },
+    {
+      "id": "creatine",
+      "type": "binary",
+      "value": 0
+    },
+    {
+      "id": "stand",
+      "type": "numeric",
+      "value": 0
+    }
+  ]
+}

@@ -1,0 +1,2056 @@
+{
+  "about": "The dashboard’s own functions (view.js, cut out by tools/golden-dashboard.mjs) on test/fixtures/vault. Regenerate when view.js changes.",
+  "view": "4fee6230e78e7451",
+  "today": "2026-04-10",
+  "checklists": [
+    {
+      "type": "A",
+      "express": false,
+      "deload": false,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "6 min",
+          "steps": [
+            "3 min bike",
+            "band external rotation"
+          ]
+        },
+        {
+          "name": "Goblet Squat",
+          "sr": "4 × 8–10"
+        },
+        {
+          "name": "Flat DB Bench Press",
+          "sr": "3 × 6–8"
+        },
+        {
+          "name": "Face Pull + Band External Rotation",
+          "sr": "3 × 15 / 2 × 15"
+        },
+        {
+          "name": "Zone 2 finisher",
+          "sr": "5–10 min"
+        }
+      ]
+    },
+    {
+      "type": "A",
+      "express": false,
+      "deload": true,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "6 min",
+          "steps": [
+            "3 min bike",
+            "band external rotation"
+          ]
+        },
+        {
+          "name": "Goblet Squat",
+          "sr": "2 × 8–10"
+        },
+        {
+          "name": "Flat DB Bench Press",
+          "sr": "2 × 6–8"
+        },
+        {
+          "name": "Face Pull + Band External Rotation",
+          "sr": "2 × 15 / 2 × 15"
+        },
+        {
+          "name": "Zone 2 finisher",
+          "sr": "5–10 min"
+        }
+      ]
+    },
+    {
+      "type": "A",
+      "express": true,
+      "deload": false,
+      "lines": [
+        {
+          "name": "Warm-up: band external rotation + dislocates",
+          "sr": "3 min"
+        },
+        {
+          "name": "Goblet Squat",
+          "sr": "2 working sets"
+        },
+        {
+          "name": "Flat DB Bench Press",
+          "sr": "2 sets"
+        },
+        {
+          "name": "Face Pull",
+          "sr": "2 × 15"
+        }
+      ]
+    },
+    {
+      "type": "A",
+      "express": true,
+      "deload": true,
+      "lines": [
+        {
+          "name": "Warm-up: band external rotation + dislocates",
+          "sr": "3 min"
+        },
+        {
+          "name": "Goblet Squat",
+          "sr": "2 working sets"
+        },
+        {
+          "name": "Flat DB Bench Press",
+          "sr": "2 sets"
+        },
+        {
+          "name": "Face Pull",
+          "sr": "2 × 15"
+        }
+      ]
+    },
+    {
+      "type": "B",
+      "express": false,
+      "deload": false,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "6 min",
+          "steps": [
+            "3 min bike",
+            "band external rotation"
+          ]
+        },
+        {
+          "name": "Romanian Deadlift",
+          "sr": "3 × 8–10"
+        },
+        {
+          "name": "Seated Cable Row",
+          "sr": "3 × 10–12"
+        },
+        {
+          "name": "Bulgarian Split Squat",
+          "sr": "3 × 8/leg"
+        },
+        {
+          "name": "Side Plank",
+          "sr": "3 × 20–40 s/side"
+        },
+        {
+          "name": "Zone 2 finisher",
+          "sr": "5–10 min"
+        }
+      ]
+    },
+    {
+      "type": "B",
+      "express": false,
+      "deload": true,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "6 min",
+          "steps": [
+            "3 min bike",
+            "band external rotation"
+          ]
+        },
+        {
+          "name": "Romanian Deadlift",
+          "sr": "2 × 8–10"
+        },
+        {
+          "name": "Seated Cable Row",
+          "sr": "2 × 10–12"
+        },
+        {
+          "name": "Bulgarian Split Squat",
+          "sr": "2 × 8/leg"
+        },
+        {
+          "name": "Side Plank",
+          "sr": "2 × 20–40 s/side"
+        },
+        {
+          "name": "Zone 2 finisher",
+          "sr": "5–10 min"
+        }
+      ]
+    },
+    {
+      "type": "B",
+      "express": true,
+      "deload": false,
+      "lines": [
+        {
+          "name": "Warm-up: band external rotation + dislocates",
+          "sr": "3 min"
+        },
+        {
+          "name": "Romanian Deadlift",
+          "sr": "2 working sets"
+        },
+        {
+          "name": "Seated Cable Row",
+          "sr": "2 sets"
+        },
+        {
+          "name": "Face Pull",
+          "sr": "2 × 15"
+        }
+      ]
+    },
+    {
+      "type": "B",
+      "express": true,
+      "deload": true,
+      "lines": [
+        {
+          "name": "Warm-up: band external rotation + dislocates",
+          "sr": "3 min"
+        },
+        {
+          "name": "Romanian Deadlift",
+          "sr": "2 working sets"
+        },
+        {
+          "name": "Seated Cable Row",
+          "sr": "2 sets"
+        },
+        {
+          "name": "Face Pull",
+          "sr": "2 × 15"
+        }
+      ]
+    },
+    {
+      "type": "S1",
+      "express": false,
+      "deload": false,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "3 min",
+          "steps": [
+            "1 min jumping jacks"
+          ]
+        },
+        {
+          "name": "Handstand (your level)",
+          "sr": "6 min"
+        },
+        {
+          "name": "Push-up (your level) + Dead Bug",
+          "sr": "4 × 6–12 / 3 × 8/side"
+        }
+      ]
+    },
+    {
+      "type": "S1",
+      "express": false,
+      "deload": true,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "3 min",
+          "steps": [
+            "1 min jumping jacks"
+          ]
+        },
+        {
+          "name": "Handstand (your level)",
+          "sr": "6 min"
+        },
+        {
+          "name": "Push-up (your level) + Dead Bug",
+          "sr": "2 × 6–12 / 2 × 8/side"
+        }
+      ]
+    },
+    {
+      "type": "S3",
+      "express": false,
+      "deload": false,
+      "lines": [
+        {
+          "name": "Warm-up",
+          "sr": "3 min",
+          "steps": [
+            "1 min jumping jacks"
+          ]
+        },
+        {
+          "name": "Circuit: squat jump · burpee",
+          "sr": "4 rounds, 40/20"
+        },
+        {
+          "name": "Cool-down walk or bike",
+          "sr": "3 min"
+        }
+      ]
+    },
+    {
+      "type": "S3",
+      "express": false,
+      "deload": true,
+      "lines": [
+        {
+          "name": "Easy Zone 2 (bike or walk)",
+          "sr": "20 min"
+        }
+      ]
+    }
+  ],
+  "state": [
+    {
+      "name": "no record: tick line 1",
+      "start": null,
+      "ops": [
+        [
+          "tick",
+          "B",
+          false,
+          1
+        ]
+      ],
+      "lengths": {
+        "B|false": 6
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "B",
+          "express": false,
+          "checked": [
+            false,
+            true,
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tick twice: unticked again",
+      "start": null,
+      "ops": [
+        [
+          "tick",
+          "B",
+          false,
+          2
+        ],
+        [
+          "tick",
+          "B",
+          false,
+          2
+        ]
+      ],
+      "lengths": {
+        "B|false": 6
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "B",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            true,
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "date": "2026-04-10",
+          "type": "B",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a pick, then a tick keeps the pick",
+      "start": null,
+      "ops": [
+        [
+          "choose",
+          "S1",
+          false,
+          true
+        ],
+        [
+          "tick",
+          "S1",
+          false,
+          0
+        ]
+      ],
+      "lengths": {
+        "S1|false": 3
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "S1",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false
+          ],
+          "picked": true
+        },
+        {
+          "date": "2026-04-10",
+          "type": "S1",
+          "express": false,
+          "checked": [
+            true,
+            false,
+            false
+          ],
+          "picked": true
+        }
+      ]
+    },
+    {
+      "name": "back to the rotation: the same session keeps its ticks, picked false",
+      "start": null,
+      "ops": [
+        [
+          "choose",
+          "A",
+          false,
+          true
+        ],
+        [
+          "tick",
+          "A",
+          false,
+          3
+        ],
+        [
+          "choose",
+          "A",
+          false,
+          false
+        ]
+      ],
+      "lengths": {
+        "A|false": 5
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "A",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "picked": true
+        },
+        {
+          "date": "2026-04-10",
+          "type": "A",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false,
+            true,
+            false
+          ],
+          "picked": true
+        },
+        {
+          "date": "2026-04-10",
+          "type": "A",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false,
+            true,
+            false
+          ],
+          "picked": false
+        }
+      ]
+    },
+    {
+      "name": "another session starts fresh",
+      "start": {
+        "date": "2026-04-10",
+        "type": "A",
+        "express": false,
+        "checked": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "picked": true
+      },
+      "ops": [
+        [
+          "tick",
+          "B",
+          false,
+          0
+        ]
+      ],
+      "lengths": {
+        "B|false": 6
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "B",
+          "express": false,
+          "checked": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Express and full are different records",
+      "start": {
+        "date": "2026-04-10",
+        "type": "A",
+        "express": false,
+        "checked": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "ops": [
+        [
+          "tick",
+          "A",
+          true,
+          1
+        ]
+      ],
+      "lengths": {
+        "A|true": 4
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "A",
+          "express": true,
+          "checked": [
+            false,
+            true,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a record without the flag reads as full",
+      "start": {
+        "date": "2026-04-10",
+        "type": "A",
+        "checked": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "ops": [
+        [
+          "tick",
+          "A",
+          false,
+          1
+        ]
+      ],
+      "lengths": {
+        "A|false": 5
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "A",
+          "express": false,
+          "checked": [
+            false,
+            true,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a stale length starts fresh",
+      "start": {
+        "date": "2026-04-10",
+        "type": "A",
+        "express": false,
+        "checked": [
+          true,
+          true
+        ]
+      },
+      "ops": [
+        [
+          "tick",
+          "A",
+          false,
+          0
+        ]
+      ],
+      "lengths": {
+        "A|false": 5
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "A",
+          "express": false,
+          "checked": [
+            true,
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "yesterday’s record starts fresh",
+      "start": {
+        "date": "2026-04-09",
+        "type": "B",
+        "express": false,
+        "checked": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "picked": true
+      },
+      "ops": [
+        [
+          "tick",
+          "B",
+          false,
+          4
+        ]
+      ],
+      "lengths": {
+        "B|false": 6
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "B",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a short choice, unpicked (the 30-minute button)",
+      "start": null,
+      "ops": [
+        [
+          "choose",
+          "S3",
+          false,
+          false
+        ]
+      ],
+      "lengths": {
+        "S3|false": 3
+      },
+      "after": [
+        {
+          "date": "2026-04-10",
+          "type": "S3",
+          "express": false,
+          "checked": [
+            false,
+            false,
+            false
+          ],
+          "picked": false
+        }
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "cut": "2026-03-01",
+      "deload": false,
+      "name": "Barbell Back Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 5–6 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": false,
+      "name": "Goblet Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 8–10 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": false,
+      "name": "Flat DB Bench Press",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 6–8 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": false,
+      "name": "Romanian Deadlift",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 8–10 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": false,
+      "name": "Seated Cable Row",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 10–12 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": true,
+      "name": "Barbell Back Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 5–6 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": true,
+      "name": "Goblet Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 8–10 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": true,
+      "name": "Flat DB Bench Press",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 6–8 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": true,
+      "name": "Romanian Deadlift",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 8–10 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-01",
+      "deload": true,
+      "name": "Seated Cable Row",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 10–12 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": false,
+      "name": "Barbell Back Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 5–6 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": false,
+      "name": "Goblet Squat",
+      "out": {
+        "weight": 50,
+        "reps": 9,
+        "short": "next 50 lb × 9",
+        "text": "Next: 50 lb × 9, one more rep than last time (50 × 8)."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": false,
+      "name": "Flat DB Bench Press",
+      "out": {
+        "weight": 60,
+        "reps": 6,
+        "short": "next 60 lb × 6",
+        "text": "Next: 60 lb × 6, if every set reached 8 last time (55 × 8). Otherwise stay at 55."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": false,
+      "name": "Romanian Deadlift",
+      "out": {
+        "weight": 65,
+        "reps": 9,
+        "short": "next 65 kg × 9",
+        "text": "Next: 65 kg × 9, one more rep than last time (65 × 8)."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": false,
+      "name": "Seated Cable Row",
+      "out": {
+        "weight": 110,
+        "reps": 12,
+        "short": "next 110 lb × 12",
+        "text": "Next: 110 lb × 12, one more rep than last time (110 × 11)."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": true,
+      "name": "Barbell Back Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 5–6 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": true,
+      "name": "Goblet Squat",
+      "out": {
+        "weight": 45,
+        "reps": 8,
+        "short": "deload 45 lb × 8",
+        "text": "Deload week: 45 lb × 8, about 10% under last time (50 × 8)."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": true,
+      "name": "Flat DB Bench Press",
+      "out": {
+        "weight": 50,
+        "reps": 6,
+        "short": "deload 50 lb × 6",
+        "text": "Deload week: 50 lb × 6, about 10% under last time (55 × 8)."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": true,
+      "name": "Romanian Deadlift",
+      "out": {
+        "weight": 60,
+        "reps": 8,
+        "short": "deload 60 kg × 8",
+        "text": "Deload week: 60 kg × 8, about 10% under last time (65 × 8)."
+      }
+    },
+    {
+      "cut": "2026-03-20",
+      "deload": true,
+      "name": "Seated Cable Row",
+      "out": {
+        "weight": 100,
+        "reps": 10,
+        "short": "deload 100 lb × 10",
+        "text": "Deload week: 100 lb × 10, about 10% under last time (110 × 11)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": false,
+      "name": "Barbell Back Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 5–6 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": false,
+      "name": "Goblet Squat",
+      "out": {
+        "weight": 55,
+        "reps": 10,
+        "short": "next 55 lb × 10",
+        "text": "Next: 55 lb × 10, one more rep than last time (55 × 9)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": false,
+      "name": "Flat DB Bench Press",
+      "out": {
+        "weight": 60,
+        "reps": 6,
+        "short": "next 60 lb × 6",
+        "text": "Next: 60 lb × 6, one more rep than last time (60 × 5)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": false,
+      "name": "Romanian Deadlift",
+      "out": {
+        "weight": 70,
+        "reps": 9,
+        "short": "next 70 kg × 9",
+        "text": "Next: 70 kg × 9, one more rep than last time (154 lb × 8)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": false,
+      "name": "Seated Cable Row",
+      "out": {
+        "weight": 115,
+        "reps": 11,
+        "short": "next 115 lb × 11",
+        "text": "Next: 115 lb × 11, one more rep than last time (115 × 10)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": true,
+      "name": "Barbell Back Squat",
+      "out": {
+        "short": "first time: calibrate",
+        "text": "First time: find a weight for 5–6 reps with 2–3 in reserve."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": true,
+      "name": "Goblet Squat",
+      "out": {
+        "weight": 50,
+        "reps": 8,
+        "short": "deload 50 lb × 8",
+        "text": "Deload week: 50 lb × 8, about 10% under last time (55 × 9)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": true,
+      "name": "Flat DB Bench Press",
+      "out": {
+        "weight": 55,
+        "reps": 6,
+        "short": "deload 55 lb × 6",
+        "text": "Deload week: 55 lb × 6, about 10% under last time (60 × 5)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": true,
+      "name": "Romanian Deadlift",
+      "out": {
+        "weight": 65,
+        "reps": 8,
+        "short": "deload 65 kg × 8",
+        "text": "Deload week: 65 kg × 8, about 10% under last time (154 lb × 8)."
+      }
+    },
+    {
+      "cut": "2026-04-10",
+      "deload": true,
+      "name": "Seated Cable Row",
+      "out": {
+        "weight": 100,
+        "reps": 10,
+        "short": "deload 100 lb × 10",
+        "text": "Deload week: 100 lb × 10, about 10% under last time (115 × 10)."
+      }
+    }
+  ],
+  "notes": [
+    {
+      "date": "2026-04-10",
+      "type": "A",
+      "name": "Goblet Squat",
+      "out": {
+        "note": "Replaces Barbell Back Squat. RIR 2. Elbows inside the knees.",
+        "temp": {
+          "until": "2026-04-19",
+          "text": "knee niggle, easing; the back squat returns after it.",
+          "short": "knee niggle, easing",
+          "weight": null
+        }
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "A",
+      "name": "Flat DB Bench Press",
+      "out": {
+        "note": "2-s lowering.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "A",
+      "name": "Face Pull",
+      "out": {
+        "note": "Light.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "A",
+      "name": "Band External Rotation",
+      "out": {
+        "note": "Elbow at side.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "A",
+      "name": "Zone 2 finisher",
+      "out": {
+        "note": "Bike or incline walk.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "B",
+      "name": "Romanian Deadlift",
+      "out": {
+        "note": "RIR 3. Hinge at the hips.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "B",
+      "name": "Seated Cable Row",
+      "out": {
+        "note": "Chest up.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "B",
+      "name": "Side Plank",
+      "out": {
+        "note": "Straight line.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "S1",
+      "name": "Handstand (your level)",
+      "out": {
+        "note": "Skill work first.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "S1",
+      "name": "Push-up (your level)",
+      "out": {
+        "note": "See the push-up ladder.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "S1",
+      "name": "Dead Bug",
+      "out": {
+        "note": "Slow.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "S3",
+      "name": "Circuit: squat jump · burpee",
+      "out": {
+        "note": "4 rounds × (40 s on / 20 s off per move) = 8 min. Hard but steady.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "type": "S3",
+      "name": "Cool-down walk or bike",
+      "out": {
+        "note": "Easy.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "A",
+      "name": "Goblet Squat",
+      "out": {
+        "note": "Replaces Barbell Back Squat. RIR 2. Elbows inside the knees.",
+        "temp": {
+          "until": "2026-04-19",
+          "text": "knee niggle, easing; the back squat returns after it.",
+          "short": "knee niggle, easing",
+          "weight": null
+        }
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "A",
+      "name": "Flat DB Bench Press",
+      "out": {
+        "note": "2-s lowering.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "A",
+      "name": "Face Pull",
+      "out": {
+        "note": "Light.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "A",
+      "name": "Band External Rotation",
+      "out": {
+        "note": "Elbow at side.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "A",
+      "name": "Zone 2 finisher",
+      "out": {
+        "note": "Bike or incline walk.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "B",
+      "name": "Romanian Deadlift",
+      "out": {
+        "note": "RIR 3. Hinge at the hips.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "B",
+      "name": "Seated Cable Row",
+      "out": {
+        "note": "Chest up.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "B",
+      "name": "Side Plank",
+      "out": {
+        "note": "Straight line.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "S1",
+      "name": "Handstand (your level)",
+      "out": {
+        "note": "Skill work first.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "S1",
+      "name": "Push-up (your level)",
+      "out": {
+        "note": "See the push-up ladder.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "S1",
+      "name": "Dead Bug",
+      "out": {
+        "note": "Slow.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "S3",
+      "name": "Circuit: squat jump · burpee",
+      "out": {
+        "note": "4 rounds × (40 s on / 20 s off per move) = 8 min. Hard but steady.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "type": "S3",
+      "name": "Cool-down walk or bike",
+      "out": {
+        "note": "Easy.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "A",
+      "name": "Goblet Squat",
+      "out": {
+        "note": "Replaces Barbell Back Squat. RIR 2. Elbows inside the knees.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "A",
+      "name": "Flat DB Bench Press",
+      "out": {
+        "note": "2-s lowering.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "A",
+      "name": "Face Pull",
+      "out": {
+        "note": "Light.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "A",
+      "name": "Band External Rotation",
+      "out": {
+        "note": "Elbow at side.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "A",
+      "name": "Zone 2 finisher",
+      "out": {
+        "note": "Bike or incline walk.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "B",
+      "name": "Romanian Deadlift",
+      "out": {
+        "note": "RIR 3. Hinge at the hips.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "B",
+      "name": "Seated Cable Row",
+      "out": {
+        "note": "Chest up.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "B",
+      "name": "Side Plank",
+      "out": {
+        "note": "Straight line.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "S1",
+      "name": "Handstand (your level)",
+      "out": {
+        "note": "Skill work first.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "S1",
+      "name": "Push-up (your level)",
+      "out": {
+        "note": "See the push-up ladder.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "S1",
+      "name": "Dead Bug",
+      "out": {
+        "note": "Slow.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "S3",
+      "name": "Circuit: squat jump · burpee",
+      "out": {
+        "note": "4 rounds × (40 s on / 20 s off per move) = 8 min. Hard but steady.",
+        "temp": null
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "S3",
+      "name": "Cool-down walk or bike",
+      "out": {
+        "note": "Easy.",
+        "temp": null
+      }
+    }
+  ],
+  "records": [
+    {
+      "name": "heavier bench",
+      "entry": {
+        "lift1": {
+          "name": "Goblet Squat",
+          "weight": 30,
+          "reps": 8
+        },
+        "lift2": {
+          "name": "Flat DB Bench Press",
+          "weight": 70,
+          "reps": 6
+        }
+      },
+      "out": [
+        "Bench 70 × 6"
+      ]
+    },
+    {
+      "name": "same weight, more reps",
+      "entry": {
+        "lift1": {
+          "name": "Romanian Deadlift",
+          "weight": 70,
+          "reps": 11,
+          "unit": "kg"
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 120,
+          "reps": 12
+        }
+      },
+      "out": [
+        "Row 120 × 12"
+      ]
+    },
+    {
+      "name": "no records",
+      "entry": {
+        "lift1": {
+          "name": "Goblet Squat",
+          "weight": 10,
+          "reps": 5
+        },
+        "lift2": null
+      },
+      "out": []
+    },
+    {
+      "name": "a lift never logged",
+      "entry": {
+        "lift1": {
+          "name": "Barbell Back Squat",
+          "weight": 60,
+          "reps": 5,
+          "unit": "kg"
+        },
+        "lift2": {
+          "name": "Flat DB Bench Press",
+          "weight": 0,
+          "reps": 0
+        }
+      },
+      "out": []
+    }
+  ],
+  "guide": [
+    {
+      "name": "Warm-up",
+      "unset": false,
+      "out": []
+    },
+    {
+      "name": "Goblet Squat",
+      "unset": false,
+      "out": [
+        {
+          "title": "Goblet Squat",
+          "unset": false,
+          "works": "Quads, glutes · helps abs, upper back, hamstrings",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Flat DB Bench Press",
+      "unset": false,
+      "out": [
+        {
+          "title": "Flat DB Bench Press",
+          "unset": false,
+          "works": "Chest · helps shoulders, triceps",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Face Pull + Band External Rotation",
+      "unset": false,
+      "out": [
+        {
+          "title": "Face Pull",
+          "unset": false,
+          "works": "Shoulders, upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        },
+        {
+          "title": "Band External Rotation",
+          "unset": false,
+          "works": "Shoulders · helps upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Zone 2 finisher",
+      "unset": false,
+      "out": [
+        {
+          "title": "Zone 2 finisher",
+          "unset": false,
+          "works": "Cardio: quads, calves",
+          "setup": "Bike.",
+          "do": "Easy.",
+          "avoid": "Hard.",
+          "video": "https://www.youtube.com/results?search_query=zone%202"
+        }
+      ]
+    },
+    {
+      "name": "Warm-up: band external rotation + dislocates",
+      "unset": false,
+      "out": [
+        {
+          "title": "Band External Rotation",
+          "unset": false,
+          "works": "Shoulders · helps upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Face Pull",
+      "unset": false,
+      "out": [
+        {
+          "title": "Face Pull",
+          "unset": false,
+          "works": "Shoulders, upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Romanian Deadlift",
+      "unset": false,
+      "out": [
+        {
+          "title": "Romanian Deadlift",
+          "unset": false,
+          "works": "Hamstrings, glutes · helps lower back, forearms",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Seated Cable Row",
+      "unset": false,
+      "out": [
+        {
+          "title": "Seated Cable Row",
+          "unset": false,
+          "works": "Upper back, lats · helps biceps, shoulders, forearms",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "unset": false,
+      "out": [
+        {
+          "title": "Bulgarian Split Squat",
+          "unset": false,
+          "works": "Quads, glutes · helps hamstrings, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Side Plank",
+      "unset": false,
+      "out": [
+        {
+          "title": "Side Plank",
+          "unset": false,
+          "works": "Obliques · helps abs, shoulders, glutes",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Handstand (your level)",
+      "unset": false,
+      "out": [
+        {
+          "title": "Handstand · L3 Chest-to-wall handstand",
+          "unset": false,
+          "works": "Shoulders · helps triceps, upper back, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Push-up (your level) + Dead Bug",
+      "unset": false,
+      "out": [
+        {
+          "title": "Dead Bug",
+          "unset": false,
+          "works": "Abs · helps obliques",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Circuit: squat jump · burpee",
+      "unset": false,
+      "out": [
+        {
+          "title": "Squat jump",
+          "unset": false,
+          "works": "Quads, glutes · helps calves",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        },
+        {
+          "title": "Burpee",
+          "unset": false,
+          "works": "Quads, chest · helps shoulders, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Cool-down walk or bike",
+      "unset": false,
+      "out": [
+        {
+          "title": "Cool-down walk or bike",
+          "unset": false,
+          "works": "Cardio: quads",
+          "setup": "Walk.",
+          "do": "Easy.",
+          "avoid": "Rushing.",
+          "video": "https://www.youtube.com/results?search_query=cool%20down"
+        }
+      ]
+    },
+    {
+      "name": "Easy Zone 2 (bike or walk)",
+      "unset": false,
+      "out": [
+        {
+          "title": "Easy Zone 2 (bike or walk)",
+          "unset": false,
+          "works": "Cardio: quads",
+          "setup": "Bike.",
+          "do": "Easy.",
+          "avoid": "Hard.",
+          "video": "https://www.youtube.com/results?search_query=zone%202"
+        }
+      ]
+    },
+    {
+      "name": "Band External Rotation",
+      "unset": false,
+      "out": [
+        {
+          "title": "Band External Rotation",
+          "unset": false,
+          "works": "Shoulders · helps upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Push-up (your level)",
+      "unset": false,
+      "out": [
+        {
+          "title": "Push-up · L2 Floor push-up",
+          "unset": false,
+          "works": "Chest · helps triceps, shoulders, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Dead Bug",
+      "unset": false,
+      "out": [
+        {
+          "title": "Dead Bug",
+          "unset": false,
+          "works": "Abs · helps obliques",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Warm-up",
+      "unset": true,
+      "out": []
+    },
+    {
+      "name": "Goblet Squat",
+      "unset": true,
+      "out": [
+        {
+          "title": "Goblet Squat",
+          "unset": false,
+          "works": "Quads, glutes · helps abs, upper back, hamstrings",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Flat DB Bench Press",
+      "unset": true,
+      "out": [
+        {
+          "title": "Flat DB Bench Press",
+          "unset": false,
+          "works": "Chest · helps shoulders, triceps",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Face Pull + Band External Rotation",
+      "unset": true,
+      "out": [
+        {
+          "title": "Face Pull",
+          "unset": false,
+          "works": "Shoulders, upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        },
+        {
+          "title": "Band External Rotation",
+          "unset": false,
+          "works": "Shoulders · helps upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Zone 2 finisher",
+      "unset": true,
+      "out": [
+        {
+          "title": "Zone 2 finisher",
+          "unset": false,
+          "works": "Cardio: quads, calves",
+          "setup": "Bike.",
+          "do": "Easy.",
+          "avoid": "Hard.",
+          "video": "https://www.youtube.com/results?search_query=zone%202"
+        }
+      ]
+    },
+    {
+      "name": "Warm-up: band external rotation + dislocates",
+      "unset": true,
+      "out": [
+        {
+          "title": "Band External Rotation",
+          "unset": false,
+          "works": "Shoulders · helps upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Face Pull",
+      "unset": true,
+      "out": [
+        {
+          "title": "Face Pull",
+          "unset": false,
+          "works": "Shoulders, upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Romanian Deadlift",
+      "unset": true,
+      "out": [
+        {
+          "title": "Romanian Deadlift",
+          "unset": false,
+          "works": "Hamstrings, glutes · helps lower back, forearms",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Seated Cable Row",
+      "unset": true,
+      "out": [
+        {
+          "title": "Seated Cable Row",
+          "unset": false,
+          "works": "Upper back, lats · helps biceps, shoulders, forearms",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "unset": true,
+      "out": [
+        {
+          "title": "Bulgarian Split Squat",
+          "unset": false,
+          "works": "Quads, glutes · helps hamstrings, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Side Plank",
+      "unset": true,
+      "out": [
+        {
+          "title": "Side Plank",
+          "unset": false,
+          "works": "Obliques · helps abs, shoulders, glutes",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Handstand (your level)",
+      "unset": true,
+      "out": [
+        {
+          "title": "Handstand · L1 Pike hold on a bench",
+          "unset": true,
+          "works": "Shoulders · helps triceps, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Push-up (your level) + Dead Bug",
+      "unset": true,
+      "out": [
+        {
+          "title": "Dead Bug",
+          "unset": false,
+          "works": "Abs · helps obliques",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Circuit: squat jump · burpee",
+      "unset": true,
+      "out": [
+        {
+          "title": "Squat jump",
+          "unset": false,
+          "works": "Quads, glutes · helps calves",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        },
+        {
+          "title": "Burpee",
+          "unset": false,
+          "works": "Quads, chest · helps shoulders, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Cool-down walk or bike",
+      "unset": true,
+      "out": [
+        {
+          "title": "Cool-down walk or bike",
+          "unset": false,
+          "works": "Cardio: quads",
+          "setup": "Walk.",
+          "do": "Easy.",
+          "avoid": "Rushing.",
+          "video": "https://www.youtube.com/results?search_query=cool%20down"
+        }
+      ]
+    },
+    {
+      "name": "Easy Zone 2 (bike or walk)",
+      "unset": true,
+      "out": [
+        {
+          "title": "Easy Zone 2 (bike or walk)",
+          "unset": false,
+          "works": "Cardio: quads",
+          "setup": "Bike.",
+          "do": "Easy.",
+          "avoid": "Hard.",
+          "video": "https://www.youtube.com/results?search_query=zone%202"
+        }
+      ]
+    },
+    {
+      "name": "Band External Rotation",
+      "unset": true,
+      "out": [
+        {
+          "title": "Band External Rotation",
+          "unset": false,
+          "works": "Shoulders · helps upper back",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Push-up (your level)",
+      "unset": true,
+      "out": [
+        {
+          "title": "Push-up · L1 Incline push-up",
+          "unset": true,
+          "works": "Chest · helps triceps, shoulders, abs",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    },
+    {
+      "name": "Dead Bug",
+      "unset": true,
+      "out": [
+        {
+          "title": "Dead Bug",
+          "unset": false,
+          "works": "Abs · helps obliques",
+          "setup": "Set up.",
+          "do": "Do it.",
+          "avoid": "Avoid that.",
+          "video": "https://www.youtube.com/results?search_query=how%20to"
+        }
+      ]
+    }
+  ]
+}

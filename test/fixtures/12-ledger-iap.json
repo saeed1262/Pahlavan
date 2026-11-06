@@ -1,0 +1,639 @@
+{
+  "name": "12-ledger-iap",
+  "about": "An active Ledger entry rules out high abdominal strain through 2026-04-30; an old knee entry has expired. The plan's lower day is screened: the back squat and RDL are blocked with lower-strain swaps, moderate lifts carry conditions.",
+  "today": "2026-03-30",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "lower-focus",
+      "name": "Lower focus",
+      "exercises": {
+        "back-squat": {
+          "name": "Barbell back squat",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings",
+              "lower-back",
+              "abs"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "rdl": {
+          "name": "Romanian deadlift",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "hamstrings",
+              "glutes"
+            ],
+            "helps": [
+              "lower-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "split-squat": {
+          "name": "Dumbbell split squat",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate",
+            "joint:knee"
+          ]
+        },
+        "goblet-squat": {
+          "name": "Goblet squat",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "abs",
+              "upper-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "leg-extension": {
+          "name": "Leg extension",
+          "unit": "lb",
+          "increment": 10,
+          "muscles": {
+            "main": [
+              "quads"
+            ],
+            "helps": []
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "hip-thrust": {
+          "name": "Barbell hip thrust",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "leg-press": {
+          "name": "Leg press (heavy)",
+          "unit": "kg",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "hamstrings"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-high"
+          ]
+        },
+        "db-rdl": {
+          "name": "Dumbbell Romanian deadlift",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "hamstrings",
+              "glutes"
+            ],
+            "helps": [
+              "lower-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "seated-leg-curl": {
+          "name": "Seated leg curl",
+          "unit": "lb",
+          "increment": 10,
+          "muscles": {
+            "main": [
+              "hamstrings"
+            ],
+            "helps": []
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Lower focus",
+        "start": "2026-03-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "deload",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "meso-2",
+                "name": "Mesocycle 2",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-30",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-04-06",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-04-13",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-04-20",
+                    "sessions": [
+                      {
+                        "id": "lower",
+                        "name": "Lower",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "back-squat",
+                            "sets": 3,
+                            "repRange": [
+                              5,
+                              8
+                            ],
+                            "rir": 2,
+                            "main": true,
+                            "swaps": [
+                              "goblet-squat"
+                            ]
+                          },
+                          {
+                            "exercise": "rdl",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              10
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "split-squat",
+                            "sets": 2,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "inputs": {
+      "ledger": [
+        {
+          "id": "abdominal-wall",
+          "area": "abdomen",
+          "noTags": [
+            "abdomen-high"
+          ],
+          "until": "2026-04-30",
+          "note": "New pressure at a known site; cleared for low and moderate strain."
+        },
+        {
+          "id": "old-knee",
+          "area": "left knee",
+          "noMovements": [
+            "split-squat"
+          ],
+          "until": "2026-02-28"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "ledger": [
+      {
+        "exercise": "back-squat",
+        "today": "2026-03-30",
+        "swapsFromSlot": true,
+        "allowed": false,
+        "blockedBy": [
+          "abdominal-wall"
+        ],
+        "conditions": 0,
+        "swaps": [
+          "goblet-squat",
+          "split-squat",
+          "leg-extension",
+          "db-rdl",
+          "hip-thrust"
+        ],
+        "why": "The back squat is tagged high abdominal strain: blocked through 2026-04-30. Swaps share a main muscle (quads, glutes) and carry a lower tag: the slot's own swap (goblet squat) first; then split squat (both main muscles); then one shared muscle, low strain first (leg extension), then the moderate DB RDL and hip thrust (tied on shared helpers, so by id). The heavy leg press is high strain too, and the seated leg curl shares no main muscle, so both are left out."
+      },
+      {
+        "exercise": "rdl",
+        "today": "2026-03-30",
+        "swapsFromSlot": false,
+        "allowed": false,
+        "blockedBy": [
+          "abdominal-wall"
+        ],
+        "conditions": 0,
+        "swaps": [
+          "db-rdl",
+          "seated-leg-curl",
+          "goblet-squat",
+          "hip-thrust",
+          "split-squat"
+        ],
+        "why": "The RDL is high strain: blocked. The DB RDL shares both main muscles (hamstrings, glutes) at moderate strain; then one shared muscle, low strain first (seated leg curl), then the moderate goblet squat, hip thrust and split squat (no shared helpers, so by id). The split squat is allowed again because the knee entry has expired; the leg extension shares no main muscle."
+      },
+      {
+        "exercise": "split-squat",
+        "today": "2026-03-30",
+        "swapsFromSlot": false,
+        "allowed": true,
+        "blockedBy": [],
+        "conditions": 2,
+        "swaps": [],
+        "why": "The knee entry ended on 2026-02-28, so it no longer applies. The split squat is moderate strain, allowed with an active abdominal entry on two conditions: breathe out on the effort, and keep 2 or more reps in reserve."
+      },
+      {
+        "exercise": "back-squat",
+        "today": "2026-05-01",
+        "swapsFromSlot": true,
+        "allowed": true,
+        "blockedBy": [],
+        "conditions": 0,
+        "swaps": [],
+        "why": "On 2026-05-01 the abdominal entry has expired: the back squat is allowed again (rules.md: back in at deload loads)."
+      }
+    ]
+  }
+}

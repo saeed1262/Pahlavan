@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-11-02",
+  "source": "Coach/Eating plan.md",
+  "level": "light",
+  "screened": "2026-11-02",
+  "counting": "allowed",
+  "goal": "recomposition",
+  "review": "2026-11-29",
+  "basis": {
+    "trendKg": 83.5,
+    "date": "2026-11-02",
+    "weighIns": 1
+  },
+  "protein": {
+    "floorG": 134,
+    "rangeG": [
+      134,
+      184
+    ],
+    "gPerKg": [
+      1.6,
+      2.2
+    ],
+    "perMealG": [
+      33,
+      46
+    ],
+    "item": "protein",
+    "tickAt": "21:00",
+    "reason": {
+      "rule": "protein",
+      "title": "Protein a day",
+      "inputs": {
+        "goals": [
+          "recomposition",
+          "posture"
+        ],
+        "trendKg": 83.5,
+        "deficit": false
+      },
+      "threshold": {
+        "liftingGPerKg": [
+          1.6,
+          2.2
+        ]
+      },
+      "note": "Lifting goals: 1.6 to 2.2 g per kg a day (Morton 2018). At 83.5 kg that is 134 to 184 g; the tick is for days with at least 134 g."
+    }
+  },
+  "fiber": {
+    "g": 36,
+    "per1000kcal": 14,
+    "how": [
+      "vegetables at 2 meals",
+      "fruit twice a day",
+      "legumes 3 times a week",
+      "whole grains"
+    ]
+  },
+  "energy": {
+    "maintenanceKcal": 2800
+  },
+  "habits": {
+    "meals": 3,
+    "snacks": true,
+    "cooking": "daily",
+    "avoid": [
+      "pork",
+      "alcohol"
+    ]
+  },
+  "meals": [
+    {
+      "id": "breakfast",
+      "name": "Breakfast",
+      "tag": "As now",
+      "text": "Overnight oats with whey, made with milk or with a big spoon of Greek yogurt.",
+      "proteinG": [
+        40,
+        40
+      ]
+    },
+    {
+      "id": "lunch",
+      "name": "Lunch",
+      "tag": "The hardest meal",
+      "text": "Fish, chicken or lamb, 2 palms, with vegetables, a cupped hand or two of rice, bread or potatoes, and olive oil, nuts or avocado.",
+      "proteinG": [
+        45,
+        45
+      ],
+      "portions": "lunch",
+      "tip": "Cook double at dinner and box half for the next day’s lunch."
+    },
+    {
+      "id": "dinner",
+      "name": "Dinner",
+      "text": "The salad becomes a full meal: 2 palms of protein (chicken, fish, eggs, lentils or chickpeas, cottage cheese), 1 cupped hand of carbs, 2 thumbs of fat.",
+      "proteinG": [
+        45,
+        45
+      ],
+      "portions": "dinner"
+    },
+    {
+      "id": "snacks",
+      "name": "Snacks",
+      "tag": "Top-up",
+      "text": "The 2 glasses of milk, plus skyr or Greek yogurt, a handful of nuts with fruit, or a boiled egg or two.",
+      "proteinG": [
+        15,
+        25
+      ]
+    }
+  ],
+  "portions": {
+    "lunch": {
+      "protein": [
+        2,
+        2
+      ],
+      "veg": [
+        2,
+        2
+      ],
+      "carbs": [
+        1,
+        2
+      ],
+      "fat": [
+        2,
+        2
+      ]
+    },
+    "dinner": {
+      "protein": [
+        2,
+        2
+      ],
+      "veg": [
+        2,
+        2
+      ],
+      "carbs": [
+        1,
+        1
+      ],
+      "fat": [
+        2,
+        2
+      ]
+    }
+  },
+  "groups": [
+    {
+      "id": "protein",
+      "name": "Protein",
+      "hand": "palm",
+      "hands": [
+        "palm",
+        "palms"
+      ],
+      "what": "Fish, chicken, lamb, eggs, lentils or chickpeas, cottage cheese"
+    },
+    {
+      "id": "veg",
+      "name": "Vegetables",
+      "hand": "fist",
+      "hands": [
+        "fist",
+        "fists"
+      ],
+      "what": "Salad or cooked vegetables"
+    },
+    {
+      "id": "carbs",
+      "name": "Carbs",
+      "hand": "cupped",
+      "hands": [
+        "cupped hand",
+        "cupped hands"
+      ],
+      "what": "Rice, bread or potatoes; whole grains for the fiber"
+    },
+    {
+      "id": "fat",
+      "name": "Fats",
+      "hand": "thumb",
+      "hands": [
+        "thumb",
+        "thumbs"
+      ],
+      "what": "Olive oil, nuts or avocado"
+    }
+  ],
+  "fallbacks": {
+    "meal": "lunch",
+    "first": {
+      "name": "Cook double at dinner",
+      "text": "Box half for the next day’s lunch"
+    },
+    "quick": [
+      {
+        "name": "A tuna or chickpea wrap",
+        "text": "Tin, wrap, a handful of salad"
+      },
+      {
+        "name": "Rotisserie chicken",
+        "text": "With a bagged salad"
+      },
+      {
+        "name": "Skyr with fruit and nuts",
+        "text": "No cooking at all"
+      }
+    ],
+    "minutes": 5
+  },
+  "pattern": [
+    {
+      "id": "fish",
+      "name": "Fish",
+      "target": "twice a week or more",
+      "min": 2,
+      "per": "week"
+    },
+    {
+      "id": "legumes",
+      "name": "Legumes",
+      "target": "3 times a week",
+      "min": 3,
+      "per": "week"
+    },
+    {
+      "id": "lamb",
+      "name": "Lamb",
+      "target": "at most twice a week, lean cuts",
+      "max": 2,
+      "per": "week"
+    },
+    {
+      "id": "veg",
+      "name": "Vegetables",
+      "target": "at 2 meals a day",
+      "min": 2,
+      "per": "day"
+    },
+    {
+      "id": "fruit",
+      "name": "Fruit",
+      "target": "twice a day",
+      "min": 2,
+      "per": "day"
+    }
+  ],
+  "patternAlso": "Olive or canola oil over butter, nuts most days, little added sugar and salt.",
+  "adjust": {
+    "windowWeeks": 4,
+    "flatCm": 0.5,
+    "steps": [
+      {
+        "id": "less",
+        "when": "Waist flat for 4 weeks and the trend not falling",
+        "then": "One cupped hand of carbs less a day"
+      },
+      {
+        "id": "back",
+        "when": "Losing faster than 1 % of body weight a week",
+        "then": "One cupped hand back",
+        "pctPerWeek": -0.01
+      }
+    ],
+    "waitWeeks": [
+      2,
+      3
+    ],
+    "creatineKg": [
+      1,
+      2
+    ],
+    "looseDay": "Protein first at the next meal and back to the template; never skip a meal to make up for it."
+  },
+  "history": [
+    {
+      "date": "2026-11-02",
+      "note": "Created, Light level (the mockup’s sample plan)."
+    }
+  ],
+  "_about": "The Food tab mockup’s plan (mockups/food-data.js) in the schema v1 shape, for the tests and the preview."
+}

@@ -1,0 +1,1088 @@
+{
+  "about": "fitness_log.py add --dry-run and ladder (writing a fresh copy each time) on temporary copies of test/fixtures/vault, by tools/golden-log.mjs. Regenerate when the script changes.",
+  "script": "b9eb0b10f895b166",
+  "cases": [
+    {
+      "name": "lifting, both lifts, every field",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Romanian Deadlift",
+          "weight": 70,
+          "reps": 9,
+          "unit": "kg"
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11
+        },
+        "durationMin": 60,
+        "cardioMin": 8,
+        "cardioMode": " bike ",
+        "rating": 8,
+        "postureDrill": true,
+        "notes": " felt good "
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "B",
+          "lift1": {
+            "name": "Romanian Deadlift",
+            "weight": 70,
+            "reps": 9,
+            "unit": "kg"
+          },
+          "lift2": {
+            "name": "Seated Cable Row",
+            "weight": 115,
+            "reps": 11,
+            "unit": "lb"
+          },
+          "durationMin": 60,
+          "cardioMin": 8,
+          "cardioMode": "bike",
+          "rating": 8,
+          "postureDrill": true,
+          "notes": "felt good"
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a swapped lift, the unit from the plan, zeros as the script reads them",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Single-leg dumbbell RDL",
+          "planned": "Romanian Deadlift",
+          "weight": 25,
+          "reps": 10
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11,
+          "unit": "lb"
+        },
+        "swaps": [
+          {
+            "from": "Bulgarian Split Squat",
+            "to": "Dumbbell split squat"
+          }
+        ],
+        "cardioMin": 0,
+        "rating": 0,
+        "durationMin": 0
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "B",
+          "lift1": {
+            "name": "Single-leg dumbbell RDL",
+            "planned": "Romanian Deadlift",
+            "weight": 25,
+            "reps": 10,
+            "unit": "lb"
+          },
+          "lift2": {
+            "name": "Seated Cable Row",
+            "weight": 115,
+            "reps": 11,
+            "unit": "lb"
+          },
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": "",
+          "swaps": [
+            {
+              "from": "Bulgarian Split Squat",
+              "to": "Dumbbell split squat"
+            }
+          ]
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "Express",
+      "input": {
+        "date": "2026-04-09",
+        "type": "A",
+        "express": true,
+        "lift1": {
+          "name": "Goblet Squat",
+          "weight": 55,
+          "reps": 10
+        },
+        "lift2": {
+          "name": "Flat DB Bench Press",
+          "weight": 60,
+          "reps": 6
+        },
+        "durationMin": 20
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "A",
+          "express": true,
+          "lift1": {
+            "name": "Goblet Squat",
+            "weight": 55,
+            "reps": 10,
+            "unit": "lb"
+          },
+          "lift2": {
+            "name": "Flat DB Bench Press",
+            "weight": 60,
+            "reps": 6,
+            "unit": "lb"
+          },
+          "durationMin": 20,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a short day",
+      "input": {
+        "date": "2026-04-09",
+        "type": "S1",
+        "durationMin": 30,
+        "cardioMin": 0,
+        "notes": "handstand felt better"
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "S1",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": 30,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": "handstand felt better"
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a custom session",
+      "input": {
+        "date": "2026-04-09",
+        "type": "custom",
+        "label": "  Easy hike ",
+        "durationMin": 90,
+        "cardioMin": 90,
+        "cardioMode": "walk"
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "custom",
+          "label": "Easy hike",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": 90,
+          "cardioMin": 90,
+          "cardioMode": "walk",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a lift not logged (no weight, 0 x 0)",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Romanian Deadlift"
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 0,
+          "reps": 0
+        }
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "B",
+          "lift1": {
+            "name": "Romanian Deadlift",
+            "weight": 0,
+            "reps": 0,
+            "unit": "kg"
+          },
+          "lift2": {
+            "name": "Seated Cable Row",
+            "weight": 0,
+            "reps": 0,
+            "unit": "lb"
+          },
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "kg on a lb lift",
+      "input": {
+        "date": "2026-04-09",
+        "type": "A",
+        "lift1": {
+          "name": "Goblet Squat",
+          "weight": 25,
+          "reps": 9,
+          "unit": "kg"
+        },
+        "lift2": {
+          "name": "Flat DB Bench Press",
+          "weight": 27.5,
+          "reps": 6,
+          "unit": "kg"
+        }
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "A",
+          "lift1": {
+            "name": "Goblet Squat",
+            "weight": 25,
+            "reps": 9,
+            "unit": "kg"
+          },
+          "lift2": {
+            "name": "Flat DB Bench Press",
+            "weight": 27.5,
+            "reps": 6,
+            "unit": "kg"
+          },
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a swap given as planned equal to the name",
+      "input": {
+        "date": "2026-04-09",
+        "type": "A",
+        "lift1": {
+          "name": "Goblet Squat",
+          "planned": "Goblet Squat",
+          "weight": 55,
+          "reps": 9
+        },
+        "lift2": {
+          "name": "Flat DB Bench Press",
+          "weight": 60,
+          "reps": 5
+        }
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "A",
+          "lift1": {
+            "name": "Goblet Squat",
+            "weight": 55,
+            "reps": 9,
+            "unit": "lb"
+          },
+          "lift2": {
+            "name": "Flat DB Bench Press",
+            "weight": 60,
+            "reps": 5,
+            "unit": "lb"
+          },
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "already logged on that date and type",
+      "input": {
+        "date": "2026-04-08",
+        "type": "A",
+        "lift1": {
+          "name": "Goblet Squat",
+          "weight": 55,
+          "reps": 9
+        },
+        "lift2": {
+          "name": "Flat DB Bench Press",
+          "weight": 60,
+          "reps": 5
+        }
+      },
+      "code": 0,
+      "output": {
+        "result": "already",
+        "session": {
+          "date": "2026-04-08",
+          "type": "A",
+          "lift1": {
+            "name": "Goblet Squat",
+            "weight": 55,
+            "reps": 9,
+            "unit": "lb"
+          },
+          "lift2": {
+            "name": "Flat DB Bench Press",
+            "weight": 60,
+            "reps": 5,
+            "unit": "lb"
+          },
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "name": "error: a date in the future",
+      "input": {
+        "date": "2099-01-01",
+        "type": "S1"
+      },
+      "code": 1,
+      "output": {
+        "error": "2099-01-01 is in the future",
+        "written": false
+      }
+    },
+    {
+      "name": "error: not a date",
+      "input": {
+        "date": "2026-4-9",
+        "type": "S1"
+      },
+      "code": 1,
+      "output": {
+        "error": "date must be YYYY-MM-DD",
+        "written": false
+      }
+    },
+    {
+      "name": "error: an unknown type",
+      "input": {
+        "date": "2026-04-09",
+        "type": "C"
+      },
+      "code": 1,
+      "output": {
+        "error": "type must be one of ['A', 'B', 'S1', 'S3', 'custom']",
+        "written": false
+      }
+    },
+    {
+      "name": "error: a custom session without a label",
+      "input": {
+        "date": "2026-04-09",
+        "type": "custom",
+        "label": "  "
+      },
+      "code": 1,
+      "output": {
+        "error": "a custom session needs a label",
+        "written": false
+      }
+    },
+    {
+      "name": "error: a missing lift",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Romanian Deadlift",
+          "weight": 70,
+          "reps": 9
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "B logs two lifts: lift2 should be Seated Cable Row (or a swap with \"planned\": \"Seated Cable Row\")",
+        "written": false
+      }
+    },
+    {
+      "name": "error: a lift that is not the session’s",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Deadlift",
+          "weight": 70,
+          "reps": 9
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "lift1 of B is Romanian Deadlift; got 'Deadlift'",
+        "written": false
+      }
+    },
+    {
+      "name": "error: a swap of the wrong lift",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Hip thrust",
+          "planned": "Goblet Squat",
+          "weight": 70,
+          "reps": 9
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "lift1 of B is Romanian Deadlift; got 'Hip thrust' planned as 'Goblet Squat'",
+        "written": false
+      }
+    },
+    {
+      "name": "error: reps not whole",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Romanian Deadlift",
+          "weight": 70,
+          "reps": 8.5
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "lift1: weight is a number, reps a whole number",
+        "written": false
+      }
+    },
+    {
+      "name": "error: a weight that is not a number",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Romanian Deadlift",
+          "weight": null,
+          "reps": 8
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "lift1: weight is a number, reps a whole number",
+        "written": false
+      }
+    },
+    {
+      "name": "error: an unknown unit",
+      "input": {
+        "date": "2026-04-09",
+        "type": "B",
+        "lift1": {
+          "name": "Romanian Deadlift",
+          "weight": 70,
+          "reps": 8,
+          "unit": "kgs"
+        },
+        "lift2": {
+          "name": "Seated Cable Row",
+          "weight": 115,
+          "reps": 11
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "lift1: unit is lb or kg, not 'kgs'",
+        "written": false
+      }
+    },
+    {
+      "name": "error: lifts on a short day",
+      "input": {
+        "date": "2026-04-09",
+        "type": "S1",
+        "lift1": {
+          "name": "Push-up",
+          "weight": 0,
+          "reps": 10
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "a S1 session has no logged lifts",
+        "written": false
+      }
+    },
+    {
+      "name": "error: Express on a short day",
+      "input": {
+        "date": "2026-04-09",
+        "type": "S3",
+        "express": true
+      },
+      "code": 1,
+      "output": {
+        "error": "only a lifting session can be Express",
+        "written": false
+      }
+    },
+    {
+      "name": "a custom session, the label only",
+      "input": {
+        "date": "2026-04-09",
+        "type": "custom",
+        "label": "Yoga"
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "custom",
+          "label": "Yoga",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a custom session with a rating, the posture drill and notes",
+      "input": {
+        "date": "2026-04-09",
+        "type": "custom",
+        "label": "Climbing",
+        "durationMin": 75,
+        "cardioMin": 0,
+        "cardioMode": "",
+        "rating": 7,
+        "postureDrill": true,
+        "notes": "  bouldering, easy grades "
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-09",
+          "type": "custom",
+          "label": "Climbing",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": 75,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": 7,
+          "postureDrill": true,
+          "notes": "bouldering, easy grades"
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "a second custom session that day, another label",
+      "input": {
+        "date": "2026-04-10",
+        "type": "custom",
+        "label": "Evening walk",
+        "durationMin": 40,
+        "cardioMin": 40,
+        "cardioMode": "walk"
+      },
+      "code": 0,
+      "output": {
+        "result": "added",
+        "session": {
+          "date": "2026-04-10",
+          "type": "custom",
+          "label": "Evening walk",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": 40,
+          "cardioMin": 40,
+          "cardioMode": "walk",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        },
+        "written": false
+      }
+    },
+    {
+      "name": "already: the same custom label that day",
+      "input": {
+        "date": "2026-04-10",
+        "type": "custom",
+        "label": "Easy run",
+        "durationMin": 30
+      },
+      "code": 0,
+      "output": {
+        "result": "already",
+        "session": {
+          "date": "2026-04-10",
+          "type": "custom",
+          "label": "Easy run",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": 30,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "name": "already: the same custom label, with spaces around it",
+      "input": {
+        "date": "2026-04-10",
+        "type": "custom",
+        "label": "  Easy run  "
+      },
+      "code": 0,
+      "output": {
+        "result": "already",
+        "session": {
+          "date": "2026-04-10",
+          "type": "custom",
+          "label": "Easy run",
+          "lift1": null,
+          "lift2": null,
+          "durationMin": null,
+          "cardioMin": 0,
+          "cardioMode": "",
+          "rating": null,
+          "postureDrill": false,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "name": "error: Express on a custom session",
+      "input": {
+        "date": "2026-04-09",
+        "type": "custom",
+        "label": "Hike",
+        "express": true
+      },
+      "code": 1,
+      "output": {
+        "error": "only a lifting session can be Express",
+        "written": false
+      }
+    },
+    {
+      "name": "error: lifts on a custom session",
+      "input": {
+        "date": "2026-04-09",
+        "type": "custom",
+        "label": "Gym",
+        "lift1": {
+          "name": "Goblet Squat",
+          "weight": 50,
+          "reps": 10
+        }
+      },
+      "code": 1,
+      "output": {
+        "error": "a custom session has no logged lifts",
+        "written": false
+      }
+    }
+  ],
+  "ladderCases": [
+    {
+      "name": "a level up",
+      "args": [
+        "pushup",
+        "3"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 0,
+      "output": {
+        "result": "set",
+        "ladder": "pushup",
+        "level": 3,
+        "name": "Tempo push-up",
+        "written": true
+      },
+      "written": true,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          },
+          {
+            "level": 3,
+            "date": "2026-04-10"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the level the last entry holds",
+      "args": [
+        "pushup",
+        "2"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 0,
+      "output": {
+        "result": "already",
+        "ladder": "pushup",
+        "level": 2,
+        "name": "Floor push-up"
+      },
+      "written": false,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a level down",
+      "args": [
+        "handstand",
+        "2"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 0,
+      "output": {
+        "result": "set",
+        "ladder": "handstand",
+        "level": 2,
+        "name": "Wall walk",
+        "written": true
+      },
+      "written": true,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          },
+          {
+            "level": 2,
+            "date": "2026-04-10"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a level held before, not the last one",
+      "args": [
+        "pushup",
+        "1"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 0,
+      "output": {
+        "result": "set",
+        "ladder": "pushup",
+        "level": 1,
+        "name": "Incline push-up",
+        "written": true
+      },
+      "written": true,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          },
+          {
+            "level": 1,
+            "date": "2026-04-10"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          }
+        ]
+      }
+    },
+    {
+      "name": "no ladders in the log yet",
+      "args": [
+        "handstand",
+        "1"
+      ],
+      "date": "2026-04-10",
+      "prep": {
+        "dropLadders": true
+      },
+      "code": 0,
+      "output": {
+        "result": "set",
+        "ladder": "handstand",
+        "level": 1,
+        "name": "Pike hold on a bench",
+        "written": true
+      },
+      "written": true,
+      "ladders": {
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-04-10"
+          }
+        ]
+      }
+    },
+    {
+      "name": "error: an unknown ladder",
+      "args": [
+        "pullup",
+        "3"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 1,
+      "output": {
+        "error": "no ladder 'pullup'; ladders: ['pushup', 'handstand']",
+        "written": false
+      },
+      "written": false,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          }
+        ]
+      }
+    },
+    {
+      "name": "error: a level past the top",
+      "args": [
+        "pushup",
+        "4"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 1,
+      "output": {
+        "error": "Push-up has levels 1-3",
+        "written": false
+      },
+      "written": false,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          }
+        ]
+      }
+    },
+    {
+      "name": "error: level 0",
+      "args": [
+        "pushup",
+        "0"
+      ],
+      "date": "2026-04-10",
+      "prep": {},
+      "code": 1,
+      "output": {
+        "error": "Push-up has levels 1-3",
+        "written": false
+      },
+      "written": false,
+      "ladders": {
+        "pushup": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 2,
+            "date": "2026-03-17"
+          }
+        ],
+        "handstand": [
+          {
+            "level": 1,
+            "date": "2026-03-01"
+          },
+          {
+            "level": 3,
+            "date": "2026-03-24"
+          }
+        ]
+      }
+    }
+  ]
+}

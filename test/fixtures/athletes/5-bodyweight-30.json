@@ -1,0 +1,124 @@
+{
+  "name": "5-bodyweight-30",
+  "about": "A made-up adult with 30 minutes 3 times a week and nothing but bodyweight: fat loss first; 6 push-ups, a 25 s hollow hold, heels that lift in the squat, ribs that flare overhead, 30 s balance; skips sessions in a bad week; desk work.",
+  "input": {
+    "profile": {
+      "schemaVersion": 1,
+      "units": {
+        "load": "kg",
+        "body": "kg"
+      },
+      "basics": {
+        "birthYear": 1987,
+        "heightCm": 170,
+        "sex": "female"
+      },
+      "goals": [
+        {
+          "id": "lose-fat",
+          "kind": "fat-loss",
+          "label": "Lose fat",
+          "importance": 8,
+          "confidence": 7,
+          "measure": "waist (tape)"
+        }
+      ],
+      "availability": {
+        "daysPerWeek": 3,
+        "minutesPerSession": 30
+      },
+      "equipment": [],
+      "trackingLevel": "light",
+      "screening": {
+        "outcome": "go",
+        "date": "2026-10-01"
+      },
+      "emphasis": [],
+      "experience": "novice",
+      "preferences": {
+        "cardio": [
+          "brisk-walk"
+        ]
+      },
+      "badWeek": {
+        "usually": [
+          "skips-sessions"
+        ]
+      },
+      "work": {
+        "desk": true,
+        "sittingHours": 9
+      },
+      "selfCheck": {
+        "date": "2026-10-01",
+        "sitToStand": {
+          "easy": true,
+          "heelsDown": false
+        },
+        "pushUps": 6,
+        "coreHold": {
+          "kind": "hollow",
+          "seconds": 25
+        },
+        "hingeFlatBack": true,
+        "overheadReach": {
+          "clean": false,
+          "ribFlare": true
+        },
+        "wallGapCm": 4,
+        "balanceS": {
+          "left": 30,
+          "right": 30
+        }
+      }
+    },
+    "today": "2026-11-04",
+    "options": {}
+  },
+  "expected": {
+    "templateId": "full-body-minimum-aba",
+    "compared": [
+      "full-body-minimum-x3",
+      "full-body-minimum-aba"
+    ],
+    "ladders": {
+      "pullup": null,
+      "pushup": 2,
+      "hollow": 3,
+      "legs": 3
+    },
+    "laddersUsed": [
+      "pushup",
+      "hollow",
+      "legs"
+    ],
+    "mustUse": [
+      "selfCheck.pushUps",
+      "selfCheck.balanceS",
+      "selfCheck.sitToStand",
+      "selfCheck.coreHold",
+      "selfCheck.overheadReach",
+      "availability.minutesPerSession",
+      "badWeek",
+      "equipment",
+      "work"
+    ],
+    "includes": [
+      "push-up",
+      "box-pistol",
+      "box-squat",
+      "hollow-hold"
+    ],
+    "excludes": [
+      "pike-push-up",
+      "pull-up"
+    ],
+    "cardio": {
+      "modes": [],
+      "minutes": null,
+      "intervals": false
+    },
+    "priority": [],
+    "why": "Thirty minutes three times a week gives minimum-dose full body; with nothing but bodyweight, the push-up ladder (level 2, floor push-ups) and the single-leg ladder (level 3, box pistols) carry pressing and single-leg work. Heels that lift give box squats and ankle mobility, ribs that flare overhead keep overhead pressing out, the 25 s hollow hold starts the core ladder at level 3, and no bar means no pull-up level. Skipped sessions lead the pre-mortem; desk work brings desk breaks."
+  }
+}

@@ -1,0 +1,2192 @@
+{
+  "name": "03-two-missed-weeks",
+  "about": "A dumbbell trainee at Standard tracking who trained twice a week for five weeks, then missed two full weeks (no sessions, check-ins or weigh-ins) and is back today.",
+  "today": "2026-03-23",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "dumbbell-base",
+      "name": "Dumbbell base",
+      "exercises": {
+        "goblet-squat": {
+          "name": "Goblet squat",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "abs",
+              "upper-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "db-bench": {
+          "name": "Flat dumbbell bench press",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "db-row": {
+          "name": "One-arm dumbbell row",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "lats",
+              "upper-back"
+            ],
+            "helps": [
+              "biceps"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Dumbbell base",
+        "start": "2026-02-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-02-02",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-02-09",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-02-16",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-02-23",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "meso-2",
+                "name": "Mesocycle 2",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "dumbbell-a",
+                        "name": "Dumbbells A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      },
+                      {
+                        "id": "dumbbell-b",
+                        "name": "Dumbbells B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-02",
+        "sessions": [
+          {
+            "id": "2026-02-02-dumbbell-a",
+            "date": "2026-02-02",
+            "trackingLevel": "standard",
+            "template": "dumbbell-a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 30,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-a",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-05-dumbbell-b",
+            "date": "2026-02-05",
+            "trackingLevel": "standard",
+            "template": "dumbbell-b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 35,
+                    "unit": "lb",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-b",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-09-dumbbell-a",
+            "date": "2026-02-09",
+            "trackingLevel": "standard",
+            "template": "dumbbell-a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 35,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-a",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-12-dumbbell-b",
+            "date": "2026-02-12",
+            "trackingLevel": "standard",
+            "template": "dumbbell-b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 35,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-b",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-16-dumbbell-a",
+            "date": "2026-02-16",
+            "trackingLevel": "standard",
+            "template": "dumbbell-a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 35,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-a",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-02-19-dumbbell-b",
+            "date": "2026-02-19",
+            "trackingLevel": "standard",
+            "template": "dumbbell-b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 35,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-b",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-02-23-dumbbell-a",
+            "date": "2026-02-23",
+            "trackingLevel": "standard",
+            "template": "dumbbell-a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-a",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-02-26-dumbbell-b",
+            "date": "2026-02-26",
+            "trackingLevel": "standard",
+            "template": "dumbbell-b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 60,
+                    "unit": "lb",
+                    "reps": 8
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-b",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          }
+        ]
+      },
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-02-dumbbell-a",
+            "date": "2026-03-02",
+            "trackingLevel": "standard",
+            "template": "dumbbell-a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 60,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-a",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-05-dumbbell-b",
+            "date": "2026-03-05",
+            "trackingLevel": "standard",
+            "template": "dumbbell-b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 60,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "dumbbell-b",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          }
+        ]
+      }
+    ],
+    "checkins": {
+      "schemaVersion": 1,
+      "daily": [
+        {
+          "date": "2026-01-19",
+          "sleepH": 6.4,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-20",
+          "sleepH": 7.1,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 3
+        },
+        {
+          "date": "2026-01-21",
+          "sleepH": 7.3,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 62,
+          "soreness": 1
+        },
+        {
+          "date": "2026-01-22",
+          "sleepH": 7.1,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-23",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-24",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-25",
+          "sleepH": 6.6,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 60,
+          "soreness": 1
+        },
+        {
+          "date": "2026-01-26",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 62,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-27",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-28",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-29",
+          "sleepH": 6.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 60,
+          "soreness": 2
+        },
+        {
+          "date": "2026-01-30",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-01-31",
+          "sleepH": 6.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 60,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-01",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-02",
+          "sleepH": 6.4,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-03",
+          "sleepH": 6.6,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 62,
+          "soreness": 1
+        },
+        {
+          "date": "2026-02-04",
+          "sleepH": 6.7,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-05",
+          "sleepH": 6.6,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 1
+        },
+        {
+          "date": "2026-02-06",
+          "sleepH": 7.0,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 62,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-07",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-08",
+          "sleepH": 6.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 60,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-09",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-10",
+          "sleepH": 6.4,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 1
+        },
+        {
+          "date": "2026-02-11",
+          "sleepH": 6.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-12",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-13",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 60,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-14",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-15",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 62,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-16",
+          "sleepH": 6.7,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 62,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-17",
+          "sleepH": 7.1,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 1
+        },
+        {
+          "date": "2026-02-18",
+          "sleepH": 6.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-19",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-20",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 60,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-21",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-22",
+          "sleepH": 6.5,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-23",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-24",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 3
+        },
+        {
+          "date": "2026-02-25",
+          "sleepH": 6.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-26",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 62,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-27",
+          "sleepH": 6.9,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 60,
+          "soreness": 2
+        },
+        {
+          "date": "2026-02-28",
+          "sleepH": 6.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-01",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 62,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-02",
+          "sleepH": 6.4,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 2
+        },
+        {
+          "date": "2026-03-03",
+          "sleepH": 6.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 60,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-04",
+          "sleepH": 6.8,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 60,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-05",
+          "sleepH": 6.6,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 60,
+          "soreness": 1
+        },
+        {
+          "date": "2026-03-06",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 61,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-07",
+          "sleepH": 6.8,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 1
+        },
+        {
+          "date": "2026-03-08",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 1
+        },
+        {
+          "date": "2026-03-23",
+          "sleepH": 7.8,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 59,
+          "soreness": 1,
+          "note": "Back after two weeks away."
+        }
+      ],
+      "weekly": [
+        {
+          "weekOf": "2026-03-02",
+          "recovery": 4,
+          "jointAches": false,
+          "unloggedSessions": 0
+        }
+      ]
+    },
+    "body": {
+      "schemaVersion": 1,
+      "weights": [
+        {
+          "date": "2026-02-02",
+          "weight": 76.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-03",
+          "weight": 75.8,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-04",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-05",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-06",
+          "weight": 75.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-07",
+          "weight": 75.8,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-08",
+          "weight": 75.9,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-09",
+          "weight": 76.3,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-10",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-11",
+          "weight": 76.0,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-12",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-13",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-14",
+          "weight": 76.3,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-15",
+          "weight": 76.0,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-16",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-17",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-18",
+          "weight": 76.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-19",
+          "weight": 76.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-20",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-21",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-22",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-23",
+          "weight": 76.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-24",
+          "weight": 76.4,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-25",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-26",
+          "weight": 76.0,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-27",
+          "weight": 76.1,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-02-28",
+          "weight": 76.3,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-01",
+          "weight": 76.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-02",
+          "weight": 76.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-03",
+          "weight": 76.5,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-04",
+          "weight": 76.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-05",
+          "weight": 76.2,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-06",
+          "weight": 76.6,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-07",
+          "weight": 76.6,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-08",
+          "weight": 76.6,
+          "unit": "kg"
+        },
+        {
+          "date": "2026-03-23",
+          "weight": 77.4,
+          "unit": "kg"
+        }
+      ],
+      "tape": [],
+      "tests": [],
+      "photos": []
+    }
+  },
+  "expected": {
+    "e1rm": [
+      {
+        "exercise": "goblet-squat",
+        "unit": "lb",
+        "sessions": 10,
+        "ignored": 0,
+        "points": 6,
+        "e1rms": [
+          66.666667,
+          71.5,
+          73.333333,
+          76.0,
+          78.0,
+          80.0
+        ],
+        "best": 80.0,
+        "change": 0.090909,
+        "verdict": "up",
+        "stallCandidate": false,
+        "unitFlag": null,
+        "why": "Goblet squat with no RIR logged: only top sets of 10 reps or fewer count (11 and 12 are left out). Six points, best-of-3 80.00 lb against 73.33: +9.09 %, up. The two-week gap does not enter: the trend runs on sessions, not days."
+      },
+      {
+        "exercise": "db-bench",
+        "unit": "lb",
+        "sessions": 10,
+        "ignored": 0,
+        "points": 5,
+        "e1rms": [
+          44.333333,
+          45.5,
+          46.666667,
+          50.666667,
+          52.0
+        ],
+        "best": 52.0,
+        "change": 0.142857,
+        "verdict": "up",
+        "stallCandidate": false,
+        "unitFlag": null,
+        "why": "DB bench: five qualifying top sets (8-10 reps); best-of-3 52.00 lb, +14.29 % over 3 sessions: up."
+      }
+    ],
+    "progression": [
+      {
+        "action": "add-reps",
+        "weight": 60,
+        "unit": "lb",
+        "reps": 11,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "goblet-squat",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-23",
+        "why": "Last top set before the break, 60 x 10, is inside 8-12: same weight, one more rep (60 x 11). This is the plain double progression; the missed-time protocol (below) adjusts it for the first week back."
+      },
+      {
+        "action": "increase",
+        "weight": 45.0,
+        "unit": "lb",
+        "reps": 8,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "db-bench",
+        "repRange": [
+          8,
+          12
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-23",
+        "why": "Last top set 40 x 12 reached the top: 40 + 5 = 45 lb x 8, assuming every set reached 12 (Standard tracking). One 5 lb step is 12.5 % of 40 lb, so the load cap allows it once as a big jump: start at the bottom of the range.",
+        "loadCap": {
+          "proposed": 45,
+          "limit": 45,
+          "bigJump": true,
+          "binding": "none"
+        }
+      }
+    ],
+    "volume": [
+      {
+        "from": "2026-03-09",
+        "to": "2026-03-15",
+        "sessions": 0,
+        "estimated": false,
+        "perWeek": {},
+        "tiers": {
+          "chest": "below-minimum",
+          "shoulders": "below-minimum",
+          "biceps": "below-minimum",
+          "triceps": "below-minimum",
+          "abs": "below-minimum",
+          "upper-back": "below-minimum",
+          "lats": "below-minimum",
+          "lower-back": "below-minimum",
+          "glutes": "below-minimum",
+          "quads": "below-minimum",
+          "hamstrings": "below-minimum",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "A missed week: no sessions from 2026-03-09 to 2026-03-15, so no sets for any muscle; every muscle is below the minimum dose."
+      },
+      {
+        "from": "2026-03-09",
+        "to": "2026-03-22",
+        "sessions": 0,
+        "estimated": false,
+        "perWeek": {},
+        "tiers": {
+          "chest": "below-minimum",
+          "shoulders": "below-minimum",
+          "biceps": "below-minimum",
+          "triceps": "below-minimum",
+          "abs": "below-minimum",
+          "upper-back": "below-minimum",
+          "lats": "below-minimum",
+          "lower-back": "below-minimum",
+          "glutes": "below-minimum",
+          "quads": "below-minimum",
+          "hamstrings": "below-minimum",
+          "calves": "below-minimum"
+        },
+        "notCounted": [],
+        "checkPriority": [],
+        "why": "The two missed weeks together: zero sessions, zero sets."
+      }
+    ],
+    "readiness": {
+      "asOf": "2026-03-23",
+      "r": 1.203862,
+      "s": 1.203862,
+      "band": "good",
+      "signals": 5,
+      "scoredDays": 36,
+      "lowRun": 0,
+      "actions": {
+        "trim": false,
+        "early-deload": false,
+        "no-hard-training": false,
+        "no-tests": false
+      },
+      "why": "Check-ins every day from 2026-01-19 to 2026-03-08, then none until today. Today's baseline window (2026-02-23 to 2026-03-22) holds exactly 14 entries, the minimum, so every signal is scored. The 15-day gap since the last scored day is over 3 days, so the smoothed score restarts from today's R (S = R = +1.204)."
+    },
+    "weight": {
+      "since": "2026-02-02",
+      "weighIns": 36,
+      "seed": 75.971429,
+      "trend": 77.175024,
+      "trendDate": "2026-03-23",
+      "rate": {
+        "kgPerWeek": 0.23571,
+        "pctPerWeek": 0.003054,
+        "spanDays": 28,
+        "weighIns": 15
+      },
+      "spanDays": 28,
+      "recentWeighIns": 15,
+      "goal": "recomposition",
+      "status": "above",
+      "why": "Daily weigh-ins to 2026-03-08, a 15-day gap, then 77.4 kg today. The gap uses 1 - 0.9^15 = 0.794 of the new reading, so the trend jumps to 77.18 kg. The 28-day slope (28 days, 15 weigh-ins) is +0.31 %/wk against the recomposition band -0.5 to 0 %: above."
+    },
+    "missed": {
+      "rotation": [
+        "dumbbell-a",
+        "dumbbell-b"
+      ],
+      "protocol": "ease-back",
+      "lastSession": "2026-03-05",
+      "daysOff": 17,
+      "weeksOff": 2,
+      "loadFactor": 0.9,
+      "rirAdd": 1,
+      "firstWeek": {
+        "from": "2026-03-23",
+        "to": "2026-03-29"
+      },
+      "restartAtWeek": null,
+      "calibration": false,
+      "nextTemplate": "dumbbell-a",
+      "gapDays": {
+        "trained": 0,
+        "rest": 0,
+        "missed": 0
+      },
+      "applied": [
+        {
+          "exercise": "goblet-squat",
+          "repRange": [
+            8,
+            12
+          ],
+          "targetRir": 2,
+          "date": "2026-03-23",
+          "before": {
+            "action": "add-reps",
+            "weight": 60,
+            "reps": 11
+          },
+          "after": {
+            "action": "ease-back",
+            "weight": 55,
+            "unit": "lb",
+            "reps": 11,
+            "rir": 3,
+            "assumedAllSets": true
+          }
+        },
+        {
+          "exercise": "db-bench",
+          "repRange": [
+            8,
+            12
+          ],
+          "targetRir": 2,
+          "date": "2026-03-23",
+          "before": {
+            "action": "increase",
+            "weight": 45,
+            "reps": 8
+          },
+          "after": {
+            "action": "ease-back",
+            "weight": 40,
+            "unit": "lb",
+            "reps": 8,
+            "rir": 3,
+            "assumedAllSets": true
+          }
+        }
+      ],
+      "why": "Last session 2026-03-05, back 2026-03-23: 17 days off, 2 whole weeks. The first week back (03-23 to 03-29) is 10 % lighter, rounded to the 5 lb step, at RIR +1: goblet 60 x 11 becomes 55 x 11 (54 rounds up), DB bench 45 x 8 becomes 40 x 8 (40.5 rounds down). The last session was a Dumbbells B day, so A is next."
+    }
+  }
+}

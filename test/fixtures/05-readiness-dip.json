@@ -1,0 +1,890 @@
+{
+  "name": "05-readiness-dip",
+  "about": "Five steady weeks of morning check-ins, then a week of bad sleep, low energy and a resting HR 8-10 bpm over baseline, while the bench top set slides.",
+  "today": "2026-03-28",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "press-block",
+      "name": "Press block",
+      "exercises": {
+        "bench-press": {
+          "name": "Barbell bench press",
+          "unit": "kg",
+          "increment": 2.5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate",
+            "joint:shoulder"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Press block",
+        "start": "2026-03-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              8
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              8
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              8
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "loading",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "upper",
+                        "name": "Upper",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "bench-press",
+                            "sets": 3,
+                            "repRange": [
+                              6,
+                              8
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-03",
+        "sessions": [
+          {
+            "id": "2026-03-02-upper",
+            "date": "2026-03-02",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 70,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-05-upper",
+            "date": "2026-03-05",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 70,
+                    "unit": "kg",
+                    "reps": 8
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-03-09-upper",
+            "date": "2026-03-09",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 72.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-12-upper",
+            "date": "2026-03-12",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 72.5,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-03-16-upper",
+            "date": "2026-03-16",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 72.5,
+                    "unit": "kg",
+                    "reps": 7
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-19-upper",
+            "date": "2026-03-19",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 70,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-03-23-upper",
+            "date": "2026-03-23",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 67.5,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-03-26-upper",
+            "date": "2026-03-26",
+            "trackingLevel": "standard",
+            "template": "upper",
+            "minutes": 40,
+            "rpe": 8,
+            "exercises": [
+              {
+                "exercise": "bench-press",
+                "sets": [
+                  {
+                    "weight": 65,
+                    "unit": "kg",
+                    "reps": 6
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "upper",
+              "slots": [
+                {
+                  "exercise": "bench-press",
+                  "sets": 3,
+                  "repRange": [
+                    6,
+                    8
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          }
+        ]
+      }
+    ],
+    "checkins": {
+      "schemaVersion": 1,
+      "daily": [
+        {
+          "date": "2026-02-15",
+          "sleepH": 6.9,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 56,
+          "soreness": 3,
+          "steps": 8203
+        },
+        {
+          "date": "2026-02-16",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 3,
+          "steps": 9431
+        },
+        {
+          "date": "2026-02-17",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 3,
+          "steps": 8020
+        },
+        {
+          "date": "2026-02-18",
+          "sleepH": 6.9,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 55,
+          "soreness": 2,
+          "steps": 7499
+        },
+        {
+          "date": "2026-02-19",
+          "sleepH": 7.4,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 2,
+          "steps": 8192
+        },
+        {
+          "date": "2026-02-20",
+          "sleepH": 7.5,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 56,
+          "soreness": 2,
+          "steps": 9266
+        },
+        {
+          "date": "2026-02-21",
+          "sleepH": 6.9,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 56,
+          "soreness": 2,
+          "steps": 7032
+        },
+        {
+          "date": "2026-02-22",
+          "sleepH": 6.9,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 54,
+          "soreness": 2,
+          "steps": 9538
+        },
+        {
+          "date": "2026-02-23",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 57,
+          "soreness": 1,
+          "steps": 9117
+        },
+        {
+          "date": "2026-02-24",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 56,
+          "soreness": 2,
+          "steps": 8982
+        },
+        {
+          "date": "2026-02-25",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 58,
+          "soreness": 1,
+          "steps": 9869
+        },
+        {
+          "date": "2026-02-26",
+          "sleepH": 7.0,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 55,
+          "soreness": 2,
+          "steps": 8148
+        },
+        {
+          "date": "2026-02-27",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 54,
+          "soreness": 3,
+          "steps": 7292
+        },
+        {
+          "date": "2026-02-28",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 3,
+          "steps": 7715
+        },
+        {
+          "date": "2026-03-01",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 54,
+          "soreness": 3,
+          "steps": 8355
+        },
+        {
+          "date": "2026-03-02",
+          "sleepH": 6.8,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 54,
+          "soreness": 3,
+          "steps": 7044
+        },
+        {
+          "date": "2026-03-03",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 54,
+          "soreness": 3,
+          "steps": 7777
+        },
+        {
+          "date": "2026-03-04",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 2,
+          "steps": 7602
+        },
+        {
+          "date": "2026-03-05",
+          "sleepH": 7.3,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 55,
+          "soreness": 3,
+          "steps": 8912
+        },
+        {
+          "date": "2026-03-06",
+          "sleepH": 6.9,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 54,
+          "soreness": 2,
+          "steps": 9108
+        },
+        {
+          "date": "2026-03-07",
+          "sleepH": 7.6,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 56,
+          "soreness": 2,
+          "steps": 8652
+        },
+        {
+          "date": "2026-03-08",
+          "sleepH": 7.2,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 55,
+          "soreness": 2,
+          "steps": 7989
+        },
+        {
+          "date": "2026-03-09",
+          "sleepH": 7.4,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 56,
+          "soreness": 3,
+          "steps": 7417
+        },
+        {
+          "date": "2026-03-10",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 54,
+          "soreness": 2,
+          "steps": 7370
+        },
+        {
+          "date": "2026-03-11",
+          "sleepH": 7.4,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 2,
+          "steps": 8006
+        },
+        {
+          "date": "2026-03-12",
+          "sleepH": 7.0,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 1,
+          "steps": 8290
+        },
+        {
+          "date": "2026-03-13",
+          "sleepH": 7.2,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 54,
+          "soreness": 1,
+          "steps": 7701
+        },
+        {
+          "date": "2026-03-14",
+          "sleepH": 7.4,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 55,
+          "soreness": 2,
+          "steps": 9626
+        },
+        {
+          "date": "2026-03-15",
+          "sleepH": 7.0,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 2,
+          "steps": 8007
+        },
+        {
+          "date": "2026-03-16",
+          "sleepH": 7.1,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 57,
+          "soreness": 3,
+          "steps": 8783
+        },
+        {
+          "date": "2026-03-17",
+          "sleepH": 7.0,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 56,
+          "soreness": 2,
+          "steps": 7264
+        },
+        {
+          "date": "2026-03-18",
+          "sleepH": 7.5,
+          "sleepQ": 3,
+          "energy": 4,
+          "rhr": 56,
+          "soreness": 2,
+          "steps": 7954
+        },
+        {
+          "date": "2026-03-19",
+          "sleepH": 6.9,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 2,
+          "steps": 9803
+        },
+        {
+          "date": "2026-03-20",
+          "sleepH": 7.0,
+          "sleepQ": 4,
+          "energy": 3,
+          "rhr": 54,
+          "soreness": 3,
+          "steps": 7795
+        },
+        {
+          "date": "2026-03-21",
+          "sleepH": 7.3,
+          "sleepQ": 4,
+          "energy": 4,
+          "rhr": 55,
+          "soreness": 2,
+          "steps": 8551
+        },
+        {
+          "date": "2026-03-22",
+          "sleepH": 6.4,
+          "sleepQ": 3,
+          "energy": 3,
+          "rhr": 58,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-23",
+          "sleepH": 6.0,
+          "sleepQ": 2,
+          "energy": 3,
+          "rhr": 60,
+          "soreness": 3
+        },
+        {
+          "date": "2026-03-24",
+          "sleepH": 5.8,
+          "sleepQ": 2,
+          "energy": 2,
+          "rhr": 62,
+          "soreness": 4
+        },
+        {
+          "date": "2026-03-25",
+          "sleepH": 5.6,
+          "sleepQ": 2,
+          "energy": 2,
+          "rhr": 64,
+          "soreness": 4
+        },
+        {
+          "date": "2026-03-26",
+          "sleepH": 5.5,
+          "sleepQ": 2,
+          "energy": 2,
+          "rhr": 65,
+          "soreness": 4
+        },
+        {
+          "date": "2026-03-27",
+          "sleepH": 5.4,
+          "sleepQ": 1,
+          "energy": 2,
+          "rhr": 65,
+          "soreness": 4
+        },
+        {
+          "date": "2026-03-28",
+          "sleepH": 5.3,
+          "sleepQ": 2,
+          "energy": 1,
+          "rhr": 66,
+          "soreness": 4
+        }
+      ],
+      "weekly": [
+        {
+          "weekOf": "2026-03-23",
+          "recovery": 2,
+          "jointAches": false,
+          "rir": {
+            "bench-press": 1
+          },
+          "note": "Work deadline, short nights."
+        }
+      ]
+    }
+  },
+  "expected": {
+    "e1rm": [
+      {
+        "exercise": "bench-press",
+        "unit": "kg",
+        "sessions": 8,
+        "ignored": 0,
+        "points": 8,
+        "e1rms": [
+          88.666667,
+          88.666667,
+          87.0,
+          89.416667,
+          89.416667,
+          84.0,
+          81.0,
+          78.0
+        ],
+        "best": 84.0,
+        "change": -0.060578,
+        "verdict": "down",
+        "stallCandidate": true,
+        "unitFlag": null,
+        "why": "Bench top sets slide from 72.5 x 7 to 65 x 6. Best-of-3 drops from 89.42 to 84.00: -6.06 %, beyond -4 %, so 'down' (a falling e1RM)."
+      }
+    ],
+    "progression": [
+      {
+        "action": "add-reps",
+        "weight": 65,
+        "unit": "kg",
+        "reps": 7,
+        "rir": 2,
+        "assumedAllSets": true,
+        "exercise": "bench-press",
+        "repRange": [
+          6,
+          8
+        ],
+        "targetRir": 2,
+        "deload": false,
+        "asOf": "2026-03-28",
+        "why": "Last top set 65 x 6 is at the bottom of 6-8: same weight, one more rep (65 x 7). Readiness, not progression, decides whether to trim the session."
+      }
+    ],
+    "readiness": {
+      "asOf": "2026-03-28",
+      "r": -2.119304,
+      "s": -2.162686,
+      "band": "low",
+      "signals": 5,
+      "scoredDays": 28,
+      "lowRun": 6,
+      "actions": {
+        "trim": true,
+        "early-deload": true,
+        "no-hard-training": true,
+        "no-tests": true
+      },
+      "e1rmFallingFrom": "bench-press",
+      "why": "35 steady days (sleep about 7.2 h, RHR about 56), then a week of short nights (6.4 to 5.3 h), falling sleep quality and energy, more soreness and RHR rising to 66. Today R -2.119, S -2.163: low, 6 days running. Actions: trim (low S); early deload (low 5+ days with a falling bench e1RM); no hard training (RHR 65 and 66 on the last two days, both at least baseline + 7); no tests (5.3 h of sleep today)."
+    }
+  }
+}

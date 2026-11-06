@@ -1,0 +1,1211 @@
+{
+  "name": "09-three-weeks-off",
+  "about": "Four weeks of full-body dumbbell training twice a week, then 24 days with no logged session (a work trip marked as missed, one unlogged hotel workout, a rest day), back today.",
+  "today": "2026-03-23",
+  "data": {
+    "program": {
+      "schemaVersion": 1,
+      "id": "home-dumbbells",
+      "name": "Home dumbbells",
+      "exercises": {
+        "goblet-squat": {
+          "name": "Goblet squat",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "quads",
+              "glutes"
+            ],
+            "helps": [
+              "abs",
+              "upper-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "db-bench": {
+          "name": "Flat dumbbell bench press",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "chest"
+            ],
+            "helps": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        },
+        "db-rdl": {
+          "name": "Dumbbell Romanian deadlift",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "hamstrings",
+              "glutes"
+            ],
+            "helps": [
+              "lower-back"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-moderate"
+          ]
+        },
+        "db-row": {
+          "name": "One-arm dumbbell row",
+          "unit": "lb",
+          "increment": 5,
+          "muscles": {
+            "main": [
+              "lats",
+              "upper-back"
+            ],
+            "helps": [
+              "biceps"
+            ]
+          },
+          "kind": "strength",
+          "risk": [
+            "abdomen-low"
+          ]
+        }
+      },
+      "macrocycle": {
+        "id": "macro-1",
+        "name": "Home dumbbells",
+        "start": "2026-02-02",
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Base",
+            "mesocycles": [
+              {
+                "id": "meso-1",
+                "name": "Mesocycle 1",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-02-02",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-02-09",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-02-16",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "deload",
+                    "start": "2026-02-23",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "meso-2",
+                "name": "Mesocycle 2",
+                "weeks": [
+                  {
+                    "index": 1,
+                    "kind": "loading",
+                    "start": "2026-03-02",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "loading",
+                    "start": "2026-03-09",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "loading",
+                    "start": "2026-03-16",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 4,
+                    "kind": "deload",
+                    "start": "2026-03-23",
+                    "sessions": [
+                      {
+                        "id": "a",
+                        "name": "Full body A",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "goblet-squat",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-bench",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          }
+                        ]
+                      },
+                      {
+                        "id": "b",
+                        "name": "Full body B",
+                        "kind": "lift",
+                        "slots": [
+                          {
+                            "exercise": "db-rdl",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2,
+                            "main": true
+                          },
+                          {
+                            "exercise": "db-row",
+                            "sets": 3,
+                            "repRange": [
+                              8,
+                              12
+                            ],
+                            "rir": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "logs": [
+      {
+        "schemaVersion": 1,
+        "month": "2026-02",
+        "sessions": [
+          {
+            "id": "2026-02-02-a",
+            "date": "2026-02-02",
+            "trackingLevel": "standard",
+            "template": "a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "a",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-05-b",
+            "date": "2026-02-05",
+            "trackingLevel": "standard",
+            "template": "b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "db-rdl",
+                "sets": [
+                  {
+                    "weight": 60,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "b",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "db-rdl",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 1
+            }
+          },
+          {
+            "id": "2026-02-09-a",
+            "date": "2026-02-09",
+            "trackingLevel": "standard",
+            "template": "a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 10
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "a",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-12-b",
+            "date": "2026-02-12",
+            "trackingLevel": "standard",
+            "template": "b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "db-rdl",
+                "sets": [
+                  {
+                    "weight": 60,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "b",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "db-rdl",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 2
+            }
+          },
+          {
+            "id": "2026-02-16-a",
+            "date": "2026-02-16",
+            "trackingLevel": "standard",
+            "template": "a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 50,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 11
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "a",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-02-19-b",
+            "date": "2026-02-19",
+            "trackingLevel": "standard",
+            "template": "b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "db-rdl",
+                "sets": [
+                  {
+                    "weight": 60,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "b",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "db-rdl",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 3
+            }
+          },
+          {
+            "id": "2026-02-23-a",
+            "date": "2026-02-23",
+            "trackingLevel": "standard",
+            "template": "a",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "goblet-squat",
+                "sets": [
+                  {
+                    "weight": 55,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              },
+              {
+                "exercise": "db-bench",
+                "sets": [
+                  {
+                    "weight": 40,
+                    "unit": "lb",
+                    "reps": 12
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "a",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "goblet-squat",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-bench",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                }
+              ],
+              "week": 4
+            }
+          },
+          {
+            "id": "2026-02-26-b",
+            "date": "2026-02-26",
+            "trackingLevel": "standard",
+            "template": "b",
+            "minutes": 45,
+            "rpe": 7,
+            "exercises": [
+              {
+                "exercise": "db-rdl",
+                "sets": [
+                  {
+                    "weight": 65,
+                    "unit": "lb",
+                    "reps": 9
+                  }
+                ]
+              }
+            ],
+            "plan": {
+              "weekKind": "loading",
+              "template": "b",
+              "kind": "lift",
+              "slots": [
+                {
+                  "exercise": "db-rdl",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2,
+                  "main": true
+                },
+                {
+                  "exercise": "db-row",
+                  "sets": 3,
+                  "repRange": [
+                    8,
+                    12
+                  ],
+                  "rir": 2
+                }
+              ],
+              "week": 4
+            }
+          }
+        ]
+      }
+    ],
+    "checkins": {
+      "schemaVersion": 1,
+      "daily": [
+        {
+          "date": "2026-03-02",
+          "mark": "missed",
+          "note": "Work trip."
+        },
+        {
+          "date": "2026-03-05",
+          "mark": "missed"
+        },
+        {
+          "date": "2026-03-10",
+          "trained": true,
+          "note": "Hotel gym, not logged."
+        },
+        {
+          "date": "2026-03-12",
+          "mark": "rest"
+        }
+      ],
+      "weekly": []
+    }
+  },
+  "expected": {
+    "adherence": {
+      "target": {
+        "lift": 2,
+        "short": 0
+      },
+      "value": {
+        "from": "2026-02-23",
+        "to": "2026-03-22",
+        "target": {
+          "lift": 2,
+          "short": 0
+        },
+        "weeks": [
+          {
+            "weekOf": "2026-02-23",
+            "lift": 2,
+            "short": 0,
+            "custom": 0,
+            "days": 2,
+            "habitDays": 0,
+            "ticksWithoutLog": 0,
+            "gaps": {
+              "unlogged": 0,
+              "missed": 0,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          },
+          {
+            "weekOf": "2026-03-02",
+            "lift": 0,
+            "short": 0,
+            "custom": 0,
+            "days": 0,
+            "habitDays": 0,
+            "ticksWithoutLog": 0,
+            "gaps": {
+              "unlogged": 0,
+              "missed": 2,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          },
+          {
+            "weekOf": "2026-03-09",
+            "lift": 0,
+            "short": 0,
+            "custom": 0,
+            "days": 0,
+            "habitDays": 1,
+            "ticksWithoutLog": 1,
+            "gaps": {
+              "unlogged": 1,
+              "missed": 0,
+              "rest": 1
+            },
+            "confirmedUnlogged": 0
+          },
+          {
+            "weekOf": "2026-03-16",
+            "lift": 0,
+            "short": 0,
+            "custom": 0,
+            "days": 0,
+            "habitDays": 0,
+            "ticksWithoutLog": 0,
+            "gaps": {
+              "unlogged": 2,
+              "missed": 0,
+              "rest": 0
+            },
+            "confirmedUnlogged": 0
+          }
+        ],
+        "lifting": {
+          "done": 2,
+          "planned": 8,
+          "pct": 0.25
+        },
+        "short": {
+          "done": 0,
+          "planned": 0,
+          "pct": null
+        },
+        "meanSessionsPerWeek": 0.5,
+        "meanTrainingDays": 0.5,
+        "gaps": {
+          "unlogged": 3,
+          "missed": 2,
+          "rest": 1
+        }
+      },
+      "why": "Window 2026-02-23 to 2026-03-22, 2 lifting sessions planned a week: 2 logged in the first week, none after: 2/8 = 25 %. Of the 6 gaps, the two trip days marked missed count as missed, the rest day as rest, and the other 3 as unlogged (one of them ticked as trained)."
+    },
+    "missed": {
+      "rotation": [
+        "a",
+        "b"
+      ],
+      "protocol": "restart",
+      "lastSession": "2026-02-26",
+      "daysOff": 24,
+      "weeksOff": 3,
+      "loadFactor": 1,
+      "rirAdd": 0,
+      "firstWeek": {
+        "from": "2026-03-23",
+        "to": "2026-03-29"
+      },
+      "restartAtWeek": 1,
+      "calibration": true,
+      "nextTemplate": "a",
+      "gapDays": {
+        "trained": 1,
+        "rest": 1,
+        "missed": 2
+      },
+      "applied": [
+        {
+          "exercise": "goblet-squat",
+          "repRange": [
+            8,
+            12
+          ],
+          "targetRir": 2,
+          "date": "2026-03-23",
+          "before": {
+            "action": "add-reps",
+            "weight": 55,
+            "reps": 10
+          },
+          "after": {
+            "action": "calibrate",
+            "weight": null,
+            "unit": "lb",
+            "reps": 10,
+            "rir": 3,
+            "assumedAllSets": true
+          }
+        },
+        {
+          "exercise": "db-bench",
+          "repRange": [
+            8,
+            12
+          ],
+          "targetRir": 2,
+          "date": "2026-03-23",
+          "before": {
+            "action": "increase",
+            "weight": 45,
+            "reps": 8
+          },
+          "after": {
+            "action": "calibrate",
+            "weight": null,
+            "unit": "lb",
+            "reps": 8,
+            "rir": 3,
+            "assumedAllSets": true
+          }
+        }
+      ],
+      "why": "Last session 2026-02-26, back 2026-03-23: 24 days off, 3 whole weeks, so restart the mesocycle at week 1 with a calibration week: each lift's plain next target (goblet 55 x 10, DB bench 45 x 8) becomes 'find a load that leaves 2-3 in reserve at the bottom of the range'. A Thursday B session was last, so A comes next. Ask first: one gap day was ticked as trained."
+    }
+  }
+}

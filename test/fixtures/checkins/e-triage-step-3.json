@@ -1,0 +1,63 @@
+{
+  "name": "e-triage-step-3",
+  "about": "The bench stall: the 03-15 letter took step 1, the 03-22 letter step 2, so the 03-29 check-in resumes at step 3. A record older than 28 days restarts at step 1.",
+  "rule": "triage",
+  "lift": [
+    "flat-db-bench-press",
+    "Flat DB Bench Press",
+    "Bench"
+  ],
+  "checkins": [
+    {
+      "date": "2026-03-15",
+      "weekStart": "2026-03-09",
+      "recovery": 4,
+      "triage": [
+        {
+          "lift": "Flat DB Bench Press",
+          "step": 1,
+          "date": "2026-03-15"
+        }
+      ]
+    },
+    {
+      "date": "2026-03-22",
+      "weekStart": "2026-03-16",
+      "recovery": 4,
+      "triage": [
+        {
+          "lift": "bench",
+          "step": 2,
+          "date": "2026-03-22"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "sleepH": 7.4,
+    "readinessBand": "normal",
+    "proteinGPerKg": 1.8,
+    "weeksToDeload": 1,
+    "weeksToMesocycleEnd": 1,
+    "muscle": {
+      "name": "chest",
+      "weeklySets": 9
+    }
+  },
+  "cases": [
+    {
+      "today": "2026-03-29",
+      "expected": {
+        "startAt": 3,
+        "chosen": 3
+      }
+    },
+    {
+      "today": "2026-04-25",
+      "expected": {
+        "startAt": 1,
+        "chosen": 3
+      }
+    }
+  ]
+}
