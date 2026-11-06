@@ -1,0 +1,4426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pahlavan:schema:v1",
+  "title": "Pahlavan data schema v1",
+  "description": "The files in the Pahlavan data folder: profile.json, program.json, log/<YYYY-MM>.json, checkins.json, body.json, ledger.json, checkins.json (the coach's check-in log), tracking.json, nudges.json, sitting.json and eating-plan.json. Each carries schemaVersion 1. Also the phone's inbox entries (Coach/Inbox/*.json), which carry the entry version v 1 instead. Keys starting with _ are comments. Written by hand to match src/core/schema.ts and src/core/validate.ts; cross-file and cross-field checks live in the validator.",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/profile"
+    },
+    {
+      "$ref": "#/$defs/program"
+    },
+    {
+      "$ref": "#/$defs/log"
+    },
+    {
+      "$ref": "#/$defs/checkins"
+    },
+    {
+      "$ref": "#/$defs/body"
+    },
+    {
+      "$ref": "#/$defs/ledger"
+    },
+    {
+      "$ref": "#/$defs/checkinLog"
+    },
+    {
+      "$ref": "#/$defs/tracking"
+    },
+    {
+      "$ref": "#/$defs/nudges"
+    },
+    {
+      "$ref": "#/$defs/sittingLog"
+    },
+    {
+      "$ref": "#/$defs/eatingPlan"
+    },
+    {
+      "$ref": "#/$defs/inboxEntry"
+    }
+  ],
+  "$defs": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "text": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[1-9]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$",
+      "description": "A real calendar date, YYYY-MM-DD (the validator also rejects dates like 2026-02-30)."
+    },
+    "unit": {
+      "enum": [
+        "kg",
+        "lb"
+      ]
+    },
+    "trackingLevel": {
+      "enum": [
+        "light",
+        "standard",
+        "full"
+      ]
+    },
+    "screeningOutcome": {
+      "enum": [
+        "go",
+        "go-ramped",
+        "conservative",
+        "blocked"
+      ]
+    },
+    "goalKind": {
+      "enum": [
+        "fat-loss",
+        "recomposition",
+        "gain",
+        "maintenance",
+        "strength",
+        "skill",
+        "posture",
+        "conditioning",
+        "health"
+      ]
+    },
+    "confidence": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "weekday": {
+      "enum": [
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "sun"
+      ]
+    },
+    "exerciseKind": {
+      "enum": [
+        "strength",
+        "circuit",
+        "timed",
+        "cardio",
+        "mobility"
+      ]
+    },
+    "sessionKind": {
+      "enum": [
+        "lift",
+        "short",
+        "express",
+        "cardio",
+        "mobility"
+      ]
+    },
+    "weekKind": {
+      "enum": [
+        "loading",
+        "deload"
+      ]
+    },
+    "dayMark": {
+      "enum": [
+        "rest",
+        "missed"
+      ]
+    },
+    "scale5": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "rir": {
+      "type": "number",
+      "minimum": 0
+    },
+    "repRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "integer",
+          "minimum": 1
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "description": "[lo, hi] reps; the validator also checks lo <= hi."
+    },
+    "riskTag": {
+      "anyOf": [
+        {
+          "enum": [
+            "abdomen-high",
+            "abdomen-moderate",
+            "abdomen-low"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^joint:[a-z][a-z-]*$"
+        }
+      ]
+    },
+    "rateBand": {
+      "type": "object",
+      "required": [
+        "unit",
+        "lo",
+        "hi"
+      ],
+      "properties": {
+        "unit": {
+          "enum": [
+            "pct",
+            "kg"
+          ]
+        },
+        "lo": {
+          "type": "number"
+        },
+        "hi": {
+          "type": "number"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A signed weekly change; pct is a fraction of body weight. The validator also checks lo <= hi."
+    },
+    "goal": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "importance",
+        "confidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/goalKind"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "importance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "measure": {
+          "type": "string"
+        },
+        "rateBand": {
+          "$ref": "#/$defs/rateBand"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "units": {
+      "type": "object",
+      "required": [
+        "load",
+        "body"
+      ],
+      "properties": {
+        "load": {
+          "$ref": "#/$defs/unit"
+        },
+        "body": {
+          "$ref": "#/$defs/unit"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "busyPeriod": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/date"
+        },
+        "to": {
+          "$ref": "#/$defs/date"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "availability": {
+      "type": "object",
+      "required": [
+        "daysPerWeek",
+        "minutesPerSession"
+      ],
+      "properties": {
+        "daysPerWeek": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "minutesPerSession": {
+          "type": "number",
+          "minimum": 0
+        },
+        "shortSessions": {
+          "$ref": "#/$defs/shortSessions"
+        },
+        "fixedDays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weekday"
+          }
+        },
+        "busy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/busyPeriod"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "shortSessions": {
+      "type": "object",
+      "required": [
+        "days",
+        "minutes"
+      ],
+      "properties": {
+        "days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "minutes": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Some of the week's days are shorter: how many, and their minutes."
+    },
+    "screening": {
+      "type": "object",
+      "required": [
+        "outcome",
+        "date"
+      ],
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/screeningOutcome"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "limits": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "emphasis": {
+      "type": "object",
+      "required": [
+        "area",
+        "seen",
+        "confidence",
+        "emphasis"
+      ],
+      "properties": {
+        "area": {
+          "$ref": "#/$defs/text"
+        },
+        "seen": {
+          "$ref": "#/$defs/text"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "emphasis": {
+          "$ref": "#/$defs/text"
+        },
+        "muscles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "kind": {
+          "$ref": "#/$defs/emphasisKind"
+        },
+        "side": {
+          "enum": [
+            "left",
+            "right"
+          ]
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "basics": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "birthYear": {
+          "type": "integer",
+          "minimum": 1900
+        },
+        "heightCm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "sex": {
+          "enum": [
+            "male",
+            "female"
+          ]
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "units",
+        "goals",
+        "availability",
+        "equipment",
+        "trackingLevel",
+        "screening",
+        "emphasis"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "units": {
+          "$ref": "#/$defs/units"
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/goal"
+          }
+        },
+        "availability": {
+          "$ref": "#/$defs/availability"
+        },
+        "equipment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "travelEquipment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What travel usually offers, in the same words as equipment. The Hotel version of a session uses only these and bodyweight; without the list, bodyweight, dumbbells and bands."
+        },
+        "trackingLevel": {
+          "$ref": "#/$defs/trackingLevel"
+        },
+        "screening": {
+          "$ref": "#/$defs/screening"
+        },
+        "emphasis": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/emphasis"
+          }
+        },
+        "basics": {
+          "$ref": "#/$defs/basics"
+        },
+        "priorityMuscles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "experience": {
+          "$ref": "#/$defs/experience"
+        },
+        "preferences": {
+          "$ref": "#/$defs/preferences"
+        },
+        "useHistory": {
+          "type": "boolean"
+        },
+        "rirCalibration": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rirCalibration"
+          }
+        },
+        "targets": {
+          "$ref": "#/$defs/targets"
+        },
+        "work": {
+          "$ref": "#/$defs/deskWork"
+        },
+        "selfCheck": {
+          "$ref": "#/$defs/selfCheck"
+        },
+        "badWeek": {
+          "$ref": "#/$defs/badWeek"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "profile.json"
+    },
+    "selfCheck": {
+      "type": "object",
+      "required": [
+        "date"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "sitToStand": {
+          "$ref": "#/$defs/sitToStand"
+        },
+        "pushUps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deadHangS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "pullUps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coreHold": {
+          "$ref": "#/$defs/coreHold"
+        },
+        "hingeFlatBack": {
+          "type": "boolean"
+        },
+        "overheadReach": {
+          "$ref": "#/$defs/overheadReach"
+        },
+        "wallGapCm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "balanceS": {
+          "$ref": "#/$defs/balance"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The intake's movement self-check, with its date (read by engine 0.6.0 and later)."
+    },
+    "sitToStand": {
+      "type": "object",
+      "required": [
+        "easy",
+        "heelsDown"
+      ],
+      "properties": {
+        "easy": {
+          "type": "boolean"
+        },
+        "heelsDown": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Five slow reps to a knee-height box: easy or not, heels down or lifting."
+    },
+    "coreHold": {
+      "type": "object",
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "plank",
+            "hollow"
+          ]
+        },
+        "seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A front plank or a hollow hold, seconds."
+    },
+    "overheadReach": {
+      "type": "object",
+      "required": [
+        "clean"
+      ],
+      "properties": {
+        "clean": {
+          "type": "boolean"
+        },
+        "ribFlare": {
+          "type": "boolean"
+        },
+        "lowBackArch": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Arms straight up against a wall: clean, or with the ribs flaring or the lower back arching (a clean reach has neither; the validator checks it)."
+    },
+    "balance": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "type": "number",
+          "minimum": 0
+        },
+        "right": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Single-leg stand, seconds a side."
+    },
+    "badWeek": {
+      "type": "object",
+      "required": [
+        "usually"
+      ],
+      "properties": {
+        "usually": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/badWeekKind"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "What usually happens when a week goes badly."
+    },
+    "temporaryChange": {
+      "type": "object",
+      "required": [
+        "until",
+        "reason"
+      ],
+      "properties": {
+        "until": {
+          "$ref": "#/$defs/date"
+        },
+        "reason": {
+          "$ref": "#/$defs/text"
+        },
+        "exercise": {
+          "$ref": "#/$defs/id"
+        },
+        "sets": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repRange": {
+          "$ref": "#/$defs/repRange"
+        },
+        "rir": {
+          "$ref": "#/$defs/rir"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "In force through `until`, inclusive."
+    },
+    "slot": {
+      "type": "object",
+      "required": [
+        "exercise",
+        "sets",
+        "repRange",
+        "rir"
+      ],
+      "properties": {
+        "exercise": {
+          "$ref": "#/$defs/id"
+        },
+        "sets": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "repRange": {
+          "$ref": "#/$defs/repRange"
+        },
+        "rir": {
+          "$ref": "#/$defs/rir"
+        },
+        "swaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "risk": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/riskTag"
+          }
+        },
+        "until": {
+          "$ref": "#/$defs/temporaryChange"
+        },
+        "main": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        },
+        "progression": {
+          "$ref": "#/$defs/slotProgression"
+        },
+        "pair": {
+          "type": "boolean",
+          "description": "Done as a superset with the slot before it: a set of each, then rest."
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "sessionTemplate": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "slots"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "$ref": "#/$defs/sessionKind"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slot"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "week": {
+      "type": "object",
+      "required": [
+        "index",
+        "kind",
+        "start",
+        "sessions"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "$ref": "#/$defs/weekKind"
+        },
+        "start": {
+          "$ref": "#/$defs/date"
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sessionTemplate"
+          }
+        },
+        "calibration": {
+          "type": "boolean"
+        },
+        "tests": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "muscleTags": {
+      "type": "object",
+      "required": [
+        "main",
+        "helps"
+      ],
+      "properties": {
+        "main": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "helps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "exercise": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "increment": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "muscles": {
+          "$ref": "#/$defs/muscleTags"
+        },
+        "kind": {
+          "$ref": "#/$defs/exerciseKind"
+        },
+        "risk": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/riskTag"
+          }
+        },
+        "equipment": {
+          "type": "string"
+        },
+        "pattern": {
+          "$ref": "#/$defs/pattern"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "if": {
+        "anyOf": [
+          {
+            "not": {
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "strength"
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "required": [
+          "unit",
+          "increment"
+        ]
+      },
+      "description": "A strength exercise (kind strength or absent) needs a unit and an increment."
+    },
+    "mesocycle": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "weeks"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "weeks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/week"
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "phase": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "mesocycles"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "mesocycles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mesocycle"
+          },
+          "minItems": 1
+        },
+        "goal": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "macrocycle": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "start",
+        "phases"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "start": {
+          "$ref": "#/$defs/date"
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/phase"
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "program": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "exercises",
+        "macrocycle"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "exercises": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/id"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/exercise"
+          }
+        },
+        "macrocycle": {
+          "$ref": "#/$defs/macrocycle"
+        },
+        "priorityMuscles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deskBreaks": {
+          "$ref": "#/$defs/deskBreaks"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "program.json. The validator also checks that every slot's exercise, swaps and until.exercise exist in `exercises`."
+    },
+    "loggedSet": {
+      "type": "object",
+      "required": [
+        "weight",
+        "unit",
+        "reps"
+      ],
+      "properties": {
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "reps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rir": {
+          "$ref": "#/$defs/rir"
+        },
+        "pain": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "planSnapshot": {
+      "type": "object",
+      "required": [
+        "weekKind",
+        "template",
+        "slots"
+      ],
+      "properties": {
+        "weekKind": {
+          "$ref": "#/$defs/weekKind"
+        },
+        "template": {
+          "$ref": "#/$defs/id"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slot"
+          }
+        },
+        "program": {
+          "$ref": "#/$defs/id"
+        },
+        "phase": {
+          "$ref": "#/$defs/id"
+        },
+        "mesocycle": {
+          "$ref": "#/$defs/id"
+        },
+        "week": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "$ref": "#/$defs/sessionKind"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "exerciseLog": {
+      "type": "object",
+      "required": [
+        "exercise",
+        "sets"
+      ],
+      "properties": {
+        "exercise": {
+          "$ref": "#/$defs/id"
+        },
+        "sets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/loggedSet"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "object",
+      "required": [
+        "id",
+        "date",
+        "trackingLevel",
+        "exercises"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/text"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "trackingLevel": {
+          "$ref": "#/$defs/trackingLevel"
+        },
+        "exercises": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/exerciseLog"
+          }
+        },
+        "template": {
+          "$ref": "#/$defs/id"
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rpe": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "plan": {
+          "$ref": "#/$defs/planSnapshot"
+        },
+        "note": {
+          "type": "string"
+        },
+        "pain": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sessionPain"
+          }
+        },
+        "hotel": {
+          "type": "boolean",
+          "description": "Done as the Hotel version: counts for adherence and the week's sets, never for a lift's e1RM trend, stall check or next target."
+        },
+        "skipWhy": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9-]*$": {
+              "$ref": "#/$defs/skipReason"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Why a skipped item was skipped, by exercise id (a key of skipped)."
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The validator also checks that a Light session logs no sets, that plan.template equals template and that every skipWhy key is in skipped."
+    },
+    "sessionPain": {
+      "type": "object",
+      "required": [
+        "area",
+        "severity"
+      ],
+      "properties": {
+        "area": {
+          "$ref": "#/$defs/text"
+        },
+        "severity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "exercise": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A pain logged with a session (the Log panel's \"Any pain or niggle?\")."
+    },
+    "log": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "month",
+        "sessions"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "month": {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/session"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "log/<YYYY-MM>.json. The validator also checks that every session falls in `month` and that ids are unique."
+    },
+    "dailyCheckin": {
+      "type": "object",
+      "required": [
+        "date"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "sleepH": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        },
+        "sleepQ": {
+          "$ref": "#/$defs/scale5"
+        },
+        "energy": {
+          "$ref": "#/$defs/scale5"
+        },
+        "soreness": {
+          "$ref": "#/$defs/scale5"
+        },
+        "rhr": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 250
+        },
+        "illness": {
+          "type": "boolean"
+        },
+        "steps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "floors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trained": {
+          "type": "boolean"
+        },
+        "mark": {
+          "$ref": "#/$defs/dayMark"
+        },
+        "protein": {
+          "type": "boolean"
+        },
+        "soreMuscles": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9-]*$": {
+              "$ref": "#/$defs/sorenessLevel"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Sore muscles on the morning body map, by muscle id."
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "weeklyCheckin": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "weekStart": {
+          "$ref": "#/$defs/date"
+        },
+        "weekOf": {
+          "$ref": "#/$defs/date"
+        },
+        "recovery": {
+          "$ref": "#/$defs/scale5"
+        },
+        "effort": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "stress": {
+          "$ref": "#/$defs/scale5"
+        },
+        "enjoyment": {
+          "$ref": "#/$defs/scale5"
+        },
+        "energy": {
+          "$ref": "#/$defs/scale5"
+        },
+        "sleepQuality": {
+          "$ref": "#/$defs/scale5"
+        },
+        "jointAches": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/jointAche"
+              }
+            }
+          ]
+        },
+        "rir": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9-]*$": {
+              "$ref": "#/$defs/rir"
+            }
+          },
+          "additionalProperties": false
+        },
+        "reportedRir": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/rir"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/rir"
+              }
+            }
+          ]
+        },
+        "proteinDays": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "proteinExtra": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7,
+          "description": "The unticked days the Sunday check-in says reached the protein target; the week's protein days are its ticks plus these, at most 7."
+        },
+        "pattern": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9-]*$": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false,
+          "description": "The eating plan's weekly pattern: met (true) or not (false), by the line's id."
+        },
+        "unloggedSessions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confirmedUnlogged": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/unloggedSession"
+          }
+        },
+        "restDays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/date"
+          }
+        },
+        "missedDays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/date"
+          }
+        },
+        "deload": {
+          "$ref": "#/$defs/checkinDeload"
+        },
+        "triage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/triageRecord"
+          }
+        },
+        "knownBusy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/knownBusy"
+          }
+        },
+        "focusFollowed": {
+          "type": "boolean"
+        },
+        "answers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "letter": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A weekly check-in (checkin.md). weekStart (or the first-v1 weekOf) is the reviewed week's Monday; in checkins.json date and weekStart are required. The validator checks Mondays, dates after the check-in, and one record per date."
+    },
+    "checkins": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "daily",
+        "weekly"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "daily": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dailyCheckin"
+          }
+        },
+        "weekly": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weeklyCheckin"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "checkins.json. The validator also checks that daily dates are unique."
+    },
+    "weighIn": {
+      "type": "object",
+      "required": [
+        "date",
+        "weight",
+        "unit"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "weight": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "tapeEntry": {
+      "type": "object",
+      "required": [
+        "date",
+        "unit"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "unit": {
+          "enum": [
+            "cm",
+            "in"
+          ]
+        },
+        "waist": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "hips": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "chest": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "arm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "testEntry": {
+      "type": "object",
+      "required": [
+        "date",
+        "results"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "results": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "photoSet": {
+      "type": "object",
+      "required": [
+        "date",
+        "poses"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "poses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "minItems": 1
+        },
+        "folder": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "weights",
+        "tape",
+        "tests",
+        "photos"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "weights": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weighIn"
+          }
+        },
+        "tape": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tapeEntry"
+          }
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/testEntry"
+          }
+        },
+        "photos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/photoSet"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "body.json. The validator also checks that weigh-in dates are unique."
+    },
+    "experience": {
+      "enum": [
+        "novice",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    "badWeekKind": {
+      "type": "string",
+      "enum": [
+        "skips-sessions",
+        "shortens-sessions",
+        "stops-for-a-while",
+        "travel",
+        "eats-off-plan",
+        "sleeps-badly"
+      ]
+    },
+    "splitKind": {
+      "type": "string",
+      "enum": [
+        "full-body",
+        "upper-lower",
+        "push-pull-legs",
+        "heavy-and-light-days",
+        "body-part",
+        "torso-limbs",
+        "upper-lower-full",
+        "specialization",
+        "hift",
+        "circuit",
+        "calisthenics"
+      ]
+    },
+    "emphasisKind": {
+      "enum": [
+        "forward-head-rounded-shoulders",
+        "overhead-limited",
+        "squat-heels-lift",
+        "knees-in",
+        "low-back-arch",
+        "asymmetry",
+        "lagging-area",
+        "waist-fat"
+      ]
+    },
+    "pattern": {
+      "enum": [
+        "squat",
+        "hinge",
+        "lunge",
+        "horizontal-push",
+        "horizontal-pull",
+        "vertical-push",
+        "vertical-pull",
+        "carry",
+        "core-anti-extension",
+        "core-anti-rotation",
+        "core-flexion",
+        "calves",
+        "biceps",
+        "triceps",
+        "rear-delt",
+        "lateral-raise",
+        "neck-upper-back",
+        "conditioning",
+        "mobility",
+        "skill"
+      ]
+    },
+    "progressionRule": {
+      "enum": [
+        "linear",
+        "double",
+        "wave",
+        "ladder"
+      ]
+    },
+    "preferences": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "likes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "dislikes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "cardio": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "splits": {
+          "$ref": "#/$defs/splitPreferences"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "splitPreferences": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "likes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/splitKind"
+          }
+        },
+        "dislikes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/splitKind"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Splits the user has liked or disliked before."
+    },
+    "slotProgression": {
+      "type": "object",
+      "required": [
+        "rule"
+      ],
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/progressionRule"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "next": {
+          "$ref": "#/$defs/id"
+        },
+        "ladder": {
+          "$ref": "#/$defs/id"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "linear: add `step` every session the reps are made; double: the rep range, then the step; wave: double with the RIR set week by week; ladder: the top of the range on every set, then the `next` variation (`ladder` and `level`: the calisthenics ladder and the 1-based level the slot starts at)."
+    },
+    "ledgerConstraint": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "area": {
+          "type": "string"
+        },
+        "noTags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/riskTag"
+          }
+        },
+        "noMovements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "until": {
+          "$ref": "#/$defs/date"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One Ledger entry's constraint: abdominal-strain tags or movements ruled out, in force through until (inclusive)."
+    },
+    "ledger": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "constraints"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ledgerConstraint"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "ledger.json, the machine-readable twin of the coach's Ledger. The validator also checks that constraint ids are unique."
+    },
+    "busyKind": {
+      "enum": [
+        "travel",
+        "crunch",
+        "other"
+      ]
+    },
+    "jointAche": {
+      "type": "object",
+      "required": [
+        "area",
+        "severity"
+      ],
+      "properties": {
+        "area": {
+          "$ref": "#/$defs/text"
+        },
+        "severity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "exercise": {
+          "type": "string"
+        },
+        "lingered": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A pain or niggle reported at the check-in. Over 3/10, or lingering, it counts as a fatigue sign."
+    },
+    "knownBusy": {
+      "type": "object",
+      "required": [
+        "from",
+        "to",
+        "kind"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/date"
+        },
+        "to": {
+          "$ref": "#/$defs/date"
+        },
+        "kind": {
+          "$ref": "#/$defs/busyKind"
+        },
+        "sessions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A known busy period ahead. The validator also checks from <= to."
+    },
+    "triageRecord": {
+      "type": "object",
+      "required": [
+        "lift",
+        "step",
+        "date"
+      ],
+      "properties": {
+        "lift": {
+          "$ref": "#/$defs/text"
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The stall triage step a letter applied to a lift."
+    },
+    "unloggedSession": {
+      "type": "object",
+      "required": [
+        "date"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A session done but not logged, confirmed at the check-in."
+    },
+    "checkinDeload": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "cancelled": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "trainedAtFullLoad": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/date"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "cancelled: the user cancels the deload in the week after the check-in. trainedAtFullLoad: Mondays of dashboard deload weeks trained at full load."
+    },
+    "checkinLog": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "checkins"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "checkins": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weeklyCheckin"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Coach/checkins.json: the weekly check-in records, one per check-in date."
+    },
+    "rirCalibration": {
+      "type": "object",
+      "required": [
+        "exercise",
+        "date",
+        "predicted",
+        "actual"
+      ],
+      "properties": {
+        "exercise": {
+          "$ref": "#/$defs/id"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "predicted": {
+          "$ref": "#/$defs/rir"
+        },
+        "actual": {
+          "$ref": "#/$defs/rir"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One RIR calibration set; bias = actual - predicted."
+    },
+    "sorenessLevel": {
+      "enum": [
+        "mild",
+        "sore"
+      ]
+    },
+    "skipReason": {
+      "enum": [
+        "time",
+        "pain",
+        "equipment",
+        "energy"
+      ]
+    },
+    "targets": {
+      "type": "object",
+      "properties": {
+        "by": {
+          "$ref": "#/$defs/date"
+        },
+        "waistDropCm": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "number",
+              "minimum": 0
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "description": "[lo, hi]: a drop from the cycle's first value, the stretch at hi."
+        },
+        "weightDropKg": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "number",
+              "minimum": 0
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "description": "[lo, hi]: a drop from the cycle's first value, the stretch at hi."
+        },
+        "rhrDropBpm": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "number",
+              "minimum": 0
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "description": "[lo, hi]: a drop from the cycle's first value, the stretch at hi."
+        },
+        "stepsPerDay": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "sleepHours": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 24
+        },
+        "tests": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Profile targets: the numbers Progress measures against (week 24)."
+    },
+    "clock": {
+      "type": "string",
+      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+      "description": "A local time, HH:MM."
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+      "description": "A moment in UTC, as an ISO timestamp."
+    },
+    "itemKind": {
+      "type": "string",
+      "enum": [
+        "supplement",
+        "amount",
+        "tick",
+        "standup",
+        "sitting",
+        "desk"
+      ]
+    },
+    "itemSlot": {
+      "type": "string",
+      "enum": [
+        "morning",
+        "midday",
+        "evening",
+        "bedtime",
+        "training",
+        "time",
+        "day"
+      ]
+    },
+    "scheduleKind": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "training",
+        "rest",
+        "weekdays",
+        "every"
+      ]
+    },
+    "suggestionState": {
+      "type": "string",
+      "enum": [
+        "open",
+        "accepted",
+        "dismissed"
+      ]
+    },
+    "nudgeAnswer": {
+      "type": "string",
+      "enum": [
+        "done",
+        "skipped",
+        "later",
+        "logged",
+        "rest",
+        "not-today"
+      ]
+    },
+    "deskStep": {
+      "type": "object",
+      "required": [
+        "name",
+        "dose"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "dose": {
+          "type": "string"
+        },
+        "how": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One step of a desk-break routine."
+    },
+    "deskWhy": {
+      "type": "object",
+      "required": [
+        "what",
+        "from"
+      ],
+      "properties": {
+        "what": {
+          "$ref": "#/$defs/text"
+        },
+        "from": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "deskBreaks": {
+      "type": "object",
+      "required": [
+        "steps",
+        "every",
+        "from",
+        "to",
+        "minutes",
+        "days"
+      ],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deskStep"
+          },
+          "minItems": 1
+        },
+        "every": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "from": {
+          "$ref": "#/$defs/clock"
+        },
+        "to": {
+          "$ref": "#/$defs/clock"
+        },
+        "minutes": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weekday"
+          },
+          "minItems": 1
+        },
+        "why": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deskWhy"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The plan's desk breaks: a routine every `every` minutes between from and to on the listed days."
+    },
+    "deskWork": {
+      "type": "object",
+      "required": [
+        "desk"
+      ],
+      "properties": {
+        "desk": {
+          "type": "boolean"
+        },
+        "sittingHours": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The intake's desk-work answer."
+    },
+    "itemSchedule": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/scheduleKind"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weekday"
+          },
+          "minItems": 1
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "from": {
+          "$ref": "#/$defs/date"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Which days an item is due. days for weekdays; n (and from) for every N days."
+    },
+    "itemReminder": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/clock"
+        },
+        "afterLog": {
+          "type": "boolean"
+        },
+        "every": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "from": {
+          "$ref": "#/$defs/clock"
+        },
+        "to": {
+          "$ref": "#/$defs/clock"
+        },
+        "atMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stretch": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The item's reminder card; which keys apply depends on the kind (validator)."
+    },
+    "itemSource": {
+      "type": "object",
+      "required": [
+        "by"
+      ],
+      "properties": {
+        "by": {
+          "type": "string",
+          "enum": [
+            "coach",
+            "user"
+          ]
+        },
+        "why": {
+          "$ref": "#/$defs/text"
+        },
+        "from": {
+          "$ref": "#/$defs/text"
+        },
+        "on": {
+          "$ref": "#/$defs/date"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "itemPause": {
+      "type": "object",
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/date"
+        },
+        "to": {
+          "$ref": "#/$defs/date"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "amountConfig": {
+      "type": "object",
+      "required": [
+        "target",
+        "unit"
+      ],
+      "properties": {
+        "target": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "$ref": "#/$defs/text"
+        },
+        "quick": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "standupConfig": {
+      "type": "object",
+      "required": [
+        "sitMinutes",
+        "standMinutes",
+        "snoozeMinutes",
+        "targetMinutes",
+        "pauseCalls",
+        "activeOnly",
+        "activeSeconds",
+        "awayMinutes",
+        "standAwayMinutes"
+      ],
+      "properties": {
+        "sitMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "standMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "snoozeMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hours": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/clock"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "pauseCalls": {
+          "type": "boolean"
+        },
+        "helper": {
+          "$ref": "#/$defs/text"
+        },
+        "activeOnly": {
+          "type": "boolean"
+        },
+        "activeSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "awayMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "standAwayMinutes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "sittingConfig": {
+      "type": "object",
+      "required": [
+        "limitMinutes",
+        "stretchMaxMinutes",
+        "awayMinutes"
+      ],
+      "properties": {
+        "limitMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stretchMaxMinutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "awayMinutes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "deskConfig": {
+      "type": "object",
+      "required": [
+        "followPlan",
+        "every",
+        "from",
+        "to",
+        "minutes"
+      ],
+      "properties": {
+        "followPlan": {
+          "type": "boolean"
+        },
+        "every": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "from": {
+          "$ref": "#/$defs/clock"
+        },
+        "to": {
+          "$ref": "#/$defs/clock"
+        },
+        "minutes": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deskStep"
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "itemGoal": {
+      "type": "object",
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "itemVersion": {
+      "type": "object",
+      "required": [
+        "until"
+      ],
+      "properties": {
+        "until": {
+          "$ref": "#/$defs/date"
+        },
+        "schedule": {
+          "$ref": "#/$defs/itemSchedule"
+        },
+        "amount": {
+          "$ref": "#/$defs/amountConfig"
+        },
+        "standup": {
+          "$ref": "#/$defs/standupConfig"
+        },
+        "sitting": {
+          "$ref": "#/$defs/sittingConfig"
+        },
+        "desk": {
+          "$ref": "#/$defs/deskConfig"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "An item's earlier settings, in force through until."
+    },
+    "trackedItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "schedule",
+        "start",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/itemKind"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "schedule": {
+          "$ref": "#/$defs/itemSchedule"
+        },
+        "start": {
+          "$ref": "#/$defs/date"
+        },
+        "source": {
+          "$ref": "#/$defs/itemSource"
+        },
+        "when": {
+          "$ref": "#/$defs/itemSlot"
+        },
+        "whenDetail": {
+          "type": "string",
+          "enum": [
+            "before",
+            "after"
+          ]
+        },
+        "reminder": {
+          "$ref": "#/$defs/itemReminder"
+        },
+        "pauses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/itemPause"
+          }
+        },
+        "habit": {
+          "$ref": "#/$defs/text"
+        },
+        "note": {
+          "type": "string"
+        },
+        "dose": {
+          "type": "string"
+        },
+        "means": {
+          "type": "string"
+        },
+        "goal": {
+          "$ref": "#/$defs/itemGoal"
+        },
+        "amount": {
+          "$ref": "#/$defs/amountConfig"
+        },
+        "standup": {
+          "$ref": "#/$defs/standupConfig"
+        },
+        "sitting": {
+          "$ref": "#/$defs/sittingConfig"
+        },
+        "desk": {
+          "$ref": "#/$defs/deskConfig"
+        },
+        "earlier": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/itemVersion"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One tracked item. Its kind decides which settings it needs (validator)."
+    },
+    "itemDay": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "done": {
+          "type": "boolean"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deskMinutes": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Stand-ups: of `minutes`, the minutes logged as desk stands (\"Standing now\"); the rest came from the stand-up card."
+        },
+        "at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One item's record for one day."
+    },
+    "itemSuggestion": {
+      "type": "object",
+      "required": [
+        "id",
+        "item",
+        "on",
+        "state"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "item": {
+          "$ref": "#/$defs/trackedItem"
+        },
+        "on": {
+          "$ref": "#/$defs/date"
+        },
+        "state": {
+          "$ref": "#/$defs/suggestionState"
+        },
+        "decided": {
+          "$ref": "#/$defs/date"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "morningReminder": {
+      "type": "object",
+      "required": [
+        "on",
+        "at"
+      ],
+      "properties": {
+        "on": {
+          "type": "boolean"
+        },
+        "at": {
+          "$ref": "#/$defs/clock"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "bodyRecordSchedule": {
+      "type": "object",
+      "required": [
+        "schedule"
+      ],
+      "properties": {
+        "schedule": {
+          "type": "string",
+          "enum": [
+            "plan",
+            "fixed"
+          ]
+        },
+        "tapeFrom": {
+          "$ref": "#/$defs/date"
+        },
+        "tapeEvery": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "testsFrom": {
+          "$ref": "#/$defs/date"
+        },
+        "testsEvery": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "bringOver": {
+      "type": "object",
+      "required": [
+        "on",
+        "items"
+      ],
+      "properties": {
+        "on": {
+          "$ref": "#/$defs/date"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "tracking": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "items",
+        "days"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackedItem"
+          }
+        },
+        "days": {
+          "type": "object",
+          "patternProperties": {
+            "^\\d{4}-\\d{2}-\\d{2}$": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-z0-9][a-z0-9-]*$": {
+                  "$ref": "#/$defs/itemDay"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/itemSuggestion"
+          }
+        },
+        "morning": {
+          "$ref": "#/$defs/morningReminder"
+        },
+        "bodyRecord": {
+          "$ref": "#/$defs/bodyRecordSchedule"
+        },
+        "bringOver": {
+          "$ref": "#/$defs/bringOver"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Coach/tracking.json: what is tracked, each item's log by day, the coach's suggestions and the check-in reminders."
+    },
+    "nudgeEntry": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "how": {
+          "$ref": "#/$defs/nudgeAnswer"
+        },
+        "at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "snoozedUntil": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "lastAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "for": {
+          "$ref": "#/$defs/text"
+        },
+        "by": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One reminder's state on one day."
+    },
+    "nudges": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "days"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "days": {
+          "type": "object",
+          "patternProperties": {
+            "^\\d{4}-\\d{2}-\\d{2}$": {
+              "type": "object",
+              "patternProperties": {
+                "^(morning|tape|photos|tests|train|coach|slot:(([01]\\d|2[0-3]):[0-5]\\d|after-log)|(amount|desk|standup):[a-z0-9][a-z0-9-]*|sitting:[a-z0-9][a-z0-9-]*(:stretch)?)$": {
+                  "$ref": "#/$defs/nudgeEntry"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "skipped": {
+          "type": "object",
+          "patternProperties": {
+            "^(tape|photos|tests):(\\d{4}-\\d{2}-\\d{2}|baseline)$": {
+              "$ref": "#/$defs/timestamp"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Coach/nudges.json: reminder state per day and reminder key, shared by every Mac, and the body-record occurrences skipped."
+    },
+    "sittingStretch": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "end": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "sittingLog": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "days"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "days": {
+          "type": "object",
+          "patternProperties": {
+            "^\\d{4}-\\d{2}-\\d{2}$": {
+              "type": "object",
+              "patternProperties": {
+                "^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/sittingStretch"
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Coach/sitting.json: sitting stretches per local day and per Mac."
+    },
+    "eatingLevel": {
+      "enum": [
+        "light",
+        "standard",
+        "full"
+      ]
+    },
+    "counting": {
+      "enum": [
+        "allowed",
+        "none"
+      ]
+    },
+    "handKind": {
+      "enum": [
+        "palm",
+        "fist",
+        "cupped",
+        "thumb"
+      ]
+    },
+    "patternPeriod": {
+      "enum": [
+        "week",
+        "day"
+      ]
+    },
+    "adjustStepId": {
+      "enum": [
+        "less",
+        "back"
+      ]
+    },
+    "gramRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "description": "[low, high], above 0; the validator also checks low <= high."
+    },
+    "proteinRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "description": "[low, high] grams of protein, 0 or more; the validator also checks low <= high."
+    },
+    "handRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "description": "[low, high] hands, whole numbers; the validator also checks low <= high."
+    },
+    "nonNegRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "description": "[low, high], 0 or more; the validator also checks low <= high."
+    },
+    "storedReason": {
+      "type": "object",
+      "required": [
+        "rule"
+      ],
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/text"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "inputs": {
+          "type": "object"
+        },
+        "threshold": {},
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A reason as the coach kept it when the plan was made."
+    },
+    "eatingBasis": {
+      "type": "object",
+      "required": [
+        "trendKg",
+        "date",
+        "weighIns"
+      ],
+      "properties": {
+        "trendKg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "weighIns": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The trend weight the grams were set from, its date and how many weigh-ins it rested on."
+    },
+    "eatingProtein": {
+      "type": "object",
+      "required": [
+        "floorG",
+        "rangeG",
+        "gPerKg",
+        "perMealG"
+      ],
+      "properties": {
+        "floorG": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rangeG": {
+          "$ref": "#/$defs/gramRange"
+        },
+        "gPerKg": {
+          "$ref": "#/$defs/gramRange"
+        },
+        "perMealG": {
+          "$ref": "#/$defs/gramRange"
+        },
+        "item": {
+          "$ref": "#/$defs/id"
+        },
+        "tickAt": {
+          "$ref": "#/$defs/clock"
+        },
+        "reason": {
+          "$ref": "#/$defs/storedReason"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The day's floor (the protein item is ticked at it; inside rangeG, validator), the range, its g per kg, a meal's share, the tracked item and its card's time."
+    },
+    "eatingFiber": {
+      "type": "object",
+      "required": [
+        "g"
+      ],
+      "properties": {
+        "g": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "per1000kcal": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "how": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "eatingEnergy": {
+      "type": "object",
+      "required": [
+        "maintenanceKcal"
+      ],
+      "properties": {
+        "maintenanceKcal": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "targetKcal": {
+          "$ref": "#/$defs/gramRange"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The coach's reference: shown only at the Standard and Full levels."
+    },
+    "eatingHabits": {
+      "type": "object",
+      "required": [
+        "meals"
+      ],
+      "properties": {
+        "meals": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "snacks": {
+          "type": "boolean"
+        },
+        "cooking": {
+          "$ref": "#/$defs/text"
+        },
+        "avoid": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "eatingMeal": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "text",
+        "proteinG"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "proteinG": {
+          "$ref": "#/$defs/proteinRange"
+        },
+        "tag": {
+          "$ref": "#/$defs/text"
+        },
+        "portions": {
+          "$ref": "#/$defs/id"
+        },
+        "tip": {
+          "$ref": "#/$defs/text"
+        },
+        "at": {
+          "$ref": "#/$defs/clock"
+        },
+        "foods": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9-]*$": {
+              "$ref": "#/$defs/text"
+            }
+          },
+          "additionalProperties": false,
+          "description": "The foods for each hand of the meal's portions, by food group id (validator)."
+        },
+        "ideas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mealIdea"
+          }
+        },
+        "trainingNote": {
+          "$ref": "#/$defs/trainingNote"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A meal with its rough protein; portions names its entry in the plan's portions (validator)."
+    },
+    "foodGroup": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "hand",
+        "hands"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "hand": {
+          "$ref": "#/$defs/handKind"
+        },
+        "hands": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/text"
+            },
+            {
+              "$ref": "#/$defs/text"
+            }
+          ],
+          "items": false,
+          "minItems": 2
+        },
+        "what": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A food group of the plate guide, the hand that measures it and its words [one, many]."
+    },
+    "fallbackTile": {
+      "type": "object",
+      "required": [
+        "name",
+        "text"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "eatingFallbacks": {
+      "type": "object",
+      "required": [
+        "meal",
+        "quick"
+      ],
+      "properties": {
+        "meal": {
+          "$ref": "#/$defs/id"
+        },
+        "quick": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fallbackTile"
+          }
+        },
+        "first": {
+          "$ref": "#/$defs/fallbackTile"
+        },
+        "minutes": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "For the meal the plan calls hardest (a meal id, validator)."
+    },
+    "patternLine": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "target",
+        "per"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "target": {
+          "$ref": "#/$defs/text"
+        },
+        "per": {
+          "$ref": "#/$defs/patternPeriod"
+        },
+        "min": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One line of the weekly pattern; min or max is required (validator)."
+    },
+    "adjustStep": {
+      "type": "object",
+      "required": [
+        "id",
+        "when",
+        "then"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/adjustStepId"
+        },
+        "when": {
+          "$ref": "#/$defs/text"
+        },
+        "then": {
+          "$ref": "#/$defs/text"
+        },
+        "pctPerWeek": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "adjustApplied": {
+      "type": "object",
+      "required": [
+        "date",
+        "step"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "step": {
+          "$ref": "#/$defs/adjustStepId"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "adjustRule": {
+      "type": "object",
+      "required": [
+        "windowWeeks",
+        "flatCm",
+        "steps",
+        "waitWeeks"
+      ],
+      "properties": {
+        "windowWeeks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 26
+        },
+        "flatCm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/adjustStep"
+          },
+          "minItems": 1
+        },
+        "waitWeeks": {
+          "$ref": "#/$defs/nonNegRange"
+        },
+        "creatineKg": {
+          "$ref": "#/$defs/nonNegRange"
+        },
+        "creatineFrom": {
+          "$ref": "#/$defs/date"
+        },
+        "creatineWeeks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "looseDay": {
+          "$ref": "#/$defs/text"
+        },
+        "applied": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/adjustApplied"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The adjustment rule: what the tape and the weight trend change, one step at a time."
+    },
+    "eatingHistory": {
+      "type": "object",
+      "required": [
+        "date",
+        "note"
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "note": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "reasonSourceKind": {
+      "enum": [
+        "intake",
+        "said"
+      ],
+      "description": "Where a reason of the plan comes from: an intake answer (\"From your intake\") or the user's own words (\"You said\")."
+    },
+    "mealIdea": {
+      "type": "object",
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "counts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A concrete meal that fits; counts names the weekly pattern lines it helps (pattern ids, validator)."
+    },
+    "trainingNote": {
+      "type": "object",
+      "properties": {
+        "lift": {
+          "$ref": "#/$defs/text"
+        },
+        "short": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A line for the kind of day the meal changes: a lifting day, a short-session day."
+    },
+    "clockPair": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/clock"
+        },
+        {
+          "$ref": "#/$defs/clock"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "description": "[from, to] local times; the validator also checks from <= to."
+    },
+    "reasonSource": {
+      "type": "object",
+      "required": [
+        "kind",
+        "text"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/reasonSourceKind"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "field": {
+          "$ref": "#/$defs/id"
+        },
+        "aside": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The intake answer or the user's words a reason comes from, with a line under it (aside)."
+    },
+    "planReason": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "icon": {
+          "$ref": "#/$defs/id"
+        },
+        "source": {
+          "$ref": "#/$defs/reasonSource"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One reason for the plan, shown under Why this plan."
+    },
+    "trainingTime": {
+      "type": "object",
+      "required": [
+        "at"
+      ],
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/clock"
+        },
+        "minutes": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 600
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "When a session starts on the Food tab's day, and roughly how long."
+    },
+    "dayTraining": {
+      "type": "object",
+      "properties": {
+        "lift": {
+          "$ref": "#/$defs/trainingTime"
+        },
+        "short": {
+          "$ref": "#/$defs/trainingTime"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The session's time by the kind of day the plan's rotation gives."
+    },
+    "dayDrinks": {
+      "type": "object",
+      "properties": {
+        "waterL": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        },
+        "milkGlasses": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "coffees": {
+          "$ref": "#/$defs/handRange"
+        },
+        "lastCoffee": {
+          "$ref": "#/$defs/clock"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The drinks line under the day."
+    },
+    "eatingDay": {
+      "type": "object",
+      "properties": {
+        "wake": {
+          "$ref": "#/$defs/clock"
+        },
+        "work": {
+          "$ref": "#/$defs/clockPair"
+        },
+        "bed": {
+          "$ref": "#/$defs/clock"
+        },
+        "training": {
+          "$ref": "#/$defs/dayTraining"
+        },
+        "drinks": {
+          "$ref": "#/$defs/dayDrinks"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The user's day as the Food tab's timeline draws it, with each meal's at."
+    },
+    "optionalCheck": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "slots"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A light check on the Food tab's Today, never a score: it pre-fills the pattern line of the same id (validator) at the Sunday check-in."
+    },
+    "eatingToday": {
+      "type": "object",
+      "properties": {
+        "optional": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/optionalCheck"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The Food tab's Today: the light checks."
+    },
+    "coachTip": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "icon": {
+          "$ref": "#/$defs/id"
+        },
+        "for": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One of the coach's tips, with what it helps (a meal id, pattern.fish, looseDay)."
+    },
+    "eatingPlan": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "updated",
+        "level",
+        "goal",
+        "review",
+        "basis",
+        "protein",
+        "meals"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "updated": {
+          "$ref": "#/$defs/date"
+        },
+        "level": {
+          "$ref": "#/$defs/eatingLevel"
+        },
+        "goal": {
+          "$ref": "#/$defs/goalKind"
+        },
+        "review": {
+          "$ref": "#/$defs/date"
+        },
+        "basis": {
+          "$ref": "#/$defs/eatingBasis"
+        },
+        "protein": {
+          "$ref": "#/$defs/eatingProtein"
+        },
+        "meals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/eatingMeal"
+          },
+          "minItems": 1
+        },
+        "source": {
+          "$ref": "#/$defs/text"
+        },
+        "screened": {
+          "$ref": "#/$defs/date"
+        },
+        "counting": {
+          "$ref": "#/$defs/counting"
+        },
+        "fiber": {
+          "$ref": "#/$defs/eatingFiber"
+        },
+        "energy": {
+          "$ref": "#/$defs/eatingEnergy"
+        },
+        "habits": {
+          "$ref": "#/$defs/eatingHabits"
+        },
+        "portions": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9-]*$": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-z0-9][a-z0-9-]*$": {
+                  "$ref": "#/$defs/handRange"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/foodGroup"
+          }
+        },
+        "fallbacks": {
+          "$ref": "#/$defs/eatingFallbacks"
+        },
+        "pattern": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/patternLine"
+          }
+        },
+        "patternAlso": {
+          "$ref": "#/$defs/text"
+        },
+        "adjust": {
+          "$ref": "#/$defs/adjustRule"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/eatingHistory"
+          }
+        },
+        "note": {
+          "type": "string"
+        },
+        "goalLabel": {
+          "$ref": "#/$defs/text"
+        },
+        "summary": {
+          "$ref": "#/$defs/text"
+        },
+        "why": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/planReason"
+          }
+        },
+        "day": {
+          "$ref": "#/$defs/eatingDay"
+        },
+        "today": {
+          "$ref": "#/$defs/eatingToday"
+        },
+        "tips": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/coachTip"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Coach/eating-plan.json: the eating plan, the twin of Coach/Eating plan.md. The validator also checks the review is not before updated, the floor is inside the range, the ids are unique and every reference resolves."
+    },
+    "inboxAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,3})?)?(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "When the phone sent an entry: ISO 8601 with the phone's offset, as Shortcuts formats it (2026-11-05T19:02:00-05:00), or in UTC."
+    },
+    "inboxLift": {
+      "type": "object",
+      "required": [
+        "weight",
+        "reps"
+      ],
+      "properties": {
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "reps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A logged lift's top set, as the log takes it; the unit, when left out, is the lift's own in the plan."
+    },
+    "inboxSessionFields": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/text"
+        },
+        "lift1": {
+          "$ref": "#/$defs/inboxLift"
+        },
+        "lift2": {
+          "$ref": "#/$defs/inboxLift"
+        },
+        "durationMin": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "express": {
+          "type": "boolean"
+        },
+        "rating": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A session from the phone: one of the plan's session types, its two logged lifts' top sets in the plan's order (lifting days only), and the Log panel's quick fields."
+    },
+    "inboxMorningFields": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "energy": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "soreness": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "sleepQ": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "sleepH": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "rhr": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 120
+        },
+        "weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "30 to 250 kg (66 to 551 lb)."
+        },
+        "steps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Yesterday's: filed under the day before, as the morning card files it."
+        },
+        "floors": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500,
+          "description": "Yesterday's, as steps."
+        },
+        "weightUnit": {
+          "$ref": "#/$defs/unit",
+          "description": "The weight's unit; kg when left out (body-data.json holds kg)."
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The morning check-in's fields under body-data.json's names, with the morning card's limits; at least one. The validator also checks the weight's range in kg."
+    },
+    "inboxSession": {
+      "type": "object",
+      "required": [
+        "v",
+        "kind",
+        "at",
+        "date",
+        "session"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "session"
+        },
+        "at": {
+          "$ref": "#/$defs/inboxAt"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "session": {
+          "$ref": "#/$defs/inboxSessionFields"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A session to log."
+    },
+    "inboxTick": {
+      "type": "object",
+      "required": [
+        "v",
+        "kind",
+        "at",
+        "date",
+        "ids"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "tick"
+        },
+        "at": {
+          "$ref": "#/$defs/inboxAt"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "done": {
+          "type": "boolean",
+          "description": "true when left out."
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "Supplements and ticks done (or, with done false, undone) on the date."
+    },
+    "inboxAmount": {
+      "type": "object",
+      "required": [
+        "v",
+        "kind",
+        "at",
+        "date",
+        "id",
+        "add"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "amount"
+        },
+        "at": {
+          "$ref": "#/$defs/inboxAt"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "add": {
+          "type": "number",
+          "not": {
+            "const": 0
+          },
+          "description": "Added to the day's amount (less than 0 takes some off, never below 0)."
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "An amount added to the day (water)."
+    },
+    "inboxMorning": {
+      "type": "object",
+      "required": [
+        "v",
+        "kind",
+        "at",
+        "date",
+        "morning"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "morning"
+        },
+        "at": {
+          "$ref": "#/$defs/inboxAt"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "morning": {
+          "$ref": "#/$defs/inboxMorningFields"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The morning check-in."
+    },
+    "inboxTrained": {
+      "type": "object",
+      "required": [
+        "v",
+        "kind",
+        "at",
+        "date",
+        "answer"
+      ],
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "trained"
+        },
+        "at": {
+          "$ref": "#/$defs/inboxAt"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "answer": {
+          "$ref": "#/$defs/trainedAnswer"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The answer to \"Did you train today?\"."
+    },
+    "trainedAnswer": {
+      "enum": [
+        "trained",
+        "rest",
+        "missed"
+      ]
+    },
+    "inboxEntry": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/inboxSession"
+        },
+        {
+          "$ref": "#/$defs/inboxTick"
+        },
+        {
+          "$ref": "#/$defs/inboxAmount"
+        },
+        {
+          "$ref": "#/$defs/inboxMorning"
+        },
+        {
+          "$ref": "#/$defs/inboxTrained"
+        }
+      ],
+      "description": "One phone entry: one file in Coach/Inbox/, named <yyyy-MM-dd>T<HH-mm-ss>-<kind>.json, sent by the phone's shortcuts and applied by Pahlavan through its own writers."
+    }
+  }
+}
