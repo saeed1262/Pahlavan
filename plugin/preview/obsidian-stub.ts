@@ -61,6 +61,8 @@ export class ItemView extends Component {
 }
 
 export class Plugin extends Component {}
+/** Obsidian's addIcon: the preview has no icon registry, so it is a no-op. */
+export function addIcon(_id: string, _svg: string): void {}
 export type TAbstractFile = { path: string };
 
 // ---------------------------------------------------------------- settings

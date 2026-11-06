@@ -27,7 +27,8 @@
 // phone reads, is written a few seconds after a change and at the first
 // refresh of each day. "Import phone entries" in Settings turns both off.
 
-import { Notice, Plugin, TFolder, type TAbstractFile, type WorkspaceLeaf } from 'obsidian';
+import { addIcon, Notice, Plugin, TFolder, type TAbstractFile, type WorkspaceLeaf } from 'obsidian';
+import { PAHLAVAN_ICON, PAHLAVAN_ICON_ID } from './brand-icon.ts';
 import { modalCards } from './card-modal.ts';
 import { CheckinWriter } from './checkin-writer.ts';
 import { isWatched, PahlavanData } from './data-source.ts';
@@ -162,7 +163,8 @@ export default class PahlavanPlugin extends Plugin {
       copy: (text) => navigator.clipboard.writeText(text),
     }));
 
-    this.addRibbonIcon('dumbbell', 'Open Pahlavan', () => void this.activate());
+    addIcon(PAHLAVAN_ICON_ID, PAHLAVAN_ICON);
+    this.addRibbonIcon(PAHLAVAN_ICON_ID, 'Open Pahlavan', () => void this.activate());
     this.addCommand({ id: 'open', name: 'Open Pahlavan', callback: () => void this.activate() });
     this.addCommand({ id: 'open-guide', name: 'Open the user guide', callback: () => void this.openGuide() });
     // "Open check-in" is what Isfahan's new-tab Check-in row runs: the morning card until today's is in, then the Check-in screen.

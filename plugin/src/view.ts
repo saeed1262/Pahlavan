@@ -3,6 +3,7 @@
 // come in through `ViewDeps`, so the static preview can drive the same view.
 
 import { ItemView, type WorkspaceLeaf } from 'obsidian';
+import { PAHLAVAN_ICON_ID } from './brand-icon.ts';
 import { sessionKey } from '../../src/adapters/vault/log-write.ts';
 import type { SessionMode } from '../../src/core/variant.ts';
 import { customLogForm, logFormFor, logFormFromEntry, soreChanges, withSwaps, type LogForm } from '../../src/report/log-form.ts';
@@ -195,7 +196,7 @@ export class PahlavanView extends ItemView {
   }
 
   override getIcon(): string {
-    return 'dumbbell';
+    return PAHLAVAN_ICON_ID;
   }
 
   override async onOpen(): Promise<void> {

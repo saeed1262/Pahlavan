@@ -1,4 +1,6 @@
-# Pahlavan
+<p align="center"><img src="docs/images/brand/logo.svg" width="132" alt="Pahlavan's logo: two crossed meels, the clubs of the zurkhaneh, in an eight-point star"></p>
+
+<h1 align="center">Pahlavan</h1>
 
 **A science-based AI fitness coach that lives in your Obsidian vault.** Pahlavan is an Obsidian plugin for strength training, workout logging and daily habits, with an AI coach in Claude Code that plans your training from your own goals, time and equipment, and looks back with you every week. Everything sits in plain files in your vault, so your data stays yours.
 
@@ -18,7 +20,7 @@
 > [!NOTE]
 > **Pahlavan is a free beta.** I use it every day, and it may still change. Bug reports and ideas are welcome in [GitHub issues](../../issues).
 
-The name is Persian for a champion, the wrestlers and heroes of the old stories.
+The name is Persian for a champion, the wrestlers and heroes of the old stories. The logo's two meels are the clubs pahlavans swing in the zurkhaneh, the traditional house of strength.
 
 ## What it does
 
