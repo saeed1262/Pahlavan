@@ -1,0 +1,10 @@
+{
+  "id": "pahlavan",
+  "name": "Pahlavan",
+  "version": "0.25.0",
+  "minAppVersion": "1.5.0",
+  "description": "Plan, log and review your training in your own notes: today's session, how ready you feel, your week, an eating plan and daily habits with reminders, with an optional Claude Code coach.",
+  "author": "Saeed Ghorbani",
+  "isDesktopOnly": true,
+  "fundingUrl": "https://ko-fi.com/saeedghorbani70608"
+}

@@ -1,0 +1,186 @@
+/* The preview harness only: an Obsidian-like frame, Obsidian's default
+   theme variables and Isfahan's phase palettes (as the Isfahan plugin sets
+   them on <body>), and the Cormorant face Isfahan loads. The plugin's own
+   styles.css is loaded unchanged after this file. */
+
+@font-face { font-family: "Isfahan Cormorant"; src: url("../../mockups/fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+
+/* ── 1. Obsidian's default theme ───────────────────────────── */
+body {
+  --font-interface: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    --radius-card: 16px;
+  --radius-data: 4px;
+}
+body.theme-light {
+  color-scheme: light;
+  --background-primary: #ffffff;
+  --background-primary-alt: #fafafa;
+  --background-secondary: #f6f6f6;
+  --background-secondary-alt: #ececec;
+  --background-modifier-border: #e3e3e3;
+  --background-modifier-hover: rgba(0, 0, 0, 0.05);
+  --text-normal: #222222;
+  --text-muted: #5c5c5c;
+  --text-faint: #8a8a8a;
+  --text-on-accent: #ffffff;
+  --interactive-accent: #7a5ae8;
+  --interactive-accent-hover: #6c4bdc;
+  --text-accent: #6a48d9;
+  --accent-chrome-rgb: 122, 90, 232;
+}
+body.theme-dark {
+  color-scheme: dark;
+  --background-primary: #1e1e1e;
+  --background-primary-alt: #242424;
+  --background-secondary: #262626;
+  --background-secondary-alt: #161616;
+  --background-modifier-border: #333333;
+  --background-modifier-hover: rgba(255, 255, 255, 0.06);
+  --text-normal: #dadada;
+  --text-muted: #a8a8a8;
+  --text-faint: #7d7d7d;
+  --text-on-accent: #ffffff;
+  --interactive-accent: #8b6cef;
+  --interactive-accent-hover: #9a7ff2;
+  --text-accent: #a68af9;
+  --accent-chrome-rgb: 139, 108, 239;
+}
+
+/* Isfahan's phases (isfahan-look/src/styles/00-palette.css). */
+body.isfahan.isfahan-dawn {
+  --background-primary: #fffaf2;
+  --background-primary-alt: #fbf3e6;
+  --background-secondary: #f4ecdf;
+  --background-secondary-alt: #eee4d3;
+  --background-modifier-border: #e3d7c4;
+  --background-modifier-hover: rgba(21, 129, 134, 0.08);
+  --text-normal: #2d2a32;
+  --text-muted: #73685d;
+  --text-faint: #978a7a;
+  --interactive-accent: #158186;
+  --interactive-accent-hover: #12777b;
+  --text-accent: #12777b;
+  --accent-chrome-rgb: 21, 129, 134;
+  --isfahan-gold: #c7862a;
+  --isfahan-gold-text: #8f601e;
+}
+body.isfahan.isfahan-workday {
+  --background-primary: #ffffff;
+  --background-primary-alt: #f7f9fc;
+  --background-secondary: #edf1f7;
+  --background-secondary-alt: #e4eaf4;
+  --background-modifier-border: #d7dfec;
+  --background-modifier-hover: rgba(31, 78, 140, 0.07);
+  --text-normal: #172033;
+  --text-muted: #5b6680;
+  --text-faint: #7f8aa1;
+  --interactive-accent: #1f4e8c;
+  --interactive-accent-hover: #1a4379;
+  --text-accent: #1f4e8c;
+  --accent-chrome-rgb: 31, 78, 140;
+  --isfahan-gold: #12999a;
+  --isfahan-gold-text: #0e7879;
+}
+body.isfahan.isfahan-evening {
+  --background-primary: #18213f;
+  --background-primary-alt: #1c2647;
+  --background-secondary: #111733;
+  --background-secondary-alt: #0d1329;
+  --background-modifier-border: #26305a;
+  --background-modifier-hover: rgba(60, 200, 194, 0.08);
+  --text-normal: #e7e9f4;
+  --text-muted: #99a2c3;
+  --text-faint: #7780a6;
+  --text-on-accent: #0b1a2a;
+  --interactive-accent: #3cc8c2;
+  --interactive-accent-hover: #52d0cb;
+  --text-accent: #5ad3ce;
+  --accent-chrome-rgb: 60, 200, 194;
+  --isfahan-gold: #e7b85a;
+  --isfahan-gold-text: #e7b85a;
+}
+body.isfahan.isfahan-night {
+  --background-primary: #0e1420;
+  --background-primary-alt: #111827;
+  --background-secondary: #090d16;
+  --background-secondary-alt: #080b13;
+  --background-modifier-border: #1a2233;
+  --background-modifier-hover: rgba(95, 179, 172, 0.07);
+  --text-normal: #b7c1d4;
+  --text-muted: #7b88a0;
+  --text-faint: #65718a;
+  --text-on-accent: #081018;
+  --interactive-accent: #5fb3ac;
+  --interactive-accent-hover: #6fbdb6;
+  --text-accent: #74c1ba;
+  --accent-chrome-rgb: 95, 179, 172;
+  --isfahan-gold: #8ea3d4;
+  --isfahan-gold-text: #8ea3d4;
+}
+body.isfahan {
+  --isfahan-girih: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><g fill='none' stroke='white' stroke-width='1.2'><path d='M30 14 L46 30 L30 46 L14 30 Z'/><path d='M19 19 H41 V41 H19 Z'/><path d='M30 0 V14 M46 30 H60 M30 46 V60 M0 30 H14'/><path d='M8 0 L0 8 M52 0 L60 8 M0 52 L8 60 M60 52 L52 60'/><circle cx='30' cy='30' r='4'/></g></svg>");
+}
+
+
+body { --font-monospace: ui-monospace, "SF Mono", Menlo, monospace; --layer-tooltip: 60; }
+body.isfahan.isfahan-dawn { --isfahan-gold: #c7862a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--font-interface); background: var(--background-secondary-alt); color: var(--text-normal); }
+.preview-app { display: flex; height: 100vh; overflow: hidden; }
+.preview-ribbon { flex: 0 0 44px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0; background: var(--background-secondary); border-right: 1px solid var(--background-modifier-border); }
+.preview-ribbon .lights { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.preview-ribbon .lights i { width: 11px; height: 11px; border-radius: 50%; background: var(--background-modifier-border); display: block; }
+.preview-ribbon > span { width: 18px; height: 18px; border-radius: 5px; background: var(--background-modifier-border); opacity: 0.7; }
+.preview-ribbon > span.is-on { background: var(--interactive-accent); opacity: 0.8; }
+.preview-workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.preview-tabbar { flex: 0 0 40px; display: flex; align-items: flex-end; padding: 0 10px; background: var(--background-secondary); border-bottom: 1px solid var(--background-modifier-border); }
+.preview-tab { height: 32px; padding: 0 14px; display: flex; align-items: center; min-width: 180px; border: 1px solid var(--background-modifier-border); border-bottom: none; border-radius: 9px 9px 0 0; background: var(--background-primary); font-size: 13px; margin-bottom: -1px; }
+.preview-leaf { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.preview-leaf .workspace-leaf-content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.preview-leaf .view-header { flex: 0 0 0; }
+.preview-leaf .view-content { flex: 1; min-height: 0; }
+
+/* The preview's stand-in for Obsidian's Notice. */
+.preview-notice { position: fixed; right: 18px; top: 18px; z-index: 100; max-width: 380px; padding: 10px 14px; border-radius: 8px; background: #222; color: #fff; font: 13px/1.4 var(--font-interface); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); }
+
+/* ── Obsidian's settings window and its Setting rows ───────── */
+.preview-st-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 40px; background: rgba(10, 14, 24, 0.38); backdrop-filter: blur(1.5px); }
+.theme-dark .preview-st-overlay { background: rgba(0, 0, 0, 0.5); }
+.preview-st-modal { position: relative; display: grid; grid-template-columns: 220px minmax(0, 1fr); width: min(1000px, 100%); height: min(820px, calc(100vh - 80px)); background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); overflow: hidden; font-family: var(--font-interface); color: var(--text-normal); }
+.preview-st-side { padding: 18px 10px; background: var(--background-secondary); border-right: 1px solid var(--background-modifier-border); overflow: auto; }
+.preview-st-group { padding: 12px 10px 6px; color: var(--text-faint); font-size: 11px; font-weight: 650; letter-spacing: 0.04em; }
+.preview-st-tab { padding: 6px 10px; border-radius: 6px; color: var(--text-muted); font-size: 13px; }
+.preview-st-tab.is-on { background: var(--background-modifier-hover); color: var(--text-normal); font-weight: 600; }
+.preview-st-main { padding: 26px 34px 34px; overflow: auto; }
+.preview-st-x { position: absolute; top: 8px; right: 14px; color: var(--text-faint); font-size: 20px; }
+.preview-st-main h2 { font-size: 20px; font-weight: 650; }
+.setting-item { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 0; border-top: 1px solid var(--background-modifier-border); }
+.setting-item-heading { margin-top: 18px; border-top: none; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 8px; }
+.setting-item-heading + .setting-item { border-top: none; }
+.setting-item-heading .setting-item-name { font-size: 15px; font-weight: 650; }
+.setting-item-name { font-size: 14px; font-weight: 500; }
+.setting-item-description { margin-top: 3px; color: var(--text-muted); font-size: 12.5px; line-height: 1.45; max-width: 520px; }
+.setting-item-description:empty { display: none; }
+.setting-item-control { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+.checkbox-container { position: relative; width: 38px; height: 22px; border-radius: 999px; background: var(--background-modifier-border); cursor: pointer; transition: background 0.15s; }
+.checkbox-container input { display: none; }
+.checkbox-container::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); transition: left 0.15s; }
+.checkbox-container.is-enabled { background: var(--interactive-accent); }
+.checkbox-container.is-enabled::after { left: 19px; }
+.setting-item-control select.dropdown, .setting-item-control input { height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); color: var(--text-normal); font: inherit; font-size: 13px; }
+
+/* Obsidian's modal frame (its own CSS in the app), for the reminder cards. */
+.modal-container { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 70px 20px; }
+.modal-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); }
+.modal { position: relative; z-index: 1; padding: 16px; border-radius: 12px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); }
+/* The macOS notification that goes with a card, drawn where macOS shows it (from the card's own text). */
+.preview-banner { position: fixed; top: 12px; right: 14px; z-index: 60; width: 352px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; padding: 11px 13px; border-radius: 16px; background: rgba(246, 246, 248, 0.92); color: #1d1d1f; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), inset 0 0 0 0.5px rgba(0, 0, 0, 0.1); backdrop-filter: blur(20px); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.theme-dark .preview-banner { background: rgba(44, 44, 48, 0.92); color: #f2f2f4; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12); }
+.preview-banner .pb-icon { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(145deg, #8b6cef, #4b2fb5); }
+.preview-banner .pb-icon svg { width: 24px; height: 24px; }
+.preview-banner .pb-head { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; }
+.preview-banner .pb-head b { font-weight: 600; }
+.preview-banner .pb-title { font-size: 13px; font-weight: 650; margin-top: 2px; }
+.preview-banner .pb-sub { font-size: 12px; font-weight: 600; opacity: 0.8; }
+.preview-banner .pb-body { font-size: 12.5px; opacity: 0.85; line-height: 1.35; }

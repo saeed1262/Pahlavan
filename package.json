@@ -1,0 +1,36 @@
+{
+  "name": "pahlavan",
+  "version": "0.25.0",
+  "description": "Pahlavan fitness-coach engine: pure, tested coaching rules with reasons.",
+  "private": true,
+  "license": "Elastic-2.0",
+  "author": "Saeed Ghorbani",
+  "type": "module",
+  "main": "./dist/pahlavan.js",
+  "exports": {
+    ".": "./dist/pahlavan.js"
+  },
+  "bin": {
+    "pahlavan-engine": "./dist/engine.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.ts\" \"plugin/test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p plugin",
+    "build": "node tools/build.mjs",
+    "build-plugin": "node tools/build-plugin.mjs",
+    "preview": "node tools/build-preview.mjs",
+    "ship-skill": "node tools/ship-skill.mjs",
+    "ship-plugin": "node tools/ship-plugin.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "obsidian": "^1.14.4",
+    "typescript": "^7.0.2"
+  }
+}
