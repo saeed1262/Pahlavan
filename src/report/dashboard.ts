@@ -8,12 +8,15 @@
 // the vault's old fitness dashboard (its view.js); the tests compare against it.
 // Pure: no clock, no I/O.
 
+import { ownNote } from '../core/reason.ts';
 import { checklistLines, type ChecklistLine } from '../adapters/vault/log-write.ts';
+import { calibrationNote } from '../core/calibration.ts';
+import { lightDoseText, readRules } from '../core/rules.ts';
 import { MUSCLES } from '../core/data/muscles.ts';
 import { daysBetween, mondayOf } from '../core/dates.ts';
-import { toEngineMuscles } from '../core/plan-data.ts';
 import type { IsoDate } from '../core/schema.ts';
 import { paths } from '../adapters/vault/layout.ts';
+import { canonicalTags } from '../adapters/vault/muscle-tags.ts';
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -208,8 +211,10 @@ export function nextTargetDash(rawPlan: unknown, log: unknown, liftName: string,
   const base = last.unit === u ? last.weight : roundTo(inUnit(last.weight, last.unit, u), p.inc);
   const was = `${last.weight}${last.unit === u ? '' : ` ${last.unit}`} × ${last.reps}`;
   if (deload) {
-    const w = roundTo(base * 0.9, p.inc);
-    return { weight: w, reps: p.lo, short: `deload ${w} ${u} × ${p.lo}`, text: `Deload week: ${w} ${u} × ${p.lo}, about 10% under last time (${was}).` };
+    // The light week's load: the plan's rule, else the dashboard's 0.9.
+    const load = readRules(rawPlan).rules.lightWeeks.load;
+    const w = roundTo(base * load, p.inc);
+    return { weight: w, reps: p.lo, short: `deload ${w} ${u} × ${p.lo}`, text: `Deload week: ${w} ${u} × ${p.lo}, about ${Math.round((1 - load) * 100)}% under last time (${was}).` };
   }
   if (last.reps >= p.hi) {
     const w = roundTo(base + p.inc, 0.5);
@@ -261,23 +266,64 @@ export function levelsText(rawPlan: unknown, log: unknown, type: string): string
 
 export const DELOAD_NOTE = 'Deload week: 2 sets of everything, about 10% lighter. S3 is 20 min easy Zone 2 + abs.';
 
+/** The copy's light-week line: the dashboard's own under the old default, else the plan's rule in words. */
+export function deloadNote(rawPlan: unknown): string {
+  const r = readRules(rawPlan);
+  return r.sources.lightWeeks === 'legacy-default' ? DELOAD_NOTE : `Deload week: ${lightDoseText(r.rules.lightWeeks)} (the plan's rule).`;
+}
+
+/** Today's session as the engine builds it (session.ts), for planText: its items' targets and RIR, and its flags. */
+export interface CopySession {
+  items: readonly { name: string; planName?: string; replaces?: { name: string } | null; rir: number; target: { weight: number | null; unit: string; reps: number; rir: number; action: string } | null; sr?: string; timed?: { text: string; rounds?: number } | null; cue?: string }[];
+  finisher: { name: string } | null;
+  flags: readonly { rule: string; note?: string }[];
+}
+
+/** A line's hint from the engine's target: the numbers Today shows; null to keep the dashboard's own. */
+function copyHint(t: CopySession['items'][number]['target']): string | null {
+  if (!t) return null;
+  if (t.weight !== null) return `${t.action === 'calibrate' ? 'start at' : 'next'} ${t.weight} ${t.unit} × ${t.reps} @ RIR ${t.rir}`;
+  return t.action === 'calibrate' ? `find a weight for ${t.reps} reps @ RIR ${t.rir}` : null;
+}
+
 /**
  * planText: today's plan as plain text, line for line the checklist: the
  * session and day, the deload note, each line with its sets and reps, its
  * hint, notes and steps, then the levels line. `dayLabel` and `shortDay`
  * are the dates as the plugin's locale writes them (the dashboard uses
- * toLocaleDateString).
+ * toLocaleDateString). With `session` (Today's, from the engine) the copy
+ * says what Today says: the calibration week's line, each target and RIR.
  */
-export function planText(input: { plan: unknown; log: unknown; date: IsoDate; type: string; express: boolean; deload: boolean; dayLabel: string; shortDay: (d: string) => string }): string {
+export function planText(input: { plan: unknown; log: unknown; date: IsoDate; type: string; express: boolean; deload: boolean; dayLabel: string; shortDay: (d: string) => string; session?: CopySession }): string {
   const titles = asObj(asObj(input.plan)['titles']);
   const out = [`${String(titles[input.type] ?? input.type)}${input.express ? ' · Express' : ''} · ${input.dayLabel}`];
-  if (input.deload) out.push(DELOAD_NOTE);
+  if (input.deload) out.push(deloadNote(input.plan));
+  const sess = input.session;
+  const calFlag = sess?.flags.find((f) => f.rule === 'plan.calibration');
+  const calRir = readRules(input.plan).rules.calibration.rir;
+  const calibrating = sess ? (calFlag ? ownNote(calFlag) : undefined) ?? (sess.items.some((x) => x.target?.action === 'calibrate') ? `Calibration week: ${calibrationNote(calRir)}.` : null) : null;
+  if (calibrating) out.push(calibrating);
   out.push('');
-  dashChecklist(input.plan, input.type, input.express, input.deload && !input.express).forEach((ex, i) => {
-    const { hint, noteText } = planDetailDash(input.plan, input.log, input.type, ex, input.date, input.deload, input.shortDay);
-    out.push(`${i + 1}. ${ex.name}: ${ex.sr}`);
-    if (hint) out.push(`   ${hint}`);
-    if (noteText) out.push(`   ${noteText}`);
+  const lines = dashChecklist(input.plan, input.type, input.express, input.deload && !input.express);
+  const rows = sess ? checklistTargets(lines, sess.items, sess.finisher?.name ?? null) : [];
+  lines.forEach((ex, i) => {
+    const { hint, noteText, temp } = planDetailDash(input.plan, input.log, input.type, ex, input.date, input.deload, input.shortDay);
+    const row = rows[i];
+    const item = sess && row?.kind === 'item' ? sess.items[row.index] : undefined;
+    const rir = item ? (item.target?.rir ?? item.rir) : null;
+    // A timed item as Today has it: intervals in words; the calibration week's easy minutes, with their line.
+    const single = ex.parts.length <= 1;
+    const changed = single && item?.timed && item.sr && item.sr !== ex.sr ? item.sr : null;
+    const dose = single && item?.timed?.rounds ? item.timed.text : (changed ?? ex.sr);
+    const shown = temp ? hint : (item && copyHint(item.target)) ?? hint;
+    const notes = rir !== null ? noteText.replace(/\bRIR \d+(?:\.\d+)?/g, `RIR ${rir}`) : noteText;
+    // A single item's RIR on its line when nothing else says it (a plan that keeps it in the rir field, not the note),
+    // as Today's row says it: not for holds, minutes or rounds.
+    const sayRir = single && item && !item.timed && rir !== null && !/s\/side|min|rounds|\bs\b/.test(ex.sr) && !/\bRIR\b/.test(`${shown} ${notes}`);
+    out.push(`${i + 1}. ${ex.name}: ${dose}${sayRir ? ` @ RIR ${rir}` : ''}`);
+    if (shown) out.push(`   ${shown}`);
+    if (changed && item?.cue) out.push(`   ${item.cue}`);
+    if (notes) out.push(`   ${notes}`);
     for (const st of ex.steps) out.push(`   - ${st}`);
   });
   const levels = levelsText(input.plan, input.log, input.type);
@@ -358,13 +404,14 @@ function entryOf(plan: Obj, key: string, e: Obj): GuideEntry {
   const names = asObj(plan['muscles']);
   const list = (ids: string[]) => ids.map((id) => String(names[id] ?? id)).join(', ');
   const m = asObj(e['muscles']);
+  // The muscles that count (muscle-tags.ts): the catalogue's for a movement it knows, so the card and its body map agree with Review and Progress.
+  const tags = canonicalTags(key, e);
   let works = '';
-  if (m['kind']) works = `${m['kind'] === 'cardio' ? 'Cardio' : 'Mobility'}${strs(m['areas']).length ? `: ${list(strs(m['areas'])).toLowerCase()}` : ''}`;
-  else if (strs(m['main']).length) {
-    const main = list(strs(m['main'])).toLowerCase();
-    works = main.charAt(0).toUpperCase() + main.slice(1) + (strs(m['helps']).length ? ` · helps ${list(strs(m['helps'])).toLowerCase()}` : '');
+  if (tags.kind) works = `${tags.kind === 'cardio' ? 'Cardio' : 'Mobility'}${strs(m['areas']).length ? `: ${list(strs(m['areas'])).toLowerCase()}` : ''}`;
+  else if (tags.tags.main.length) {
+    const main = list(tags.tags.main).toLowerCase();
+    works = main.charAt(0).toUpperCase() + main.slice(1) + (tags.tags.helps.length ? ` · helps ${list(tags.tags.helps).toLowerCase()}` : '');
   }
-  const mapped = m['kind'] ? { muscles: { main: [], helps: [] } } : toEngineMuscles({ main: strs(m['main']), helps: strs(m['helps']) });
   const slugs = (ids: readonly string[]) => [...new Set(ids.map((id) => SLUG_OF.get(id)).filter((x): x is string => Boolean(x)))];
   const v = asObj(e['video']);
   const checked = typeof v['url'] === 'string';
@@ -377,8 +424,8 @@ function entryOf(plan: Obj, key: string, e: Obj): GuideEntry {
     do: typeof e['do'] === 'string' ? e['do'] : null,
     avoid: typeof e['avoid'] === 'string' ? e['avoid'] : null,
     video: checked ? { url: String(v['url']), label: `${String(v['title'] ?? 'Video')} · ${String(v['channel'] ?? '')}`.replace(/ · $/, ''), checked } : { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, label: `Search YouTube: ${q}`, checked },
-    main: slugs(mapped.muscles.main),
-    helps: slugs(mapped.muscles.helps).filter((x) => !slugs(mapped.muscles.main).includes(x)),
+    main: slugs(tags.tags.main),
+    helps: slugs(tags.tags.helps).filter((x) => !slugs(tags.tags.main).includes(x)),
   };
 }
 

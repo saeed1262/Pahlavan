@@ -110,12 +110,21 @@ export interface Emphasis {
   area: string;
   seen: string;
   confidence: Confidence;
+  /**
+   * The user's answer to the question this row raises (intake.md: a finding
+   * is a question, never a diagnosis): true, it holds and the plan acts on
+   * it; false, it does not and the plan leaves the row out. Left out: not
+   * asked yet (findings.ts says what the plan does then).
+   */
+  confirmed?: boolean;
   emphasis: string;
   /** Which intake.md row this is, so the plan generator can act on it. */
   kind?: EmphasisKind;
   /** The weaker side, for an asymmetry. */
   side?: 'left' | 'right';
   muscles?: string[];
+  /** Muscle regions this row names (data/regions.ts ids), declared weak by the person: `check` holds each to the declared-region rule (volume.ts, `declaredRegions`). */
+  regions?: string[];
 }
 
 /**
@@ -145,6 +154,22 @@ export interface SelfCheck {
   wallGapCm?: number;
   /** Single-leg stand, eyes open, seconds a side (the test stops at 30). */
   balanceS?: { left: number; right: number };
+  /**
+   * The user's answer, per test, when its result is a finding the plan would
+   * act on (a struggled sit-to-stand or lifting heels, a rounded hinge, an
+   * overhead reach that is not clean, balance under 30 s): true, it holds and
+   * the plan acts on it; false, it does not and only its warm-up lines stay.
+   * A test left out: not asked yet (findings.ts says what the plan does then).
+   */
+  confirmed?: SelfCheckConfirmed;
+}
+
+/** The self-check results the user confirmed (true) or declined (false), by test. */
+export interface SelfCheckConfirmed {
+  sitToStand?: boolean;
+  hingeFlatBack?: boolean;
+  overheadReach?: boolean;
+  balanceS?: boolean;
 }
 
 /** Round 5's "when a week goes badly, what usually happens", as kinds the plan can act on. */
@@ -183,6 +208,8 @@ export interface Profile {
   screening: Screening;
   emphasis: Emphasis[];
   priorityMuscles?: string[];
+  /** Regions the person declares weak (data/regions.ts ids): never diagnosed from photos. `review` reports them and `check` holds each to the declared-region rule. */
+  priorityRegions?: string[];
   /** Training age by how fast they progress: session to session, week to week, or by blocks. */
   experience?: Experience;
   /** Exercise ids the user likes or dislikes, preferred cardio, and splits liked or disliked before. */
@@ -199,6 +226,27 @@ export interface Profile {
   targets?: BodyTargets;
   /** The intake's desk-work answer: the plan proposes desk breaks for desk work. */
   work?: DeskWork;
+  /** The user's own standing rules for any plan the coach writes; `engine check` reports a plan that breaks one. */
+  planRules?: ProfilePlanRules;
+}
+
+/**
+ * The user's own rules for the plan's shape, as they stated them at intake
+ * ("3 sets each; a leg, chest, back and shoulder exercise every session;
+ * core on short days"). The coach designs within them; `engine check` warns
+ * (`plan-rule`) where a plan breaks one.
+ */
+export interface ProfilePlanRules {
+  /** Every strength exercise with sets on a lifting day has this many working sets. */
+  setsPerExercise?: number;
+  /**
+   * What every lifting session holds: each entry is a catalogue movement
+   * pattern ("squat", "horizontal-push") or a muscle id ("chest"), with
+   * alternatives joined by "|" ("squat|lunge|hinge" for "a leg exercise").
+   */
+  liftSession?: { patterns: string[] };
+  /** Every short day holds a core exercise. */
+  shortDayCore?: boolean;
 }
 
 /**
@@ -249,6 +297,8 @@ export type RiskTag = (typeof ABDOMEN_RISK)[number] | `joint:${string}`;
 export interface MuscleTags {
   main: string[];
   helps: string[];
+  /** The muscle regions it biases (data/regions.ts ids); each region's parent muscle belongs in main or helps. */
+  regions?: string[];
 }
 
 export interface Exercise {
@@ -295,9 +345,25 @@ export interface SlotProgression {
   step?: number;
   /** Ladder: the harder variation's exercise id. */
   next?: string;
-  /** Ladder: which calisthenics ladder (pullup, pushup, hollow, legs) and the 1-based level the slot starts at. */
+  /** Ladder: which calisthenics ladder (pullup, pushup, hollow, legs) and the 1-based level the slot starts at (plan-data.json holds it as the ladder's `startLevel`). */
   ladder?: string;
   level?: number;
+}
+
+/**
+ * A timed item's structure, in minutes (plan-data's `timed`): steady work
+ * of `minutes`, or intervals of `rounds` × `workMin` hard with `restMin`
+ * easy between, with an optional warm-up and cool-down. With intervals and
+ * no warm-up or cool-down given, `minutes` is the whole item (the easy time
+ * around the intervals included); src/core/timed.ts counts it.
+ */
+export interface TimedWork {
+  minutes?: number;
+  rounds?: number;
+  workMin?: number;
+  restMin?: number;
+  warmupMin?: number;
+  cooldownMin?: number;
 }
 
 export interface ExerciseSlot {
@@ -315,6 +381,8 @@ export interface ExerciseSlot {
   note?: string;
   /** Done as a superset with the slot before it (plan-data's `pair`, engine 0.9.0): a set of each, then rest. */
   pair?: boolean;
+  /** A timed item (cardio, intervals, timed skill work): its minutes and structure. `sets` is then its rounds, or 1. */
+  timed?: TimedWork;
 }
 
 export interface SessionTemplate {

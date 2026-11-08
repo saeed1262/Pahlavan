@@ -1,6 +1,8 @@
 // Matches a free-text exercise name (as a plan file writes it) to the engine's
-// starter catalogue, so a vault exercise gets the catalogue's movement pattern,
-// abdominal-strain tag and equipment. No match is a warning, never a guess.
+// catalogue, so a vault exercise gets the catalogue's movement pattern,
+// abdominal-strain tag and equipment. A name matches an entry by its name, its
+// id, one of its aliases (data/exercises.ts) or a synonym below. No match is a
+// warning, never a guess.
 
 import { CATALOGUE, CATALOGUE_BY_ID, type CatalogueEntry } from '../../core/data/exercises.ts';
 
@@ -22,8 +24,15 @@ export function normalizeName(name: string): string {
 
 /**
  * Common gym names that differ from the catalogue's own names, normalized, to
- * the nearest catalogue entry (the same pattern, abdominal-strain tag and main
- * muscles). Generic exercise vocabulary, not anyone's plan.
+ * the catalogue entry for the same movement, or for the nearest one that
+ * trains the same muscles (a tempo push-up, a cable curl). The entry gives
+ * the pattern, the abdominal-strain tag and the muscle tags that count
+ * (muscle-tags.ts), so a synonym must train the same muscles: a variant that
+ * trains materially different ones (an L-sit pull-up's abs) is left out, and
+ * its guide entry's tags count. A synonym is checked before the names, so
+ * none may be another entry's own name or alias (a test checks): a movement
+ * the catalogue has answers to its own name. Generic exercise vocabulary, not
+ * anyone's plan.
  */
 export const NAME_SYNONYMS: Readonly<Record<string, string>> = {
   'barbell back squat': 'back-squat',
@@ -54,51 +63,57 @@ export const NAME_SYNONYMS: Readonly<Record<string, string>> = {
   'chest supported dumbbell row': 'chest-supported-db-row',
   'rear delt fly': 'reverse-db-fly',
   'reverse fly': 'reverse-db-fly',
+  'rear delt machine': 'reverse-pec-deck',
+  'rear delt machine fly': 'reverse-pec-deck',
+  'machine reverse fly': 'reverse-pec-deck',
+  'reverse machine fly': 'reverse-pec-deck',
   'face pull': 'face-pull',
+  'banded lateral raise': 'band-lateral-raise',
+  shrug: 'db-shrug',
   'hip thrust': 'hip-thrust',
+  'hip abduction': 'hip-abduction-machine',
+  'seated hip abduction': 'hip-abduction-machine',
+  'machine hip abduction': 'hip-abduction-machine',
+  'abductor machine': 'hip-abduction-machine',
+  'hip abductor machine': 'hip-abduction-machine',
   'hamstring curl': 'seated-leg-curl',
   'leg curl': 'seated-leg-curl',
-  'lying leg curl': 'seated-leg-curl',
+  'lying leg curl': 'lying-leg-curl',
+  'lying hamstring curl': 'lying-leg-curl',
+  'prone leg curl': 'lying-leg-curl',
+  'slider hamstring curl': 'slider-leg-curl',
+  'sliding leg curl': 'slider-leg-curl',
+  'towel leg curl': 'slider-leg-curl',
   'triceps pushdown': 'cable-pushdown',
   'rope triceps pushdown': 'cable-pushdown',
   'straight bar triceps pushdown': 'cable-pushdown',
+  'overhead cable triceps extension': 'cable-overhead-triceps-extension',
+  'overhead cable extension': 'cable-overhead-triceps-extension',
+  'cable overhead extension': 'cable-overhead-triceps-extension',
+  'rope overhead triceps extension': 'cable-overhead-triceps-extension',
+  'overhead rope triceps extension': 'cable-overhead-triceps-extension',
   'cable chest press': 'machine-chest-press',
   'chest press': 'machine-chest-press',
-  'walking lunge': 'reverse-lunge',
-  'dumbbell walking lunge': 'reverse-lunge',
+  'machine fly': 'pec-deck',
+  'machine chest fly': 'pec-deck',
+  'pec deck fly': 'pec-deck',
   lunge: 'reverse-lunge',
-  'hammer curl': 'db-curl',
   'cable curl': 'db-curl',
   'biceps curl': 'db-curl',
   'floor push up': 'push-up',
   'tempo push up': 'push-up',
   'deficit push up': 'push-up',
-  'archer push up': 'push-up',
-  'elevated pike push up': 'pike-push-up',
   'band assisted pull up': 'assisted-pull-up',
-  'weighted pull up': 'pull-up',
-  'l sit pull up': 'pull-up',
-  chinup: 'pull-up',
-  'chin up': 'pull-up',
   'box pistol high box': 'box-pistol',
   'box pistol low box': 'box-pistol',
-  'assisted pistol': 'box-pistol',
   pistol: 'pistol-squat',
   'weighted pistol': 'pistol-squat',
-  'shrimp squat': 'pistol-squat',
-  'tuck hollow hold': 'hollow-hold',
   'hollow hold arms by sides': 'hollow-hold',
   'hollow hold arms overhead': 'hollow-hold',
   'hollow rocks': 'hollow-hold',
-  'one leg l sit': 'tuck-l-sit',
-  'l sit': 'tuck-l-sit',
   'chest to wall handstand': 'wall-handstand',
   'chest to wall balance': 'wall-handstand',
-  'pike hold on a bench': 'wall-handstand',
-  'wall walk': 'wall-handstand',
-  'kick up and bail': 'wall-handstand',
-  'freestanding handstand': 'wall-handstand',
-  'freestanding handstand 15 s': 'wall-handstand',
+  'freestanding handstand 15 s': 'freestanding-handstand',
   'zone 2 finisher': 'zone2-bike',
   'easy zone 2 bike or walk': 'zone2-bike',
   'cool down walk or bike': 'brisk-walk',
@@ -107,12 +122,14 @@ export const NAME_SYNONYMS: Readonly<Record<string, string>> = {
   'single leg glute bridge': 'single-leg-glute-bridge',
 };
 
+/** Each entry's own names, normalized: its name, its id with spaces, and its aliases. */
+export function ownNames(e: CatalogueEntry): string[] {
+  return [...new Set([e.name, e.id.replace(/-/g, ' '), ...e.aliases].map(normalizeName))];
+}
+
 const BY_NAME: ReadonlyMap<string, CatalogueEntry> = (() => {
   const m = new Map<string, CatalogueEntry>();
-  for (const e of CATALOGUE) {
-    m.set(normalizeName(e.name), e);
-    m.set(normalizeName(e.id.replace(/-/g, ' ')), e);
-  }
+  for (const e of CATALOGUE) for (const n of ownNames(e)) m.set(n, e);
   return m;
 })();
 

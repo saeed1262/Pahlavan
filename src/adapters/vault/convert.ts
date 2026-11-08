@@ -11,8 +11,10 @@
 // parsed JSON; nothing here writes. Unknowns become warnings, never crashes.
 
 import { normalizeEquipment } from '../../core/plan/context.ts';
+import { calibrateSlot, calibrateTimedSlot } from '../../core/calibration.ts';
 import { CATALOGUE_BY_ID } from '../../core/data/exercises.ts';
 import { MUSCLE_IDS, MUSCLES } from '../../core/data/muscles.ts';
+import { parentMissingText, REGION_IDS, regionProblems } from '../../core/data/regions.ts';
 import { newestBaseline } from '../../core/cycle.ts';
 import { addDays, dayText, daysBetween, isIsoDate, mondayOf } from '../../core/dates.ts';
 import { deskBreaksFromPlanData, deskTimingFromPlanData } from '../../core/desk-breaks.ts';
@@ -20,9 +22,16 @@ import {
   dashboardSets,
   deloadSr,
   exerciseId,
+  itemFieldProblems,
+  itemRir,
+  itemSets,
+  itemTimed,
+  ladderLevelOn,
+  ladderStartOf,
   parseNote,
   parseSr,
   phaseNamesFrom,
+  planStartOf,
   toEngineMuscles,
   type ExerciseExtras,
   type PlanData,
@@ -66,7 +75,8 @@ import {
 } from '../../core/schema.ts';
 import { validateBody, validateCheckinLog, validateCheckins, validateEatingPlan, validateLedger, validateProfile, validateProgram, validateSession } from '../../core/validate.ts';
 import { explain, type Reason } from '../../core/reason.ts';
-import { matchCatalogue } from './catalogue-match.ts';
+import { isLightWeek, LEGACY_DEFAULT_MESSAGE, legacyItems, lightWeekAt, nextLightWeek, planCalendar, readRules, weeksThrough, type ReadRules } from '../../core/rules.ts';
+import { canonicalTags, differsItem, tagsText } from './muscle-tags.ts';
 
 export interface VaultWarning {
   code: string;
@@ -110,6 +120,8 @@ export interface LadderInfo {
   history: { level: number; date: IsoDate }[];
   /** A plan session (one of the plan's lifting or short types) has an item on this ladder ("Pull-up (your level)"). */
   carried: boolean;
+  /** The plan's starting level (plan-data's `startLevel`), when it declares one among the levels; the count reads it before any level is logged (ladderLevelOn). */
+  startLevel?: number;
 }
 
 export interface VaultPlanInfo {
@@ -121,8 +133,10 @@ export interface VaultPlanInfo {
   express: { warmup: string | null; mainSets: number; secondSets: number; finish: { exercise: string; name: string; sets: number; repRange: RepRange; sr: string } | null } | null;
   /** The plan's warm-ups, for lifting and short days. */
   warmups: { lift: string | null; short: string | null };
-  /** Week 1's Monday: the first logged plan session (the dashboard's clock); null before any. */
+  /** Week 1's Monday: plan-data's `start`, else the first logged plan session (the dashboard's clock), else the cycle start; null before any, and with no plan. */
   start: IsoDate | null;
+  /** Where `start` comes from: plan-data's own `start`, the first logged plan session, or the cycle start (null with none). */
+  startFrom?: 'plan' | 'log' | 'cycle' | null;
   /** The newest "Baseline - <date>.md": weight trends start here. */
   cycleStart: IsoDate | null;
   /** Every "Baseline - <date>.md" date in the fitness folder, oldest first (the cycle rule picks from them by date). */
@@ -148,6 +162,11 @@ export interface VaultData {
   plan: VaultPlanInfo;
   /** Vault exercise id to the catalogue entry it matched. */
   catalogueMatch: Record<string, string>;
+  /**
+   * The coach's standing rules from plan-data.json (rules.ts): every kind,
+   * the plan's own or the old default, and each logged lift's progression.
+   */
+  rules: ReadRules;
   warnings: VaultWarning[];
   /** Problems with the data itself (unreadable or invalid files). */
   errors: VaultWarning[];
@@ -156,6 +175,8 @@ export interface VaultData {
 export interface VaultOptions {
   /** Ladder levels and the program's length are taken as of this date (default: the latest data). */
   asOf?: IsoDate;
+  /** No plan-data.json at all (a fresh vault, `assembleVault`): no plan weeks, whatever the log or the baseline note say. */
+  noPlan?: boolean;
 }
 
 // ---------------------------------------------------------------- small helpers
@@ -263,12 +284,15 @@ export function ladderHistory(log: unknown): Record<string, { level: number; dat
   return out;
 }
 
-/** The ladder level's name on a date (the dashboard's ladderNameAt: level 1 before any entry). */
+/**
+ * The ladder level's name on a date: the log's level, else the plan's
+ * `startLevel`, else level 1 (the dashboard's ladderNameAt read level 1
+ * before any entry; a plan that declares its start reads that instead).
+ */
 export function ladderNameAt(plan: PlanData, history: Record<string, { level: number; date: IsoDate }[]>, id: string, date: IsoDate | null): string | null {
   const l = plan.ladders.find((x) => x.id === id);
   if (!l) return null;
-  const h = (history[id] ?? []).filter((x) => date === null || x.date <= date);
-  const level = h.at(-1)?.level ?? 1;
+  const { level } = ladderLevelOn(history[id] ?? [], ladderStartOf(l).level, date);
   return l.levels[level - 1]?.name ?? null;
 }
 
@@ -278,7 +302,8 @@ export function ladderNameAt(plan: PlanData, history: Record<string, { level: nu
 export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData {
   const notes = new Notes();
   const asOf = opts.asOf ?? null;
-  const plan = readPlan(files.plan, notes) ?? ({
+  const planRead = readPlan(files.plan, notes);
+  const plan = planRead ?? ({
     weekTarget: { lift: 0, short: 0 },
     liftTypes: [],
     shortTypes: [],
@@ -299,6 +324,8 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     deskRoutine: [],
   });
   const liftUnit = plan.liftUnit;
+  // The standing rules: the plan's own, else the old defaults (said once, in the legacy-default warning).
+  const rules = readRules(planRead ? files.plan : undefined);
   const ladders = ladderHistory(files.log);
   const guideKeys = new Map(Object.keys(plan.guide).map((k) => [k.toLowerCase(), k]));
   const liftKeys = new Map(Object.keys(plan.lifts).map((k) => [k.toLowerCase(), k]));
@@ -316,10 +343,12 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     if (!names.has(id)) names.set(id, name);
     return id;
   };
-  const use = (id: string, sr: string) => {
+  // How an exercise is done: sets, minutes or rounds (a `timed` field is minutes, whatever its sr says).
+  const use = (id: string, sr: string, timedField = false) => {
     const u = usage.get(id) ?? { sets: false, minutes: false, rounds: false };
     const p = parseSr(sr);
-    if (p.sets !== null) u.sets = true;
+    if (timedField) u.minutes = true;
+    else if (p.sets !== null) u.sets = true;
     else if (p.rounds !== null) u.rounds = true;
     else if (p.minutes !== null) u.minutes = true;
     else u.sets = true;
@@ -350,10 +379,27 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     ...plan.liftTypes.map((type) => ({ type, template: templateId(type), kind: 'lift' as const, label: labelOf(type, 'lift') })),
     ...plan.shortTypes.map((type) => ({ type, template: templateId(type), kind: 'short' as const, label: labelOf(type, 'short') })),
   ];
+  // Each ladder's declared start; one that is not among its levels is said once and read around.
+  const ladderStarts = new Map<string, number>();
+  for (const l of plan.ladders) {
+    if (!isObj(l) || !isStr(l.id)) continue;
+    const s = ladderStartOf(l);
+    if (s.problem) notes.warn('plan-data', s.problem);
+    if (s.level !== null) ladderStarts.set(l.id, s.level);
+  }
   const ladderLevelAt = (id: string) => ladderNameAt(plan, ladders, id, asOf);
   const itemExercise = (item: PlanDataItem): string => {
     if (item.ladder) {
       const lv = ladderLevelAt(item.ladder);
+      // Neither a logged level nor a declared start: the item counts as the lowest level, which a plan that means a
+      // harder one (a draft before its first logged level) undercounts. Say so, with how to declare the start.
+      if (lv && ladderLevelOn(ladders[item.ladder] ?? [], ladderStarts.get(item.ladder), asOf).from === 'lowest') {
+        notes.group(
+          'ladder-start',
+          `Ladder items with no level in the log and no starting level in the plan: the weekly sets assume the ladder's lowest level. Declare the level this plan starts at as the ladder's "startLevel" in plan-data.json ("startLevel": 6 starts it at the sixth level, as \`engine log ladder --level\` counts), or log the level with \`engine log ladder\`.`,
+          `${item.ladder}: counted as level 1 (${lv})`,
+        );
+      }
       if (lv) return ensure(lv);
       notes.group('unknown-ladder', 'Items name a ladder plan-data does not define; the item itself is used.', item.ladder);
     }
@@ -366,25 +412,31 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
   };
   const buildSlot = (type: string, item: PlanDataItem, lifting: boolean): ExerciseSlot & SlotExtras => {
     const exercise = itemExercise(item);
-    use(exercise, item.sr);
+    // The item's own fields (rir, timed) first; one that is not well formed is read from the note instead.
+    const problems = itemFieldProblems(item);
+    if (problems.length) notes.group('plan-item-field', 'Plan items whose rir or timed field is not well formed: read from the note and sets as before.', `${type} ${item.name}: ${problems.join('; ')}`);
+    const timed = itemTimed(item);
+    const timedField = timed !== null && item.timed !== undefined && !problems.some((p) => p.startsWith('timed'));
+    use(exercise, item.sr, timedField);
     // Every level of a ladder is done the way its item prescribes ("6 min" or sets).
-    if (item.ladder) for (const lv of plan.ladders.find((l) => l.id === item.ladder)?.levels ?? []) if (isStr(lv?.name)) use(ensure(lv.name), item.sr);
-    const parsed = parseSr(item.sr);
+    if (item.ladder) for (const lv of plan.ladders.find((l) => l.id === item.ladder)?.levels ?? []) if (isStr(lv?.name)) use(ensure(lv.name), item.sr, timedField);
     const note = parseNote(item.note);
+    // A timed item's sets are its rounds (1 for steady minutes), never its minutes.
     const slot: ExerciseSlot & SlotExtras = {
       exercise,
-      sets: Math.max(1, parsed.sets ?? dashboardSets(item.sr)),
-      repRange: rangeOf(item, exercise),
-      rir: note.rir ?? 2,
+      sets: itemSets(item),
+      repRange: timedField ? [1, 1] : rangeOf(item, exercise),
+      rir: itemRir(item)?.lo ?? 2,
     };
+    if (timed) slot.timed = timed;
     if (lifting && item.logged) {
       slot.main = true;
       slot.progression = { rule: 'double' };
     }
     if (item.ladder) {
       const l = plan.ladders.find((x) => x.id === item.ladder);
-      const h = (ladders[item.ladder] ?? []).filter((x) => asOf === null || x.date <= asOf);
-      const next = l?.levels[h.at(-1)?.level ?? 1]?.name;
+      // The level above the one the item counts as (the same order: the log's, the plan's start, the lowest).
+      const next = l?.levels[ladderLevelOn(ladders[item.ladder] ?? [], ladderStarts.get(item.ladder), asOf).level]?.name;
       slot.progression = next ? { rule: 'ladder', next: ensure(next) } : { rule: 'ladder' };
     }
     if (note.until) {
@@ -393,7 +445,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     }
     if (isStr(item.note) && item.note.trim()) slot.note = item.note;
     slot._item = item;
-    slot._derived = { exercise: slot.exercise, sets: slot.sets, repRange: slot.repRange, rir: slot.rir, until: slot.until?.until ?? null };
+    slot._derived = { exercise: slot.exercise, sets: slot.sets, repRange: slot.repRange, rir: slot.rir, until: slot.until?.until ?? null, timed: timed ? { ...timed } : null };
     return slot;
   };
   const items = (type: string): PlanDataItem[] =>
@@ -405,7 +457,8 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     slots: items(type).map((item) => buildSlot(type, item, kind === 'lift')),
     _type: type,
   }));
-  // The dashboard's deload week: every "N ×" becomes 2 sets; S3 becomes deloadS3.
+  // The light week (the plan's rule, else the dashboard's): every "N ×" becomes its sets; S3 becomes deloadS3.
+  const lw = rules.rules.lightWeeks;
   const deloadSlots = (t: SessionTemplate & { _type: string }): ExerciseSlot[] => {
     if (t._type === 'S3' && plan.deloadS3.length) {
       return plan.deloadS3
@@ -413,13 +466,15 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
         .map((x) => {
           const exercise = ensure(x.name);
           use(exercise, x.sr);
-          return { exercise, sets: dashboardSets(x.sr), repRange: parseSr(x.sr).repRange ?? [1, 1], rir: 2 };
+          const timed = itemTimed(x);
+          return { exercise, sets: itemSets(x), repRange: parseSr(x.sr).repRange ?? [1, 1], rir: 2, ...(timed ? { timed } : {}) };
         });
     }
+    // A timed item keeps its minutes: the light week halves sets, not cardio.
     return t.slots.map((s) => {
       const item = (s as SlotExtras)._item;
       const { _item: _i, _derived: _d, ...rest } = s as ExerciseSlot & SlotExtras;
-      return item && parseSr(item.sr).sets !== null ? { ...rest, sets: dashboardSets(deloadSr(item.sr)) } : rest;
+      return item && !s.timed && parseSr(item.sr).sets !== null ? { ...rest, sets: itemSets({ sr: deloadSr(item.sr, lw.sets) }) } : rest;
     });
   };
   const deload: SessionTemplate[] = loading.map((t) => ({ id: t.id, name: t.name, kind: t.kind, slots: deloadSlots(t) }));
@@ -436,12 +491,17 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
   rawSessions.sort((a, b) => (String(a['date']) < String(b['date']) ? -1 : String(a['date']) > String(b['date']) ? 1 : 0));
   const planTypes = new Set([...plan.liftTypes, ...plan.shortTypes]);
   const firstPlan = rawSessions.find((s) => planTypes.has(String(s['type'])));
-  // Week 1: the Monday of the first logged plan session (the dashboard's clock). Until the
+  // Week 1: the plan's own start when it names one (plan-data's `start`, the week holding
+  // that date), so the plan weeks agree with the dates the coach chose from day one.
+  // Without it, the Monday of the first logged plan session (the dashboard's clock); until the
   // current cycle (the newest baseline note on or before the date) has a plan session of its
-  // own, week 1 is the Monday of the cycle start, so a fresh start reads "Week 1" from day one.
+  // own, the Monday of the cycle start, so a fresh start reads "Week 1" from day one.
+  const own = planStartOf(files.plan);
+  if (own.problem) notes.warn('plan-data', own.problem);
   const cycleNow = newestBaseline([...(files.baselines ?? [])].filter(isIsoDate), asOf ?? undefined);
   const cycleLogged = cycleNow === null || rawSessions.some((s) => planTypes.has(String(s['type'])) && String(s['date']) >= cycleNow);
-  const start = firstPlan && cycleLogged ? mondayOf(String(firstPlan['date'])) : cycleNow ? mondayOf(cycleNow) : null;
+  const startFrom: VaultPlanInfo['startFrom'] = opts.noPlan ? null : own.monday ? 'plan' : firstPlan && cycleLogged ? 'log' : cycleNow ? 'cycle' : null;
+  const start = startFrom === 'plan' ? own.monday : startFrom === 'log' ? mondayOf(String(firstPlan!['date'])) : startFrom === 'cycle' ? mondayOf(cycleNow!) : null;
 
   const sessions: Session[] = [];
   const ids = new Map<string, number>();
@@ -553,20 +613,22 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     // The plan snapshot: the dashboard's frozen list of what the plan had, with swaps applied.
     if (lifting || short) {
       const express = s['express'] === true && lifting;
-      const week = start ? planWeekOf(start, date) : null;
-      const deloadWeek = week !== null && week > 0 && week % 4 === 0;
+      const week = start && date >= start ? planWeekOf(start, date) : null;
+      const deloadWeek = week !== null && isLightWeek(lw, week);
       let list: { name: string; sets: number }[] | null = Array.isArray(s['exercises'])
         ? (s['exercises'] as unknown[]).filter((x): x is { name: string; sets: number } => isObj(x) && isStr(x['name']) && isNum(x['sets']))
         : null;
+      const rebuilt = !list;
       if (!list) {
-        list = plannedWork(plan, type, express, deloadWeek, (lid) => ladderNameAt(plan, ladders, lid, date));
-        notes.group('snapshot-rebuilt', 'Sessions without a saved exercise list: rebuilt from the current plan, as the dashboard does.', `${date} ${type}`);
+        list = plannedWork(plan, type, express, deloadWeek, (lid) => ladderNameAt(plan, ladders, lid, date), lw.sets);
+        notes.group('snapshot-rebuilt', 'Sessions without a saved exercise list: counted from the plan as it reads today (as the dashboard does), so their sets per muscle are approximate.', `${date} ${type}`);
       }
       const typeItems = items(type);
       const itemFor = (name: string) =>
         typeItems.find((i) => i.name === name) ??
         typeItems.find((i) => i.ladder && plan.ladders.find((l) => l.id === i.ladder)?.levels.some((lv) => lv.name === name));
-      const slots: (ExerciseSlot & { _planned?: string })[] = [];
+      // `_rir`: the RIR the plan item gives (the top of a range), null when it gives none (the slot's own rir is then a default): what the effort rule reads for a set logged without one.
+      const slots: (ExerciseSlot & { _planned?: string; _rir?: number | null })[] = [];
       const planNames: string[] = [];
       for (const x of list) {
         const sets = Math.round(x.sets);
@@ -575,23 +637,27 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
         const item = itemFor(x.name);
         const exercise = ensure(done);
         const range = item ? rangeOf(item, exerciseId(x.name)) : (liftInfo.get(exerciseId(x.name))?.repRange ?? [1, 1]);
-        const slot: ExerciseSlot & { _planned?: string } = { exercise, sets, repRange: range, rir: parseNote(item?.note).rir ?? 2 };
+        const given = itemRir(item);
+        const slot: ExerciseSlot & { _planned?: string; _rir?: number | null } = { exercise, sets, repRange: range, rir: given?.lo ?? 2, _rir: given?.hi ?? null };
         if (item?.logged && lifting) slot.main = true;
         if (done !== x.name) slot._planned = x.name;
         slots.push(slot);
         planNames.push(x.name);
       }
-      const snapshot: PlanSnapshot = {
+      const snapshot: PlanSnapshot & { _rebuilt?: true } = {
         program: 'vault-plan',
         weekKind: deloadWeek ? 'deload' : 'loading',
         template: templateId(type),
         kind: (express ? 'express' : lifting ? 'lift' : 'short'),
         slots,
       };
+      // Not what the plan held that day: the review marks the session's counts approximate.
+      if (rebuilt) snapshot._rebuilt = true;
       if (week !== null && week > 0) {
-        snapshot.phase = `phase-${Math.floor((week - 1) / 8) + 1}`;
-        snapshot.mesocycle = `meso-${Math.floor((week - 1) / 4) + 1}`;
-        snapshot.week = ((week - 1) % 4) + 1;
+        const at = lightWeekAt(lw, week);
+        snapshot.phase = `phase-${at.phase}`;
+        snapshot.mesocycle = `meso-${at.mesocycle}`;
+        snapshot.week = at.weekInMesocycle;
       }
       session.plan = snapshot;
 
@@ -641,24 +707,34 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     const lift = lk ? plan.lifts[lk] : undefined;
     const u = usage.get(id);
     const ex: Exercise & ExerciseExtras = { name: gk ?? name };
-    const gm = isObj(guide?.muscles) ? (guide.muscles as { main?: unknown; helps?: unknown; kind?: unknown }) : null;
-    const tagKind = gm?.kind === 'cardio' || gm?.kind === 'mobility' ? gm.kind : null;
+    // One source of muscle tags (muscle-tags.ts): the catalogue's for a movement it knows, else the guide's, or the guide's with an override reason.
+    const tags = canonicalTags(name, guide);
+    for (const m of tags.unknown) notes.group('unknown-muscle', 'Guide entries name muscle groups the engine does not know; those tags were dropped.', `${gk}: ${m}`);
+    const regionIssues = regionProblems(tags.unknownRegions);
+    for (const r of regionIssues.unknown) notes.group('unknown-region', `Guide entries name muscle regions that are not region ids; they count nowhere. The regions are ${REGION_IDS.join(', ')}.`, `${gk}: ${r}`);
+    for (const r of regionIssues.unsupported) notes.group('unsupported-region', 'Guide entries name muscle regions the evidence does not support; they count nowhere. Each gives the nearest supported option and why.', `${gk}: ${r}`);
+    for (const r of tags.regionsWithoutParent) notes.group('region-parent-missing', 'Guide entries name a muscle region whose muscle the entry does not tag in main or helps; those regions count nowhere. Add the muscle, or remove the region.', `${gk}: ${parentMissingText(r)}`);
+    if (gk && tags.source === 'catalogue' && tags.differs) {
+      notes.group('muscle-tags-differ', 'Guide entries whose muscles differ from the engine catalogue\'s: the catalogue\'s count, in Review, Progress, Plan, the movement guide and `plan` alike. The next plan export (`plan --format plan-data --vault .`) writes the catalogue\'s into the guide; to keep an entry\'s own, give it `muscles.override` with the reason, beside at least one main muscle.', differsItem(gk, tags.differs));
+    }
+    if (gk && tags.source === 'override') {
+      notes.group('muscle-tags-overridden', 'For information: guide entries that keep their own muscles over the catalogue\'s (`muscles.override`), with the reason given; their tags count everywhere.', `${gk}: ${tags.override}`);
+    }
+    if (gk && tags.overrideIgnored) {
+      notes.group('muscle-tags-override-ignored', 'Guide entries whose `muscles.override` is not honoured: the catalogue\'s tags count, and the next plan export replaces the entry\'s copy, override included. An override needs a reason (a non-empty string) beside at least one main muscle.', `${gk}: ${tags.overrideIgnored}`);
+    }
+    if (gk && tags.uncounted) {
+      notes.group('muscle-tags-uncounted', `Guide entries marked cardio or mobility for movements the engine catalogue counts as strength work: not counted in sets per muscle. If one is strength work, remove its \`kind\` and the catalogue's tags count.`, `${gk}: guide ${tags.kind} | catalogue ${tagsText(tags.uncounted)}`);
+    }
     const timedOnly = u && !u.sets && (u.minutes || u.rounds);
-    if (tagKind) ex.kind = tagKind;
+    if (tags.kind) ex.kind = tags.kind;
     else if (timedOnly) ex.kind = u.rounds ? 'circuit' : 'timed';
     else {
       ex.unit = asUnit(lift?.unit) ?? liftUnit;
       ex.increment = isNum(lift?.inc) && lift.inc > 0 ? lift.inc : defaultIncrement(ex.unit);
-      if (gm) {
-        const mapped = toEngineMuscles({
-          main: Array.isArray(gm.main) ? gm.main.filter(isStr) : [],
-          helps: Array.isArray(gm.helps) ? gm.helps.filter(isStr) : [],
-        });
-        for (const m of mapped.unknown) notes.group('unknown-muscle', 'Guide entries name muscle groups the engine does not know; those tags were dropped.', `${gk}: ${m}`);
-        if (mapped.muscles.main.length || mapped.muscles.helps.length) ex.muscles = mapped.muscles;
-      }
+      if (tags.tags.main.length || tags.tags.helps.length) ex.muscles = { main: [...tags.tags.main], helps: [...tags.tags.helps], ...(tags.tags.regions?.length ? { regions: [...tags.tags.regions] } : {}) };
     }
-    const match = matchCatalogue(name);
+    const match = tags.catalogue;
     if (match) {
       catalogueMatch[id] = match.id;
       ex.pattern = match.pattern;
@@ -684,11 +760,11 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
       notes.group('unknown-exercise', 'Exercises in the plan or the log that are not in the engine catalogue: no abdominal-strain tag or movement pattern, so the Ledger screen cannot clear them.', ex.name);
     }
     if ((ex.kind ?? 'strength') === 'strength' && !ex.muscles) {
-      notes.group('no-muscles', 'Strength exercises with no muscles in plan-data\'s guide: not counted in sets per muscle.', ex.name);
+      notes.group('no-muscles', 'Strength exercises with no muscle tags (neither the engine catalogue nor plan-data\'s guide gives any): not counted in sets per muscle.', ex.name);
     }
   }
 
-  // The program: plan weeks from the dashboard's week 1, phases of two 4-week mesocycles.
+  // The program: plan weeks from the dashboard's week 1; a mesocycle ends at each light week, a phase is two.
   const programStart = start ?? mondayOf(asOf ?? '2000-01-03');
   const needed = asOf && asOf >= programStart ? planWeekOf(programStart, asOf) : 1;
   // plan-data's optional phase names, by position (else "Phase N", as the dashboard says).
@@ -696,25 +772,41 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
   for (const w of named.warnings) notes.warn('plan-data', w);
   // The plan's length (plan-data's `weeks`, else the dashboard's 24); past it, whole phases more.
   const planWeeks = planWeeksOf(files.plan);
-  const totalWeeks = Math.max(planWeeks, Math.ceil(needed / 8) * 8);
+  const totalWeeks = weeksThrough(lw, planWeeks, needed);
   if (needed > planWeeks) notes.warn('past-plan-end', `Plan week ${needed} is past the plan's ${planWeeks} weeks: a new cycle is due (planning.md, "Build the macrocycle").`);
-  const mesoCount = totalWeeks / 4;
-  const phases: Phase[] = [];
-  // Phases of two 4-week mesocycles; a plan of an odd number of mesocycles ends on a one-mesocycle phase.
-  for (let p = 0; p < Math.ceil(mesoCount / 2); p++) {
-    const mesocycles: Mesocycle[] = [0, 1].filter((m) => p * 2 + m < mesoCount).map((m) => {
-      const meso = p * 2 + m;
-      const weeks: Week[] = [1, 2, 3, 4].map((i) => {
-        const n = meso * 4 + i;
-        const w: Week = { index: i, kind: i === 4 ? 'deload' : 'loading', start: addDays(programStart, 7 * (n - 1)), sessions: i === 4 ? deload : loading };
-        if (n === 1) w.calibration = true;
+  // The calibration weeks (the plan's rule, else plan week 1): the loading sessions with every strength item at the
+  // calibration RIR or more, and intervals as easy steady minutes unless the rule keeps cardio as planned, so Today,
+  // the log form and review's targets apply what the week says (steady cardio and other timed items keep theirs).
+  // Without a plan start every date falls in the stand-in week 1, so there is no calibration week.
+  const cal = rules.rules.calibration;
+  // A calibration week the plan puts on one of its light weeks: the light week wins, said in a warning.
+  const calibrationOnLight: number[] = [];
+  const calibrated = loading.map((t) => ({
+    ...t,
+    slots: t.slots.map((s) => {
+      const lifted = (exercises[s.exercise]?.kind ?? 'strength') === 'strength' ? calibrateSlot(s, cal.rir) : s;
+      return cal.cardio === 'easy' ? calibrateTimedSlot(lifted) : lifted;
+    }),
+  }));
+  // Phases of two mesocycles, each ending at its light week (every 4th week by default); a plan of an odd number of
+  // mesocycles ends on a one-mesocycle phase.
+  const phases: Phase[] = planCalendar(lw, totalWeeks).map((mesos, p) => {
+    const mesocycles: Mesocycle[] = mesos.map((m) => {
+      const weeks: Week[] = m.weeks.map((n, i) => {
+        const light = isLightWeek(lw, n);
+        const calibrating = cal.weeks.includes(n) && !light && start !== null;
+        if (cal.weeks.includes(n) && light) calibrationOnLight.push(n);
+        const w: Week = { index: i + 1, kind: light ? 'deload' : 'loading', start: addDays(programStart, 7 * (n - 1)), sessions: light ? deload : calibrating ? calibrated : loading };
+        if (calibrating) w.calibration = true;
+        // The plan's test weeks (rules.tests); without them the body record keeps tests at each phase end.
+        if (rules.rules.tests.weeks?.includes(n)) w.tests = true;
         return w;
       });
-      return { id: `meso-${meso + 1}`, name: `Mesocycle ${meso + 1}`, weeks };
+      return { id: `meso-${m.mesocycle}`, name: `Mesocycle ${m.mesocycle}`, weeks };
     });
     const nm = named.phases[p];
-    phases.push({ id: `phase-${p + 1}`, name: nm?.name ?? `Phase ${p + 1}`, ...(nm?.goal ? { goal: nm.goal } : {}), mesocycles });
-  }
+    return { id: `phase-${p + 1}`, name: nm?.name ?? `Phase ${p + 1}`, ...(nm?.goal ? { goal: nm.goal } : {}), mesocycles };
+  });
   const top: Obj = {};
   for (const [k, v] of Object.entries(isObj(files.plan) ? files.plan : {})) if (k !== 'sessions' && k !== 'lifts' && k !== 'guide') top[k] = v;
   const extras: PlanDataExtras = {
@@ -907,6 +999,14 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
     else notes.group('unknown-muscle', 'Guide entries name muscle groups the engine does not know; those tags were dropped.', `muscles: ${k}`);
   }
   notes.flush();
+  if (planRead) {
+    if (rules.problems.length) {
+      notes.warnings.push({ code: 'rules-invalid', message: 'Standing rules in plan-data.json Pahlavan cannot read: each kind with a problem uses Pahlavan\'s old default until it is fixed (unknown keys are listed and left out).', items: rules.problems.map((x) => `${x.path}: ${x.message}`) });
+    }
+    if (calibrationOnLight.length) notes.warnings.push({ code: 'calibration-on-light-week', message: 'Calibration weeks the plan\'s rules put on a light week: the light week is kept and those weeks do not calibrate; move one of the two in `rules`.', items: calibrationOnLight.map((n) => `plan week ${n}`) });
+    const legacy = legacyItems(rules);
+    if (legacy.length) notes.warnings.push({ code: 'legacy-default', message: LEGACY_DEFAULT_MESSAGE, items: legacy });
+  }
 
   return {
     program,
@@ -924,6 +1024,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
       express: expressOf(plan, ensure),
       warmups: { lift: isStr(plan.warmups?.lift) ? plan.warmups.lift : null, short: isStr(plan.warmups?.short) ? plan.warmups.short : null },
       start,
+      startFrom,
       cycleStart,
       baselines,
       weeks: planWeeksOf(files.plan),
@@ -931,18 +1032,32 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
       lifts,
       ladders: plan.ladders
         .filter((l) => isObj(l) && isStr(l.id))
-        .map((l) => ({ id: l.id, name: l.name, levels: (l.levels ?? []).map((x) => x.name), history: ladders[l.id] ?? [], carried: [...plan.liftTypes, ...plan.shortTypes].some((t) => items(t).some((i) => i.ladder === l.id)) })),
+        .map((l) => ({
+          id: l.id,
+          name: l.name,
+          levels: (l.levels ?? []).map((x) => x.name),
+          history: ladders[l.id] ?? [],
+          carried: [...plan.liftTypes, ...plan.shortTypes].some((t) => items(t).some((i) => i.ladder === l.id)),
+          ...(ladderStarts.has(l.id) ? { startLevel: ladderStarts.get(l.id)! } : {}),
+        })),
     },
     catalogueMatch,
+    rules,
     warnings: notes.warnings,
     errors: notes.errors,
   };
 }
 
-/** The plan's length in weeks: plan-data's `weeks` (a generated plan writes it), up to whole 4-week mesocycles; else the dashboard's 24. */
+/**
+ * The plan's length in weeks: plan-data's `weeks` (a generated plan writes
+ * it), up to the end of the mesocycle holding its last week on the plan's
+ * light-week calendar (whole 4-week mesocycles by default; a plan listing
+ * its light weeks ends where it says); else the dashboard's 24.
+ */
 export function planWeeksOf(rawPlan: unknown): number {
   const w = isObj(rawPlan) ? rawPlan['weeks'] : undefined;
-  return typeof w === 'number' && Number.isInteger(w) && w >= 1 && w <= 104 ? Math.ceil(w / 4) * 4 : 24;
+  if (!(typeof w === 'number' && Number.isInteger(w) && w >= 1 && w <= 104)) return 24;
+  return nextLightWeek(readRules(rawPlan).rules.lightWeeks, w) ?? w;
 }
 
 /** The plan's Express block, with the finisher as an exercise id. */
@@ -952,9 +1067,9 @@ function expressOf(plan: PlanData, ensure: (name: string) => string): VaultPlanI
   const f = isObj(e.finish) && isStr(e.finish.name) && e.finish.name.trim() && isStr(e.finish.sr) ? e.finish : null;
   return {
     warmup: isStr(e.warmup) ? e.warmup.replace(/^Warm-up:\s*/i, '') : null,
-    mainSets: dashboardSets(e.mainSets),
-    secondSets: dashboardSets(isStr(e.secondSets) ? e.secondSets : e.mainSets),
-    finish: f ? { exercise: ensure(f.name), name: f.name, sets: dashboardSets(f.sr), repRange: parseSr(f.sr).repRange ?? [1, 1], sr: f.sr } : null,
+    mainSets: itemSets({ sr: e.mainSets }),
+    secondSets: itemSets({ sr: isStr(e.secondSets) ? e.secondSets : e.mainSets }),
+    finish: f ? { exercise: ensure(f.name), name: f.name, sets: itemSets(f), repRange: parseSr(f.sr).repRange ?? [1, 1], sr: f.sr } : null,
   };
 }
 
@@ -981,6 +1096,8 @@ export function plannedWork(
   express: boolean,
   deloadWeek: boolean,
   ladderName: (id: string) => string | null,
+  /** A light week's sets (the plan's rule; the dashboard's 2 by default). */
+  lightSetsRule: number | 'half' = readRules(plan).rules.lightWeeks.sets,
 ): { name: string; sets: number }[] {
   const items = ((plan.sessions[type] ?? [])).filter((x) => isObj(x) && isStr(x.name) && isStr(x.sr));
   if (express) {
@@ -994,7 +1111,7 @@ export function plannedWork(
     ];
   }
   if (deloadWeek && type === 'S3' && plan.deloadS3.length) return plan.deloadS3.map((x) => ({ name: x.name, sets: dashboardSets(x.sr) }));
-  return items.map((i) => ({ name: (i.ladder ? ladderName(i.ladder) : null) ?? i.name, sets: dashboardSets(deloadWeek ? deloadSr(i.sr) : i.sr) }));
+  return items.map((i) => ({ name: (i.ladder ? ladderName(i.ladder) : null) ?? i.name, sets: dashboardSets(deloadWeek ? deloadSr(i.sr, lightSetsRule) : i.sr) }));
 }
 
 // ---------------------------------------------------------------- ladders (the dashboard's Skills card)
@@ -1021,7 +1138,7 @@ export interface LadderStatus {
 
 /**
  * Each ladder's level on a date and the level its latest test shows, as
- * fitness_log.py review gives them. With `cycleStart`, a test dated before
+ * the original log script's review gives them. With `cycleStart`, a test dated before
  * it does not count (a fresh start's tests are the cycle's own), and only a
  * ladder a plan session carries gets `testShowsLevel` (a ladder no session
  * trains has nothing to move up).

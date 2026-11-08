@@ -6,6 +6,7 @@
 // doesn't keeps its own.
 
 import { toMinutes, hhmm } from './clock.ts';
+import { appliedEmphasis } from './findings.ts';
 import { explain, type Result } from './reason.ts';
 import { WEEKDAYS, type DeskBreaks, type DeskConfig, type DeskStep, type Profile, type Program, type TrackedItem, type Weekday } from './schema.ts';
 
@@ -108,9 +109,9 @@ export function deskBreaksFromPlanData(routine: unknown, guide: unknown, timing:
 /**
  * The generator's desk breaks: for desk work (the intake's answer), the
  * default routine on Habit Nudges' timing, with the reasons the profile
- * gives (desk hours, a forward-head posture finding). Without a band, the
- * pull-apart becomes wall slides. Null, with the reason, when there is no
- * desk work.
+ * gives (desk hours, a forward-head posture finding that acts in full:
+ * confirmed, or a profile from before the question). Without a band, the pull-apart becomes wall slides. Null, with
+ * the reason, when there is no desk work.
  */
 export function deskBreaksFor(profile: Profile): Result<DeskBreaks | null> {
   const work = profile.work;
@@ -121,7 +122,7 @@ export function deskBreaksFor(profile: Profile): Result<DeskBreaks | null> {
   const band = profile.equipment.some((e) => /band/i.test(e));
   const steps = DEFAULT_DESK_STEPS.map((s) => (s.name === 'Band Pull-Apart' && !band ? { name: 'Wall slides', dose: '×10' } : { ...s }));
   const why = [{ what: work.sittingHours ? `Desk job, about ${work.sittingHours} hours seated` : 'Desk job', from: 'intake' }];
-  const posture = profile.emphasis.find((e) => e.kind === 'forward-head-rounded-shoulders');
+  const posture = appliedEmphasis(profile).find((e) => e.kind === 'forward-head-rounded-shoulders');
   if (posture) why.push({ what: posture.seen, from: 'the body assessment' });
   const t = NUDGES_DESK_TIMING;
   return explain<DeskBreaks | null>({ steps, every: t.every, from: t.from, to: t.to, minutes: t.minutes, days: [...t.days], why }, 'plan.desk-breaks', inputs, {

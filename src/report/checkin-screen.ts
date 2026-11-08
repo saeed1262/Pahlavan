@@ -14,6 +14,7 @@ import { coachSteps, type CoachSteps, type SundayStatus } from '../core/coach-st
 import { CATALOGUE_BY_ID } from '../core/data/exercises.ts';
 import { MUSCLES } from '../core/data/muscles.ts';
 import { addDays, dayText, mondayOf } from '../core/dates.ts';
+import { planDataGroups } from '../core/plan-data.ts';
 import type { IsoDate, SorenessLevel, WeeklyCheckin } from '../core/schema.ts';
 import { buildTemplate, letterFocus, reviewedSunday, type TemplateOptions } from './checkin.ts';
 import { scopeInfo, withinCycle } from './cycle.ts';
@@ -279,7 +280,9 @@ function trainsToday(read: VaultRead, date: IsoDate): { name: string | null; slu
   if (!s.session) return { name: null, slugs: [] };
   const slugs = new Set<string>();
   for (const it of s.items) {
-    const m = read.data.program.exercises[it.exercise]?.muscles ?? CATALOGUE_BY_ID.get(it.exercise)?.muscles;
+    // The plan's exercise carries the tags that count (muscle-tags.ts); one without (a timed hold) reads its catalogue movement's, on the same 14 groups.
+    const cat = CATALOGUE_BY_ID.get(read.data.catalogueMatch[it.exercise] ?? '')?.muscles;
+    const m = read.data.program.exercises[it.exercise]?.muscles ?? (cat ? planDataGroups(cat) : undefined);
     for (const id of [...(m?.main ?? []), ...(m?.helps ?? [])]) {
       const slug = SLUG_OF.get(id);
       if (slug) slugs.add(slug);

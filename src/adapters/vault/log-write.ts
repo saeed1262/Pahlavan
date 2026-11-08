@@ -1,16 +1,17 @@
 // Writing the dashboard's files, as pure functions from text to text: the
-// session entry in fitness-log-data.json's exact shape (fitness_log.py add
-// is the reference, check for check), its merge with what is on disk now,
+// session entry in fitness-log-data.json's exact shape (the original log
+// script's add is the reference, check for check: test/log-write.test.ts), its merge with what is on disk now,
 // the add-only Workout habit tick in habits-data.json, and the per-muscle
 // sore-muscle merge in body-data.json. The caller reads and writes the files
 // and passes today's date in; nothing here touches the clock or the disk.
 
 import { daysBetween, isIsoDate, mondayOf } from '../../core/dates.ts';
 import { MUSCLE_IDS, MUSCLES } from '../../core/data/muscles.ts';
-import { dashboardSets, deloadSr, type PlanData } from '../../core/plan-data.ts';
+import { dashboardSets, deloadSr, planStartOf, type PlanData } from '../../core/plan-data.ts';
 import type { IsoDate, SorenessLevel } from '../../core/schema.ts';
 import { habitCheckinKey } from '../../core/tracking.ts';
 import { ladderHistory, ladderNameAt, plannedWork, readPlanData } from './convert.ts';
+import { isLightWeek, readRules } from '../../core/rules.ts';
 import { habitsTextOr } from './habits-write.ts';
 
 type Obj = Record<string, unknown>;
@@ -55,7 +56,7 @@ export interface LoggedSetInput {
 }
 
 /**
- * The input: fitness_log.py add's own shape (date, type, label, lift1, lift2,
+ * The input: the original log script's add shape (date, type, label, lift1, lift2,
  * express, durationMin, cardioMin, cardioMode, rating, postureDrill, notes,
  * swaps), plus what Pahlavan adds.
  */
@@ -95,7 +96,7 @@ export interface LogContext {
 
 export type BuildResult = { ok: true; entry: Obj } | { ok: false; error: string };
 
-/** The keys fitness_log.py add writes, in its order. */
+/** The keys the original log script's add writes, in its order. */
 export const SCRIPT_KEYS = ['date', 'type', 'label', 'express', 'lift1', 'lift2', 'durationMin', 'cardioMin', 'cardioMode', 'rating', 'postureDrill', 'notes', 'swaps'] as const;
 /** The keys a save from Pahlavan owns: the script's, the dashboard's two, and the new ones. */
 export const OWNED_KEYS = [...SCRIPT_KEYS, 'checklist', 'exercises', 'sessionRpe', 'pain', 'hotel', 'trackingLevel', 'exerciseSets'] as const;
@@ -110,8 +111,10 @@ export function liftUnit(plan: Obj, name: string): unknown {
   return truthy(own) ? own : plan['liftUnit'];
 }
 
-/** The plan's week for a date, counted from the first logged plan session (the dashboard's planStartOf). */
+/** The plan's week for a date: from the plan's own start (plan-data's `start`), else from the first logged plan session (the dashboard's planStartOf). */
 function planWeekAt(plan: PlanData, log: unknown, date: IsoDate): number {
+  const own = planStartOf(plan).monday;
+  if (own) return Math.floor(daysBetween(own, mondayOf(date)) / 7) + 1;
   const types = [...plan.liftTypes, ...plan.shortTypes];
   const sessions = isObj(log) && Array.isArray(log['sessions']) ? (log['sessions'] as Obj[]) : [];
   const dates = [...sessions.filter((s) => isObj(s) && types.includes(String(s['type'])) && isIsoDate(s['date'])).map((s) => String(s['date'])), date].sort();
@@ -120,7 +123,7 @@ function planWeekAt(plan: PlanData, log: unknown, date: IsoDate): number {
 }
 
 /**
- * The session entry for fitness-log-data.json: fitness_log.py add's checks
+ * The session entry for fitness-log-data.json: the original log script's checks
  * and fields exactly (in its order, with its messages), then the dashboard's
  * `checklist` and `exercises`, then Pahlavan's own fields. On an edit, the
  * fields Pahlavan does not own come over from the original.
@@ -198,7 +201,8 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
   else if (pd && Array.isArray(pd.sessions[t])) {
     const history = ladderHistory(ctx.log);
     const week = planWeekAt(pd, ctx.log, date);
-    entry['exercises'] = plannedWork(pd, t, Boolean(entry['express']), week > 0 && week % 4 === 0, (id) => ladderNameAt(pd, history, id, date));
+    const lw = readRules(ctx.plan).rules.lightWeeks;
+    entry['exercises'] = plannedWork(pd, t, Boolean(entry['express']), isLightWeek(lw, week), (id) => ladderNameAt(pd, history, id, date), lw.sets);
   }
 
   // Pahlavan's own fields; the engine reads them, the script and the dashboard keep them.
@@ -230,11 +234,13 @@ export interface ChecklistLine {
 /**
  * The dashboard's checklist for a session (its exercisesFor): the warm-up
  * line, then the plan's items with paired ones joined; Express is its own
- * four lines; a deload week halves to 2 sets, and S3 becomes the deload block.
+ * four lines; a light week takes its sets (the plan's rule, else 2), and S3
+ * becomes the deload block.
  */
 export function checklistLines(rawPlan: unknown, type: string, express: boolean, deloadWeek: boolean): ChecklistLine[] {
   const plan = readPlanData(rawPlan);
   if (!plan || !Array.isArray(plan.sessions[type])) return [];
+  const lightSets = readRules(rawPlan).rules.lightWeeks.sets;
   const lifting = plan.liftTypes.includes(type);
   if (express && lifting) {
     const logged = (plan.sessions[type]).filter((i) => i.logged);
@@ -249,7 +255,7 @@ export function checklistLines(rawPlan: unknown, type: string, express: boolean,
   if (deloadWeek && type === 'S3' && plan.deloadS3.length) return plan.deloadS3.map((x) => ({ name: x.name, sr: x.sr, parts: [x.name] }));
   const lines: ChecklistLine[] = [{ name: 'Warm-up', sr: lifting ? '6 min' : '3 min', parts: [], warmup: true }];
   for (const it of plan.sessions[type]) {
-    const sr = deloadWeek ? deloadSr(it.sr) : it.sr;
+    const sr = deloadWeek ? deloadSr(it.sr, lightSets) : it.sr;
     const prev = lines.at(-1)!;
     if (it.pair && lines.length > 1) lines[lines.length - 1] = { name: `${prev.name} + ${it.name}`, sr: `${prev.sr} / ${sr}`, parts: [...prev.parts, it.name] };
     else lines.push({ name: it.name, sr, parts: [it.name] });
@@ -257,12 +263,11 @@ export function checklistLines(rawPlan: unknown, type: string, express: boolean,
   return lines;
 }
 
-/** A session's plan week is a deload week (every 4th from the first logged plan session). */
+/** A session's plan week is a light week (the plan's rule, else every 4th), counted from the first logged plan session. */
 export function isDeloadDate(rawPlan: unknown, log: unknown, date: IsoDate): boolean {
   const plan = readPlanData(rawPlan);
   if (!plan) return false;
-  const w = planWeekAt(plan, log, date);
-  return w > 0 && w % 4 === 0;
+  return isLightWeek(readRules(rawPlan).rules.lightWeeks, planWeekAt(plan, log, date));
 }
 
 /** The sets the dashboard counts for a dose, re-exported for the form. */
@@ -442,8 +447,8 @@ export type LadderMerge =
   | { result: 'unreadable'; error: string };
 
 /**
- * fitness-log-data.json with a ladder's level set, as `fitness_log.py ladder
- * ID LEVEL --date D` writes it: `{level, date}` appended to `ladders[id]`,
+ * fitness-log-data.json with a ladder's level set, as the original log
+ * script's `ladder ID LEVEL --date D` writes it: `{level, date}` appended to `ladders[id]`,
  * unless the last entry already holds that level ("already"). The ladder and
  * its levels come from plan-data.json; the script's messages, word for word.
  * Every other key, session and ladder stays.
@@ -492,8 +497,8 @@ export type FixMerge =
   | { result: 'unreadable'; error: string };
 
 /**
- * fitness-log-data.json with one logged lift corrected, as `fitness_log.py
- * fix` writes it: the session by date, type and label; the lift's weight
+ * fitness-log-data.json with one logged lift corrected, as the original log
+ * script's `fix` writes it: the session by date, type and label; the lift's weight
  * (a whole number kept whole), reps, or "planned" cleared once its name is
  * the plan's logged lift for that slot. The script's checks and messages,
  * word for word; every other session, field and key stays.

@@ -12,16 +12,23 @@ import { DAY_SOURCES, loggedWeekdays, REAL_WEEK, type DaySource, type PlannedIte
 import { dayText } from '../dates.ts';
 import { explain, joinNotes, type Result } from '../reason.ts';
 import { screeningCaps } from '../safety.ts';
-import type { Weekday } from '../schema.ts';
+import type { TimedWork, Weekday } from '../schema.ts';
 import type { PlanContext } from './context.ts';
 
 export const CONDITIONING = {
   intervalsMinutes: 30,
+  /** The interval session: 4 rounds of 4 minutes hard with 3 minutes easy between; the session's other minutes easy around them. */
+  intervals: { rounds: 4, workMin: 4, restMin: 3 },
   zone2MaxMinutes: 45,
   finisherFromMinutes: 60,
   steps: { base: 6000, active: 7000, perPhase: 1000, max: 10000 },
   activeMinutes: [150, 300],
 } as const;
+
+/** A conditioning session's minutes and structure, as the plan item's `timed`: the 4 × 4 intervals, or steady minutes. */
+export function conditioningTimed(minutes: number, vigorous: boolean): TimedWork {
+  return vigorous ? { minutes, ...CONDITIONING.intervals } : { minutes };
+}
 
 /** The daily steps for a phase (0-based): 7,000 with an active goal (6,000 without), 1,000 more each phase, at most 10,000 (heuristic). */
 export function stepsGoal(goalKinds: Iterable<string>, phase: number): number {

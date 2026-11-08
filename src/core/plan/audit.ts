@@ -6,7 +6,8 @@
 // changes.
 
 import { CATALOGUE_BY_ID } from '../data/exercises.ts';
-import { explain, type Result } from '../reason.ts';
+import { asksConfirmation, emphasisConfirmation, emphasisQuestion, selfCheckConfirmation, type Confirmation } from '../findings.ts';
+import { explain, joinNotes, type Result } from '../reason.ts';
 import { screeningDue } from '../safety.ts';
 import type { Program } from '../schema.ts';
 import type { Comparison } from './compare.ts';
@@ -14,6 +15,7 @@ import { cardioModes } from './conditioning.ts';
 import type { PlanContext } from './context.ts';
 import type { Proposal } from './generate.ts';
 import { rankCandidates } from './select.ts';
+import { FINDING_LABEL, OVERHEAD_PRESSES, selfCheckFindings } from './self-check.ts';
 import type { WeekSize } from './size.ts';
 import type { TemplateChoice } from './template.ts';
 
@@ -26,6 +28,8 @@ export interface InputUse {
   effect: string;
   /** Other inputs that set the same decision: either alone is enough. */
   with?: string[];
+  /** For a finding (a body-assessment row the engine acts on, a self-check result), the user's answer: confirmed, declined, or not asked yet (findings.ts). */
+  confirmation?: Confirmation;
 }
 
 export interface AuditPlan {
@@ -113,43 +117,65 @@ export function personalization(ctx: PlanContext, plan: AuditPlan): Result<Input
   add({ input: 'screening.date', value: p.screening.date, used: true, effect: `Re-screening on the calendar by ${String(screeningDue(p.screening.date, ctx.start).reason.inputs['due'])}.` });
   if (p.screening.limits?.length) add({ input: 'screening.limits', value: p.screening.limits.join('; '), used: false, effect: 'Free text: the coach applies them, and turns each into a Ledger constraint when it names movements.' });
 
-  // The body assessment.
+  // The body assessment: each row the engine acts on, as the user answered it (findings.ts).
+  const asks = asksConfirmation(p);
   for (const e of p.emphasis) {
     const key = `emphasis.${e.kind ?? e.area}`;
     const withSc = e.kind && ctx.selfCheckEmphasis.has(e.kind) ? ctx.selfCheck.effects.filter((x) => x.value.asEmphasis === e.kind).map((x) => `selfCheck.${x.value.input}`) : [];
     const postureGoal = ctx.goals.filter((g) => g.kind === 'posture').map((g) => `goals.${g.id}`);
-    const base = { input: key, value: `${e.seen} (${e.confidence} confidence)` };
+    const finding = emphasisQuestion(e) !== null;
+    const c = emphasisConfirmation(e);
+    const base = { input: key, value: `${e.seen} (${e.confidence} confidence)`, ...(finding ? { confirmation: c } : {}) };
+    if (finding && c === 'declined') {
+      add({ ...base, used: false, effect: 'You said it does not hold (confirmed: false), so the plan leaves it out.' });
+      continue;
+    }
+    // Not asked yet: as before in a profile from before the question (the warning has the question), a preference only in one that asks.
+    const soft = finding && c === 'unconfirmed' && asks;
+    const open = finding && c === 'unconfirmed' ? (asks ? ' Not confirmed with you yet, so a preference and warm-up only: it rules nothing out.' : ' Not confirmed with you yet: the finding-unconfirmed warning has the question.') : '';
+    const row = (u: InputUse) => add({ ...u, effect: `${u.effect}${open}` });
     switch (e.kind) {
       case 'forward-head-rounded-shoulders': {
         const v = plan.proposal.volume[0];
-        add({ ...base, used: true, effect: `Pull at least 1.8 times push (${v ? `${v.pullPush.pull} pull to ${v.pullPush.push} push sets in week ${v.week}` : 'every week'}), rear-delt work in every session, chest and lat stretches in the warm-up.`, ...(postureGoal.length ? { with: postureGoal } : {}) });
+        // Unanswered in a profile that asks: its warm-up only, no 2-to-1 aim or rear-delt work (the posture goal may set its own).
+        if (soft) {
+          add({ ...base, used: !ctx.posture, effect: `Not confirmed with you yet, so no 2-to-1 pull to push and no rear-delt work in every session${ctx.posture ? ' from it (the posture goal sets pull at least equal to push)' : ''}; chest and lat stretches in the warm-up.` });
+          break;
+        }
+        row({ ...base, used: true, effect: `Pull at least 1.8 times push (${v ? `${v.pullPush.pull} pull to ${v.pullPush.push} push sets in week ${v.week}` : 'every week'}), rear-delt work in every session, chest and lat stretches in the warm-up.`, ...(postureGoal.length ? { with: postureGoal } : {}) });
         break;
       }
       case 'overhead-limited': {
         const presses = [...ids].filter((id) => ctx.byId.get(id)?.pattern === 'vertical-push').map(name);
-        add({ ...base, used: true, effect: `No overhead pressing until the reach improves: ${presses.length ? list(presses) : 'incline pressing'} instead; upper-back extension and a lat stretch in the warm-up.`, ...(withSc.length ? { with: withSc } : {}) });
+        // Ruled out only once confirmed (here or by the self-check's overhead reach); else ranked behind the overhead-free presses.
+        const ruledOut = OVERHEAD_PRESSES.some((id) => ctx.exclude.has(id));
+        row({ ...base, used: true, effect: ruledOut ? `No overhead pressing until the reach improves: ${presses.length ? list(presses) : 'incline pressing'} instead; upper-back extension and a lat stretch in the warm-up.` : `Landmine or incline pressing ranked first in the overhead slots${presses.length ? ` (${list(presses)} in the plan)` : ''}, overhead pressing not ruled out; upper-back extension and a lat stretch in the warm-up.`, ...(withSc.length ? { with: withSc } : {}) });
         break;
       }
       case 'squat-heels-lift':
-        add({ ...base, used: true, effect: 'Heel-elevated goblet squats or box squats first, ankle mobility in the warm-up.', ...(withSc.length ? { with: withSc } : {}) });
+        row({ ...base, used: true, effect: 'Heel-elevated goblet squats or box squats first, ankle mobility in the warm-up.', ...(withSc.length ? { with: withSc } : {}) });
         break;
       case 'knees-in':
-        add({ ...base, used: true, effect: 'Tempo goblet squats and split squats ranked first, banded side walks in the warm-up.' });
+        row({ ...base, used: true, effect: 'Tempo goblet squats and split squats ranked first, banded side walks in the warm-up.' });
         break;
       case 'low-back-arch':
-        add({ ...base, used: true, effect: 'Dead bugs and hollow holds in the core slots, glute work in the hinge accessories, a hip-flexor stretch in the warm-up.' });
+        row({ ...base, used: true, effect: 'Dead bugs and hollow holds in the core slots, glute work in the hinge accessories, a hip-flexor stretch in the warm-up.' });
         break;
       case 'asymmetry':
-        add({ ...base, used: true, effect: `One-sided work ranked first, the ${e.side ?? 'weaker'} side first.` });
+        row({ ...base, used: true, effect: `One-sided work ranked first, the ${e.side ?? 'weaker'} side first.` });
         break;
       case 'lagging-area':
-        add({ ...base, used: (e.muscles ?? []).some((m) => ctx.priority.includes(m)), effect: `Priority muscles: ${list((e.muscles ?? []).filter((m) => ctx.priority.includes(m)))} (10-16 sets a week).` });
+        if (soft) {
+          add({ ...base, used: false, effect: 'Not confirmed with you yet, so it makes no priority muscle: the finding-unconfirmed warning asks whether you want one.' });
+          break;
+        }
+        row({ ...base, used: (e.muscles ?? []).some((m) => ctx.priority.includes(m)), effect: `Priority muscles: ${list((e.muscles ?? []).filter((m) => ctx.priority.includes(m)))} (10-16 sets a week).` });
         break;
       case 'waist-fat':
-        add({ ...base, used: false, effect: 'No change to exercise choice; the tape measures it.' });
+        row({ ...base, used: false, effect: 'No change to exercise choice; the tape measures it.' });
         break;
       default:
-        add({ ...base, used: false, effect: 'No kind: the engine cannot act on it; the coach applies the emphasis by hand.' });
+        row({ ...base, used: false, effect: 'No kind: the engine cannot act on it; the coach applies the emphasis by hand.' });
     }
   }
 
@@ -157,7 +183,22 @@ export function personalization(ctx: PlanContext, plan: AuditPlan): Result<Input
   if (p.priorityMuscles?.length) add({ input: 'priorityMuscles', value: p.priorityMuscles.join(', '), used: true, effect: `Priority muscles fitted to 10-16 sets a week: ${list(ctx.priority)}.` });
   if (p.experience !== undefined) {
     const rules = [...new Set(plan.proposal.progression.map((x) => x.rule))];
-    add({ input: 'experience', value: p.experience, used: true, effect: `${p.experience}: ${rules.length ? `${list(rules)} progression on the main lifts` : 'the progression rules'}; ${picked.factors.find((f) => f.factor === 'training-age')?.note ?? ''}` });
+    const mains = plan.program.macrocycle.phases.flatMap((ph) => ph.mesocycles.flatMap((m) => m.weeks.flatMap((w) => w.sessions.flatMap((t) => t.slots.filter((x) => x.main).map((x) => x.exercise)))));
+    // What the training age decides: linear progression for a novice's loaded main lifts (double or a wave otherwise), the
+    // template's training-age points, the strength targets' size, and the movements above a novice's level.
+    const shaped =
+      rules.includes('linear') ||
+      rules.includes('wave') ||
+      (p.experience !== 'novice' && mains.some((id) => CATALOGUE_BY_ID.get(id)?.load === 'external')) ||
+      (picked.factors.find((f) => f.factor === 'training-age')?.points ?? 0) > 0 ||
+      plan.proposal.targets.some((t) => t.kind === 'strength') ||
+      (p.experience !== 'novice' && [...ids].some((id) => (CATALOGUE_BY_ID.get(id)?.level ?? 'beginner') !== 'beginner' && !ctx.unlock.has(id)));
+    const note = picked.factors.find((f) => f.factor === 'training-age')?.note ?? '';
+    add(
+      shaped
+        ? { input: 'experience', value: p.experience, used: true, effect: `${p.experience}: ${rules.length ? `${list(rules)} progression on the main lifts` : 'the progression rules'}; ${note}` }
+        : { input: 'experience', value: p.experience, used: false, effect: `${p.experience}: nothing in this plan turns on it (${rules.length ? `${list(rules)} progression` : 'the progression'}, no strength targets, and no template scored better for it); ${note}` },
+    );
   }
   const likes = p.preferences?.likes ?? [];
   if (likes.length) {
@@ -226,7 +267,28 @@ export function personalization(ctx: PlanContext, plan: AuditPlan): Result<Input
       const withSc = own.flatMap((e) => (e.asEmphasis ? p.emphasis.filter((x) => x.kind === e.asEmphasis).map((x) => `emphasis.${x.kind}`) : []));
       const used = changes.length > 0 || (lad !== undefined && lad.level !== null) || legsUse || wallUse;
       const effect = notes.length ? notes.join(' ') : t === 'deadHangS' ? 'The pull-ups set the pull-up level; the hang confirms it.' : 'Recorded; no change to exercise choice.';
-      add({ input: `selfCheck.${t}`, value, used: t === 'wallGapCm' ? wallUse : used, effect: t === 'wallGapCm' && !wallUse ? `${sc.wallGapCm} cm: no posture goal, so a baseline for the phase review only.` : effect, ...(withSc.length ? { with: withSc } : {}) });
+      const confirmation = own.find((e) => e.confirmation)?.confirmation;
+      add({ input: `selfCheck.${t}`, value, used: t === 'wallGapCm' ? wallUse : used, effect: t === 'wallGapCm' && !wallUse ? `${sc.wallGapCm} cm: no posture goal, so a baseline for the phase review only.` : effect, ...(withSc.length ? { with: withSc } : {}), ...(confirmation ? { confirmation } : {}) });
+    }
+    // The user's answers to the findings: confirmed in full, declined to warm-ups only, the rest not asked yet.
+    if (sc.confirmed !== undefined) {
+      const findings = selfCheckFindings(sc);
+      const named = (c: Confirmation) => findings.filter((f) => selfCheckConfirmation(sc, f.test) === c).map((f) => FINDING_LABEL[f.test].toLowerCase());
+      const [yes, no, open] = [named('confirmed'), named('declined'), named('unconfirmed')];
+      const answers = Object.entries(sc.confirmed).filter(([k]) => !k.startsWith('_'));
+      const stray = answers.map(([k]) => k).filter((k) => !findings.some((f) => f.test === k));
+      add({
+        input: 'selfCheck.confirmed',
+        value: answers.map(([k, v]) => `${k}: ${v ? 'yes' : 'no'}`).join(', ') || 'no answers yet',
+        // A declined finding drops its regressions: without the answer they would shape the plan again.
+        used: no.length > 0,
+        effect: joinNotes(
+          yes.length > 0 && `Confirmed with you, so applied in full: ${list(yes)}.`,
+          no.length > 0 && `Declined, so warm-ups only: ${list(no)}.`,
+          open.length > 0 && `Not answered yet, so preferences and warm-ups only, nothing ruled out: ${list(open)}.`,
+          stray.length > 0 && `${list(stray)}: no finding to confirm (that result changes no exercise).`,
+        ) ?? 'No finding to confirm: every result is clean.',
+      });
     }
   }
 

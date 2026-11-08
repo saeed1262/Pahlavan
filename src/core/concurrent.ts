@@ -23,6 +23,8 @@ import { WEEKDAYS, type Exercise, type IsoDate, type RepRange, type Weekday } fr
 export const CONCURRENT = {
   /** Easy conditioning of this many minutes or fewer before lifting is a warm-up. */
   warmUpMinutes: 10,
+  /** Conditioning on the same day as lifting goes at least this many hours after it, else lifting first (Moderate). */
+  apartHours: 3,
   legGapHours: 24,
   /** Hour of day assumed when a session gives none. */
   defaultHour: 12,
@@ -41,7 +43,7 @@ export const CONCURRENT = {
 } as const;
 
 /** Patterns that are never hard work on their own: isolation, core, skill, mobility and conditioning. */
-export const NOT_HARD_PATTERNS: ReadonlySet<string> = new Set(['biceps', 'triceps', 'lateral-raise', 'rear-delt', 'calves', 'neck-upper-back', 'core-anti-extension', 'core-anti-rotation', 'core-flexion', 'skill', 'mobility', 'conditioning']);
+export const NOT_HARD_PATTERNS: ReadonlySet<string> = new Set(['biceps', 'triceps', 'lateral-raise', 'rear-delt', 'calves', 'neck-upper-back', 'hip-abduction', 'chest-fly', 'core-anti-extension', 'core-anti-rotation', 'core-flexion', 'skill', 'mobility', 'conditioning']);
 
 export interface PlannedItem {
   kind: 'lift' | 'conditioning';
@@ -147,7 +149,7 @@ export function checkConcurrent(week: readonly PlannedSession[], exercises: Read
         {
           flag: 'conditioning-before-lifting',
           sessions: [s.id],
-          suggestion: `Lift first in ${s.id}: move ${before.map((i) => i.label ?? 'the conditioning').join(', ')} after the lifting, or to a non-lifting day (or 3+ h apart). A 5-10 min easy warm-up is fine.`,
+          suggestion: `Lift first in ${s.id}: move ${before.map((i) => i.label ?? 'the conditioning').join(', ')} after the lifting, or to a non-lifting day (or ${CONCURRENT.apartHours}+ h apart). A 5-10 min easy warm-up is fine.`,
         },
         { session: s.id, items: before.map((i) => ({ label: i.label ?? null, minutes: i.minutes ?? null, hard: i.hard ?? false })) },
         { warmUpMinutes: CONCURRENT.warmUpMinutes },

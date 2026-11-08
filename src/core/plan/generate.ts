@@ -3,6 +3,7 @@
 // lives in its own module; this one runs them in order, assembles the program,
 // applies the screening caps, and runs the checks. Pure and deterministic.
 
+import { calibrateSlot, calibrateTimedSlot, calibrationNote } from '../calibration.ts';
 import { checkConcurrent, DAY_SOURCES, liftItem, type DaySource } from '../concurrent.ts';
 import type { CatalogueEntry } from '../data/exercises.ts';
 import { dayText } from '../dates.ts';
@@ -10,13 +11,14 @@ import { LADDER_BY_ID } from '../data/ladders.ts';
 import { MAJOR_MUSCLES, MUSCLES } from '../data/muscles.ts';
 import { deloadPrescription } from '../deload.ts';
 import { deskBreaksFor } from '../desk-breaks.ts';
+import { asksConfirmation, findingUnconfirmed, type FindingToConfirm } from '../findings.ts';
 import { explain, joinNotes, type Result } from '../reason.ts';
 import { REFERRAL } from '../data/red-flags.ts';
 import { applyScreening, screenExercise, screeningCaps, type Prescription } from '../safety.ts';
 import type { ExerciseSlot, IsoDate, Mesocycle, Phase, Program, SessionKind, SessionTemplate, Week, Weekday } from '../schema.ts';
 import { validateProgram } from '../validate.ts';
-import { checkVolume, plannedSetsPerMuscle, pullPushSets, setEffort, volumeTier, type EffortContext, type PlannedSplit, type VolumeTier } from '../volume.ts';
-import { conditioningPlan, plannedWeek, userLayoutDays, type ConditioningPlan } from './conditioning.ts';
+import { checkVolume, plannedSetsPerMuscle, priorityMuscles, pullPushSets, setEffort, volumeTier, type EffortContext, type PlannedSplit, type VolumeTier } from '../volume.ts';
+import { conditioningPlan, conditioningTimed, plannedWeek, userLayoutDays, type ConditioningPlan } from './conditioning.ts';
 import { buildContext, priorityOverRoom, toExercise, type PlanContext, type PlanInput, type PrioritySource } from './context.ts';
 import { baseRir, DOSE, estimatedMinutes, fitTime, ladderFor, pairNotes, progressionRule, repRange, slotNote, warmUpMinutes, type BuiltSlot, type BuiltTemplate } from './dose.ts';
 import { buildMacrocycle, type PhasePlan, type WeekPlan } from './macrocycle.ts';
@@ -28,7 +30,7 @@ import { BANDS, fitVolume, type VolumeFit } from './volume-fit.ts';
 import { compareTemplates, type CandidateFacts, type TemplateScore } from './compare.ts';
 import { FAMILIES, familyFit, type FamilyFit, type FamilyId } from './families.ts';
 import { personalization, type InputUse } from './audit.ts';
-import type { LadderStart } from './self-check.ts';
+import { findingsToConfirm, type LadderStart } from './self-check.ts';
 import type { Reason } from '../reason.ts';
 
 export interface ProposalSlot {
@@ -85,18 +87,22 @@ export interface ProposalFamily {
  * What the coach should know beside the checks, each with its reason:
  * `priority-over-room`, more named priority muscles than the lifting days
  * have room for (all kept); `priority-short`, a priority muscle the fit could
- * not bring to its direct sets near failure, with what blocked it.
+ * not bring to its direct sets near failure, with what blocked it;
+ * `finding-unconfirmed`, a body-assessment finding with no answer from the
+ * user yet, with the question to ask (`finding`).
  */
 export interface ProposalWarning {
-  code: 'priority-over-room' | 'priority-short';
+  code: 'priority-over-room' | 'priority-short' | 'finding-unconfirmed';
   muscles: string[];
   reason: Reason;
+  /** For `finding-unconfirmed`: the finding (`selfCheck.<test>` or `emphasis.<kind>`), where its answer goes, and the question. */
+  finding?: FindingToConfirm;
 }
 
 export interface Proposal {
   status: 'ok' | 'blocked' | 'checks-failed';
   why: string[];
-  /** Beside the checks: named priority muscles past the week's room, a priority muscle's minimum not reached. */
+  /** Beside the checks: named priority muscles past the week's room, a priority muscle's minimum not reached, a finding not confirmed with the user. */
   warnings: ProposalWarning[];
   /** "How your data shaped this plan": every profile input, the decision it drove or why it was left out. */
   personalization: InputUse[];
@@ -108,16 +114,20 @@ export interface Proposal {
   ladders: ProposalLadder[];
   /** The priority muscles, each with why. */
   priority: { muscle: string; source: PrioritySource['source']; reason: Reason }[];
-  /** Which muscle map the sets per muscle use: the vault's guide (as Pahlavan counts) or the catalogue's. */
-  volumeMap: { source: 'vault' | 'catalogue'; fromVault: { exercise: string; guide: string }[]; fromCatalogue: string[] };
+  /** Whose muscle tags the sets per muscle use: the catalogue's, with the vault guide's overrides (`muscles.override`, each with its entry and reason) laid over them. */
+  volumeMap: { source: 'catalogue'; overrides: { exercise: string; guide: string; reason: string }[] };
   template: { id: string; family: string; modifier: string; equipmentMode: string; experience: string; liftingDays: number; extraDays: number; minutes: number } | null;
   /** The week's days, each with where it came from (your logged weeks, your available days, the default layout), and why (`layout`). */
   week: { days: { weekday: Weekday; session: string; kind: 'lift' | 'cardio'; source: DaySource }[]; layout: Reason; minimumWeek: { sessions: number; minutes: number; content: string } } | null;
   phases: { id: string; name: string; goal: string; from: IsoDate; to: IsoDate; weeks: { index: number; start: IsoDate; kind: 'loading' | 'deload'; calibration: boolean; tests: boolean }[] }[];
   /** The first full loading week after calibration. */
   sessions: ProposalSession[];
-  /** Each loading week of the first mesocycle: sets per muscle, their tiers, the split (direct, indirect, near failure, unknown effort) and pull to push. */
-  volume: { week: number; layout: string[]; perWeek: Record<string, number>; split: Record<string, PlannedSplit>; tiers: Record<string, VolumeTier>; pullPush: { pull: number; push: number } }[];
+  /**
+   * Each loading week of the first mesocycle: sets per muscle, their tiers, the split (direct, indirect, near failure, unknown effort) and pull to push.
+   * With --vault the plan is fitted and checked on plan-data's 14 groups (a muscle in main never also a helper), as `engine review` will count the written plan: `perWeekVault` names that count (it equals `perWeek` then).
+   * `regions` is each muscle region's sets by the region credit, reported only: the generator does not plan by region.
+   */
+  volume: { week: number; layout: string[]; perWeek: Record<string, number>; perWeekVault?: Record<string, number>; split: Record<string, PlannedSplit>; regions?: Record<string, PlannedSplit>; tiers: Record<string, VolumeTier>; pullPush: { pull: number; push: number } }[];
   progression: { exercise: string; rule: string; step?: number; next?: string }[];
   calibration: Calibration | null;
   conditioning: ConditioningPlan[];
@@ -140,7 +150,7 @@ const LOWER_MAIN = new Set(['squat', 'hinge', 'lunge']);
 const rotations = (i: number, m: number) => Array.from({ length: m }, (_, k) => k + 1).filter((k) => (i + k) % 2 === 0).length;
 
 function emptyProposal(why: string[], checks: Check[]): Proposal {
-  return { status: 'blocked', why, warnings: [], personalization: [], templates: [], families: [], ladders: [], priority: [], volumeMap: { source: 'catalogue', fromVault: [], fromCatalogue: [] }, template: null, week: null, phases: [], sessions: [], volume: [], progression: [], calibration: null, conditioning: [], calendar: [], targets: [], preMortem: [], warmUp: [], checks };
+  return { status: 'blocked', why, warnings: [], personalization: [], templates: [], families: [], ladders: [], priority: [], volumeMap: { source: 'catalogue', overrides: [] }, template: null, week: null, phases: [], sessions: [], volume: [], progression: [], calibration: null, conditioning: [], calendar: [], targets: [], preMortem: [], warmUp: [], checks };
 }
 
 function warmUp(ctx: PlanContext): string[] {
@@ -150,7 +160,8 @@ function warmUp(ctx: PlanContext): string[] {
     if (e && e.equipment.every((q) => q === 'bodyweight' || ctx.equipment.has(q)) && !out.includes(e.name)) out.push(e.name);
   };
   if (ctx.emphasis.has('squat-heels-lift')) add('ankle-mobility');
-  if (ctx.posture) ['thoracic-extension', 'chest-doorway-stretch', 'lat-stretch'].forEach(add);
+  // An unanswered posture finding still adds its warm-up, though it sets no 2-to-1 aim or rear-delt work (findings.ts).
+  if (ctx.posture || ctx.emphasis.has('forward-head-rounded-shoulders')) ['thoracic-extension', 'chest-doorway-stretch', 'lat-stretch'].forEach(add);
   if (ctx.emphasis.has('overhead-limited')) ['thoracic-extension', 'lat-stretch'].forEach(add);
   if (ctx.emphasis.has('low-back-arch')) add('hip-flexor-stretch');
   if (ctx.emphasis.has('knees-in')) add('banded-side-walk');
@@ -237,19 +248,23 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
    * slot screening (equipment, level, dislikes, the Ledger at the mesocycle start, the self-check), not
    * already in the session nor one of the week's main lifts. The slot's own pattern first, then
    * movements with a rep range before holds (abs grow from load that goes up, planning.md), then those
-   * that train fewer muscles, then each pattern's own ranking.
+   * that train fewer muscles, then each pattern's own ranking. With `helpers` (a major muscle under its
+   * minimum dose, volume-fit.ts's `cover`), movements that only help it count too, after those that train it,
+   * and a movement below the user's ladder level is allowed last.
    */
-  const swapsFor = (phase: number, start: IsoDate, mainIds: ReadonlySet<string>) => (t: BuiltTemplate, s: BuiltSlot, muscle: string): BuiltSlot[] => {
+  const swapsFor = (phase: number, start: IsoDate, mainIds: ReadonlySet<string>, helpers = false) => (t: BuiltTemplate, s: BuiltSlot, muscle: string): BuiltSlot[] => {
     const inSession = new Set(t.slots.map((x) => x.entry.id));
-    const patterns = [...new Set(ctx.catalogue.filter((e) => e.muscles.main.includes(muscle)).map((e) => e.pattern))];
+    const trains = (e: CatalogueEntry) => e.muscles.main.includes(muscle) || (helpers && e.muscles.helps.includes(muscle));
+    const patterns = [...new Set(ctx.catalogue.filter(trains).map((e) => e.pattern))];
     const found: CatalogueEntry[] = [];
     for (const pattern of patterns) {
-      const r = rankCandidates(ctx, { pattern, role: 'accessory' }, start, new Set([...inSession, ...mainIds, ...ctx.belowLevel.keys()]));
+      const r = rankCandidates(ctx, { pattern, role: 'accessory' }, start, new Set([...inSession, ...mainIds, ...(helpers ? [] : ctx.belowLevel.keys())]));
       if (!r || r.fallback) continue;
-      for (const e of r.ranked) if (e.muscles.main.includes(muscle) && !found.includes(e)) found.push(e);
+      for (const e of r.ranked) if (trains(e) && !found.includes(e)) found.push(e);
     }
-    const key = (e: CatalogueEntry) => [e.pattern === s.entry.pattern ? 0 : 1, e.load === 'timed' ? 1 : 0, e.muscles.main.length];
-    const sorted = found.map((e, i) => ({ e, i, k: key(e) })).sort((a, b) => a.k[0]! - b.k[0]! || a.k[1]! - b.k[1]! || a.k[2]! - b.k[2]! || a.i - b.i);
+    // For a major muscle's minimum, a movement below the user's ladder level (split squats beside box pistols) comes last, when nothing else can train it.
+    const key = (e: CatalogueEntry) => [ctx.belowLevel.has(e.id) ? 1 : 0, e.pattern === s.entry.pattern ? 0 : 1, e.muscles.main.includes(muscle) ? 0 : 1, e.load === 'timed' ? 1 : 0, e.muscles.main.length];
+    const sorted = found.map((e, i) => ({ e, i, k: key(e) })).sort((a, b) => a.k[0]! - b.k[0]! || a.k[1]! - b.k[1]! || a.k[2]! - b.k[2]! || a.k[3]! - b.k[3]! || a.k[4]! - b.k[4]! || a.i - b.i);
     return sorted.map(({ e }) => slotFor(t.blueprint, e, { role: 'accessory' }, s.slotIndex, phase));
   };
   /** The concurrent-training problems of a mesocycle's sessions in every week layout, as the `concurrent` check finds them. */
@@ -321,13 +336,16 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
       pullPush: ctx.pullPush,
       minimumDose: tpl.minimumDose,
       hybrid: ctx.modifier === 'hybrid',
+      cover: swapsFor(phase, start, mainIds, true),
       ...(nearFailure(phase) ? { hard: (s: BuiltSlot) => effortOf(s.entry.id, s.entry.name, s.rir).value.effort !== 'easy', swaps: swapsFor(phase, start, mainIds), concurrent: concurrentOf(phase) } : {}),
     }).value;
     builtByMeso.push(fit.templates);
     fitsByMeso.push(fit);
     for (const x of fit.swaps) {
       const name = (id: string) => ctx.byId.get(id)?.name ?? id;
-      notes.push(`Mesocycle ${m + 1}: ${name(x.from)} in ${tpl.blueprints.find((b) => b.id === x.template)?.name ?? x.template} swapped for ${name(x.to)}, so ${MUSCLES.find((y) => y.id === x.muscle)?.label.toLowerCase() ?? x.muscle} reaches its 10 direct sets near failure (no set could be added without it).`);
+      const muscle = MUSCLES.find((y) => y.id === x.muscle)?.label.toLowerCase() ?? x.muscle;
+      const goal = x.for === 'priority' ? `${muscle} reaches its 10 direct sets near failure` : `${muscle} reaches its minimum of ${BANDS.majorMinimumDose} sets a week`;
+      notes.push(`Mesocycle ${m + 1}: ${name(x.from)} in ${tpl.blueprints.find((b) => b.id === x.template)?.name ?? x.template} swapped for ${name(x.to)}, so ${goal} (no set could be added without it).`);
     }
   }
 
@@ -335,14 +353,13 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
   const toSlot = (s: BuiltSlot, w: WeekPlan): ExerciseSlot => {
     let rir = s.rir;
     if (s.progression?.rule === 'wave' && w.kind === 'loading') rir = Math.max(0, s.rir + 2 - w.weekInMeso);
-    if (w.calibration) rir = Math.max(rir, DOSE.calibrationRir);
     if (ctx.senior && w.phase === 0) rir = Math.max(rir, DOSE.seniorRir);
     const slot: ExerciseSlot = { exercise: s.entry.id, sets: s.sets, repRange: s.repRange, rir };
     if (s.role === 'main') slot.main = true;
     if (s.pair) slot.pair = true;
     if (s.progression) slot.progression = s.progression;
-    slot.note = w.calibration ? `Calibration week: find a load that leaves 3 in reserve at the bottom of the range. ${s.note}` : ctx.senior && w.phase >= 1 && s.role === 'main' ? `${s.note} Lift fast and controlled on the way up.` : s.note;
-    return slot;
+    slot.note = w.calibration ? `Calibration week: ${calibrationNote()}. ${s.note}` : ctx.senior && w.phase >= 1 && s.role === 'main' ? `${s.note} Lift fast and controlled on the way up.` : s.note;
+    return w.calibration ? calibrateSlot(slot) : slot;
   };
   const exercisesUsed = new Set<string>();
   const programWeeks: { plan: WeekPlan; week: Week }[] = [];
@@ -358,16 +375,17 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
         const d = deloadPrescription(slots, 'standard').value;
         slots = slots.map((s, i) => ({ ...s, sets: d[i]!.sets, rir: d[i]!.rir, note: `Deload: half the sets, RIR +3. ${s.note ?? ''}`.trim() }));
       }
-      if (t.finisher) slots.push({ exercise: t.finisher, sets: 1, repRange: [1, 1], rir: 3, note: 'Finisher: 8 min easy (zone 2).' });
+      if (t.finisher) slots.push({ exercise: t.finisher, sets: 1, repRange: [1, 1], rir: 3, timed: conditioningTimed(DOSE.finisherMinutes, false), note: 'Finisher: easy (zone 2).' });
       return { id: t.blueprint.id, name: t.blueprint.name, kind: t.blueprint.kind, slots };
     });
     const cond = conditioningByPhase[w.phase]!;
-    const cardio: SessionTemplate[] = cond.sessions.map((c) => ({
-      id: `conditioning-${WEEKDAYS[c.day]}`,
-      name: c.vigorous ? '4 x 4 intervals' : 'Easy conditioning',
-      kind: 'cardio',
-      slots: [{ exercise: c.exercise, sets: 1, repRange: [1, 1], rir: 3, note: c.vigorous ? `${c.minutes} min: 4 x 4 min hard (about 90-95 % of max heart rate), 3 min easy between.` : `${c.minutes} min easy (zone 2: you can talk in full sentences).` }],
-    }));
+    // The minutes and the intervals' structure are the slot's `timed`; in the calibration week intervals are easy steady minutes.
+    const cardio: SessionTemplate[] = cond.sessions.map((c) => {
+      const timed = conditioningTimed(c.minutes, c.vigorous);
+      const slot: ExerciseSlot = { exercise: c.exercise, sets: timed.rounds ?? 1, repRange: [1, 1], rir: 3, timed, note: c.vigorous ? 'Hard: about 90-95 % of max heart rate; easy between.' : 'Easy (zone 2: you can talk in full sentences).' };
+      const easy = w.calibration ? calibrateTimedSlot(slot) : slot;
+      return { id: `conditioning-${WEEKDAYS[c.day]}`, name: c.vigorous && easy === slot ? '4 x 4 intervals' : 'Easy conditioning', kind: 'cardio', slots: [easy] };
+    });
     const pres: Prescription = {
       sessions: [...lifting, ...cardio],
       conditioning: cond.sessions.map((c) => ({ id: `conditioning-${WEEKDAYS[c.day]}`, minutes: c.minutes, vigorous: c.vigorous })),
@@ -435,7 +453,17 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
     const { pull, push, status } = pullPushSets(lift, exercises, { aim: ctx.pullPush }).value;
     if (status === 'below') ratioProblems.push(`week ${w.index}: pull ${pull} / push ${push}`);
     if (w.meso === 0) {
-      volume.push({ week: w.index, layout: lift.map((t) => t.id), perWeek: pv.perWeek, split: pv.split, tiers: Object.fromEntries(muscles.map((m) => [m, volumeTier(pv.perWeek[m] ?? 0)])), pullPush: { pull, push } });
+      volume.push({
+        week: w.index,
+        layout: lift.map((t) => t.id),
+        perWeek: pv.perWeek,
+        // With --vault the plan is built on plan-data's groups (context.ts), so its count is Pahlavan's.
+        ...(ctx.muscleMap ? { perWeekVault: pv.perWeek } : {}),
+        split: pv.split,
+        ...(pv.regions ? { regions: pv.regions } : {}),
+        tiers: Object.fromEntries(muscles.map((m) => [m, volumeTier(pv.perWeek[m] ?? 0)])),
+        pullPush: { pull, push },
+      });
     }
   }
   check('volume', volProblems, `Every loading week inside the bands (major muscles 4+, priority 10-16${ctx.outcome !== 'conservative' ? ' with at least 10 direct sets near failure, past 16 only by the half credit on top of those 10' : ''}${ctx.posture ? ', the posture emphasis\'s upper back and lats up to 20' : ''}, nothing over 20, at most 8 direct sets per session).`);
@@ -507,9 +535,9 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
   }
   const layoutWeek = tpl.rotation[0]!;
   const warnings: ProposalWarning[] = [];
-  // The week's room against the named priority muscles: a priority the plan trains on its short sessions does not count.
-  const shortTrained = [...new Set(firstLoading.week.sessions.filter((t) => t.kind !== 'lift').flatMap((t) => t.slots.flatMap((x) => exercises[x.exercise]?.kind === 'cardio' ? [] : (exercises[x.exercise]?.muscles?.main ?? []))))];
-  const room = priorityOverRoom(ctx.prioritySources, ctx.priorityRoom, shortTrained, { liftingDays: tpl.liftingDays, minutes: tpl.minutes });
+  // The week's room against the effective priority muscles (as check's priority-room counts them): one the plan trains only on its short sessions does not count.
+  const mainOn = (lifting: boolean) => [...new Set(firstLoading.week.sessions.filter((t) => (t.kind === 'lift' || t.kind === 'express') === lifting).flatMap((t) => t.slots.flatMap((x) => exercises[x.exercise]?.kind === 'cardio' ? [] : (exercises[x.exercise]?.muscles?.main ?? []))))];
+  const room = priorityOverRoom(priorityMuscles(ctx.profile), ctx.priorityRoom, { short: mainOn(false), lifting: mainOn(true) }, { liftingDays: tpl.liftingDays, minutes: tpl.minutes });
   if (room) warnings.push({ code: 'priority-over-room', muscles: room.value.counted, reason: room.reason });
   // A priority muscle the fit left short, once, from the first mesocycle it is short in.
   const shortSeen = new Set<string>();
@@ -535,7 +563,7 @@ function buildCandidate(ctx: PlanContext, size: Result<WeekSize>, tplR: Result<T
     families: [],
     ladders: [],
     priority: [],
-    volumeMap: { source: 'catalogue', fromVault: [], fromCatalogue: [] },
+    volumeMap: { source: 'catalogue', overrides: [] },
     template: { id: tpl.id, family: tpl.family, modifier: ctx.modifier, equipmentMode: ctx.equipmentMode, experience: ctx.experience, liftingDays: tpl.liftingDays, extraDays: tpl.extraDays, minutes: tpl.minutes },
     week: {
       days: [
@@ -647,10 +675,11 @@ export function generatePlan(input: PlanInput): Result<GeneratedPlan> {
   });
   proposal.priority = ctx.prioritySources.map((r) => ({ muscle: r.value.muscle, source: r.value.source, reason: r.reason }));
   const usedIds = Object.keys(program.exercises).filter((id) => ctx.byId.get(id)!.load !== 'cardio' && ctx.byId.get(id)!.pattern !== 'mobility');
-  proposal.volumeMap = ctx.muscleMap
-    ? { source: 'vault', fromVault: usedIds.filter((id) => ctx.muscleMap![id]).map((id) => ({ exercise: id, guide: ctx.muscleMap![id]!.guide })), fromCatalogue: usedIds.filter((id) => !ctx.muscleMap![id]) }
-    : { source: 'catalogue', fromVault: [], fromCatalogue: usedIds };
+  proposal.volumeMap = { source: 'catalogue', overrides: usedIds.filter((id) => ctx.muscleMap?.[id]).map((id) => ({ exercise: id, guide: ctx.muscleMap![id]!.guide, reason: ctx.muscleMap![id]!.override })) };
   proposal.personalization = personalization(ctx, { program, proposal, tpl, size: size.value, comparison: comparison.value }).value;
+  // Each finding with no answer yet, with the question that settles it (findings.ts).
+  const asks = asksConfirmation(ctx.profile);
+  proposal.warnings = [...proposal.warnings, ...findingsToConfirm(ctx.profile).map((f): ProposalWarning => ({ code: 'finding-unconfirmed', muscles: [], finding: f, reason: findingUnconfirmed(f, asks).reason }))];
   const failed = proposal.checks.filter((c) => !c.passed).map((c) => c.id);
   return explain<GeneratedPlan>({ program, proposal }, rule, { start: ctx.start, weeks: ctx.weeks, template: tpl.id, compared: built.map((b) => b.tplR.value.id), outcome: ctx.outcome, status: proposal.status }, {
     note: joinNotes(`${tpl.id}: ${tpl.liftingDays} lifting day(s) of ${tpl.minutes} min, ${ctx.weeks} weeks from ${dayText(ctx.start)}.`, failed.length > 0 && `Failed checks: ${failed.join(', ')}.`),

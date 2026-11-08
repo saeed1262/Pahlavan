@@ -3,18 +3,20 @@
 
 import { ladderStatus, planWeekOf, type VaultData, type VaultWarning } from '../adapters/vault/convert.ts';
 import { adherence } from '../core/adherence.ts';
+import { calibrateTarget, calibrationStall, type CalibrationSource } from '../core/calibration.ts';
 import { backToBack, checkConcurrent, liftItem, weekLayout, type PlannedItem, type PlannedSession, type WeekLayout } from '../core/concurrent.ts';
 import { LOWER_BODY } from '../core/data/muscles.ts';
 import { addDays, dayText, daysBetween, mondayOf, weekOf } from '../core/dates.ts';
 import { decideDeload, deloadPrescription } from '../core/deload.ts';
 import { e1rmTrend } from '../core/e1rm.ts';
+import { asksConfirmation, findingUnconfirmed } from '../core/findings.ts';
 import { exerciseHistory, topSet, trendSets, type TopSet } from '../core/history.ts';
-import { applyReturn, returnProtocol, type ReturnProtocol } from '../core/missed.ts';
+import { applyReturn, restartStart, returnProtocol, type ReturnProtocol } from '../core/missed.ts';
 import { effectiveSlot, weekAt } from '../core/plan.ts';
-import { exerciseId, noteRir, parseSr, toEngineMuscles, type ExerciseExtras, type SlotExtras } from '../core/plan-data.ts';
+import { exerciseId, itemRir, ladderLevelOn, noteRir, parseSr, toEngineMuscles, type ExerciseExtras, type SlotExtras } from '../core/plan-data.ts';
 import { plannedEffort, plannedLoad, sessionLoad, typicalMinutes, weekLoad } from '../core/load.ts';
 import { soreDays, soreOn } from '../core/soreness.ts';
-import { setInUnit } from '../core/units.ts';
+import { setInUnit, weightInUnit } from '../core/units.ts';
 import {
   busyPeriods,
   cancelState,
@@ -30,18 +32,22 @@ import {
   triageStart,
   type Fatigue,
 } from '../core/checkins.ts';
-import { nextTarget } from '../core/progression.ts';
+import { nextTarget, type ProgressionTarget } from '../core/progression.ts';
 import { proteinForProfile } from '../core/protein.ts';
 import { readinessActions, readinessBaseline, readinessOn, readinessSeries, type ReadinessBand, type ReadinessDay } from '../core/readiness.ts';
-import { explain, joinNotes, type Result } from '../core/reason.ts';
+import { explain, joinNotes, type Result, type RuleFrom } from '../core/reason.ts';
+import { cite, fromKind, fromLift, legacyLift, liftRuleText, lightWeekAt, ruleText, RULE_KINDS, RULE_PATHS, type LiftProgression, type MissedRules, type PlanRules, type RuleKind, type RuleSource } from '../core/rules.ts';
+import { roundToStep } from '../core/units.ts';
 import { dayLength, sessionMinutes, timeCheck, type SessionMinutes } from '../core/session-time.ts';
+import { timedMinutes } from '../core/timed.ts';
 import { PAIN, painRule, painText, type PainReport, type PainVerdict } from '../core/pain.ts';
+import { findingsToConfirm } from '../core/plan/self-check.ts';
 import { skipReport, type SkipLine } from '../core/skips.ts';
 import { cycleOf } from './cycle.ts';
 import { screenExercise } from '../core/safety.ts';
 import type { BusyPeriod, DailyCheckin, Exercise, ExerciseSlot, IsoDate, LedgerConstraint, RateBand, Session, SessionTemplate, Unit, Week, WeeklyCheckin } from '../core/schema.ts';
 import { detectStall, triageLadder } from '../core/stall.ts';
-import { checkVolume, holdBests, holdKindOf, plannedSetsPerMuscle, pullPushAim, pullPushSets, setEffort, setsPerMuscle, volumeTier, type EffortContext, type SetEffort } from '../core/volume.ts';
+import { checkRegions, checkVolume, declaredRegions, holdBests, holdKindOf, plannedSetsPerMuscle, priorityMuscles, pullPushAim, pullPushSets, setEffort, setsPerMuscle, volumeTier, type DoneEffortItem, type Effort, type EffortContext, type SetEffort } from '../core/volume.ts';
 import { RATE_BANDS, rateStatus, weightRate, weightTrend, type RateStatus } from '../core/weight.ts';
 
 /** checkin.md: the roadmap's band, used until Coach/profile.json gives a goal. */
@@ -69,6 +75,8 @@ export interface Ctx {
   /** Mondays of deload weeks the check-ins say were trained at full load. */
   fullLoad: IsoDate[];
   fatigue: Result<Fatigue>;
+  /** The latest calibration week's first day on or before the date (plan week 1, or a restart's first session back): e1RM trends start there. */
+  calibrationFrom: IsoDate | null;
 }
 
 export function context(data: VaultData, date: IsoDate): Ctx {
@@ -94,6 +102,11 @@ export function context(data: VaultData, date: IsoDate): Ctx {
     dailyMarked: [...byDay.values()].sort((a, b) => (a.date < b.date ? -1 : 1)),
     fullLoad: fullLoadWeeks(records, date),
     fatigue: fatigueFrom(records, date),
+    // The plan's latest calibration week (its rule, else week 1), or a restart's first week back when the rule calibrates it.
+    calibrationFrom: [
+      weeks.filter((w) => w.calibration && w.start <= date).at(-1)?.start ?? null,
+      data.rules.rules.calibration.afterRestart ? restartStart(data.sessions, date, data.rules.rules.missed.restartAfterWeeks) : null,
+    ].filter((d): d is IsoDate => d !== null).sort().at(-1) ?? null,
   };
 }
 
@@ -135,7 +148,8 @@ function readinessSection(ctx: Ctx, e1rmFalling: boolean | undefined) {
     latestScored: latest ? compactDay(latest) : null,
     last14: series.slice(-14).map(compactDay),
     scoredDays: scored.length,
-    actions: readinessActions(ctx.daily, ctx.date, { since, ...(e1rmFalling === undefined ? {} : { e1rmFalling }) }),
+    // The plan's low-day change (or none), cited by the trim.
+    actions: readinessActions(ctx.daily, ctx.date, { since, ...(e1rmFalling === undefined ? {} : { e1rmFalling }), low: ctx.data.rules.rules.readiness.low, from: fromKind(ctx.data.rules, 'readiness') }),
   };
 }
 
@@ -161,7 +175,7 @@ function goalBand(ctx: Ctx): { band: RateBand; source: string } {
 }
 
 /**
- * The dashboard's own weight numbers (fitness_log.py review's weightTrend):
+ * The dashboard's own weight numbers (the original log script's weightTrend):
  * an EWMA with a 7-day time constant, and the rate against the trend point 7+
  * days back. checkin.md quotes the coach's slope and mentions these when the
  * two disagree in direction.
@@ -215,12 +229,16 @@ export interface LiftContext {
   adherencePct: number | null;
   deloadThisWeek: boolean;
   protocol: ReturnProtocol | null;
+  /** A calibration week on the date (calibrationOf): targets are calibrated and no stall is called. */
+  calibration: CalibrationSource | null;
   readinessBand: ReadinessBand | null;
   sleep7: number | null;
   rateStatus: RateStatus | null;
   weeksToDeload: number | null;
   weeksToMesocycleEnd: number | null;
   plannedPerWeek: Record<string, number>;
+  /** The light-week rule (the plan's or the old default), for this week's light targets. */
+  lightWeek: { load: number; rirAdd: number; from: RuleFrom };
 }
 
 /**
@@ -279,13 +297,75 @@ function currentSlot(ctx: Ctx, exercise: string): ExerciseSlot | undefined {
   return undefined;
 }
 
+/** The exercise's slot in the first loading week after the calibration week: the ordinary targets the plan returns to. */
+function ordinarySlot(ctx: Ctx, exercise: string): ExerciseSlot | undefined {
+  const from = ctx.week?.start ?? ctx.date;
+  const after = ctx.data.program.macrocycle.phases.flatMap((p) => p.mesocycles.flatMap((m) => m.weeks)).find((w) => w.kind === 'loading' && !w.calibration && w.start > from);
+  for (const t of liftTemplates(after)) {
+    const s = t.slots.find((x) => x.exercise === exercise);
+    if (s) return s;
+  }
+  return undefined;
+}
+
 function trendOf(ctx: Ctx, exercise: string) {
   const info = ctx.data.plan.lifts.find((l) => l.exercise === exercise);
   const ex = ctx.data.program.exercises[exercise];
   const unit: Unit = info?.unit ?? ex?.unit ?? ctx.data.plan.liftUnit;
   const increment = info?.increment ?? ex?.increment ?? (unit === 'kg' ? 2.5 : 5);
   const tops = liftTopSets(ctx, exercise);
-  return { info, ex, unit, increment, tops, trend: e1rmTrend(tops, { unit, increment }) };
+  // The trend (and so the stall check and the falling-e1RM signal) starts at the latest calibration week: the loads
+  // were found again there, so lighter calibration sets against older ones are not a decline. A lift whose rule answers
+  // a stall with a lighter weight starts again at its latest reset too: the stall was answered there, so the drop is
+  // taken once per stall, never again while the trend from before it still reads flat.
+  const calFrom = ctx.calibrationFrom;
+  const resetFrom = stallResetFrom(ctx, exercise, info, { unit, increment });
+  const from = [calFrom, resetFrom].filter((d): d is IsoDate => d !== null).sort().at(-1) ?? null;
+  const used = from ? tops.filter((t) => t.date >= from) : tops;
+  const own = e1rmTrend(used, { unit, increment });
+  const cut = tops.length - used.length;
+  const byReset = from !== null && from === resetFrom;
+  const why = (d: IsoDate) => (byReset ? `before the reset of ${dayText(d)} (the rule's lighter weight after a stall) left out: the trend starts again there` : `from before the calibration week of ${dayText(d)} left out: the loads start again there`);
+  const trend = cut && from
+    ? { ...own, reason: { ...own.reason, inputs: { ...own.reason.inputs, ...(byReset ? { resetFrom: from } : { calibrationFrom: from }), leftOut: cut }, note: joinNotes(own.reason.note, `${cut} top set${cut === 1 ? '' : 's'} ${why(from)}.`) ?? '' } }
+    : own;
+  return { info, ex, unit, increment, tops, trend };
+}
+
+/**
+ * The latest reset of a lift whose rule answers a stall with a lighter weight
+ * (`onStall: {drop}`): the first loading session at least about half the
+ * drop under the loading session before it. Null for any other rule, or
+ * when no such session is logged.
+ */
+function stallResetFrom(ctx: Ctx, exercise: string, info: { name: string } | undefined, ex: { unit: Unit; increment: number }): IsoDate | null {
+  const onStall = info ? ctx.data.rules.lifts[info.name]?.rule.onStall : undefined;
+  if (!onStall || onStall === 'report') return null;
+  const loading = exerciseHistory(strengthSessions(ctx.sessions), exercise).filter((h) => !h.deload && h.sets.length > 0);
+  const w = (h: (typeof loading)[number]) => {
+    const t = topSet(h.sets)!;
+    return weightInUnit(t.weight, t.unit, ex);
+  };
+  for (let i = loading.length - 1; i > 0; i--) if (w(loading[i]!) <= w(loading[i - 1]!) * (1 - onStall.drop / 2) + 1e-9) return loading[i]!.date;
+  return null;
+}
+
+/**
+ * The calibration week on the date: the first week back after a restart
+ * (3+ weeks off, its first week), else plan week 1 of a plan with a start;
+ * null in any other week.
+ * In it every target is calibrated and no stall is called (calibration.ts).
+ */
+export function calibrationOf(ctx: Ctx, protocol: ReturnProtocol | null): CalibrationSource | null {
+  const p = protocol;
+  if (p?.protocol === 'restart' && p.calibration && p.firstWeek && ctx.date >= p.firstWeek.from && ctx.date <= p.firstWeek.to) return 'restart';
+  return ctx.planWeek !== null && ctx.week?.calibration ? 'plan' : null;
+}
+
+/** The missed-time rule and the calibration's restart part, for the return protocol, with the rule cited. */
+export function missedRule(data: VaultData): { rule: MissedRules & { afterRestart: boolean; calibrationRir: number }; from: RuleFrom } {
+  const cal = data.rules.rules.calibration;
+  return { rule: { ...data.rules.rules.missed, afterRestart: cal.afterRestart, calibrationRir: cal.rir }, from: fromKind(data.rules, 'missed') };
 }
 
 function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
@@ -294,12 +374,20 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
   const hotel = hotelLeftOut(ctx, exercise);
   const trend = hotel ? { ...own, reason: { ...own.reason, note: joinNotes(own.reason.note, hotel.reason.note) ?? '' } } : own;
   const slot = currentSlot(ctx, exercise);
-  const stall = detectStall(trend.value, lc.adherencePct);
+  const detected = detectStall(trend.value, lc.adherencePct);
+  const stall = lc.calibration ? calibrationStall(detected, lc.calibration) : detected;
   const repRange = info?.repRange ?? (slot?.main ? slot.repRange : null);
   const name = nameOf(ctx, exercise);
   let next: Result<unknown> | null = null;
   let returnAdjusted: Result<unknown> | null = null;
+  // In a calibration week: what progression would have given, held for the week after.
+  let heldProgression: Result<unknown> | null = null;
+  // A stalled lift whose rule takes it lighter: what progression gave before the reset.
+  let stallReset: Result<unknown> | null = null;
   const aliases = aliasesOf(ctx, exercise);
+  // The lift's standing rule: the plan's own (`lifts[name].progression`), else the old default, double progression.
+  const standing = info ? (ctx.data.rules.lifts[info.name] ?? { rule: legacyLift(), source: 'legacy-default' as const }) : null;
+  const liftFrom = info && standing && repRange ? fromLift(info.name, standing, { lo: repRange[0], hi: repRange[1], inc: increment, unit }) : undefined;
   if (repRange) {
     const history = exerciseHistory(strengthSessions(ctx.sessions), exercise);
     const full = new Set(ctx.fullLoad);
@@ -312,38 +400,73 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
       history,
       exercise: { unit, increment },
       repRange,
-      targetRir: slot?.rir ?? 2,
+      // In plan week 1 the slot carries the calibration RIR: progression (held for the week after) reads the ordinary one.
+      targetRir: (lc.calibration === 'plan' ? (ordinarySlot(ctx, exercise) ?? slot) : slot)?.rir ?? 2,
       deload: lc.deloadThisWeek,
+      lightWeek: lc.lightWeek,
       ...(slot?.progression ? { rule: slot.progression } : {}),
+      ...(standing && liftFrom ? { standing: { rule: standing.rule, source: standing.source, from: liftFrom } } : {}),
       date: capDate,
       ...(ctx.fullLoad.length ? { fullLoadWeeks: ctx.fullLoad } : {}),
       ...(reported ? { reportedRir: { rir: reported.rir, checkin: reported.checkin } } : {}),
       ...(bias ? { rirBias: { bias: bias.bias, date: bias.entry.date } } : {}),
     });
     next = t;
-    const p = lc.protocol;
-    if (p && (p.protocol === 'ease-back' || p.protocol === 'restart') && p.firstWeek && ctx.date >= p.firstWeek.from && ctx.date <= p.firstWeek.to) {
-      returnAdjusted = applyReturn(t.value, p, { unit, increment }, ctx.date);
+    // A stall the lift's rule answers with a lighter weight (onStall): the reset, from the last loading weight. Not in a
+    // light week (lighter already) or a calibration week (no stall is called).
+    const onStall = standing?.rule.onStall;
+    const base = t.reason.inputs['base'];
+    if (onStall && onStall !== 'report' && stall.value.stalled && !lc.deloadThisWeek && !lc.calibration && typeof base === 'number' && t.value.action !== 'target') {
+      const w = roundToStep(base * (1 - onStall.drop), increment);
+      stallReset = t;
+      next = explain({ ...t.value, action: 'lighter' as const, weight: w, reps: repRange[0] }, t.reason.rule, { base, unit, repRange, drop: onStall.drop, stall: stall.value }, {
+        threshold: { drop: onStall.drop },
+        note: `Stalled (${stall.reason.note ?? 'e1RM flat over 3 sessions'}): ${w} ${unit} x ${repRange[0]}, about ${Math.round(onStall.drop * 100)} % under ${base} ${unit}, as the rule says.`,
+        ...(liftFrom ? { from: liftFrom } : {}),
+      });
     }
+    const p = lc.protocol;
+    const firstWeekBack = p !== null && p.firstWeek !== null && ctx.date >= p.firstWeek.from && ctx.date <= p.firstWeek.to;
+    const easing = p !== null && (p.protocol === 'ease-back' || (p.protocol === 'restart' && !p.calibration));
+    const eased = firstWeekBack && easing ? applyReturn((next as Result<ProgressionTarget>).value, p, { unit, increment }, ctx.date, missedRule(ctx.data).from, ctx.data.rules.rules.calibration.rir) : null;
+    const calRule = ctx.data.rules.rules.calibration;
+    const calFrom = fromKind(ctx.data.rules, 'calibration');
+    const weightOf = (h: typeof lastLogged) => {
+      const top = h ? topSet(h.sets) : undefined;
+      return top ? weightInUnit(top.weight, top.unit, { unit, increment }) : null;
+    };
+    if (lc.calibration === 'restart' && p?.firstWeek) {
+      // The first week back after a restart: nothing from before the gap carries over; a weight found since is held.
+      const since = p.firstWeek.from;
+      next = calibrateTarget((next as Result<ProgressionTarget>).value, { lastWeight: lastLogged && lastLogged.date >= since ? weightOf(lastLogged) : null, repRange, source: 'restart', rir: calRule.rir, from: calFrom });
+      heldProgression = t;
+    } else if (lc.calibration === 'plan') {
+      // Plan week 1: the last loading weight held (or the first week back's lighter one) at the calibration RIR.
+      next = calibrateTarget(eased?.value ?? (next as Result<ProgressionTarget>).value, { lastWeight: weightOf(lastLogged), repRange, source: 'plan', rir: calRule.rir, from: calFrom });
+      heldProgression = t;
+    } else if (eased) returnAdjusted = eased;
   } else {
     next = explain(null, 'progression.double', { exercise }, { note: `${name} has no rep range in plan-data's lifts: no next target (add a lifts entry to get one).` });
   }
   const mainMuscle = ctx.data.program.exercises[exercise]?.muscles?.main[0];
-  const start = stall.value.stalled ? triageStart(ctx.records, aliases, ctx.date) : null;
-  const triage = stall.value.stalled
-    ? triageLadder(name, {
-        sleepH: lc.sleep7,
-        readinessBand: lc.readinessBand,
-        proteinGPerKg: null,
-        rateStatus: lc.rateStatus,
-        recovery: ctx.fatigue.value.recovery,
-        jointAches: ctx.fatigue.value.jointAches,
-        startAt: start!.value.startAt,
-        weeksToDeload: lc.weeksToDeload,
-        weeksToMesocycleEnd: lc.weeksToMesocycleEnd,
-        muscle: mainMuscle ? { name: mainMuscle, weeklySets: r2(lc.plannedPerWeek[mainMuscle] ?? 0) } : null,
-      })
-    : null;
+  // The stall response is the plan's rule: the triage ladder picks a step (the old default), or the facts are reported
+  // and the coach picks at the check-in. The stall itself is a calculation and means the same either way.
+  const stallFrom = fromKind(ctx.data.rules, 'stall');
+  const reportOnly = ctx.data.rules.rules.stall.response === 'report';
+  const start = stall.value.stalled && !reportOnly ? triageStart(ctx.records, aliases, ctx.date) : null;
+  const facts = {
+    sleepH: lc.sleep7,
+    readinessBand: lc.readinessBand,
+    proteinGPerKg: null,
+    rateStatus: lc.rateStatus,
+    recovery: ctx.fatigue.value.recovery,
+    jointAches: ctx.fatigue.value.jointAches,
+    weeksToDeload: lc.weeksToDeload,
+    weeksToMesocycleEnd: lc.weeksToMesocycleEnd,
+    muscle: mainMuscle ? { name: mainMuscle, weeklySets: r2(lc.plannedPerWeek[mainMuscle] ?? 0) } : null,
+  };
+  const triage = stall.value.stalled && !reportOnly ? triageLadder(name, { ...facts, startAt: start!.value.startAt, from: stallFrom }) : null;
+  const stallFacts = stall.value.stalled && reportOnly ? stallFactsOf(name, facts, stallFrom) : null;
   // The last top set: with every set logged, the session's heaviest, even where its e1RM used another.
   const lastTop = tops.at(-1) ?? null;
   const last = lastTop ? { date: lastTop.date, ...setInUnit(lastTop.top ?? lastTop, { unit, increment }) } : null;
@@ -355,6 +478,8 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
     increment,
     repRange,
     inPlanThisWeek: Boolean(slot?.main),
+    /** The lift's progression rule: the plan's own or the old default, its value and its words. */
+    progressionRule: standing && info ? { source: standing.source, path: `lifts["${info.name}"].progression`, value: standing.rule, text: liftFrom?.text ?? cite(standing.source, liftRuleText(standing.rule, { lo: info.repRange[0], hi: info.repRange[1], inc: increment, unit })) } : null,
     sessions: tops.length,
     last,
     e1rm: trend,
@@ -362,7 +487,10 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
     ...(hotel ? { hotel } : {}),
     ...(start ? { triageStart: start } : {}),
     triage,
+    ...(stallFacts ? { stallFacts } : {}),
     next,
+    ...(heldProgression ? { heldProgression } : {}),
+    ...(stallReset ? { stallReset } : {}),
     ...(returnAdjusted ? { returnAdjusted } : {}),
   };
 }
@@ -370,6 +498,8 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
 // ---------------------------------------------------------------- concurrent training
 
 function minutesOf(slot: ExerciseSlot): number | undefined {
+  const own = timedMinutes(slot.timed);
+  if (own !== null) return own;
   const item = (slot as SlotExtras)._item;
   const m = /(\d+)\s*(?:[–-]\s*\d+\s*)?min/.exec(item?.sr ?? '') ?? /(\d+)\s*min/.exec(slot.note ?? '');
   return m ? Number(m[1]) : undefined;
@@ -444,6 +574,8 @@ export function buildReview(data: VaultData, date: IsoDate) {
         type: v['type'] ?? s.template ?? 'custom',
         ...(v['label'] ? { label: v['label'] } : {}),
         ...(s.plan?.kind === 'express' ? { express: true } : {}),
+        // No exercise list saved with the entry: its sets per muscle come from today's plan (the snapshot-rebuilt warning).
+        ...((s.plan as { _rebuilt?: true } | undefined)?._rebuilt ? { approximate: true } : {}),
         name: sessionLabel(ctx, s),
         // Each logged lift's top set; every set logged, how many.
         lifts: liftLogs(s).map((x) => ({ exercise: x.exercise, name: nameOf(ctx, x.exercise), ...setInUnit(topSet(x.sets)!, exerciseUnit(ctx, x.exercise)), ...(s.trackingLevel === 'full' ? { sets: x.sets.length } : {}) })),
@@ -468,23 +600,36 @@ export function buildReview(data: VaultData, date: IsoDate) {
   // Adherence: the cycle's weeks only (a fresh start's earlier weeks are not this plan's shortfall), so the stall and light-week gates read the cycle's figure.
   const adh = adherence({ sessions: ctx.sessions, today: date, target, daily: ctx.daily, weekly: data.checkins.weekly, program: data.program, since: cycleOf(data, date).value.start });
 
+  // The return protocol, and with it the calibration week: no stall or falling e1RM is acted on while loads are found.
+  const protocol = returnProtocol({ sessions: ctx.sessions, today: date, rotation: data.plan.types.filter((t) => t.kind === 'lift').map((t) => t.template), daily: ctx.dailyMarked, ...missedRule(data) });
+  const calibration = calibrationOf(ctx, protocol.value);
+
   // e1RM and stalls first: they feed the readiness and deload triggers.
   const ids = liftIds(ctx);
   const mains = new Set(liftTemplates(ctx.loading).flatMap((t) => t.slots.filter((s) => s.main).map((s) => s.exercise)));
   const trends = new Map(ids.map((id) => [id, trendOf(ctx, id)]));
   const adherencePct = adh.value.lifting.pct;
-  const stalledMain = ids.filter((id) => mains.has(id) && detectStall(trends.get(id)!.trend.value, adherencePct).value.stalled).map((id) => nameOf(ctx, id));
-  const e1rmFalling = ids.some((id) => mains.has(id) && trends.get(id)!.trend.value.verdict === 'down');
+  const stalledMain = calibration ? [] : ids.filter((id) => mains.has(id) && detectStall(trends.get(id)!.trend.value, adherencePct).value.stalled).map((id) => nameOf(ctx, id));
+  const e1rmFalling = !calibration && ids.some((id) => mains.has(id) && trends.get(id)!.trend.value.verdict === 'down');
   const readiness = readinessSection(ctx, e1rmFalling);
   const earlySignal = readiness.actions.find((a) => a.value.action === 'early-deload')?.value.active === true;
   const recovery = recoveryTrigger(ctx.records, date);
   const busy = busyPeriods(ctx.records, date);
   const cancel = cancelState(ctx.records, date);
   const cancelledWeeks = cancel.weeks;
+  // The light weeks: the plan's rule (its weeks, what it does with an early signal), else the old default's every 4th
+  // week with its busy-week move and cancel.
+  const lw = data.rules.rules.lightWeeks;
+  const lwFrom = fromKind(data.rules, 'lightWeeks');
+  const legacyLight = data.rules.sources.lightWeeks === 'legacy-default';
   const deload = data.plan.start && date >= data.plan.start
     ? decideDeload({
         programStart: data.plan.start,
         today: date,
+        lightWeeks: lw,
+        early: lw.early,
+        legacy: legacyLight,
+        from: lwFrom,
         earlyDeloadSignal: earlySignal,
         stalledMainLifts: stalledMain,
         ...(ctx.records.length ? { recoveryTrigger: recovery.value } : {}),
@@ -494,7 +639,7 @@ export function buildReview(data: VaultData, date: IsoDate) {
       })
     : null;
   const planWeek = ctx.planWeek;
-  const weekInMeso = planWeek ? ((planWeek - 1) % 4) + 1 : null;
+  const place = planWeek ? lightWeekAt(lw, planWeek) : null;
 
   // Volume.
   const templates = (ctx.week?.sessions ?? []).map((t) => effective(t, date));
@@ -503,8 +648,9 @@ export function buildReview(data: VaultData, date: IsoDate) {
   const weights = Object.fromEntries(templates.map((t) => [t.id, t.kind === 'lift' || t.kind === 'express' ? (liftCount ? target.lift / liftCount : 0) : shortCount ? target.short / shortCount : 0]));
   const planned = plannedSetsPerMuscle(templates, exercises, { weights, effort: effortOf(ctx) });
   const done = setsPerMuscle(ctx.sessions, exercises, from, to);
-  const priority = data.profile?.priorityMuscles ?? data.program.priorityMuscles ?? [];
+  const priority = priorityMuscles(data.profile, data.program.priorityMuscles);
   const muscles = data.plan.muscles.length ? data.plan.muscles : [...new Set([...Object.keys(planned.value.perWeek), ...Object.keys(done.value.perWeek)])];
+  const declared = declaredRegions(data.profile);
   const volume = {
     weekKind: ctx.week?.kind ?? null,
     planned,
@@ -512,33 +658,39 @@ export function buildReview(data: VaultData, date: IsoDate) {
     /** Each muscle against the bands, with its direct, indirect, near-failure and unknown-effort sets: a priority muscle's minimum counts its direct sets near failure. */
     bands: checkVolume(planned.value.perWeek, { muscles, priority, split: planned.value.split }),
     doneTiers: Object.fromEntries(muscles.map((m) => [m, volumeTier(done.value.perWeek[m] ?? 0)])),
+    /** Every modelled muscle region, planned and done, against the region rules (`check` warns on the short ones, with options): the declared ones, and a priority muscle's coverage regions. */
+    regions: checkRegions(planned.value.regions ?? {}, { priority, declared, done: done.value.regions ?? {} }),
     /** Weekly pulling against pushing sets of this week's plan, weighted as `planned`, against the posture emphasis's ratio (as `plan` checks it). */
     pullPush: pullPushSets(templates, exercises, { weights, aim: pullPushAim(data.profile) }),
   };
 
   // Body and the rest.
   const weight = weightSection(ctx);
-  const protocol = returnProtocol({ sessions: ctx.sessions, today: date, rotation: data.plan.types.filter((t) => t.kind === 'lift').map((t) => t.template), daily: ctx.dailyMarked });
   const lc: LiftContext = {
     adherencePct,
     deloadThisWeek: deload?.value.deload ?? false,
     protocol: protocol.value,
+    calibration,
     readinessBand: readiness.latestScored?.band ?? null,
     sleep7: weight.last7.sleepH?.value ?? null,
     rateStatus: weight.band.value && typeof weight.band.value === 'object' && 'status' in weight.band.value ? (weight.band.value as { status: RateStatus }).status : null,
     weeksToDeload: deload?.value.weeksToScheduled ?? null,
-    weeksToMesocycleEnd: weekInMeso ? 4 - weekInMeso : null,
+    weeksToMesocycleEnd: place?.weeksToMesocycleEnd ?? null,
     plannedPerWeek: planned.value.perWeek,
+    lightWeek: { load: lw.load, rirAdd: lw.rirAdd, from: lwFrom },
   };
   const lifts = ids.map((id) => analyseLift(ctx, id, lc));
 
-  // The deload prescription when a deload is this week or next.
+  // The old default's deload prescription against rules.md's, when a deload is this week or next: a plan that
+  // declares its light weeks says which it is, so there is nothing to compare.
   let prescription = null;
-  if (deload && (deload.value.deload || deload.value.weeksToScheduled === 1)) {
+  if (legacyLight && deload && (deload.value.deload || deload.value.weeksToScheduled === 1)) {
     const diffs: { session: string; exercise: string; standardSets: number; dashboardSets: number }[] = [];
     for (const t of liftTemplates(ctx.loading)) {
-      const std = deloadPrescription(t.slots, 'standard').value;
-      const leg = deloadPrescription(t.slots, 'legacy').value;
+      // Sets only: a timed item (the finisher) keeps its minutes in a light week.
+      const setSlots = t.slots.filter((s) => !s.timed);
+      const std = deloadPrescription(setSlots, 'standard').value;
+      const leg = deloadPrescription(setSlots, 'legacy').value;
       std.forEach((s, i) => {
         if (s.sets !== leg[i]!.sets) diffs.push({ session: typeOf(ctx, t.id), exercise: nameOf(ctx, s.exercise), standardSets: s.sets, dashboardSets: leg[i]!.sets });
       });
@@ -610,12 +762,16 @@ export function buildReview(data: VaultData, date: IsoDate) {
       planWeek,
       /** The plan's length in weeks (the top bar's "Week N of M"). */
       planWeeks: data.plan.weeks,
-      phase: planWeek ? Math.floor((planWeek - 1) / 8) + 1 : null,
-      mesocycle: planWeek ? Math.floor((planWeek - 1) / 4) + 1 : null,
-      weekInMesocycle: weekInMeso,
-      deload: planWeek !== null && planWeek % 4 === 0,
-      deloadNext: planWeek !== null && planWeek % 4 === 3,
+      phase: place?.phase ?? null,
+      mesocycle: place?.mesocycle ?? null,
+      weekInMesocycle: place?.weekInMesocycle ?? null,
+      /** This mesocycle's length in weeks (to its light week); null for an open one after the plan's last listed light week. */
+      mesocycleWeeks: place?.mesocycleWeeks ?? null,
+      deload: place?.light ?? false,
+      deloadNext: place?.lightNext ?? false,
     },
+    /** The standing rules this review applied, by kind: the plan's own or the old default, with the rule in words. */
+    rules: rulesSection(data),
     thisWeek,
     adherence: adh,
     readiness,
@@ -646,6 +802,48 @@ export function buildReview(data: VaultData, date: IsoDate) {
     /** The last 4 weeks' skipped lines with their reasons, by exercise, and the flags they raise. */
     skips: skipsSection(ctx, time),
   };
+}
+
+/**
+ * A stalled lift's facts for the coach, when the plan's stall rule reports
+ * and the coach picks the response: sleep, readiness, protein, the weight
+ * rate, recovery and joint aches, the weeks to the light week and to the
+ * mesocycle's end, and the main muscle's weekly sets.
+ */
+function stallFactsOf(name: string, f: { sleepH: number | null; readinessBand: ReadinessBand | null; proteinGPerKg: number | null; rateStatus: RateStatus | null; recovery: number | null; jointAches: boolean | null; weeksToDeload: number | null; weeksToMesocycleEnd: number | null; muscle: { name: string; weeklySets: number } | null }, from: RuleFrom) {
+  const parts = [
+    f.sleepH !== null && `sleep ${f.sleepH.toFixed(1)} h`,
+    f.readinessBand !== null && `readiness ${f.readinessBand}`,
+    f.recovery !== null && `recovery ${f.recovery} of 5`,
+    f.jointAches === true && 'joint aches',
+    f.rateStatus !== null && `weight rate ${f.rateStatus} the band`,
+    f.weeksToDeload !== null && `light week in ${f.weeksToDeload} week(s)`,
+    f.weeksToMesocycleEnd !== null && `mesocycle ends in ${f.weeksToMesocycleEnd} week(s)`,
+    f.muscle !== null && `${f.muscle.name} at ${f.muscle.weeklySets} sets a week`,
+  ].filter((x): x is string => Boolean(x));
+  return explain(f, 'stall.facts', { exercise: name }, {
+    title: 'Stall',
+    note: joinNotes(`${name} has stalled; the coach picks the response at the check-in.`, parts.length > 0 && `The facts: ${parts.join('; ')}.`),
+    from,
+  });
+}
+
+/** A standing rule as a screen shows it: where it came from, where it is written, its value and its words. */
+export type RuleView<T> = { source: RuleSource; path: string; value: T; text: string };
+/** Every plan-level kind with its own value type, and each logged lift's rule by name. */
+export type RuleViews = { [K in RuleKind]: RuleView<PlanRules[K]> } & { lifts: Record<string, RuleView<LiftProgression>> };
+
+/** Each standing rule as the review applied it: where it came from, its value and its words; each logged lift's too. */
+export function rulesSection(data: VaultData): RuleViews {
+  const r = data.rules;
+  const view = <K extends RuleKind>(k: K): RuleView<PlanRules[K]> => ({ source: r.sources[k], path: RULE_PATHS[k], value: r.rules[k], text: cite(r.sources[k], ruleText(k, r.rules)) });
+  const kinds = Object.fromEntries(RULE_KINDS.map((k) => [k, view(k)])) as { [K in RuleKind]: RuleView<PlanRules[K]> };
+  const lifts: Record<string, RuleView<LiftProgression>> = {};
+  for (const l of data.plan.lifts) {
+    const e = r.lifts[l.name] ?? { rule: legacyLift(), source: 'legacy-default' as const };
+    lifts[l.name] = { source: e.source, path: `lifts["${l.name}"].progression`, value: e.rule, text: cite(e.source, liftRuleText(e.rule, { lo: l.repRange[0], hi: l.repRange[1], inc: l.increment, unit: l.unit })) };
+  }
+  return { ...kinds, lifts };
 }
 
 /** Why a Hotel session is marked: what it counts for, and the lifts whose numbers leave it out. */
@@ -860,6 +1058,14 @@ export function timeWarning(time: ReturnType<typeof timeSection>): VaultWarning 
   return { code: 'time-over', message: `${over.length === 1 ? 'A session runs' : `${over.length} sessions run`} over the day's length in the profile: ${over.map((s) => `${s.type} about ${s.check.value.minutes} min of ${s.check.value.limit}`).join(', ')}.`, items: over.map((s) => s.type) };
 }
 
+/** One warning per body-assessment finding the user has not answered yet (the review's warnings), each with the question to ask (findings.ts). */
+export function findingWarnings(data: Pick<VaultData, 'profile'>): VaultWarning[] {
+  const p = data.profile;
+  if (!p) return [];
+  const asks = asksConfirmation(p);
+  return findingsToConfirm(p).map((f) => ({ code: 'finding-unconfirmed', message: findingUnconfirmed(f, asks).reason.note ?? f.question, items: [f.input] }));
+}
+
 /** What the check-in answers contribute: the latest record, fatigue, the triggers and the weeks they change. */
 function checkinSection(ctx: Ctx, d: { recovery: Result<boolean>; busy: BusyPeriod[]; cancelledWeeks: IsoDate[] }) {
   const last = ctx.records.at(-1) ?? null;
@@ -891,25 +1097,49 @@ function nextInRotation(ctx: Ctx): { lift: string | null; short: string | null }
  * The effort rule on the vault's plan (volume.ts's setEffort): the RIR in the
  * item's note (the top of a range), a hold read from its sets and reps ("3 ×
  * 45–60 s/side", "2 × hold") against the latest tested hold, and each
- * ladder's level in the log on the date (level 1 before any entry, as the
- * plan's "your level" items read it).
+ * ladder's level on the date as the plan's "your level" items read it (the
+ * log's level, else the plan's startLevel, else level 1: ladderLevelOn).
  */
 export function effortContextOf(ctx: Ctx): EffortContext {
   return {
     holds: holdBests(ctx.data.profile?.selfCheck, latestTests(ctx)),
-    ladders: ctx.data.plan.ladders.map((l) => ({ id: l.id, name: l.name, levels: l.levels.map(exerciseId), level: l.history.filter((x) => x.date <= ctx.date).at(-1)?.level ?? 1 })),
+    ladders: ctx.data.plan.ladders.map((l) => ({ id: l.id, name: l.name, levels: l.levels.map(exerciseId), level: ladderLevelOn(l.history, l.startLevel, ctx.date).level })),
   };
 }
 
-function effortOf(ctx: Ctx): (slot: ExerciseSlot) => Result<SetEffort> {
+export function effortOf(ctx: Ctx): (slot: ExerciseSlot) => Result<SetEffort> {
   const effortCtx = effortContextOf(ctx);
   return (slot) => {
     const sr = (slot as SlotExtras)._item?.sr ?? '';
     const p = parseSr(sr);
     const topS = p.seconds ? (p.repRange?.[1] ?? null) : /\bhold\b/i.test(sr) ? null : undefined;
     const hold = topS === undefined ? null : { topS, kind: holdKindOf([slot.exercise, ctx.data.catalogueMatch[slot.exercise]]) };
-    return setEffort({ exercise: slot.exercise, name: nameOf(ctx, slot.exercise), rir: noteRir(slot.note)?.hi ?? null, hold }, effortCtx);
+    const item = (slot as SlotExtras)._item;
+    return setEffort({ exercise: slot.exercise, name: nameOf(ctx, slot.exercise), rir: (item ? itemRir(item) : noteRir(slot.note))?.hi ?? null, hold }, effortCtx);
   };
+}
+
+/**
+ * The effort rule on the sets done (volume.ts's setsPerMuscle): a logged
+ * set's own RIR, else the RIR the plan item gave (the session's snapshot),
+ * and each ladder at its level on the session's date (the log's, else the
+ * plan's startLevel; a lower level than that is easy); nothing else tells:
+ * unknown.
+ */
+export function doneEffortOf(ctx: Ctx): (item: DoneEffortItem) => Effort {
+  const holds = holdBests(ctx.data.profile?.selfCheck, latestTests(ctx));
+  const at = new Map<IsoDate, EffortContext>();
+  const contextAt = (date: IsoDate): EffortContext => {
+    let c = at.get(date);
+    if (!c) {
+      c = { holds, ladders: ctx.data.plan.ladders.map((l) => ({ id: l.id, name: l.name, levels: l.levels.map(exerciseId), level: ladderLevelOn(l.history, l.startLevel, date).level })) };
+      at.set(date, c);
+    }
+    return c;
+  };
+  // A vault snapshot's slot carries the item's own RIR (`_rir`, null when it gives none); an engine program's slot rir is its own.
+  const plannedRir = (slot: DoneEffortItem['planned']): number | null => (slot === null ? null : '_rir' in slot ? ((slot as { _rir?: number | null })._rir ?? null) : slot.rir);
+  return (it) => setEffort({ exercise: it.exercise, name: nameOf(ctx, it.exercise), rir: it.rir ?? plannedRir(it.planned), hold: null }, contextAt(it.date)).value.effort;
 }
 
 /** The latest value of each test, this cycle's only (a test dated before the cycle start does not count): the effort rule's holds read them too. */
@@ -938,7 +1168,9 @@ function testsSection(ctx: Ctx): Result<Record<string, { value: number; date: Is
 export function buildReadiness(data: VaultData, date: IsoDate) {
   const ctx = context(data, date);
   const mains = new Set(liftTemplates(ctx.loading).flatMap((t) => t.slots.filter((s) => s.main).map((s) => s.exercise)));
-  const e1rmFalling = [...mains].some((id) => trendOf(ctx, id).trend.value.verdict === 'down');
+  // As review reads it: a calibration week's loads are being found, so a falling e1RM is not acted on.
+  const protocol = returnProtocol({ sessions: ctx.sessions, today: date, rotation: data.plan.types.filter((t) => t.kind === 'lift').map((t) => t.template), daily: ctx.dailyMarked, ...missedRule(data) });
+  const e1rmFalling = !calibrationOf(ctx, protocol.value) && [...mains].some((id) => trendOf(ctx, id).trend.value.verdict === 'down');
   return {
     date,
     ...readinessSection(ctx, e1rmFalling),
@@ -975,16 +1207,19 @@ export function knownLifts(data: VaultData): string[] {
  */
 export function buildNext(data: VaultData, date: IsoDate, exercise: string) {
   const review = buildReview(data, date);
-  const lift = review.lifts.find((l) => l.exercise === exercise) ?? analyseLift(context(data, date), exercise, {
+  const ctx = context(data, date);
+  const lift = review.lifts.find((l) => l.exercise === exercise) ?? analyseLift(ctx, exercise, {
     adherencePct: review.adherence.value.lifting.pct,
     deloadThisWeek: review.deload?.value.deload ?? false,
     protocol: review.missed.value,
+    calibration: calibrationOf(ctx, review.missed.value),
     readinessBand: review.readiness.latestScored?.band ?? null,
     sleep7: review.weight.last7.sleepH?.value ?? null,
     rateStatus: null,
     weeksToDeload: review.deload?.value.weeksToScheduled ?? null,
-    weeksToMesocycleEnd: review.week.weekInMesocycle ? 4 - review.week.weekInMesocycle : null,
+    weeksToMesocycleEnd: review.week.planWeek ? lightWeekAt(data.rules.rules.lightWeeks, review.week.planWeek).weeksToMesocycleEnd : null,
     plannedPerWeek: review.volume.planned.value.perWeek,
+    lightWeek: { load: data.rules.rules.lightWeeks.load, rirAdd: data.rules.rules.lightWeeks.rirAdd, from: fromKind(data.rules, 'lightWeeks') },
   });
   const warnings: VaultWarning[] = [];
   if (lift.sessions === 0 && !lift.inPlanThisWeek) {

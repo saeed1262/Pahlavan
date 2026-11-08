@@ -7,8 +7,9 @@
 // so the coach does no date arithmetic. Pure: the date and the notes already
 // there are inputs; nothing is read or written here.
 
+import { CALIBRATION } from '../core/calibration.ts';
 import { addDays, dayText, isIsoDate, mondayOf } from '../core/dates.ts';
-import { DELOAD } from '../core/deload.ts';
+import { legacyRules, nthLightWeek, phaseWeeks, type LightWeeksRules } from '../core/rules.ts';
 import { explain, type Result } from '../core/reason.ts';
 import type { IsoDate } from '../core/schema.ts';
 import { paths } from '../adapters/vault/layout.ts';
@@ -16,8 +17,6 @@ import { paths } from '../adapters/vault/layout.ts';
 /** The note's path: in the fitness folder, named by its date. */
 export const baselinePath = (date: IsoDate): string => `${paths().fitness}/Baseline - ${date}.md`;
 
-/** A phase is two mesocycles: its tests fall on the Saturday of its last week (the generator's calendar). */
-const PHASE_WEEKS = DELOAD.every * 2;
 
 export interface BaselineNote {
   /** The note's path in the vault. */
@@ -28,21 +27,30 @@ export interface BaselineNote {
   previous: IsoDate | null;
   /** Week 1's Monday: the week the note's date falls in. */
   weekOne: IsoDate;
-  /** The first light week's Sunday (the end of week 4): the next photo set. */
+  /** The first light week's Sunday (the end of week 4 by default): the next photo set. */
   firstPhotos: IsoDate;
-  /** Phase 1's last Saturday (week 8): the first fitness tests. */
+  /** Phase 1's last Saturday (week 8 by default): the first fitness tests. */
   firstTests: IsoDate;
   /** The note, word for word. */
   text: string;
 }
 
-/** The baseline note for a fresh start on `date`, given the dates of the notes already in the folder. */
-export function baselineNote(date: IsoDate, existing: readonly string[]): Result<BaselineNote> {
+/**
+ * The baseline note for a fresh start on `date`, given the dates of the notes
+ * already in the folder and the plan's light weeks (the old default's every
+ * 4th week without them): the photos on the first light week's Sunday, the
+ * tests on the Saturday of phase 1's last week (a phase is two mesocycles).
+ */
+export function baselineNote(date: IsoDate, existing: readonly string[], lightWeeks: Pick<LightWeeksRules, 'every' | 'weeks'> = legacyRules().lightWeeks, testWeeks: readonly number[] | null = null): Result<BaselineNote> {
   if (!isIsoDate(date)) throw new Error(`baselineNote needs a date as YYYY-MM-DD, got ${String(date)}`);
   const dates = [...existing].filter(isIsoDate).sort();
   const weekOne = mondayOf(date);
-  const firstPhotos = addDays(weekOne, DELOAD.every * 7 - 1);
-  const firstTests = addDays(weekOne, PHASE_WEEKS * 7 - 2);
+  const legacy = legacyRules().lightWeeks;
+  const photosWeek = nthLightWeek(lightWeeks, 1) ?? nthLightWeek(legacy, 1)!;
+  // The plan's first test week (rules.tests), else phase 1's last week.
+  const testsWeek = testWeeks?.[0] ?? phaseWeeks(lightWeeks, 1).last ?? phaseWeeks(legacy, 1).last!;
+  const firstPhotos = addDays(weekOne, photosWeek * 7 - 1);
+  const firstTests = addDays(weekOne, testsWeek * 7 - 2);
   const previous = dates.filter((d) => d < date).at(-1) ?? null;
   const exists = dates.includes(date);
   const text = baselineText(date, firstPhotos, firstTests);
@@ -89,6 +97,6 @@ The first tests come at the end of phase 1 (${dayText(tests)}, in the light week
 
 ## 4. Strength
 
-No testing day. Week 1 is calibration: the first time you do each session, pick weights that leave 3 reps in reserve and log the top sets of the main lifts. Those first logs are the strength baseline.
+No testing day. Week 1 is calibration: the first time you do each session, pick weights that leave ${CALIBRATION.rir} reps in reserve and log the top sets of the main lifts. Those first logs are the strength baseline.
 `;
 }

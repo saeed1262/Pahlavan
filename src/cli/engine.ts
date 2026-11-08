@@ -4,7 +4,7 @@
 // log add's habit ticks) habits-data.json, Coach/eating-plan.json and (log,
 // and the phone's inbox) fitness-log-data.json; for the inbox also
 // Coach/nudges.json, and inside Coach/Inbox/ its refused.json and phone.json
-// and the moves to applied/.
+// and the moves to applied/; for plan-write, plan-data.json.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -54,6 +54,10 @@ const io: CliIo = {
   },
   writeNudges(root, text) {
     writeAtomic(join(root, paths().nudges), text);
+  },
+  writePlan(root, text) {
+    // The whole plan, once the plan check found no hard error (plan-write).
+    writeAtomic(join(root, paths().plan), text);
   },
   writeInbox(root, name, text) {
     if (name !== INBOX_FILES.refused && name !== INBOX_FILES.phone) throw new Error(`not one of the inbox's own files: ${name}`);

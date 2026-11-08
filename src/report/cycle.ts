@@ -13,7 +13,7 @@ export type { Scope } from '../core/cycle.ts';
 
 /** The cycle holding `date`, from the vault's baseline notes and its first logged plan session. */
 export function cycleOf(data: VaultData, date: IsoDate): Result<Cycle> {
-  return cycleStart({ baselines: data.plan.baselines ?? (data.plan.cycleStart ? [data.plan.cycleStart] : []), firstPlanSession: data.plan.start, date });
+  return cycleStart({ baselines: data.plan.baselines ?? (data.plan.cycleStart ? [data.plan.cycleStart] : []), firstPlanSession: data.plan.start, date, fromPlanStart: data.plan.startFrom === 'plan' });
 }
 
 /** What a view counts and how it says so: its scope, the cycle, and the first day it counts (null: everything). */

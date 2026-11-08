@@ -10,6 +10,7 @@
 // everything in Pahlavan, so no row assumes the phone. Pure: the date is an
 // input.
 
+import { legacyRules, lightCalendarText, lightDoseText, type LightWeeksRules } from '../core/rules.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
 import type { TrackingRead } from '../adapters/vault/tracking-read.ts';
 import { hhmm, toMinutes } from '../core/clock.ts';
@@ -67,6 +68,8 @@ export interface RoutineInput {
   didYouTrain: { on: boolean; at: string };
   /** The body record's parts on the date (the tape, photos and tests: their schedule and next date). */
   body: Record<BodyPart, PartStatus> | null;
+  /** The plan's light weeks (rules.ts); without them, the old default's every 4th week. */
+  lightWeeks?: LightWeeksRules | null;
 }
 
 export const ROUTINE_INTRO = 'About five minutes a day in Pahlavan, plus the session. It changes when your plan or your items change.';
@@ -197,7 +200,13 @@ function sundayRows(input: RoutineInput): RoutineRow[] {
   return rows;
 }
 
-/** Every four weeks (with a plan): the light week, and the phase end with its tests and review. */
+/** The plan's light weeks in a sentence: "Every 4th plan week is a light week: 2 sets of everything, about 10 % lighter, RIR +3." */
+function lightLine(lw: LightWeeksRules): string {
+  const when = cap(lightCalendarText(lw));
+  return `${when} ${lw.weeks && lw.weeks.length > 1 ? 'are light weeks' : 'is a light week'}: ${lightDoseText(lw)}.`;
+}
+
+/** Every mesocycle (with a plan): the light week, and the phase end with its tests and review. */
 function weekRows(input: RoutineInput): RoutineRow[] {
   const program = input.program;
   if (!program) return [];
@@ -213,7 +222,7 @@ function weekRows(input: RoutineInput): RoutineRow[] {
       command: COACH_COMMANDS.review,
       next: !light ? 'None left in this plan' : light.from <= date ? `Now, until ${dayText(light.to)}` : `Next: ${dayText(light.from)} to ${dayText(light.to)}`,
       where: 'Plan',
-      reason: explain(light, 'routine.light', { next: light }, { note: 'Every fourth plan week is a light week: two sets of everything, a little lighter. Its Sunday closes the month: the mesocycle review writes next month’s plan.' }).reason,
+      reason: explain(light, 'routine.light', { next: light }, { note: `${lightLine(input.lightWeeks ?? legacyRules().lightWeeks)} Its Sunday closes the mesocycle: the mesocycle review writes the next one’s plan.` }).reason,
     });
   }
   const reviews = planSteps(program, input.planWeeks ?? null).filter((s) => s.value.kind === 'phase-review');
@@ -251,7 +260,7 @@ export function yourRoutine(input: RoutineInput): Result<Routine> {
   const groups: RoutineGroup[] = [
     { id: 'daily' as const, title: 'Every day', rows: dailyRows(input, items) },
     { id: 'sunday' as const, title: 'Sundays', rows: sundayRows(input) },
-    { id: 'weeks' as const, title: 'Every four weeks', rows: weekRows(input) },
+    { id: 'weeks' as const, title: (input.lightWeeks ?? legacyRules().lightWeeks).every === 4 ? 'Every four weeks' : 'Each mesocycle', rows: weekRows(input) },
     { id: 'own' as const, title: 'On your own schedule', rows: ownRows(input) },
   ].filter((g) => g.rows.length);
   return explain({ title: 'Your routine', intro: ROUTINE_INTRO, groups }, 'routine', { date: input.date, items: items.length, plan: input.program !== null, morning: input.tracking?.morning ?? null, didYouTrain: input.didYouTrain }, {
@@ -273,5 +282,6 @@ export function buildRoutine(read: VaultRead, tr: TrackingRead | null, date: Iso
     lifts: planned && read.data.plan.types.some((t) => t.kind === 'lift'),
     didYouTrain: opts.didYouTrain ?? DEFAULT_NUDGE_SETTINGS.didYouTrain,
     body: { tape: parts.tape.value, photos: parts.photos.value, tests: parts.tests.value },
+    lightWeeks: planned ? read.data.rules.rules.lightWeeks : null,
   });
 }

@@ -1,7 +1,9 @@
 // How long a plan session takes, from its items as plan-data writes them,
 // timed the way the plan generator times its sessions (core/plan/dose.ts):
 // the warm-up, then each item's work and the rest after it. A cardio or
-// other timed item gives its own minutes ("20 min"); a set takes its own
+// other timed item gives its own minutes ("20 min"), intervals their
+// warm-up, rounds of work, the easy minutes between and cool-down (the
+// item's `timed`, else the intervals its note describes); a set takes its own
 // time (half a minute of reps, a hold's seconds at the low end of its
 // range, both sides of a "/side" or "/leg" item) and the item's rest (the
 // low end of "2–3 min" or "60–90 s", as the generator's time budget counts
@@ -11,23 +13,29 @@
 // `shortSessions.minutes`, an estimate over it flagged with its reason.
 // Pure.
 
+import { itemTimed } from './plan-data.ts';
 import { DOSE, REST } from './plan/dose.ts';
 import { explain, joinNotes, type Result } from './reason.ts';
 import type { Profile } from './schema.ts';
+import { isIntervals, timedMinutes, timedText } from './timed.ts';
 
-/** A plan item as the estimate reads it: plan-data's `sr`, `rest` and `pair`. */
+/** A plan item as the estimate reads it: plan-data's `sr`, `rest`, `pair`, and for a timed item its `timed` and `note`. */
 export interface TimedItem {
   name: string;
   sr: string;
   rest?: string | null;
   pair?: boolean;
+  note?: string;
+  timed?: unknown;
 }
 
 export interface ItemMinutes {
   name: string;
   minutes: number;
-  /** How it was counted, in words: "20 min", "3 × (30 s + 60 s rest)". */
+  /** How it was counted, in words: "20 min", "3 × (30 s + 60 s rest)", "4 × 4 min hard, 3 min easy between". */
   how: string;
+  /** A timed item (its own minutes), not sets with their rests. */
+  timed?: true;
 }
 
 export interface SessionMinutes {
@@ -70,8 +78,18 @@ function workOf(spec: string): { minutes: number; text: string } {
 /** The moves of a circuit, from its name ("Circuit: squat jump · burpee" has 2); 1 when it names none. */
 const movesOf = (name: string) => Math.max(1, (name.split(':').at(-1) ?? name).split(/\s+·\s+|\s+\+\s+/).length);
 
-/** An item's sets and one set's time, or its own minutes; null when its `sr` says nothing to time. `rested`: the time on and off already holds the rest. */
-function parseItem(sr: string, name = ''): { sets: number; work: { minutes: number; text: string }; rested?: boolean } | { minutes: number } | null {
+/**
+ * An item's sets and one set's time, or its own minutes (`how` for
+ * intervals: their structure in words); null when nothing in it says a
+ * time. `rested`: the time on and off already holds the rest.
+ */
+function parseItem(item: TimedItem): { sets: number; work: { minutes: number; text: string }; rested?: boolean } | { minutes: number; how?: string } | null {
+  // A timed item: its `timed` field, else its sr's minutes and the intervals its note describes.
+  const t = itemTimed(item);
+  const total = timedMinutes(t);
+  if (t && total !== null) return isIntervals(t) ? { minutes: total, how: timedText(t).replace(/ · about [\d.]+ min$/, '') } : { minutes: total };
+  const sr = item.sr;
+  const name = item.name;
   const s = String(sr ?? '');
   const sets = /^(\d+)\s*[×x]\s*(.*)$/.exec(s.trim());
   if (sets) return { sets: Number(sets[1]), work: workOf(sets[2]!) };
@@ -108,13 +126,13 @@ export function sessionMinutes(input: { items: readonly TimedItem[]; warmup: str
   const list = input.items;
   for (let i = 0; i < list.length; i++) {
     const it = list[i]!;
-    const p = parseItem(it.sr, it.name);
+    const p = parseItem(it);
     if (!p) {
       untimed.push(it.name);
       continue;
     }
     if ('minutes' in p) {
-      items.push({ name: it.name, minutes: p.minutes, how: `${p.minutes} min` });
+      items.push({ name: it.name, minutes: p.minutes, how: p.how ?? `${p.minutes} min`, timed: true });
       continue;
     }
     if (p.rested) {
@@ -123,7 +141,7 @@ export function sessionMinutes(input: { items: readonly TimedItem[]; warmup: str
       continue;
     }
     const next = list[i + 1];
-    const q = next?.pair ? parseItem(next.sr, next.name) : null;
+    const q = next?.pair ? parseItem(next) : null;
     const restOf = (x: TimedItem) => restMinutes(x.rest)?.minutes ?? REST.sets.minutes;
     if (next && q && 'sets' in q) {
       // A superset: rounds of a set of each and the pair's one rest; a partner's extra sets on their own.
@@ -138,12 +156,12 @@ export function sessionMinutes(input: { items: readonly TimedItem[]; warmup: str
     items.push({ name: it.name, minutes: r2(p.sets * (p.work.minutes + rest)), how: `${p.sets} × (${p.work.text} + ${secText(rest)} rest)` });
   }
   const total = Math.round(warmup + items.reduce((a, x) => a + x.minutes, 0));
-  const timed = items.filter((x) => /^\d+(?:\.\d+)? min$/.test(x.how));
+  const timed = items.filter((x) => x.timed);
   const sets = items.filter((x) => !timed.includes(x));
   return explain<SessionMinutes>({ minutes: total, warmup, items, untimed }, 'time.estimate', { kind: input.kind, items: list.length, warmup: own ? input.warmup : null }, {
     threshold: { workMinutes: DOSE.workMinutes, restWhenNone: REST.sets.minutes, warmup: TIME.warmup },
     note: joinNotes(
-      `About ${total} min: a ${warmup}-min warm-up${timed.length ? `, ${timed.map((x) => `${x.minutes} min of ${x.name}`).join(', ')}` : ''}${sets.length ? `, and ${r2(sets.reduce((a, x) => a + x.minutes, 0))} min of sets with their rests` : ''}.`,
+      `About ${total} min: a ${warmup}-min warm-up${timed.length ? `, ${timed.map((x) => `${x.minutes} min of ${x.name}${x.how === `${x.minutes} min` ? '' : ` (${x.how})`}`).join(', ')}` : ''}${sets.length ? `, and ${r2(sets.reduce((a, x) => a + x.minutes, 0))} min of sets with their rests` : ''}.`,
       'Each set counts its own time (half a minute of reps, a hold’s seconds at the low end, both sides) and the rest after it, the low end of a range, as the plan generator times a session; set-up and walking between stations are not counted.',
       untimed.length > 0 && `Not timed: ${untimed.join(', ')} (its sets and reps give no time).`,
     ),

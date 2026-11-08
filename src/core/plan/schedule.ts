@@ -2,6 +2,7 @@
 // calendar, targets with predicted values, and the pre-mortem's data-driven
 // risks. Every prediction is a heuristic and says so.
 
+import { CALIBRATION } from '../calibration.ts';
 import { addDays, daysBetween } from '../dates.ts';
 import { explain, joinNotes, type Result } from '../reason.ts';
 import { screeningCaps, screeningDue } from '../safety.ts';
@@ -39,8 +40,8 @@ export function calibrationPlan(ctx: PlanContext): Result<Calibration> {
   return explain<Calibration>(
     {
       week: 1,
-      rir: 3,
-      instructions: 'For every weighted exercise, find a load that leaves 3 reps in reserve at the bottom of its range; for each ladder, the level where the bottom of the range is clean. No progression decisions and no stall checks this week.',
+      rir: CALIBRATION.rir,
+      instructions: `For every weighted exercise, find a load that leaves ${CALIBRATION.rir} reps in reserve at the bottom of its range; for each ladder, the level where the bottom of the range is clean. No progression decisions and no stall checks this week.`,
       tests,
     },
     'plan.calibration',

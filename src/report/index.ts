@@ -23,3 +23,4 @@ export * from './baseline.ts';
 export * from './welcome.ts';
 export * from './your-day.ts';
 export * from './routine.ts';
+export * from './home.ts';

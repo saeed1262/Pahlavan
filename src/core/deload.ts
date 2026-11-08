@@ -1,9 +1,14 @@
-// Deloads (rules.md, "Deloads"; checkin.md, deload triggers): scheduled every
-// Nth week, triggered early by readiness or by stalls on 2+ main lifts,
-// cancellable by the user, and the prescription for the week.
+// Deloads (rules.md, "Deloads"; checkin.md, deload triggers): the plan's
+// light weeks (rules.ts: every Nth week, or the weeks the plan lists), the
+// early signals (readiness, stalls on 2+ main lifts, poor recovery), and the
+// prescription for the week. The old default applies an early signal, moves
+// a light week onto a busy week and lets the user cancel one; a plan that
+// declares its light weeks reports the signals as facts and the coach moves
+// a light week by editing the plan.
 
 import { daysBetween, mondayOf } from './dates.ts';
-import { explain, joinNotes, type Result } from './reason.ts';
+import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
+import { isLightWeek, lightCalendarText, nextLightWeek, nthLightWeek, type LightWeeksRules } from './rules.ts';
 import type { BusyKind, BusyPeriod, ExerciseSlot, IsoDate, RepRange } from './schema.ts';
 
 export const DELOAD = {
@@ -30,8 +35,11 @@ export interface DeloadDecision {
   /** Plan week counted from the program start's Monday (week 1). */
   planWeek: number;
   scheduled: boolean;
-  /** Weeks to the next deload (moved by a busy week if one was), 0 in a deload week. */
-  weeksToScheduled: number;
+  /** Weeks to the next deload (moved by a busy week if one was), 0 in a deload week; null when the plan lists none ahead. */
+  weeksToScheduled: number | null;
+  /** Every early signal that fired (and a busy-week move): facts, whether or not the rule acts on them. */
+  signals: DeloadTrigger[];
+  /** The signals acted on: the ones that make this a light week. */
   triggers: DeloadTrigger[];
   deload: boolean;
   /** The user's override was applied. */
@@ -43,8 +51,16 @@ export interface DeloadDecision {
 export interface DeloadInput {
   programStart: IsoDate;
   today: IsoDate;
-  /** Deload every Nth week (default 4). */
+  /** Deload every Nth week (default 4), when `lightWeeks` is not given. */
   every?: number;
+  /** The plan's light weeks (rules.ts): every Nth week or the listed weeks. */
+  lightWeeks?: Pick<LightWeeksRules, 'every' | 'weeks'>;
+  /** What an early signal does: makes the week light (the old default), is offered as a fact, or is only listed. */
+  early?: LightWeeksRules['early'];
+  /** The old default's busy-week move and cancel (default true): a plan's declared light weeks move only when the coach edits them. */
+  legacy?: boolean;
+  /** The light-week rule, cited in the note. */
+  from?: RuleFrom;
   /** readiness.ts readinessActions: the early-deload action is active. */
   earlyDeloadSignal?: boolean;
   /** Main lifts with a stall this week (stall.ts). */
@@ -64,12 +80,14 @@ export interface DeloadInput {
  * period covers it, else moves to the busy week just before it, else to the
  * busy week just after it (planning.md, life-aware scheduling).
  */
-function movedDeloads(programStart: IsoDate, every: number, busy: readonly BusyPeriod[], upTo: number): Map<number, DeloadMove | null> {
+function movedDeloads(programStart: IsoDate, lw: Pick<LightWeeksRules, 'every' | 'weeks'>, busy: readonly BusyPeriod[], upTo: number): Map<number, DeloadMove | null> {
   const week = (d: IsoDate) => Math.floor(daysBetween(mondayOf(programStart), mondayOf(d)) / 7) + 1;
   const busyWeeks = new Map<number, BusyPeriod>();
   for (const b of busy) for (let w = week(b.from); w <= week(b.to); w++) if (!busyWeeks.has(w)) busyWeeks.set(w, b);
   const out = new Map<number, DeloadMove | null>();
-  for (let s = every; s <= upTo + every; s += every) {
+  for (let n = 1; ; n++) {
+    const s = nthLightWeek(lw, n);
+    if (s === null || s > upTo) break;
     const pick = busyWeeks.has(s) ? s : busyWeeks.has(s - 1) && s - 1 >= 1 ? s - 1 : busyWeeks.has(s + 1) ? s + 1 : s;
     const b = busyWeeks.get(pick);
     out.set(pick, pick === s || !b ? null : { from: s, to: pick, busy: { from: b.from, to: b.to, kind: b.kind } });
@@ -77,30 +95,53 @@ function movedDeloads(programStart: IsoDate, every: number, busy: readonly BusyP
   return out;
 }
 
+/** The light weeks up to a plan week, unmoved. */
+function plainDeloads(lw: Pick<LightWeeksRules, 'every' | 'weeks'>, upTo: number): Map<number, DeloadMove | null> {
+  const out = new Map<number, DeloadMove | null>();
+  for (let n = 1; ; n++) {
+    const s = nthLightWeek(lw, n);
+    if (s === null || s > upTo) break;
+    out.set(s, null);
+  }
+  return out;
+}
+
 export function decideDeload(input: DeloadInput): Result<DeloadDecision> {
-  const every = input.every ?? DELOAD.every;
-  if (!(Number.isInteger(every) && every >= 2)) throw new RangeError(`deload interval must be a whole number of 2 or more, got ${every}`);
+  const every = input.lightWeeks ? input.lightWeeks.every : (input.every ?? DELOAD.every);
+  if (every !== null && !(Number.isInteger(every) && every >= 2)) throw new RangeError(`deload interval must be a whole number of 2 or more, got ${every}`);
+  const lw = input.lightWeeks ?? { every, weeks: null };
+  const legacy = input.legacy ?? true;
+  const early = input.early ?? 'apply';
   const offset = daysBetween(mondayOf(input.programStart), mondayOf(input.today));
   if (offset < 0) throw new RangeError(`${input.today} is before the program start ${input.programStart}`);
   const planWeek = offset / 7 + 1;
-  const scheduled = planWeek % every === 0;
-  const deloads = movedDeloads(input.programStart, every, input.busy ?? [], planWeek + every);
+  const scheduled = isLightWeek(lw, planWeek);
+  // Far enough ahead for the next light week after this one, moved or not.
+  const ahead = (nextLightWeek(lw, planWeek + 1) ?? planWeek) + 1;
+  const deloads = legacy ? movedDeloads(input.programStart, lw, input.busy ?? [], ahead) : plainDeloads(lw, ahead);
   const here = deloads.has(planWeek);
   const movedIn = deloads.get(planWeek) ?? null;
   const movedOut = scheduled && !here ? [...deloads.values()].find((m) => m?.from === planWeek) ?? null : null;
-  const weeksToScheduled = Math.min(...[...deloads.keys()].filter((w) => w >= planWeek).map((w) => w - planWeek));
+  const upcoming = [...deloads.keys()].filter((w) => w >= planWeek).map((w) => w - planWeek);
+  const weeksToScheduled = upcoming.length ? Math.min(...upcoming) : null;
   const stalled = input.stalledMainLifts ?? [];
-  const triggers: DeloadTrigger[] = [];
-  if (input.earlyDeloadSignal === true) triggers.push('readiness');
-  if (stalled.length >= DELOAD.stalledMainLifts) triggers.push('stalls');
-  if (input.recoveryTrigger === true) triggers.push('recovery');
-  if (movedIn) triggers.push('busy-week');
+  const signals: DeloadTrigger[] = [];
+  if (input.earlyDeloadSignal === true) signals.push('readiness');
+  if (stalled.length >= DELOAD.stalledMainLifts) signals.push('stalls');
+  if (input.recoveryTrigger === true) signals.push('recovery');
+  const triggers: DeloadTrigger[] = early === 'apply' ? [...signals] : [];
+  if (movedIn) {
+    signals.push('busy-week');
+    triggers.push('busy-week');
+  }
   const wanted = here || triggers.length > 0;
 
   let deload = wanted;
   let cancelled = false;
   let cancelNote: string | undefined;
-  if (input.cancelled && wanted) {
+  if (input.cancelled && wanted && !legacy) {
+    cancelNote = 'The check-in cancels this light week, but the plan\'s rule still has it: to move it, the coach edits the plan\'s light weeks.';
+  } else if (input.cancelled && wanted) {
     if (here && input.previousCancelled) {
       cancelNote = 'Cancel not applied: the last scheduled deload was cancelled too, and two mesocycles never run without one.';
     } else {
@@ -111,8 +152,10 @@ export function decideDeload(input: DeloadInput): Result<DeloadDecision> {
   }
 
   const move = movedIn ?? movedOut ?? undefined;
-  const value: DeloadDecision = { planWeek, scheduled, weeksToScheduled, triggers, deload, cancelled };
+  const value: DeloadDecision = { planWeek, scheduled, weeksToScheduled, signals, triggers, deload, cancelled };
   if (move) value.move = move;
+  const fired = signals.filter((t) => t !== 'busy-week');
+  const act = early === 'apply' ? 'offer an early light week' : early === 'offer' ? 'a signal for an early light week; the plan\'s rule leaves it to the coach' : 'a fact only (the plan\'s rule takes no early light week)';
   return explain<DeloadDecision>(
     value,
     'deload.decide',
@@ -128,19 +171,20 @@ export function decideDeload(input: DeloadInput): Result<DeloadDecision> {
       previousCancelled: input.previousCancelled ?? false,
     },
     {
-      threshold: { every, stalledMainLifts: DELOAD.stalledMainLifts },
+      threshold: lw.weeks ? { weeks: lw.weeks, stalledMainLifts: DELOAD.stalledMainLifts } : { every, stalledMainLifts: DELOAD.stalledMainLifts },
       note: joinNotes(
-        scheduled && !movedOut && `Plan week ${planWeek}: the scheduled deload (every ${every}th week).`,
+        scheduled && !movedOut && (lw.weeks ? `Plan week ${planWeek}: a light week (${lightCalendarText(lw)}).` : `Plan week ${planWeek}: the scheduled deload (every ${every}th week).`),
         movedOut && `Plan week ${planWeek} was the scheduled deload; it moved to week ${movedOut.to}, the ${movedOut.busy.kind} week (${movedOut.busy.from} to ${movedOut.busy.to}).`,
         movedIn && `Plan week ${planWeek}: the deload moved here from week ${movedIn.from}, to fall on the ${movedIn.busy.kind} week (${movedIn.busy.from} to ${movedIn.busy.to}).`,
-        !here && !movedOut && `Plan week ${planWeek}: the ${scheduled ? 'next' : 'scheduled'} deload is in ${weeksToScheduled} week(s).`,
+        !here && !movedOut && (weeksToScheduled === null ? `Plan week ${planWeek}: the plan lists no light week ahead.` : `Plan week ${planWeek}: the ${scheduled ? 'next' : 'scheduled'} deload is in ${weeksToScheduled} week(s).`),
         movedOut && `The next deload is in ${weeksToScheduled} week(s).`,
-        triggers.includes('readiness') && 'Readiness has been low 5 days running with a falling e1RM: offer an early light week.',
-        triggers.includes('stalls') && `Stalls on ${stalled.length} main lifts (${stalled.join(', ')}): offer an early light week.`,
-        triggers.includes('recovery') && 'Poor recovery and joint aches at two check-ins running: offer an early light week (heuristic).',
+        fired.includes('readiness') && `Readiness has been low 5 days running with a falling e1RM: ${act}.`,
+        fired.includes('stalls') && `Stalls on ${stalled.length} main lifts (${stalled.join(', ')}): ${act}.`,
+        fired.includes('recovery') && `Poor recovery and joint aches at two check-ins running: ${act} (heuristic).`,
         !here && triggers.some((t) => t !== 'busy-week') && 'The user decides.',
         cancelNote,
       ),
+      ...(input.from ? { from: input.from } : {}),
     },
   );
 }

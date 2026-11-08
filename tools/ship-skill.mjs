@@ -7,6 +7,11 @@
 // dependencies, so the skill runs it on any machine with Node, without this
 // project. No vault path is built in: the caller names the skill folder.
 //
+// Before anything is copied, the built engine's plan check runs on the
+// made-up vault (test/fixtures/vault): no hard error on a date its Ledger
+// allows, and exactly the one it should give while a constraint holds. Any
+// other error stops the ship.
+//
 // Then the skill's own self-check (<skill-dir>/scripts/selfcheck.mjs, when it
 // has one) runs against the vault that holds the skill (<vault>/.claude/skills/<name>):
 // every documented engine command, read only, and the docs against the engine.
@@ -51,6 +56,26 @@ if (version.status !== 0) {
   process.exit(1);
 }
 const v = JSON.parse(version.stdout);
+
+// The plan check on the made-up vault: on 2026-04-20 nothing blocks; on 2026-04-12 the abdominal constraint blocks
+// the Romanian deadlift (a ledger-blocked error), and nothing else.
+const fixture = join(root, 'test', 'fixtures', 'vault');
+const expected = [
+  ['2026-04-20', []],
+  ['2026-04-12', ['ledger-blocked']],
+];
+for (const [date, want] of expected) {
+  const r = spawnSync(node, [engine, 'check', '--vault', fixture, '--date', date, '--json'], { encoding: 'utf8' });
+  let got = null;
+  try {
+    got = JSON.parse(r.stdout).errors.map((e) => e.code);
+  } catch {}
+  if (!got || JSON.stringify(got) !== JSON.stringify(want)) {
+    console.error(`ship-skill: engine check on test/fixtures/vault (${date}) gave ${got ? `errors [${got.join(', ')}]` : `no JSON (exit ${r.status}): ${r.stderr.trim().split('\n')[0] ?? ''}`}, expected [${want.join(', ')}]; nothing shipped`);
+    process.exit(1);
+  }
+}
+console.log(`ship-skill: engine check on test/fixtures/vault: as expected on ${expected.map(([d, w]) => `${d} (${w.length ? w.join(', ') : 'no errors'})`).join(' and ')}`);
 
 // The skill's own files, from skill/ in this repository.
 const source = from ? resolve(process.env.INIT_CWD ?? process.cwd(), from) : join(root, 'skill');

@@ -227,7 +227,7 @@ const profileShape = shape(
       shape(
         'emphasis',
         { area: text, seen: text, confidence: oneOf(CONFIDENCE), emphasis: text },
-        { kind: oneOf(EMPHASIS_KINDS), side: oneOf(['left', 'right']), muscles: arr(str()) },
+        { kind: oneOf(EMPHASIS_KINDS), side: oneOf(['left', 'right']), muscles: arr(str()), regions: arr(str()), confirmed: bool },
       ),
     ),
   },
@@ -238,6 +238,7 @@ const profileShape = shape(
       { birthYear: num({ min: 1900, int: true }), heightCm: num({ above: 0 }), sex: oneOf(['male', 'female']) },
     ),
     priorityMuscles: arr(str()),
+    priorityRegions: arr(str()),
     travelEquipment: arr(str()),
     experience: oneOf(EXPERIENCE),
     preferences: shape('preferences', {}, {
@@ -259,6 +260,7 @@ const profileShape = shape(
       }),
       wallGapCm: num({ min: 0 }),
       balanceS: shape('balance', { left: num({ min: 0 }), right: num({ min: 0 }) }),
+      confirmed: shape('selfCheckConfirmed', {}, { sitToStand: bool, hingeFlatBack: bool, overheadReach: bool, balanceS: bool }),
     }),
     badWeek: shape('badWeek', { usually: arr(oneOf(BAD_WEEK_KINDS)) }, { note: str() }),
     useHistory: bool,
@@ -273,6 +275,12 @@ const profileShape = shape(
       sleepHours: num({ above: 0, max: 24 }),
       tests: record(num({ min: 0 })),
     }),
+    // The user's own rules for the plan's shape: `engine check` reports a plan that breaks one (pattern names it judges there).
+    planRules: shape('planRules', {}, {
+      setsPerExercise: num({ min: 1, int: true }),
+      liftSession: shape('liftSessionRule', { patterns: arr(str({ nonEmpty: true }), { min: 1 }) }),
+      shortDayCore: bool,
+    }),
   },
 );
 
@@ -280,6 +288,15 @@ const temporaryChange = shape(
   'temporaryChange',
   { until: date, reason: text },
   { exercise: id, sets: num({ min: 0, int: true }), repRange, rir, note: str() },
+);
+
+// A timed item's structure: its minutes, or intervals with their work (timed.ts counts it).
+const timedWork = then(
+  shape('timedWork', {}, { minutes: num({ above: 0 }), rounds: num({ min: 1, int: true }), workMin: num({ above: 0 }), restMin: num({ min: 0 }), warmupMin: num({ min: 0 }), cooldownMin: num({ min: 0 }) }),
+  (v, p, e) => {
+    const t = v as { minutes?: number; rounds?: number; workMin?: number };
+    if (t.minutes === undefined && (t.rounds === undefined || t.workMin === undefined)) fail(e, p, 'needs minutes, or rounds with workMin');
+  },
 );
 
 const slot = shape(
@@ -293,6 +310,7 @@ const slot = shape(
     progression: shape('slotProgression', { rule: oneOf(PROGRESSION_RULES) }, { step: num({ above: 0 }), next: id, ladder: id, level: num({ min: 1, int: true }) }),
     note: str(),
     pair: bool,
+    timed: timedWork,
   },
 );
 
@@ -312,7 +330,7 @@ const exercise = then(
       pattern: oneOf(PATTERNS),
       unit,
       increment: num({ above: 0 }),
-      muscles: shape('muscleTags', { main: arr(str()), helps: arr(str()) }),
+      muscles: shape('muscleTags', { main: arr(str()), helps: arr(str()) }, { regions: arr(str()) }),
       kind: oneOf(EXERCISE_KINDS),
       risk: arr(riskTag),
       equipment: str(),

@@ -23,6 +23,19 @@ export interface VaultRead {
   files: Record<VaultFileKey, 'found' | 'missing'>;
   /** Each file as parsed JSON, before conversion (the log writer needs plan-data and the log as they are). */
   raw?: Partial<Record<VaultFileKey, unknown>>;
+  /** Set when the plan was a draft read in place of plan-data.json (`--plan <file>`): the draft's file. */
+  draft?: { file: string };
+}
+
+/** A draft plan read in place of the vault's plan-data.json: its text and where it came from. */
+export interface DraftPlan {
+  text: string;
+  file: string;
+}
+
+/** The warning every report read from a draft carries, so its numbers are never taken for the plan as written. */
+export function draftWarning(file: string): VaultWarning {
+  return { code: 'draft-plan', message: `The plan is the draft ${file}, read in place of plan-data.json: these numbers are what Pahlavan would show once it is written, not the plan as it stands.`, items: [file] };
 }
 
 /** The files the adapter reads, in order. */
@@ -67,7 +80,7 @@ export function assembleVault(texts: Readonly<Partial<Record<VaultFileKey, strin
   const names = fitnessNames ?? [];
   files.baselines = names.map((n) => /^Baseline - (\d{4}-\d{2}-\d{2})\.md$/.exec(n)?.[1]).filter((d): d is string => d !== undefined);
 
-  const data = files.plan === undefined && found.plan === 'missing' ? fromVault({ ...files, plan: {} }, opts) : fromVault(files, opts);
+  const data = files.plan === undefined && found.plan === 'missing' ? fromVault({ ...files, plan: {} }, { ...opts, noPlan: true }) : fromVault(files, opts);
   if (found.plan === 'missing') data.errors = data.errors.filter((e) => e.code !== 'plan-data');
   data.errors.unshift(...errors);
   data.warnings.unshift(...warnings);
@@ -97,11 +110,26 @@ export function readNewestLetter(io: ReadIo, root: string): { path: string; text
   return path && text !== null ? { path, text } : null;
 }
 
-/** Reads and converts the vault at `root`. A missing plan-data.json is an error; the other files may be missing. */
-export function readVault(io: ReadIo, root: string, opts: VaultOptions = {}): VaultRead {
+/**
+ * Reads and converts the vault at `root`. A missing plan-data.json is an
+ * error; the other files may be missing. With `plan`, the draft's text
+ * stands in for plan-data.json's before anything is parsed, so a draft goes
+ * through exactly the assembly the written file does; the read is marked
+ * (`draft`) and carries the `draft-plan` warning.
+ */
+export function readVault(io: ReadIo, root: string, opts: VaultOptions & { plan?: DraftPlan } = {}): VaultRead {
+  const { plan, ...vaultOpts } = opts;
   const texts: Partial<Record<VaultFileKey, string | null>> = {};
   for (const key of VAULT_FILE_KEYS) texts[key] = io.readText(joinPath(root, paths()[key]));
-  return assembleVault(texts, io.listDir(joinPath(root, paths().fitness)), root, opts);
+  if (plan) texts.plan = plan.text;
+  const read = assembleVault(texts, io.listDir(joinPath(root, paths().fitness)), root, vaultOpts);
+  if (plan) {
+    read.draft = { file: plan.file };
+    // A draft that is not JSON says so by its own name, not plan-data.json's.
+    for (const e of read.data.errors) if (e.code === 'json' && e.message.startsWith(`${paths().plan} `)) e.message = `${plan.file}${e.message.slice(paths().plan.length)}`;
+    read.data.warnings.unshift(draftWarning(plan.file));
+  }
+  return read;
 }
 
 /** `readVault` through an asynchronous reader: the same files, the same assembly. */

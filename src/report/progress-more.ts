@@ -14,6 +14,7 @@ import { stepsGoal } from '../core/plan/conditioning.ts';
 import type { BodyTargets, DailyCheckin, IsoDate, TapeEntry, TestEntry } from '../core/schema.ts';
 import { STALL } from '../core/stall.ts';
 import { weightTrend } from '../core/weight.ts';
+import { isLightWeek, phaseWeeks as phaseWeeksOf } from '../core/rules.ts';
 import { cycleOf, scopeInfo, withinCycle, type Scope } from './cycle.ts';
 import { envelope, sourcesOf } from './envelope.ts';
 import { liftTrends } from './progress.ts';
@@ -291,8 +292,12 @@ export function buildProgressMore(read: VaultRead, date: IsoDate, root = '', opt
   const unlogged = data.checkins.daily.filter((d) => d.date <= date && !sessionDays.has(d.date) && dayStateOf(d.date, date, 0, d) === 'unlogged').map((d) => d.date);
   // Plan weeks and months that end before the cycle start are left out, not drawn empty.
   const inCycle = <B extends Bucket>(b: B) => !since || b.to >= since;
-  const phaseWeeks = (week.planStart && week.planWeek ? planWeeks(week.planStart, ((week.phase ?? 1) - 1) * 8 + 1, 8) : []).filter(inCycle);
-  const weeks = sessionCounts(sessions, phaseWeeks, unlogged, date).map((b) => ({ ...b, deload: (b as { n?: number }).n !== undefined && ((b as { n?: number }).n ?? 0) % 4 === 0 }));
+  // The phase's weeks on the plan's light-week calendar (two mesocycles; an open last phase runs to the plan's end).
+  const lw = data.rules.rules.lightWeeks;
+  const span = phaseWeeksOf(lw, week.phase ?? 1);
+  const spanCount = (span.last ?? Math.max(week.planWeek ?? span.first, data.plan.weeks)) - span.first + 1;
+  const phaseWeeks = (week.planStart && week.planWeek ? planWeeks(week.planStart, span.first, Math.max(1, spanCount)) : []).filter(inCycle);
+  const weeks = sessionCounts(sessions, phaseWeeks, unlogged, date).map((b) => ({ ...b, deload: (b as { n?: number }).n !== undefined && isLightWeek(lw, (b as { n?: number }).n ?? 0) }));
   const months = sessionCounts(sessions, monthBuckets(date, 6).filter(inCycle), unlogged, date);
   const cardio = cardioWeeks(sessions, phaseWeeks, date);
   if (!sessions.length) notes.push({ section: 'training', code: 'no-sessions', text: `No sessions logged${thisCycle} yet.` });

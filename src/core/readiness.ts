@@ -7,7 +7,8 @@
 // before the reset is never "your usual".
 
 import { addDays, dayText, daysBetween } from './dates.ts';
-import { explain, joinNotes, type Result } from './reason.ts';
+import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
+import type { Adjustment } from './rules.ts';
 import type { DailyCheckin, IsoDate } from './schema.ts';
 import { clip, mean, stdev } from './stats.ts';
 
@@ -78,23 +79,35 @@ export interface ReadinessBandKey {
   effect: string;
 }
 
+/** The old default's low-day change: one set fewer and RIR +1 (checkin.md's decision rule). */
+const LEGACY_LOW: Adjustment = { sets: -1, rir: 1 };
+
+/** A low day's change in words: "one set fewer per exercise and RIR +1". */
+export function trimWords(a: Adjustment): string {
+  const sets = a.sets === 0 ? '' : a.sets === -1 ? 'one set fewer per exercise' : `${-a.sets} sets fewer per exercise`;
+  const rir = a.rir ? `RIR +${a.rir}` : '';
+  return [sets, rir].filter(Boolean).join(' and ') || 'no change';
+}
+
 /**
- * How readiness works, in words, and what each band does to the session (the
- * checkin.md decision rule: only low changes it, one set fewer per exercise
- * and RIR +1), so a screen can explain the score beside it.
+ * How readiness works, in words, and what each band does to the session:
+ * only low changes it, by the plan's rule (`low`; null: nothing changes),
+ * else the old default's one set fewer per exercise and RIR +1, so a screen
+ * can explain the score beside it.
  */
-export function readinessKey(): Result<{ how: string; bands: ReadinessBandKey[] }> {
+export function readinessKey(low: Adjustment | null = LEGACY_LOW): Result<{ how: string; bands: ReadinessBandKey[] }> {
   const b = READINESS.bands;
+  const lowWords = low ? trimWords(low) : null;
   const bands: ReadinessBandKey[] = [
     { band: 'good', label: 'Good', from: b.good, to: null, effect: 'Train as planned' },
     { band: 'normal', label: 'Normal', from: b.normal, to: b.good, effect: 'Train as planned' },
     { band: 'watch', label: 'Watch', from: b.watch, to: b.normal, effect: 'Train as planned' },
-    { band: 'low', label: 'Low', from: null, to: b.watch, effect: 'One set fewer per exercise and RIR +1' },
+    { band: 'low', label: 'Low', from: null, to: b.watch, effect: lowWords ? lowWords.charAt(0).toUpperCase() + lowWords.slice(1) : 'Train as planned (the plan’s rule)' },
   ];
   const how = 'Each row compares the morning with your own baseline from this cycle’s mornings, where 0 is your usual. The needle is their average, smoothed over 3 days.';
   return explain({ how, bands }, 'readiness.key', {}, {
     threshold: { bands: b, alpha: READINESS.alpha, baselineDays: READINESS.baselineDays },
-    note: 'Only a low score changes the session: one set fewer per exercise and RIR +1, until it is back to watch or better.',
+    note: lowWords ? `Only a low score changes the session: ${lowWords}, until it is back to watch or better.` : 'No score changes the session: the plan’s rule leaves a low day as planned.',
   });
 }
 
@@ -294,7 +307,14 @@ export interface ReadinessAction {
 export function readinessActions(
   daily: readonly DailyCheckin[],
   today: IsoDate,
-  opts: { e1rmFalling?: boolean; since?: IsoDate | null } = {},
+  opts: {
+    e1rmFalling?: boolean;
+    since?: IsoDate | null;
+    /** The plan's low-day change (null: none, so trim is never active); the old default without it. */
+    low?: Adjustment | null;
+    /** The readiness rule, cited by the trim. */
+    from?: RuleFrom;
+  } = {},
 ): Result<ReadinessAction>[] {
   const scope: ReadinessScope = { since: opts.since ?? null };
   const rows = readinessSeries(daily, today, scope);
@@ -310,7 +330,9 @@ export function readinessActions(
     for (let d = row.date; byDay.get(d)?.band === 'low'; d = addDays(d, -1)) lowRun++;
   }
 
-  const trim = row?.band === 'low';
+  const low = opts.low === undefined ? LEGACY_LOW : opts.low;
+  const isLow = row?.band === 'low';
+  const trim = isLow && low !== null;
   const earlyDeload = lowRun >= READINESS.lowRunDays && opts.e1rmFalling === true;
   const noHard = row ? row.rhrFlag || row.illness : false;
   const noTests = row ? row.date === today && row.shortSleep : false;
@@ -318,7 +340,14 @@ export function readinessActions(
   return [
     explain<ReadinessAction>({ action: 'trim', active: trim }, 'readiness.trim', { asOf, s: row?.s ?? null, band: row?.band ?? 'unscored' }, {
       threshold: { low: `S <= ${READINESS.bands.watch}` },
-      note: joinNotes(trim && 'Readiness is low: one set fewer per exercise and RIR +1 until it is back to watch or better.', base.building ? buildingNote(base) : row?.band === 'unscored' && 'The latest check-in is not scored.', stale, none),
+      note: joinNotes(
+        trim && `Readiness is low: ${trimWords(low!)} until it is back to watch or better.`,
+        isLow && !low && 'Readiness is low; the plan\'s rule leaves the session as planned.',
+        base.building ? buildingNote(base) : row?.band === 'unscored' && 'The latest check-in is not scored.',
+        stale,
+        none,
+      ),
+      ...(opts.from ? { from: opts.from } : {}),
     }),
     explain<ReadinessAction>({ action: 'early-deload', active: earlyDeload }, 'readiness.early-deload', { asOf, lowRun, e1rmFalling: opts.e1rmFalling ?? null }, {
       threshold: { lowRunDays: READINESS.lowRunDays, e1rmFalling: true },

@@ -7,7 +7,9 @@
 // posture emphasis is on. One set moves at a time, deterministically. A
 // priority muscle still short of its direct sets near failure when no set can
 // move swaps an accessory or core slot for one that trains it directly; what
-// stays short is reported with what blocked it (`shortfalls`).
+// stays short is reported with what blocked it (`shortfalls`). A major muscle
+// under its minimum dose that no set can reach swaps a free accessory slot
+// for one that trains or helps it, when the catalogue offers one.
 
 import { MAJOR_MUSCLES, MUSCLES } from '../data/muscles.ts';
 import { explain, joinNotes, type Result } from '../reason.ts';
@@ -29,8 +31,8 @@ export interface PriorityShortfall {
 /** The fitted sessions, the swaps made for a priority muscle's minimum, and the priority muscles still short. */
 export interface VolumeFit {
   templates: BuiltTemplate[];
-  /** Each swap made: the session, the movement out and the one in, and the priority muscle it was for. */
-  swaps: { template: string; from: string; to: string; muscle: string }[];
+  /** Each swap made: the session, the movement out and the one in, the muscle it was for, and why (a priority muscle's direct sets near failure, or a major muscle's minimum dose). */
+  swaps: { template: string; from: string; to: string; muscle: string; for: 'priority' | 'minimum' }[];
   shortfalls: PriorityShortfall[];
 }
 
@@ -58,6 +60,13 @@ export interface VolumeFitInput {
    * dislikes, the Ledger, the self-check). Absent, no swaps.
    */
   swaps?: (t: BuiltTemplate, s: BuiltSlot, muscle: string) => BuiltSlot[];
+  /**
+   * The slots that could take the place of accessory slot `s` of `t` and
+   * train or help `muscle`, best first (the same screening as `swaps`), for a
+   * major muscle under its minimum dose that no set can reach. Absent, no
+   * such swaps.
+   */
+  cover?: (t: BuiltTemplate, s: BuiltSlot, muscle: string) => BuiltSlot[];
   /** The concurrent-training problems of the planned week these sessions make: a swap may add none. */
   concurrent?: (templates: readonly BuiltTemplate[]) => string[];
 }
@@ -207,7 +216,7 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
   /** Per muscle: the free slots a swap looked at and the movements it tried in them. */
   const swapsTried = new Map<string, { slots: number; candidates: number }>();
   let muscleList = muscles;
-  const trainsPriorityHard = (s: BuiltSlot) => input.hard!(s) && s.entry.muscles.main.some((x) => priority.has(x));
+  const trainsPriorityHard = (s: BuiltSlot) => input.hard !== undefined && input.hard(s) && s.entry.muscles.main.some((x) => priority.has(x));
   const swappable = (s: BuiltSlot) => s.role === 'accessory' && !s.fixed && !s.pinned && s.entry.load !== 'cardio' && !trainsPriorityHard(s);
   const bandsNow = () => {
     const vs = vols();
@@ -216,7 +225,11 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
     const all = [...new Set([...muscleList, ...templates.flatMap((t) => t.slots.flatMap((s) => slotMuscles(s).map(([x]) => x)))])];
     return new Map(all.map((x) => [x, { lo: lowVol(x, vs, hs), soft: over(x, vs, hv, false), hard: over(x, vs, hv, true) }]));
   };
-  const swapFor = (m: string): boolean => {
+  /**
+   * `priority`: a movement that trains m directly near failure (input.swaps). `minimum`: one that
+   * trains or helps m (input.cover), for a major muscle under its minimum dose.
+   */
+  const swapFor = (m: string, why: 'priority' | 'minimum' = 'priority'): boolean => {
     const vs = vols();
     const hv = helpVols();
     const excess = (s: BuiltSlot) => Math.max(0, ...slotMuscles(s).map(([x]) => over(x, vs, hv, false)));
@@ -233,11 +246,12 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
       const at = t.slots.indexOf(s);
       const next = t.slots[at + 1];
       const nextPaired = next?.pair === true;
-      for (const c of input.swaps!(t, s, m)) {
-        if (!c.entry.muscles.main.includes(m) || t.slots.some((x) => x !== s && x.entry.id === c.entry.id)) continue;
+      for (const c of why === 'priority' ? input.swaps!(t, s, m) : input.cover!(t, s, m)) {
+        const trains = why === 'priority' ? c.entry.muscles.main.includes(m) : slotMuscles(c).some(([x]) => x === m);
+        if (!trains || t.slots.some((x) => x !== s && x.entry.id === c.entry.id)) continue;
         const repl: BuiltSlot = { ...c, role: 'accessory', slotIndex: s.slotIndex, sets: Math.min(DOSE.maxSets, Math.max(DOSE.minSets, s.sets)) };
         delete repl.pair;
-        if (!input.hard!(repl)) continue;
+        if (why === 'priority' && !input.hard!(repl)) continue;
         tried.candidates++;
         // A superset partner that competes with the new movement is done as straight sets instead.
         if (s.pair === true && !competing(t.slots[at - 1]!.entry, repl.entry)) repl.pair = true;
@@ -248,7 +262,8 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
           const b = before.get(x) ?? { lo: 0, soft: -Infinity, hard: -Infinity };
           if (a.hard > Math.max(0, b.hard) + 1e-9) return false;
           if (x === m) return a.lo > b.lo + 1e-9;
-          return a.soft <= Math.max(0, b.soft) + 1e-9 && a.lo >= Math.min(b.lo, low(x)) - 1e-9;
+          // A minimum is the volume check's floor, a soft top only a guide: for it, another muscle may pass its soft top (never the cap).
+          return (why === 'minimum' || a.soft <= Math.max(0, b.soft) + 1e-9) && a.lo >= Math.min(b.lo, low(x)) - 1e-9;
         });
         const ratioAfter = ratios();
         const ok =
@@ -258,7 +273,7 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
           (!aim || ratioAfter.every((r, i) => r >= Math.min(ratioBefore[i]!, aim.target) - 1e-9)) &&
           (input.concurrent?.(templates) ?? []).every((p) => concurrentBefore.has(p));
         if (ok) {
-          swapped.push({ template: t.blueprint.id, from: s.entry.id, to: repl.entry.id, muscle: m });
+          swapped.push({ template: t.blueprint.id, from: s.entry.id, to: repl.entry.id, muscle: m, for: why });
           muscleList = [...after.keys()].sort();
           return true;
         }
@@ -419,6 +434,14 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
       const shortP = muscleList.filter((m) => byHard(m) && lowVol(m, vs, hs4) < BANDS.priority[0] - 1e-9).sort((a, b) => lowVol(a, vs, hs4) - lowVol(b, vs, hs4) || (a < b ? -1 : 1));
       moved = shortP.some((m) => swapFor(m));
     }
+
+    // 5. A major muscle under its minimum dose (the volume check's floor) with no set left to add: a swap
+    // for a movement that trains or helps it (above), the largest shortfall first.
+    if (!moved && input.cover) {
+      const hs5 = hardVols();
+      const shortM = muscleList.filter((m) => MAJOR_MUSCLES.includes(m) && !byHard(m) && lowVol(m, vs, hs5) < BANDS.majorMinimumDose - 1e-9).sort((a, b) => lowVol(a, vs, hs5) - lowVol(b, vs, hs5) || (a < b ? -1 : 1));
+      moved = shortM.some((m) => swapFor(m, 'minimum'));
+    }
     if (!moved) break;
     moves++;
   }
@@ -429,11 +452,13 @@ export function fitVolume(input: VolumeFitInput): Result<VolumeFit> {
   const misses = muscleList.filter((m) => lowVol(m, final, finalHard) < low(m) - 1e-9 || over(m, final, finalHelp, false) > 1e-9);
   const shortfalls = muscleList.filter((m) => byHard(m) && lowVol(m, final, finalHard) < BANDS.priority[0] - 1e-9).map((m) => shortfall(m, final, finalHard));
   const swapText = swapped.map((x) => `${x.template}/${x.from} -> ${x.to} (${x.muscle})`);
+  const swapsFor = (why: 'priority' | 'minimum') => swapped.filter((x) => x.for === why).map((x) => `${x.template}/${x.from} -> ${x.to} (${x.muscle})`);
   return explain<VolumeFit>({ templates, swaps: swapped, shortfalls }, 'plan.volume-fit', { layouts: input.layouts, priority: [...priority], pullPush: aim ? aim.target : null, moves, nearFailure: input.hard !== undefined, ...(swapped.length ? { swaps: swapText } : {}) }, {
     threshold: BANDS,
     note: joinNotes(
       dropped.length > 0 && `Dropped to keep 8 direct sets per muscle per session: ${dropped.join(', ')}.`,
-      swapped.length > 0 && `Swapped for a priority muscle's direct sets near failure: ${swapText.join(', ')}.`,
+      swapsFor('priority').length > 0 && `Swapped for a priority muscle's direct sets near failure: ${swapsFor('priority').join(', ')}.`,
+      swapsFor('minimum').length > 0 && `Swapped for a major muscle's minimum of ${BANDS.majorMinimumDose} sets: ${swapsFor('minimum').join(', ')}.`,
       misses.length > 0 && `Outside the soft bands: ${misses.map((m) => `${m} ${minVol(m, final)}-${maxVol(m, final)}${byHard(m) ? ` (${minVol(m, finalHard)} direct near failure)` : ''}`).join(', ')}.`,
       ...shortfalls.map((f) => `${labelOf(f.muscle)}: ${f.have} direct sets near failure of the ${f.need}; ${f.blocked.join('; ')}.`),
     ),

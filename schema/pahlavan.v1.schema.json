@@ -396,10 +396,20 @@
         "confidence": {
           "$ref": "#/$defs/confidence"
         },
+        "confirmed": {
+          "type": "boolean",
+          "description": "The user's answer to the question this row raises: true, it holds and the plan acts on it; false, it does not and the plan leaves the row out; left out, not asked yet."
+        },
         "emphasis": {
           "$ref": "#/$defs/text"
         },
         "muscles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "regions": {
           "type": "array",
           "items": {
             "type": "string"
@@ -506,6 +516,12 @@
             "type": "string"
           }
         },
+        "priorityRegions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "experience": {
           "$ref": "#/$defs/experience"
         },
@@ -532,6 +548,9 @@
         },
         "badWeek": {
           "$ref": "#/$defs/badWeek"
+        },
+        "planRules": {
+          "$ref": "#/$defs/planRules"
         }
       },
       "patternProperties": {
@@ -579,6 +598,9 @@
         },
         "balanceS": {
           "$ref": "#/$defs/balance"
+        },
+        "confirmed": {
+          "$ref": "#/$defs/selfCheckConfirmed"
         }
       },
       "patternProperties": {
@@ -676,6 +698,29 @@
       "additionalProperties": false,
       "description": "Single-leg stand, seconds a side."
     },
+    "selfCheckConfirmed": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "sitToStand": {
+          "type": "boolean"
+        },
+        "hingeFlatBack": {
+          "type": "boolean"
+        },
+        "overheadReach": {
+          "type": "boolean"
+        },
+        "balanceS": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The user's answer per self-check test whose result is a finding: true, it holds and the plan acts on it; false, it does not and only its warm-up lines stay; a test left out, not asked yet."
+    },
     "badWeek": {
       "type": "object",
       "required": [
@@ -697,6 +742,46 @@
       },
       "additionalProperties": false,
       "description": "What usually happens when a week goes badly."
+    },
+    "planRules": {
+      "type": "object",
+      "properties": {
+        "setsPerExercise": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "liftSession": {
+          "$ref": "#/$defs/liftSessionRule"
+        },
+        "shortDayCore": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The user's own rules for the plan's shape; engine check reports a plan that breaks one."
+    },
+    "liftSessionRule": {
+      "type": "object",
+      "required": [
+        "patterns"
+      ],
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "What every lifting session holds: catalogue movement patterns or muscle ids, alternatives joined by |."
     },
     "temporaryChange": {
       "type": "object",
@@ -783,8 +868,58 @@
         "pair": {
           "type": "boolean",
           "description": "Done as a superset with the slot before it: a set of each, then rest."
+        },
+        "timed": {
+          "$ref": "#/$defs/timedWork"
         }
       },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false
+    },
+    "timedWork": {
+      "type": "object",
+      "description": "A timed item's structure, in minutes: steady work of `minutes`, or intervals of `rounds` x `workMin` hard with `restMin` easy between, with an optional warm-up and cool-down. Needs minutes, or rounds with workMin.",
+      "properties": {
+        "minutes": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workMin": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "restMin": {
+          "type": "number",
+          "minimum": 0
+        },
+        "warmupMin": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cooldownMin": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "minutes"
+          ]
+        },
+        {
+          "required": [
+            "rounds",
+            "workMin"
+          ]
+        }
+      ],
       "patternProperties": {
         "^_": true
       },
@@ -871,6 +1006,12 @@
           }
         },
         "helps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "regions": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1778,6 +1919,9 @@
         "rear-delt",
         "lateral-raise",
         "neck-upper-back",
+        "hip-abduction",
+        "chest-fly",
+        "jump",
         "conditioning",
         "mobility",
         "skill"
@@ -1873,7 +2017,7 @@
         "^_": true
       },
       "additionalProperties": false,
-      "description": "linear: add `step` every session the reps are made; double: the rep range, then the step; wave: double with the RIR set week by week; ladder: the top of the range on every set, then the `next` variation (`ladder` and `level`: the calisthenics ladder and the 1-based level the slot starts at)."
+      "description": "linear: add `step` every session the reps are made; double: the rep range, then the step; wave: double with the RIR set week by week; ladder: the top of the range on every set, then the `next` variation (`ladder` and `level`: the calisthenics ladder and the 1-based level the slot starts at; plan-data.json holds it as the ladder's `startLevel`)."
     },
     "ledgerConstraint": {
       "type": "object",

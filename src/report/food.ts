@@ -207,7 +207,8 @@ export function buildFood(read: VaultRead, tr: TrackingRead | null, date: IsoDat
   const cmN = (cm: number) => (units.length === 'cm' ? cm : Math.round(inLength(cm, units) * 10) / 10);
   const kgT = (kg: number, f: (n: number) => string = String) => `${f(units.weight === 'kg' ? kg : inWeight(kg, units))} ${units.weight}`;
   const cmT = (cm: number, f: (n: number) => string = String) => `${f(cmN(cm))} ${units.length}`;
-  const week = { planWeek: data.plan.start && read.files.plan !== 'missing' ? planWeekOf(data.plan.start, date) : null, phase: read.files.plan !== 'missing' ? phaseAt(data, date) : null };
+  // No plan week before the plan's start (a start ahead of today), as review counts it.
+  const week = { planWeek: data.plan.start && read.files.plan !== 'missing' && date >= data.plan.start ? planWeekOf(data.plan.start, date) : null, phase: read.files.plan !== 'missing' ? phaseAt(data, date) : null };
 
   // ---------------------------------------------------------------- the trend (the banner needs it with or without a plan)
   const goal = plan?.goal ?? data.profile?.goals.slice().sort((a, b) => b.importance - a.importance).find((x) => DIRECTION[x.kind])?.kind ?? 'recomposition';

@@ -13,7 +13,13 @@
 //
 // With --transcript, every piece of the coach's text (split at " · " and at
 // "…") must appear in the transcript word for word (markdown and spacing aside),
-// so the replay shows what the coach said, with only marked cuts.
+// so the replay shows what the coach said, with only marked cuts. A Claude
+// Code session file (.jsonl) is read as JSON, line by line, and only the main
+// session's assistant text counts (its quotes and line breaks unescaped; a
+// subagent's messages, `isSidechain`, are not the coach's words to the user).
+// A .json file is read the same way when it holds a list of those events (or
+// `{"messages": [...]}`), and refused with a clear message otherwise; any
+// other file is plain text.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -58,6 +64,50 @@ function wrap(line, width, indent) {
 }
 
 const plain = (s) => s.replace(/\*\*|`/g, '');
+
+/** The main session's assistant text of one event (a subagent's, `isSidechain`, left out). */
+function assistantText(event) {
+  if (!event || typeof event !== 'object' || event.isSidechain === true) return [];
+  const message = event.message ?? (event.role ? event : null);
+  if (event.type !== 'assistant' && message?.role !== 'assistant') return [];
+  const content = message?.content;
+  if (typeof content === 'string') return [content];
+  if (Array.isArray(content)) return content.filter((b) => b?.type === 'text' && typeof b.text === 'string').map((b) => b.text);
+  return [];
+}
+
+/**
+ * The text to check a cast against. A session transcript (.jsonl, one JSON
+ * event a line) gives the main session's assistant text blocks, parsed rather
+ * than matched raw, so a line the coach wrote with quotes or a line break
+ * matches as written; a line that is not JSON is left out. A .json file holds
+ * those events as a list (or under `messages`); any other JSON is refused, as
+ * there is no way to tell the coach's words in it. Anything else is plain text.
+ */
+export function transcriptText(text, name = '') {
+  let events;
+  if (/\.jsonl$/i.test(name)) {
+    events = [];
+    for (const line of text.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        events.push(JSON.parse(line));
+      } catch {
+        // not an event
+      }
+    }
+  } else if (/\.json$/i.test(name)) {
+    let doc;
+    try {
+      doc = JSON.parse(text);
+    } catch (e) {
+      throw new Error(`${name} is not valid JSON (${e.message}): pass the session's .jsonl file, or a plain-text transcript`);
+    }
+    events = Array.isArray(doc) ? doc : Array.isArray(doc?.messages) ? doc.messages : null;
+    if (!events) throw new Error(`${name} is not a list of session events (nor {"messages": [...]}): pass the session's .jsonl file, or a plain-text transcript`);
+  } else return text;
+  return events.flatMap(assistantText).join('\n');
+}
 
 /** The cast's coach text, checked against the transcript. */
 export function verify(cast, transcript) {
@@ -184,7 +234,14 @@ function main() {
   const { values, positionals } = parseArgs({ allowPositionals: true, options: { out: { type: 'string' }, transcript: { type: 'string' }, frame: { type: 'string' } } });
   const cast = JSON.parse(readFileSync(positionals[0], 'utf8'));
   if (values.transcript) {
-    const missing = verify(cast, readFileSync(values.transcript, 'utf8'));
+    let text;
+    try {
+      text = transcriptText(readFileSync(values.transcript, 'utf8'), values.transcript);
+    } catch (e) {
+      console.error(`terminal-svg: ${e.message}`);
+      process.exit(2);
+    }
+    const missing = verify(cast, text);
     if (missing.length) {
       console.error(`not in the transcript (${missing.length}):\n  ${missing.join('\n  ')}`);
       process.exit(1);

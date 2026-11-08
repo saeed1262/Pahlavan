@@ -7,6 +7,7 @@
 import { ladderHistory, ladderNameAt, readPlanData } from '../adapters/vault/convert.ts';
 import { buildLogEntry, sessionKey, checklistLines, isDeloadDate, type LogInput } from '../adapters/vault/log-write.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
+import { calibrationCardioNote } from '../core/calibration.ts';
 import { CATALOGUE, CATALOGUE_BY_ID, type CatalogueEntry } from '../core/data/exercises.ts';
 import { MUSCLES } from '../core/data/muscles.ts';
 import { dayText } from '../core/dates.ts';
@@ -47,6 +48,12 @@ export interface FormRow {
   /** Why it was swapped: the reason's title ("Injury limit", "Hotel swap"), or "Your swap". */
   swapWhy: string | null;
   sr: string;
+  /**
+   * A timed item as Today shows it: `text` the dose in words (intervals:
+   * "4 × 4 min hard, 3 min easy between · about 25 min"; a calibration
+   * week's easy minutes), `note` the calibration week's line when it applies.
+   */
+  timed?: { text: string; note: string | null };
   sets: number;
   repRange: [number, number] | null;
   rir: number | null;
@@ -54,8 +61,9 @@ export interface FormRow {
   lift: 0 | 1 | null;
   unit: 'lb' | 'kg';
   step: number;
-  target: { weight: number | null; reps: number; rir: number } | null;
-  /** When there is no target: the engine's start note ("pick a weight for 8-10 reps at RIR 4"). */
+  /** `calibrate`: a calibration week's target (the weight held, or none to find, at the bottom of the range). */
+  target: { weight: number | null; reps: number; rir: number; calibrate?: true } | null;
+  /** When there is no target: the engine's start note ("pick a weight for 8-10 reps at RIR 4"); a calibration week's target: how to find the load. */
   targetNote: string | null;
   last: { weight: number; unit: string; reps: number; date: IsoDate } | null;
   /** Other exercises it could be swapped for (names). */
@@ -156,6 +164,21 @@ function kindOf(read: VaultRead, id: string, name: string, sr: string): RowKind 
   return 'load';
 }
 
+/** "easy, conversational" reads "Easy, conversational". */
+const sentence = (t: string) => (t ? t[0]!.toUpperCase() + t.slice(1) : t);
+
+/**
+ * A timed item's dose for the panel: intervals in words, else (a calibration
+ * week's easy minutes, with `note` its line) its minutes as the session has
+ * them; null for a steady item done as planned (its sr says it).
+ */
+function timedRow(it: { sr?: string; timed?: { text: string; rounds?: number; minutes: number } }, note: string | null): FormRow['timed'] | null {
+  const t = it.timed;
+  if (!t) return null;
+  if ((t.rounds ?? 0) >= 2) return { text: plain(t.text), note };
+  return note ? { text: plain(it.sr ?? t.text), note } : null;
+}
+
 /** Alternatives for a swap: the catalogue's nearest (easier, harder, the same pattern) that the profile's equipment and the Ledger allow. */
 export function swapOptions(read: VaultRead, id: string, date: IsoDate, limit = 4): string[] {
   const c = catalogueEntry(read, id);
@@ -229,7 +252,9 @@ export function logFormFor(read: VaultRead, session: Session, date: IsoDate): Lo
     const items = line.parts.map(find).filter((x): x is NonNullable<typeof x> => x !== null);
     const fin = !items.length && session.finisher && line.parts.includes(session.finisher.name) ? session.finisher : null;
     if (fin) {
-      rows.push({ ...base, kind: 'cardio', name: plain(fin.name), sr: plain(fin.sr) });
+      const easy = session.flags.find((f) => f.rule === 'plan.calibration.cardio');
+      const ft = timedRow(fin, easy ? `${sentence(calibrationCardioNote((easy.inputs as { source?: 'plan' | 'restart' }).source))}.` : null);
+      rows.push({ ...base, kind: 'cardio', name: plain(fin.name), sr: plain(fin.sr), ...(ft ? { timed: ft } : {}) });
       return;
     }
     if (!items.length) {
@@ -243,7 +268,12 @@ export function logFormFor(read: VaultRead, session: Session, date: IsoDate): Lo
     const planned = it.replaces ? part : null;
     const { unit, step } = unitStep(plan, it.name, planned, it.target?.unit);
     const lift = lifting && items.length === 1 && loggedNames.indexOf(part) >= 0 ? (loggedNames.indexOf(part) as 0 | 1) : null;
-    const target = it.target ? { weight: it.target.weight, reps: it.target.reps, rir: it.target.rir } : null;
+    const target = it.target ? { weight: it.target.weight, reps: it.target.reps, rir: it.target.rir, ...(it.target.action === 'calibrate' ? { calibrate: true as const } : {}) } : null;
+    const calibrateNote = target?.calibrate
+      ? target.weight === null
+        ? `Calibration week: find a weight that leaves ${target.rir} reps in reserve at ${target.reps} reps.`
+        : `Calibration week: start at ${target.weight} ${unit} and adjust until ${target.reps} reps leave ${target.rir} in reserve.`
+      : null;
     const why = it.replaces ? it.adjustments.find((a) => a.rule === 'safety.ledger' || a.rule === 'variant.hotel' || a.rule.startsWith('soreness'))?.title ?? 'Swap' : null;
     const start = it.adjustments.find((a) => a.rule === 'progression.start');
     const lastAny = it.last as { weight: number; unit: string; reps: number; date: IsoDate } | null;
@@ -251,6 +281,7 @@ export function logFormFor(read: VaultRead, session: Session, date: IsoDate): Lo
     const last = before ? null : lastAny;
     const fill = before ? null : target;
     const timed = kind === 'timed';
+    const tw = items.length === 1 ? timedRow(it, it.adjustments.some((a) => a.rule === 'plan.calibration.cardio') ? (it.cue ?? null) : null) : null;
     rows.push({
       ...base,
       kind,
@@ -258,6 +289,7 @@ export function logFormFor(read: VaultRead, session: Session, date: IsoDate): Lo
       planned,
       swapWhy: why,
       sr: plain(sr),
+      ...(tw ? { timed: tw } : {}),
       sets: it.sets,
       repRange: it.repRange,
       rir: it.rir,
@@ -265,7 +297,7 @@ export function logFormFor(read: VaultRead, session: Session, date: IsoDate): Lo
       unit,
       step,
       target,
-      targetNote: before ? `Your last top set is from before this cycle: enter what you used${target ? ', or tap Same as target' : ''}.` : target ? null : start?.note ? plain(start.note).replace(/^[^:]+:\s*/, '') : null,
+      targetNote: before ? `Your last top set is from before this cycle: enter what you used${target ? ', or tap Same as target' : ''}.` : target ? calibrateNote : start?.note ? plain(start.note).replace(/^[^:]+:\s*/, '') : null,
       last: last ?? null,
       swaps: items.length === 1 ? swapOptions(read, it.replaces?.exercise ?? it.exercise, date) : [],
       top: fill ? { weight: fill.weight, reps: fill.reps } : { weight: null, reps: null },
@@ -343,8 +375,8 @@ export function withSwaps(form: LogForm, by: Readonly<Record<string, string>>): 
 
 /**
  * A new custom session ("Something else"): a label, minutes, cardio, session
- * RPE, rating and notes, no checklist and no lifts, as fitness_log.py add and
- * the dashboard's dialog log one. `choices` lets the session menu go back to
+ * RPE, rating and notes, no checklist and no lifts, as the original log
+ * script's add and the dashboard's dialog log one. `choices` lets the session menu go back to
  * a planned session.
  */
 export function customLogForm(read: VaultRead, date: IsoDate, label = '', choices: LogForm['choices'] = read.data.plan.types.map((t) => ({ type: t.type, name: t.label, kind: t.kind, suggested: false })), suggested: string | null = null): LogForm {
@@ -475,7 +507,7 @@ export function topOf(row: FormRow, tracking: 'standard' | 'full'): { weight: nu
   return sets.reduce((a, b) => ((b.weight ?? 0) > (a.weight ?? 0) || ((b.weight ?? 0) === (a.weight ?? 0) && (b.reps ?? 0) > (a.reps ?? 0)) ? b : a));
 }
 
-/** The filled form as the log writer's input (fitness_log.py add's shape, plus Pahlavan's fields). */
+/** The filled form as the log writer's input (the original log script's add shape, plus Pahlavan's fields). */
 export function inputFromForm(f: LogForm): LogInput {
   const lift = (i: 0 | 1) => {
     const r = f.rows.find((x) => x.lift === i);
@@ -528,7 +560,7 @@ export interface FrozenList {
   type: string;
   /** Express: a lifting session's own block (a short day is saved as itself, as the Log panel saves it). */
   express: boolean;
-  /** The plan week is a light week (every 4th from the first logged plan session): 2 sets of everything. */
+  /** The plan week is a light week (the plan's light weeks, every 4th by default, counted from the first logged plan session): its sets by the rule. */
   deloadWeek: boolean;
   /** The entry's `exercises`, word for word: each plan line's name (a ladder's level that day) and its sets. */
   exercises: { name: string; sets: number }[];
@@ -589,16 +621,19 @@ function skippedLines(read: VaultRead, type: string, lines: readonly { name: str
   return { ok: true, names: out, via };
 }
 
+/** A light week's sets in words: "2 sets of each", "half the sets". */
+const lightSetsWords = (sets: number | 'half') => (sets === 'half' ? 'half the sets' : `${sets} set${sets === 1 ? '' : 's'} of each`);
+
 /**
  * The exercise list a session's log entry freezes, exactly as the Log
  * panel's save writes it (buildLogEntry's own `exercises`, from the plan as
- * it reads on that date: its lines and sets, a light week's 2 sets, the
- * ladder levels of that day, Express's own block), for a session logged
- * elsewhere (fitness_log.py add), so the engine reads its plan snapshot
- * from the list and not from a later plan. `lifts` are the done lifts'
- * names, for a swap: they only set the entry's `planned`, never the list.
- * An error for what buildLogEntry refuses (a date after today, a lift on a
- * short day).
+ * it reads on that date: its lines and sets, a light week's sets by the
+ * plan's rule, the ladder levels of that day, Express's own block), for a
+ * session logged elsewhere (`engine log add`), so the engine reads its plan
+ * snapshot from the list and not from a later plan. `lifts` are the done
+ * lifts' names, for a swap: they only set the entry's `planned`, never the
+ * list. An error for what buildLogEntry refuses (a date after today, a lift
+ * on a short day).
  */
 export function frozenList(read: VaultRead, opts: { date: IsoDate; type: string; mode: SessionMode; lifts?: [string | null, string | null]; skip?: readonly string[] }, today: IsoDate): { ok: true; list: Result<FrozenList> } | { ok: false; error: string } {
   const plan = planOf(read);
@@ -641,7 +676,7 @@ export function frozenList(read: VaultRead, opts: { date: IsoDate; type: string;
     ok: true,
     list: explain(value, 'log.freeze', { date: opts.date, type: opts.type, express, deloadWeek, lifts: given, skip: opts.skip ?? [] }, {
       note: joinNotes(
-        `The plan's ${opts.type} as it reads on ${dayText(opts.date)}: ${exercises.length} line${exercises.length === 1 ? '' : 's'}${express ? ', its Express block' : ''}${deloadWeek ? ', a light week (2 sets of each)' : ''}, the ladder levels of that day; a timed line counts a set per 2 minutes, as the dashboard counts it.`,
+        `The plan's ${opts.type} as it reads on ${dayText(opts.date)}: ${exercises.length} line${exercises.length === 1 ? '' : 's'}${express ? ', its Express block' : ''}${deloadWeek ? `, a light week (${lightSetsWords(read.data.rules.rules.lightWeeks.sets)})` : ''}, the ladder levels of that day; a timed line counts a set per 2 minutes, as the dashboard counts it.`,
         'The Log panel writes this list into the session’s entry as `exercises`, so the session keeps the plan it was done on.',
         swaps.length > 0 && `A swap names the plan's lift as \`planned\` (${swaps.join('; ')}); the list keeps the plan's names.`,
         `The entry's \`checklist\` as the Log panel writes it: ${checklist.done} of ${checklist.total} lines done${checklist.skipped.length ? `, skipped: ${checklist.skipped.join('; ')}` : ''}.${skipped.via.length ? ` ${skipped.via.join(' ')}` : ''}`,

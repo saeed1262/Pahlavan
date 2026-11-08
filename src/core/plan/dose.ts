@@ -42,12 +42,11 @@ export const DOSE = {
   minSets: 2,
   /** Main lifts keep at least 3 working sets, except in minimum-dose templates. */
   minMainSets: 3,
-  calibrationRir: 3,
   seniorRir: 4,
 } as const;
 
-const ISOLATION: ReadonlySet<Pattern> = new Set(['biceps', 'triceps', 'lateral-raise', 'rear-delt', 'calves', 'neck-upper-back']);
-const CORE: ReadonlySet<Pattern> = new Set(['core-anti-extension', 'core-anti-rotation', 'core-flexion']);
+export const ISOLATION: ReadonlySet<Pattern> = new Set(['biceps', 'triceps', 'lateral-raise', 'rear-delt', 'calves', 'neck-upper-back', 'hip-abduction', 'chest-fly']);
+export const CORE: ReadonlySet<Pattern> = new Set(['core-anti-extension', 'core-anti-rotation', 'core-flexion']);
 
 export interface BuiltSlot {
   entry: CatalogueEntry;
@@ -73,7 +72,7 @@ export interface BuiltSlot {
  * what the time budget counts (the low end of 2-3 min).
  */
 export const REST = {
-  heavy: { text: '2-3 min', minutes: 2 },
+  heavy: { text: '2-3 min', minutes: 2, range: [2, 3] },
   sets: { text: '90 s', minutes: 1.5 },
   pair: { text: '90 s after each pair', minutes: 1.5 },
 } as const;

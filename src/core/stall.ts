@@ -3,7 +3,7 @@
 // least 80 % adherence over the span. Below 80 % it is an adherence question.
 
 import { E1RM, type E1rmTrend } from './e1rm.ts';
-import { explain, joinNotes, type Result } from './reason.ts';
+import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
 import type { ReadinessBand } from './readiness.ts';
 import type { RateStatus } from './weight.ts';
 
@@ -23,7 +23,8 @@ export const STALL = {
   poorRecovery: 2,
 } as const;
 
-export type StallStatus = 'stalled' | 'progressing' | 'adherence' | 'insufficient-data' | 'needs-adherence';
+/** `calibration`: a calibration week, when no stall is called (calibration.ts). */
+export type StallStatus = 'stalled' | 'progressing' | 'adherence' | 'insufficient-data' | 'needs-adherence' | 'calibration';
 
 export interface Stall {
   stalled: boolean;
@@ -83,6 +84,8 @@ export interface TriageInput {
   muscle?: { name: string; weeklySets: number } | null;
   /** Where last week's letter left off (1-4). */
   startAt?: 1 | 2 | 3 | 4;
+  /** The stall rule (the plan's, or the old default's triage), cited by each step. */
+  from?: RuleFrom;
 }
 
 /**
@@ -169,6 +172,7 @@ export function triageLadder(exercise: string, input: TriageInput): Result<Triag
               ? { step: STALL.volumeStep, upAtOrUnder: STALL.volumeUpMax }
               : undefined,
       note: joinNotes(s.step === 1 && unknown.length > 0 && `Not known: ${unknown.join(', ')}.`, s.step < startAt && `Skipped: last week's letter reached step ${startAt}.`),
+      ...(input.from ? { from: input.from } : {}),
     }),
   );
 }

@@ -4,11 +4,19 @@
 // Each muscle's count is also split into its direct and indirect sets, and a
 // plan's direct sets by effort: a priority muscle's minimum is met by direct
 // sets taken near failure (rules.md, "Volume", and the "Muscle" row).
+//
+// Beside the muscles, the same pass tallies the muscle regions
+// (data/regions.ts) an exercise biases, by the catalogue's region credit: 1 a
+// set when the region's parent muscle is a main muscle of the exercise, 0.5
+// when the parent only helps. The region tally never feeds the muscles' own
+// counts; it is reported, and held to the region rules (`checkRegions`).
 
 import { CONCURRENT } from './concurrent.ts';
 import type { Pattern } from './data/exercises.ts';
 import { MUSCLES } from './data/muscles.ts';
+import { REGIONS, REGIONS_BY_ID, type RegionGrade } from './data/regions.ts';
 import { dayText, daysBetween } from './dates.ts';
+import { appliedEmphasis } from './findings.ts';
 import { explain, joinNotes, type Result } from './reason.ts';
 import type { Exercise, ExerciseSlot, IsoDate, Profile, SelfCheck, Session, SessionTemplate } from './schema.ts';
 
@@ -62,8 +70,29 @@ export interface PlannedSplit extends VolumeSplit {
 /** The exercise has muscle tags, so its sets count. */
 const tagged = (exercises: Catalogue, id: string) => Boolean(exercises[id]?.muscles && (exercises[id].muscles.main.length > 0 || exercises[id].muscles.helps.length > 0));
 
-/** Adds one exercise's sets to the tally (and its split); returns false when it has no muscle tags. */
-function add(tally: Record<string, number>, exercises: Catalogue, id: string, sets: number, split?: Record<string, VolumeSplit>): boolean {
+/**
+ * The region credit of one exercise's tags (data/exercises.ts): each listed
+ * region counts 1 a set when its parent muscle is a main muscle, 0.5 when the
+ * parent only helps, and nothing when the parent is neither or the id is not
+ * a modelled region. A region listed twice counts once.
+ */
+export function regionCredit(tags: { main: readonly string[]; helps: readonly string[]; regions?: readonly string[] } | undefined): [string, number][] {
+  const out: [string, number][] = [];
+  for (const id of new Set(tags?.regions ?? [])) {
+    const parent = REGIONS_BY_ID.get(id)?.muscle;
+    if (!parent) continue;
+    if (tags!.main.includes(parent)) out.push([id, 1]);
+    else if (tags!.helps.includes(parent)) out.push([id, VOLUME.indirect]);
+  }
+  return out;
+}
+
+/**
+ * Adds one exercise's sets to the tally (and its split, and its region
+ * credit to `regions`); returns false when it has no muscle tags. The region
+ * tally is a separate record: the muscles' own counts never change with it.
+ */
+function add(tally: Record<string, number>, exercises: Catalogue, id: string, sets: number, split?: Record<string, VolumeSplit>, regions?: Record<string, VolumeSplit>): boolean {
   const ex = exercises[id];
   const m = ex?.muscles;
   if (!m || (m.main.length === 0 && m.helps.length === 0)) return Boolean(ex?.kind && ex.kind !== 'strength');
@@ -75,11 +104,37 @@ function add(tally: Record<string, number>, exercises: Catalogue, id: string, se
     tally[g] = (tally[g] ?? 0) + VOLUME.indirect * sets;
     if (split) (split[g] ??= { direct: 0, indirect: 0 }).indirect += VOLUME.indirect * sets;
   }
+  if (regions) {
+    for (const [r, w] of regionCredit(m)) {
+      const o = (regions[r] ??= { direct: 0, indirect: 0 });
+      if (w === 1) o.direct += sets;
+      else o.indirect += w * sets;
+    }
+  }
   return true;
 }
 
-const splitPerWeek = (o: Readonly<Record<string, VolumeSplit>>, weeks: number): Record<string, VolumeSplit> =>
-  Object.fromEntries(Object.entries(o).map(([g, v]) => [g, { direct: v.direct / weeks, indirect: v.indirect / weeks }]));
+/**
+ * Adds one done item's direct sets by effort to a tally already holding its
+ * sets (`add`): near failure to `hardDirect`, of unknown effort to `unknown`,
+ * for each main muscle and each region it gives full credit; an easy set adds
+ * to neither.
+ */
+function addEffort(exercises: Catalogue, id: string, by: { hard: number; unknown: number }, split: Record<string, VolumeSplit>, regions: Record<string, VolumeSplit>): void {
+  const m = exercises[id]?.muscles;
+  if (!m) return;
+  const put = (o: VolumeSplit & Partial<PlannedSplit>) => {
+    o.hardDirect = (o.hardDirect ?? 0) + by.hard;
+    o.unknown = (o.unknown ?? 0) + by.unknown;
+  };
+  for (const g of m.main) put(split[g]!);
+  for (const [r, w] of regionCredit(m)) if (w === 1) put(regions[r]!);
+}
+
+const splitPerWeek = (o: Readonly<Record<string, VolumeSplit & Partial<PlannedSplit>>>, weeks: number): Record<string, VolumeSplit> =>
+  Object.fromEntries(
+    Object.entries(o).map(([g, v]) => [g, { direct: v.direct / weeks, indirect: v.indirect / weeks, ...(v.hardDirect !== undefined ? { hardDirect: v.hardDirect / weeks, unknown: (v.unknown ?? 0) / weeks } : {}) }]),
+  );
 
 export interface VolumeTally {
   from: IsoDate;
@@ -93,8 +148,18 @@ export interface VolumeTally {
   perWeek: Record<string, number>;
   /** Each muscle's weekly sets split into direct and indirect (`perWeek` is their sum). */
   split: Record<string, VolumeSplit>;
+  /** Each muscle region's weekly sets by the region credit: direct (its muscle main, 1 a set) and indirect (its muscle helping, 0.5); left out when no exercise biased a region. */
+  regions?: Record<string, VolumeSplit>;
   /** Exercise ids with no muscle tags that are not circuits, timed or cardio items. */
   notCounted: string[];
+}
+
+/** One done item as the effort rule reads it: the RIR logged for the set (null when none was), the snapshot's planned slot for it (null when none), and the session's date. */
+export interface DoneEffortItem {
+  exercise: string;
+  rir: number | null;
+  planned: ExerciseSlot | null;
+  date: IsoDate;
 }
 
 /**
@@ -102,19 +167,24 @@ export interface VolumeTally {
  * Full tracking counts the logged sets, and a planned item with no sets of
  * its own (a superset's pair, a row left blank) at the snapshot's sets.
  * Standard and Light count the plan snapshot's sets minus skipped items, as
- * the snippet does, so they are an estimate.
+ * the snippet does, so they are an estimate. With `effort`, each direct set
+ * is also judged (a logged set by its own RIR, a planned one by the
+ * snapshot's), and `split` and `regions` carry the direct sets near failure
+ * (`hardDirect`) and of unknown effort (`unknown`) as a plan's split does.
  */
 export function setsPerMuscle(
   sessions: readonly Session[],
   exercises: Catalogue,
   from: IsoDate,
   to: IsoDate,
+  opts: { effort?: (item: DoneEffortItem) => Effort } = {},
 ): Result<VolumeTally> {
   const days = daysBetween(from, to) + 1;
   if (days < 1) throw new RangeError(`empty range: ${from} to ${to}`);
   const weeks = days / 7;
   const total: Record<string, number> = {};
   const split: Record<string, VolumeSplit> = {};
+  const regions: Record<string, VolumeSplit> = {};
   const missing = new Set<string>();
   let counted = 0;
   // Standard or Light sessions counted from their snapshot; Full ones that counted a planned item from it.
@@ -125,19 +195,23 @@ export function setsPerMuscle(
   for (const s of sessions) {
     if (s.date < from || s.date > to) continue;
     const skipped = new Set(s.skipped ?? []);
-    let items: { exercise: string; sets: number }[];
+    const plannedOf = (id: string) => s.plan?.slots.find((x) => x.exercise === id) ?? null;
+    // Each item's sets, and the RIR each logged set was logged at (null for an item counted from the snapshot).
+    let items: { exercise: string; sets: number; rirs: (number | null)[] | null }[];
+    const logged = (x: Session['exercises'][number]) => ({ exercise: x.exercise, sets: x.sets.length, rirs: x.sets.map((st) => st.rir ?? null) });
+    const planned = (x: ExerciseSlot) => ({ exercise: x.exercise, sets: x.sets, rirs: null });
     if (s.trackingLevel === 'full' && s.exercises.length > 0) {
-      items = s.exercises.map((x) => ({ exercise: x.exercise, sets: x.sets.length }));
+      items = s.exercises.map(logged);
       // The planned items the session logged no sets for, done and not skipped: their planned sets.
-      const logged = new Set(items.map((x) => x.exercise));
-      const rest = (s.plan?.slots ?? []).filter((x) => !logged.has(x.exercise) && !skipped.has(x.exercise));
+      const loggedIds = new Set(items.map((x) => x.exercise));
+      const rest = (s.plan?.slots ?? []).filter((x) => !loggedIds.has(x.exercise) && !skipped.has(x.exercise));
       if (rest.some((x) => tagged(exercises, x.exercise))) partial++;
-      items.push(...rest.map((x) => ({ exercise: x.exercise, sets: x.sets })));
+      items.push(...rest.map(planned));
     } else if (s.plan) {
-      items = s.plan.slots.map((x) => ({ exercise: x.exercise, sets: x.sets }));
+      items = s.plan.slots.map(planned);
       estimated = true;
     } else if (s.exercises.length > 0) {
-      items = s.exercises.map((x) => ({ exercise: x.exercise, sets: x.sets.length }));
+      items = s.exercises.map(logged);
       estimated = true;
     } else {
       unusable++;
@@ -146,13 +220,36 @@ export function setsPerMuscle(
     counted++;
     for (const it of items) {
       if (skipped.has(it.exercise)) continue;
-      if (!add(total, exercises, it.exercise, it.sets, split)) missing.add(it.exercise);
+      if (!add(total, exercises, it.exercise, it.sets, split, regions)) missing.add(it.exercise);
+      else if (opts.effort) {
+        const slot = plannedOf(it.exercise);
+        const by = { hard: 0, unknown: 0 };
+        const judge = (rir: number | null, sets: number) => {
+          const e = opts.effort!({ exercise: it.exercise, rir, planned: slot, date: s.date });
+          if (e === 'hard') by.hard += sets;
+          else if (e === 'unknown') by.unknown += sets;
+        };
+        if (it.rirs) for (const rir of it.rirs) judge(rir, 1);
+        else judge(null, it.sets);
+        addEffort(exercises, it.exercise, by, split, regions);
+      }
     }
   }
 
   const perWeek = Object.fromEntries(Object.entries(total).map(([g, v]) => [g, v / weeks]));
   return explain<VolumeTally>(
-    { from, to, weeks, sessions: counted, estimated: estimated || partial > 0, total, perWeek, split: splitPerWeek(split, weeks), notCounted: [...missing].sort() },
+    {
+      from,
+      to,
+      weeks,
+      sessions: counted,
+      estimated: estimated || partial > 0,
+      total,
+      perWeek,
+      split: splitPerWeek(split, weeks),
+      ...(Object.keys(regions).length ? { regions: splitPerWeek(regions, weeks) } : {}),
+      notCounted: [...missing].sort(),
+    },
     'volume.weekly',
     { from, to, days, sessionsInRange: counted + unusable },
     {
@@ -321,6 +418,8 @@ export interface PlannedVolume {
   perWeek: Record<string, number>;
   /** Each muscle's weekly sets split into direct and indirect (`perWeek` is their sum), and the direct sets by effort. */
   split: Record<string, PlannedSplit>;
+  /** Each muscle region's weekly sets by the region credit, its direct sets by effort as the muscles' are; left out when no slot biases a region. */
+  regions?: Record<string, PlannedSplit>;
   /** Each slot with direct sets and its effort (empty without an effort rule). */
   efforts: SlotEffort[];
   /** Templates with more than 8 direct sets for one muscle. */
@@ -342,6 +441,7 @@ export function plannedSetsPerMuscle(
 ): Result<PlannedVolume> {
   const perWeek: Record<string, number> = {};
   const split: Record<string, PlannedSplit> = {};
+  const regions: Record<string, PlannedSplit> = {};
   const efforts: SlotEffort[] = [];
   const missing = new Set<string>();
   const overSession: PlannedVolume['overSession'] = [];
@@ -352,8 +452,10 @@ export function plannedSetsPerMuscle(
     for (const slot of t.slots) {
       const sets = slot.sets * k;
       const main = exercises[slot.exercise]?.muscles?.main ?? [];
+      const credit = regionCredit(exercises[slot.exercise]?.muscles);
       for (const g of [...main, ...(exercises[slot.exercise]?.muscles?.helps ?? [])]) split[g] ??= { direct: 0, indirect: 0, hardDirect: 0, unknown: 0 };
-      if (!add(perWeek, exercises, slot.exercise, sets, split)) missing.add(slot.exercise);
+      for (const [r] of credit) regions[r] ??= { direct: 0, indirect: 0, hardDirect: 0, unknown: 0 };
+      if (!add(perWeek, exercises, slot.exercise, sets, split, regions)) missing.add(slot.exercise);
       for (const g of main) direct[g] = (direct[g] ?? 0) + slot.sets;
       if (main.length === 0) continue;
       const e = opts.effort?.(slot, t);
@@ -361,6 +463,12 @@ export function plannedSetsPerMuscle(
       for (const g of main) {
         if (effort === 'hard') split[g]!.hardDirect += sets;
         else if (effort === 'unknown') split[g]!.unknown += sets;
+      }
+      // A region's direct sets (its muscle main) take the slot's effort, as the muscle's do.
+      for (const [r, w] of credit) {
+        if (w !== 1) continue;
+        if (effort === 'hard') regions[r]!.hardDirect += sets;
+        else if (effort === 'unknown') regions[r]!.unknown += sets;
       }
       if (e) efforts.push({ template: t.id, exercise: slot.exercise, sets: r2(sets), effort, by: e.value.by, note: e.reason.note ?? null });
     }
@@ -371,7 +479,7 @@ export function plannedSetsPerMuscle(
   const nameOf = (x: string) => exercises[x]?.name ?? x;
   const listed = (kind: Effort) => [...new Set(efforts.filter((e) => e.effort === kind).map((e) => nameOf(e.exercise)))].join(', ');
   return explain<PlannedVolume>(
-    { perWeek, split, efforts, overSession, notCounted: [...missing].sort() },
+    { perWeek, split, ...(Object.keys(regions).length ? { regions } : {}), efforts, overSession, notCounted: [...missing].sort() },
     'volume.planned',
     { templates: templates.map((t) => t.id), ...(opts.weights ? { weights } : {}) },
     {
@@ -462,11 +570,188 @@ export function checkVolume(
   });
 }
 
+// ---------------------------------------------------------------- regions
+
+/**
+ * The region rules (both heuristic, built on the regional growth studies
+ * data/regions.ts cites and grades): each coverage region of a
+ * priority muscle gets at least 4 direct region sets a week, and a region the
+ * person declares weak at least 6 direct region sets near failure (0-3 RIR,
+ * an unknown effort counted) inside its muscle's priority 10-16. Whole-muscle
+ * tiers are unchanged by them.
+ */
+export const REGION_RULES = { coverage: 4, declared: 6 } as const;
+
+/**
+ * The regions a profile declares weak: `priorityRegions` and the `regions`
+ * of its body-assessment rows that act in full (confirmed rows, or every row
+ * in a profile that records no answers; an unanswered or declined row is left out).
+ * Modelled region ids only, each once, in that order: a weak region is the
+ * person's word, never a diagnosis.
+ */
+export function declaredRegions(profile: Pick<Profile, 'priorityRegions' | 'emphasis' | 'selfCheck'> | null | undefined): string[] {
+  if (!profile) return [];
+  const all = [...(profile.priorityRegions ?? []), ...appliedEmphasis(profile).flatMap((e) => e.regions ?? [])];
+  return [...new Set(all.filter((r) => REGIONS_BY_ID.has(r)))];
+}
+
+/** The given priority muscles, then each declared region's muscle (each once). */
+export function regionPriority(priority: readonly string[], declared: readonly string[]): string[] {
+  return [...new Set([...priority, ...declared.map((r) => REGIONS_BY_ID.get(r)?.muscle).filter((m): m is string => Boolean(m))])];
+}
+
+/**
+ * The muscles of the body assessment's lagging areas that act in full
+ * (confirmed rows, or every row in a profile that records no answers, as the
+ * plan generator reads them); an unanswered or declined row adds none.
+ */
+export function laggingMuscles(profile: Pick<Profile, 'emphasis' | 'selfCheck'> | null | undefined): string[] {
+  if (!profile) return [];
+  return [...new Set(appliedEmphasis(profile).filter((e) => e.kind === 'lagging-area').flatMap((e) => e.muscles ?? []))];
+}
+
+/**
+ * The week's room for priority muscles (H): each takes 10-16 weekly sets, so
+ * up to 2-3 fit a phase (rules.md, "Volume", the Priority row): 3 with 4 or
+ * more lifting days, 2 with 3, 1 with 2 or fewer or 30-minute sessions.
+ */
+export const PRIORITY_ROOM = { fourDays: 3, threeDays: 2, twoDaysOr30Min: 1, shortSessionMinutes: 30 } as const;
+
+/** The room a week of `liftingDays` lifting sessions of `minutes` has for priority muscles (PRIORITY_ROOM). */
+export function weekRoom(liftingDays: number, minutes: number): number {
+  if (minutes <= PRIORITY_ROOM.shortSessionMinutes || liftingDays <= 2) return PRIORITY_ROOM.twoDaysOr30Min;
+  return liftingDays >= 4 ? PRIORITY_ROOM.fourDays : PRIORITY_ROOM.threeDays;
+}
+
+/**
+ * The priority muscles counted against the week's room: all but those the
+ * plan trains only on its short sessions (abs and obliques on a
+ * cardio-and-core day use none of the lifting days' room). A muscle with
+ * direct sets on a lifting day counts, whatever the short days add: one
+ * push-up item on a short day does not excuse a chest priority. Null when
+ * they fit. `shortSessions` and `liftingSessions` are the main muscles each
+ * kind of session trains (cardio aside).
+ */
+export function overRoom(priority: readonly string[], room: number, shortSessions: readonly string[], liftingSessions: readonly string[] = []): { counted: string[]; onShort: string[] } | null {
+  const onShort = priority.filter((m) => shortSessions.includes(m) && !liftingSessions.includes(m));
+  const counted = priority.filter((m) => !onShort.includes(m));
+  return counted.length > room ? { counted, onShort } : null;
+}
+
+/**
+ * The effective priority muscles, the one list every count holds to the
+ * priority tier (10-16, its minimum direct sets near failure) and the region
+ * rules read: the profile's priority muscles (else the program's), then the
+ * muscles of a lagging area the person confirmed, then the muscle of each
+ * region the person declares weak. A confirmed lagging area or a declared
+ * weak region makes its muscle a priority everywhere: the review's bands,
+ * the plan check, Progress and Plan.
+ */
+export function priorityMuscles(profile: Pick<Profile, 'priorityMuscles' | 'priorityRegions' | 'emphasis' | 'selfCheck'> | null | undefined, programPriority: readonly string[] = []): string[] {
+  return regionPriority([...(profile?.priorityMuscles ?? programPriority), ...laggingMuscles(profile)], declaredRegions(profile));
+}
+
+export type RegionStatus = 'ok' | 'short' | 'reported';
+
+/** One modelled region's weekly sets against the region rules. */
+export interface RegionCheck {
+  id: string;
+  muscle: string;
+  label: string;
+  grade: RegionGrade;
+  /** In the coverage rule (a priority muscle's coverage region gets 4 direct sets a week). */
+  coverage: boolean;
+  /** A heuristic region shown as a rough guide only. */
+  roughGuide: boolean;
+  /** Declared weak by the person (`declaredRegions`). */
+  declared: boolean;
+  /** Its muscle is a priority muscle (the profile's, or a declared region's muscle). */
+  priority: boolean;
+  /** The plan's weekly region sets (direct plus half credit), its direct and half-credit sets, and its direct sets near failure and of unknown effort. */
+  sets: number;
+  direct: number;
+  indirect: number;
+  hardDirect: number;
+  unknown: number;
+  /** The week's sets done, when given. */
+  done: { sets: number; direct: number; indirect: number } | null;
+  /** The rule it is held to: `declared` (6 direct near failure), `coverage` (4 direct), or null (reported only). */
+  rule: 'declared' | 'coverage' | null;
+  min: number | null;
+  /** The sets the rule counts: direct for coverage, direct near failure (unknown effort counted) for a declared region. */
+  counted: number | null;
+  status: RegionStatus;
+}
+
+/**
+ * Every modelled region (data/regions.ts, in its order) with the plan's
+ * weekly region sets against the region rules: a declared region is held to
+ * 6 direct sets near failure, a coverage region of a priority muscle to 4
+ * direct sets, and the rest (a muscle that is not a priority, the rough-guide
+ * and heuristic regions, the upper chest) are reported only. `done` adds the
+ * week's sets done to each row.
+ */
+export function checkRegions(
+  planned: Readonly<Record<string, PlannedSplit>>,
+  opts: { priority?: readonly string[]; declared?: readonly string[]; done?: Readonly<Record<string, VolumeSplit>> } = {},
+): Result<RegionCheck>[] {
+  const priority = new Set(opts.priority ?? []);
+  const declared = new Set(opts.declared ?? []);
+  return REGIONS.map((r) => {
+    const p = planned[r.id] ?? { direct: 0, indirect: 0, hardDirect: 0, unknown: 0 };
+    const d = opts.done ? (opts.done[r.id] ?? { direct: 0, indirect: 0 }) : null;
+    const isDeclared = declared.has(r.id);
+    const isPriority = priority.has(r.muscle);
+    const rule: RegionCheck['rule'] = isDeclared ? 'declared' : r.coverage && isPriority ? 'coverage' : null;
+    const min = rule === 'declared' ? REGION_RULES.declared : rule === 'coverage' ? REGION_RULES.coverage : null;
+    const counted = rule === 'declared' ? r2(p.hardDirect + p.unknown) : rule === 'coverage' ? r2(p.direct) : null;
+    const status: RegionStatus = min === null || counted === null ? 'reported' : counted < min - 1e-9 ? 'short' : 'ok';
+    const muscle = labelOf(r.muscle).toLowerCase();
+    const sets = `${r2(p.direct)} direct sets a week${p.indirect > 0 ? ` (and ${r2(p.indirect)} at half credit from lifts its muscle helps)` : ''}`;
+    const unknown = p.unknown > 0 ? ` (${r2(p.unknown)} of unknown effort, counted)` : '';
+    const note =
+      rule === 'declared'
+        ? `${r.label}: ${counted} direct sets near failure a week${unknown}, ${status === 'short' ? 'under' : 'at or over'} the ${REGION_RULES.declared} a declared weak region gets, inside the priority 10-16 for the ${muscle} (heuristic).`
+        : rule === 'coverage'
+          ? `${r.label}: ${sets}, ${status === 'short' ? 'under' : 'at or over'} the ${REGION_RULES.coverage} direct sets a priority muscle's coverage region gets (heuristic).`
+          : r.roughGuide
+            ? `${r.label}: ${sets}. A rough guide only, held to no minimum unless declared.`
+            : !r.coverage
+              ? `${r.label}: ${sets}. Not in the coverage rule (${r.grade === 'heuristic' ? 'a heuristic region' : `${r.grade} evidence`}): reported, held to ${REGION_RULES.declared} only when declared.`
+              : `${r.label}: ${sets}. The ${muscle} are not a priority muscle: reported, not held to a minimum.`;
+    const value: RegionCheck = {
+      id: r.id,
+      muscle: r.muscle,
+      label: r.label,
+      grade: r.grade,
+      coverage: r.coverage,
+      roughGuide: r.roughGuide === true,
+      declared: isDeclared,
+      priority: isPriority,
+      sets: r2(p.direct + p.indirect),
+      direct: r2(p.direct),
+      indirect: r2(p.indirect),
+      hardDirect: r2(p.hardDirect),
+      unknown: r2(p.unknown),
+      done: d ? { sets: r2(d.direct + d.indirect), direct: r2(d.direct), indirect: r2(d.indirect) } : null,
+      rule,
+      min,
+      counted,
+      status,
+    };
+    return explain<RegionCheck>(value, 'volume.regions', { region: r.id, muscle: r.muscle, direct: value.direct, hardDirect: value.hardDirect, unknown: value.unknown, priority: isPriority, declared: isDeclared }, {
+      threshold: { coverage: REGION_RULES.coverage, declared: REGION_RULES.declared, hardRir: VOLUME.hardRir, direct: 1, indirect: VOLUME.indirect },
+      note,
+    });
+  });
+}
+
 // ---------------------------------------------------------------- pull to push
 
 /** Patterns that count as pulling and pushing, for the posture ratio. */
 export const PULL_PATTERNS: readonly Pattern[] = ['horizontal-pull', 'vertical-pull', 'rear-delt'];
-export const PUSH_PATTERNS: readonly Pattern[] = ['horizontal-push', 'vertical-push'];
+/** A chest fly pushes as a press does (the chest and front delts), so it counts on the pushing side, as a reverse fly counts on the pulling side. */
+export const PUSH_PATTERNS: readonly Pattern[] = ['horizontal-push', 'vertical-push', 'chest-fly'];
 
 /**
  * The posture ratio for a forward-head, rounded-shoulders finding in the body
@@ -485,18 +770,18 @@ export interface PullPushAim {
   why: 'finding' | 'goal';
 }
 
-/** The ratio a profile's plan is held to: 2 to 1 only with the finding; a posture goal alone, at least 1 to 1; else none. */
-export function pullPushAim(profile: Pick<Profile, 'emphasis' | 'goals'> | null | undefined): PullPushAim | null {
+/** The ratio a profile's plan is held to: 2 to 1 only with the finding acting in full (confirmed, or a profile from before the question); a posture goal alone, at least 1 to 1; else none. */
+export function pullPushAim(profile: Pick<Profile, 'emphasis' | 'goals' | 'selfCheck'> | null | undefined): PullPushAim | null {
   if (!profile) return null;
-  if (profile.emphasis.some((e) => e.kind === 'forward-head-rounded-shoulders')) return { ...PULL_PUSH, why: 'finding' };
+  if (appliedEmphasis(profile).some((e) => e.kind === 'forward-head-rounded-shoulders')) return { ...PULL_PUSH, why: 'finding' };
   if (profile.goals.some((g) => g.kind === 'posture')) return { ...PULL_PUSH_GOAL, why: 'goal' };
   return null;
 }
 
-/** The posture emphasis: a forward-head, rounded-shoulders body assessment, or a posture goal. */
-export function postureEmphasis(profile: Pick<Profile, 'emphasis' | 'goals'> | null | undefined): boolean {
+/** The posture emphasis: a forward-head, rounded-shoulders body assessment acting in full (as `pullPushAim`), or a posture goal. */
+export function postureEmphasis(profile: Pick<Profile, 'emphasis' | 'goals' | 'selfCheck'> | null | undefined): boolean {
   if (!profile) return false;
-  return profile.emphasis.some((e) => e.kind === 'forward-head-rounded-shoulders') || profile.goals.some((g) => g.kind === 'posture');
+  return appliedEmphasis(profile).some((e) => e.kind === 'forward-head-rounded-shoulders') || profile.goals.some((g) => g.kind === 'posture');
 }
 
 export type PullPushStatus = 'ok' | 'below' | 'no-target' | 'no-pushing';

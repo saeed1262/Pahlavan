@@ -9,6 +9,19 @@ export interface Reason {
   inputs: Record<string, unknown>;
   threshold?: unknown;
   note?: string;
+  /**
+   * The standing rule the result applies: the plan's own (plan-data.json's
+   * `rules`, a lift's `progression`) or, where the plan sets none, the old
+   * default. `path` is where the rule is written; the note starts with `text`.
+   */
+  from?: RuleFrom;
+}
+
+/** Where a result's rule comes from (rules.ts): the plan, or the old default the plan leaves standing. */
+export interface RuleFrom {
+  kind: 'plan' | 'legacy-default';
+  path: string;
+  text: string;
 }
 
 /**
@@ -33,6 +46,7 @@ export const TITLES: Readonly<Record<string, string>> = {
   deload: 'Light week',
   'deload.prescription': 'Light-week sets',
   stall: 'Stall',
+  calibration: 'Calibration week',
   'stall.triage': 'Stall triage',
   e1rm: 'e1RM trend',
   'e1rm.epley': 'e1RM',
@@ -149,12 +163,28 @@ export function explain<T>(
   value: T,
   rule: string,
   inputs: Record<string, unknown>,
-  extra: { threshold?: unknown; note?: string | undefined; title?: string } = {},
+  extra: { threshold?: unknown; note?: string | undefined; title?: string; from?: RuleFrom | undefined } = {},
 ): Result<T> {
   const reason: Reason = { rule, title: extra.title ?? titleFor(rule), inputs };
   if (extra.threshold !== undefined) reason.threshold = extra.threshold;
-  if (extra.note) reason.note = extra.note;
+  const note = extra.from ? joinNotes(extra.from.text, extra.note) : extra.note;
+  if (note) reason.note = note;
+  if (extra.from) reason.from = extra.from;
   return { value, reason };
+}
+
+/** A reason's own note, without the rule it cites at its start (the note itself when it cites none). */
+export function ownNote(reason: Pick<Reason, 'note' | 'from'>): string | undefined {
+  const n = reason.note;
+  if (!n || !reason.from || !n.startsWith(reason.from.text)) return n;
+  return n.slice(reason.from.text.length).trim() || undefined;
+}
+
+/** A reason that also cites the rule it applied (its note led by the rule's text); unchanged without one. */
+export function cited(reason: Reason, from: RuleFrom | undefined | null): Reason {
+  if (!from) return reason;
+  const note = joinNotes(from.text, reason.note);
+  return { ...reason, ...(note ? { note } : {}), from };
 }
 
 /** Joins the non-empty parts of a note into sentences. */

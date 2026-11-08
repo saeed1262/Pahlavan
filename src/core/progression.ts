@@ -1,12 +1,13 @@
 // Double progression: the next target for one exercise from its last sessions,
 // its rep range [lo, hi] and the target RIR. The arithmetic follows the
-// dashboard's nextTarget (fitness_log.py next_target) and rules.md
+// dashboard's nextTarget (the original log script's next target) and rules.md
 // ("Progression"); the two-miss rule follows the numbers.md flag.
 
 import { addDays, dayText, mondayOf } from './dates.ts';
 import type { ExerciseSession } from './history.ts';
 import { topSet } from './history.ts';
-import { explain, joinNotes, type Result } from './reason.ts';
+import { cited, explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
+import type { LiftProgression, RuleSource } from './rules.ts';
 import { capLoadJump } from './safety.ts';
 import type { IsoDate, LoggedSet, RepRange, SlotProgression, Unit } from './schema.ts';
 import { roundToStep, setInUnit, weightInUnit } from './units.ts';
@@ -26,7 +27,7 @@ export const PROGRESSION = {
   lighterBand: [0.05, 0.1],
 } as const;
 
-/** `calibrate` and `ease-back` come from the missed-time protocol (missed.ts). */
+/** `calibrate` comes from the calibration week (calibration.ts), `ease-back` from the missed-time protocol (missed.ts). */
 export type ProgressionAction =
   | 'start'
   | 'no-data'
@@ -37,7 +38,8 @@ export type ProgressionAction =
   | 'add-reps'
   | 'calibrate'
   | 'ease-back'
-  | 'next-variation';
+  | 'next-variation'
+  | 'target';
 
 export interface ProgressionTarget {
   action: ProgressionAction;
@@ -48,6 +50,8 @@ export interface ProgressionTarget {
   rir: number;
   /** Standard or Light tracking: the logged top set stands in for every set. */
   assumedAllSets: boolean;
+  /** A coach-set target (rule `target`): the last session met it; the target holds until the coach sets the next. */
+  targetMet?: boolean;
 }
 
 export interface ProgressionInput {
@@ -58,8 +62,17 @@ export interface ProgressionInput {
   targetRir: number;
   /** The coming session is in a deload week. */
   deload?: boolean;
+  /** The light week's load (a fraction of the last loading weight) and RIR added, and the rule they come from (default: 0.9 and +3). */
+  lightWeek?: { load: number; rirAdd: number; from?: RuleFrom };
   /** The slot's progression rule (default double; linear uses its own step). */
   rule?: SlotProgression;
+  /**
+   * The lift's standing rule (rules.ts): the plan's own, or the old default
+   * the plan leaves standing, with where it came from. The plan's own rule
+   * sets the step: an increase over the load-jump guide is reported, not
+   * capped. Without it, the old default (double progression, capped).
+   */
+  standing?: { rule: LiftProgression; source: RuleSource; from?: RuleFrom };
   /** The coming session's date, for the load-jump cap's 7 days (default: the day after the last session). */
   date?: IsoDate;
   /** Mondays of deload weeks the check-ins say were trained at full load: their sessions count as loading. */
@@ -102,7 +115,7 @@ export function nextTarget(raw: ProgressionInput): Result<ProgressionTarget> {
   const full = new Set(raw.fullLoadWeeks ?? []);
   const restored = raw.history.filter((h) => h.deload && full.has(mondayOf(h.date)));
   const input: ProgressionInput = restored.length ? { ...raw, history: raw.history.map((h) => (restored.includes(h) ? { ...h, deload: false } : h)) } : raw;
-  const r0 = cappedTarget(input);
+  const r0 = withStanding(cappedTarget(input), input);
   const r = restored.length
     ? {
         value: r0.value,
@@ -131,6 +144,13 @@ export function nextTarget(raw: ProgressionInput): Result<ProgressionTarget> {
   };
 }
 
+/** A target cited by the lift's standing rule; a light-week target keeps the light-week rule it already cites. */
+function withStanding(r: Result<ProgressionTarget>, input: ProgressionInput): Result<ProgressionTarget> {
+  const from = input.standing?.from;
+  if (!from || r.reason.from) return r;
+  return { value: r.value, reason: cited(r.reason, from) };
+}
+
 function cappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const r = uncappedTarget(input);
   const base = r.reason.inputs['base'];
@@ -153,6 +173,22 @@ function cappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const cap = capLoadJump({ proposed: r.value.weight, date, history, exercise: input.exercise });
   const loadCap = { proposed: r.value.weight, limit: cap.value.limit, bigJump: cap.value.bigJump, binding: cap.value.binding };
   if (!cap.value.capped && !cap.value.bigJump) return r;
+  if (input.standing?.source === 'plan') {
+    // The plan's rule sets the step: the guide (one step a session, about 10 % in 7 days) is a heuristic, reported as a fact.
+    const unit = input.exercise.unit;
+    return {
+      value: r.value,
+      reason: {
+        ...r.reason,
+        inputs: { ...r.reason.inputs, loadCap: { ...loadCap, applied: false } },
+        note: joinNotes(
+          r.reason.note,
+          cap.value.capped && `${r.value.weight} ${unit} is over the load-jump guide (${cap.value.limit} ${unit}: one step a session, about 10 % in 7 days; a heuristic). Reported, not applied: the plan's rule sets the step.`,
+          cap.value.bigJump && !cap.value.capped && 'One step is more than 10 % of the load (a big jump): reported, the plan\'s rule sets the step.',
+        ) ?? '',
+      },
+    };
+  }
   return {
     value: { ...r.value, weight: cap.value.weight },
     reason: {
@@ -170,13 +206,25 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const unit = exercise.unit;
   const inc = exercise.increment;
   const deload = input.deload === true;
+  const lightWeek = { load: input.lightWeek?.load ?? PROGRESSION.deloadFactor, rirAdd: input.lightWeek?.rirAdd ?? PROGRESSION.deloadRirAdd, from: input.lightWeek?.from };
   const stepUp = input.rule?.rule === 'linear' && input.rule.step ? input.rule.step : inc;
   const threshold = { lo, hi, targetRir, increment: inc, ...(stepUp !== inc ? { linearStep: stepUp } : {}) };
-  const rule = `progression.${input.rule?.rule ?? 'double'}`;
+  // The plan's own lift rule (double, linear, hold, target) names the result; else the slot's (double by default).
+  const own = input.standing?.source === 'plan' ? input.standing.rule : null;
+  const rule = own ? `progression.${own.rule}` : `progression.${input.rule?.rule ?? 'double'}`;
+  const onMiss = input.standing?.rule.onMiss ?? { after: 2, drop: 1 - PROGRESSION.lighterFactor };
+  const target = own?.rule === 'target' ? (own.target ?? null) : null;
 
   const loading = history.filter((h) => !h.deload);
   const logged = loading.filter((h) => h.sets.length > 0);
   const last = logged.at(-1);
+
+  if (!last && target && !deload) {
+    return explain<ProgressionTarget>({ action: 'target', weight: target.weight, unit, reps: target.reps, rir: target.rir, assumedAllSets: false, targetMet: false }, rule, { sessions: history.length, loggedSessions: 0, repRange, target, targetMet: false }, {
+      threshold,
+      note: `The coach's target: ${target.weight} ${unit} x ${target.reps} at RIR ${target.rir}.`,
+    });
+  }
 
   if (!last) {
     const performed = history.length > 0;
@@ -185,7 +233,7 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
       weight: null,
       unit,
       reps: lo,
-      rir: deload ? targetRir + PROGRESSION.deloadRirAdd : targetRir,
+      rir: deload ? targetRir + lightWeek.rirAdd : targetRir,
       assumedAllSets: false,
     };
     // Logged only in deload weeks: progression never starts from a deload load.
@@ -257,11 +305,26 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   });
 
   if (deload) {
-    const w = roundToStep(base * PROGRESSION.deloadFactor, inc);
-    return explain(make('deload', w, lo, targetRir + PROGRESSION.deloadRirAdd), rule, inputs, {
-      threshold: { ...threshold, deloadFactor: PROGRESSION.deloadFactor, deloadRirAdd: PROGRESSION.deloadRirAdd },
+    const w = roundToStep(base * lightWeek.load, inc);
+    return explain(make('deload', w, lo, targetRir + lightWeek.rirAdd), rule, inputs, {
+      threshold: { ...threshold, deloadFactor: lightWeek.load, deloadRirAdd: lightWeek.rirAdd },
       note: joinNotes(
-        `Deload week: ${w} ${unit} x ${lo}, about 10 % under the last loading session (${base} ${unit}), RIR +${PROGRESSION.deloadRirAdd}.`,
+        `Deload week: ${w} ${unit} x ${lo}, ${lightWeek.load >= 1 ? 'the load of' : `about ${Math.round((1 - lightWeek.load) * 100)} % under`} the last loading session (${base} ${unit}), RIR +${lightWeek.rirAdd}.`,
+        assumption,
+      ),
+      ...(lightWeek.from ? { from: lightWeek.from } : {}),
+    });
+  }
+
+  if (target) {
+    // The coach's numbers; met once every judged set reached its reps at its weight or more.
+    const met = base >= target.weight - 1e-9 && reps.length > 0 && reps.every((r) => r >= target.reps);
+    return explain<ProgressionTarget>({ ...make('target', target.weight, target.reps, target.rir), targetMet: met }, rule, { ...inputs, target, targetMet: met }, {
+      threshold,
+      note: joinNotes(
+        met
+          ? `The coach's target is met (${base} ${unit} x ${reps.join(', ')}): ${target.weight} ${unit} x ${target.reps} at RIR ${target.rir} holds until the coach sets the next one.`
+          : `The coach's target: ${target.weight} ${unit} x ${target.reps} at RIR ${target.rir}.`,
         assumption,
       ),
     });
@@ -269,20 +332,35 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
 
   const miss = (h: ExerciseSession) => judged(h).sets.some((s) => s.reps < lo);
   const prev = logged.at(-2);
-  if (prev && miss(last) && miss(prev)) {
-    let w = roundToStep(base * PROGRESSION.lighterFactor, inc);
-    if (w >= base) w = Math.max(0, Number((base - inc).toFixed(6))); // the step is too coarse for 10 %
+  const missRun = onMiss === 'hold' ? null : logged.slice(-onMiss.after);
+  if (onMiss !== 'hold' && missRun!.length === onMiss.after && missRun!.every(miss)) {
+    const factor = own ? 1 - onMiss.drop : PROGRESSION.lighterFactor;
+    let w = roundToStep(base * factor, inc);
+    if (w >= base) w = Math.max(0, Number((base - inc).toFixed(6))); // the step is too coarse for the drop
     const drop = base > 0 ? 1 - w / base : 0;
-    const [bandLo, bandHi] = PROGRESSION.lighterBand;
-    return explain(make('lighter', w, lo), rule, { ...inputs, previous: summary(prev, exercise), drop }, {
-      threshold: { ...threshold, lighterFactor: PROGRESSION.lighterFactor, lighterBand: PROGRESSION.lighterBand },
+    const [bandLo, bandHi] = own ? [Math.max(0, onMiss.drop - 0.05), onMiss.drop] : PROGRESSION.lighterBand;
+    const runText = onMiss.after === 1 ? 'A session' : onMiss.after === 2 ? 'Two sessions in a row' : `${onMiss.after} sessions in a row`;
+    return explain(make('lighter', w, lo), rule, { ...inputs, ...(prev ? { previous: summary(prev, exercise) } : {}), drop }, {
+      threshold: { ...threshold, lighterFactor: factor, lighterBand: own ? [bandLo, bandHi] : PROGRESSION.lighterBand },
       note: joinNotes(
-        `Two sessions in a row under ${lo} reps: ${w} ${unit} x ${lo}, ${(drop * 100).toFixed(1)} % lighter.`,
+        `${runText} under ${lo} reps: ${w} ${unit} x ${lo}, ${(drop * 100).toFixed(1)} % lighter.`,
         (drop < bandLo - 1e-9 || drop > bandHi + 1e-9) &&
-          `The ${inc} ${unit} step makes this outside 5-10 %; a wider rep range lets reps carry the progress.`,
+          `The ${inc} ${unit} step makes this outside ${Math.round(bandLo * 100)}-${Math.round(bandHi * 100)} %; a wider rep range lets reps carry the progress.`,
         assumption,
       ),
     });
+  }
+
+  if (own?.rule === 'linear') {
+    // Linear: the weight goes up every session each set reaches the top; the reps stay there.
+    if (reps.some((r) => r < hi)) {
+      return explain(make('hold', base, hi), rule, inputs, { threshold, note: joinNotes(`A set under ${hi} reps: hold ${base} ${unit} and aim for ${hi} on every set.`, assumption, unreliable) });
+    }
+    if (rirs.some((r) => r < targetRir)) {
+      return explain(make('hold', base, hi), rule, { ...inputs, judgedRir: rirs }, { threshold, note: joinNotes(`Reached ${hi} reps but with less than ${targetRir} in reserve: repeat ${base} ${unit} x ${hi} at the target RIR before adding weight.`, assumption) });
+    }
+    const w = roundToStep(base + stepUp, PROGRESSION.incrementRounding);
+    return explain(make('increase', w, hi), rule, inputs, { threshold, note: joinNotes(`Every set reached ${hi}: ${w} ${unit} x ${hi}.`, assumption, unreliable) });
   }
 
   if (reps.some((r) => r < lo)) {
@@ -303,6 +381,9 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
         ),
       });
     }
+    if (own?.rule === 'hold') {
+      return explain(make('hold', base, hi), rule, inputs, { threshold, note: joinNotes(`Every set reached ${hi}: the weight stays at ${base} ${unit} x ${hi} (the rule adds no weight).`, assumption) });
+    }
     const w = roundToStep(base + stepUp, PROGRESSION.incrementRounding);
     return explain(make('increase', w, lo), rule, inputs, {
       threshold,
@@ -315,9 +396,9 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
     });
   }
 
-  const target = Math.min(hi, Math.max(lo, Math.min(...reps) + 1));
-  return explain(make('add-reps', base, target), rule, inputs, {
+  const nextReps = Math.min(hi, Math.max(lo, Math.min(...reps) + 1));
+  return explain(make('add-reps', base, nextReps), rule, inputs, {
     threshold,
-    note: joinNotes(`Inside the range: ${base} ${unit} x ${target}, one more rep.`, assumption, unreliable),
+    note: joinNotes(`Inside the range: ${base} ${unit} x ${nextReps}, one more rep.`, assumption, unreliable),
   });
 }

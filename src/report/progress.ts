@@ -15,18 +15,21 @@ import { addDays, dayText, daysBetween, mondayOf } from '../core/dates.ts';
 import { E1RM, epley } from '../core/e1rm.ts';
 import { effectiveSlot } from '../core/plan.ts';
 import { READINESS, readinessBaseline, readinessSeries } from '../core/readiness.ts';
+import type { Result } from '../core/reason.ts';
 import type { IsoDate, Session } from '../core/schema.ts';
 import { setInUnit } from '../core/units.ts';
-import { checkVolume, setsPerMuscle, VOLUME, type PlannedSplit } from '../core/volume.ts';
+import { checkRegions, checkVolume, declaredRegions, priorityMuscles, setsPerMuscle, VOLUME, type PlannedSplit, type RegionCheck, type VolumeSplit } from '../core/volume.ts';
 import { weightTrend } from '../core/weight.ts';
 import { cycleOf, scopeInfo, withinCycle, type Scope, type ScopeInfo } from './cycle.ts';
 import { envelope, sourcesOf } from './envelope.ts';
-import { buildReview, context, liftTopSets, sessionLabel, type Ctx } from './review.ts';
+import { regionOptionsFor, type RegionOptions } from './region-options.ts';
+import { buildReview, context, doneEffortOf, liftTopSets, sessionLabel, type Ctx } from './review.ts';
 import { dayStateOf, type DayState } from './today.ts';
 import { paths } from '../adapters/vault/layout.ts';
 
 type Review = ReturnType<typeof buildReview>;
 type PlannedSplits = Readonly<Record<string, PlannedSplit>>;
+type Splits = Readonly<Record<string, VolumeSplit>>;
 
 export const CALENDAR_WEEKS = 26;
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -45,28 +48,85 @@ export function volumeStatus(status: string): VolumeStatus {
 
 // ---------------------------------------------------------------- volume
 /**
+ * One muscle region's weekly sets in a view, against the region rules
+ * (`checkRegions`, the same rows `review` and `check` report): `rule` is
+ * what it is held to (a declared region 6 direct near failure, a priority
+ * muscle's coverage region 4 direct, or null: reported only), `counted` the
+ * sets that rule counts, `status` short, ok or reported, or `uncoverable`:
+ * short, and no catalogue movement that biases it fits the person's
+ * equipment, the Ledger, the dislikes and the findings (what `check` calls
+ * region-uncoverable, information rather than a shortfall).
+ */
+export type RegionRow = Pick<RegionCheck, 'id' | 'label' | 'sets' | 'direct' | 'indirect' | 'grade' | 'roughGuide' | 'coverage' | 'declared' | 'rule' | 'min' | 'counted'> & { status: RegionCheck['status'] | 'uncoverable'; note: string | null };
+
+/** The region rows grouped under their muscle, in data/regions.ts's order; a short one no catalogue option can cover is `uncoverable`. */
+function regionsByMuscle(checks: readonly Result<RegionCheck>[], optionsOf: (region: string) => RegionOptions): Record<string, RegionRow[]> {
+  const out: Record<string, RegionRow[]> = {};
+  for (const { value: r, reason } of checks) {
+    const uncoverable = r.status === 'short' && optionsOf(r.id).options.length === 0;
+    const note = uncoverable ? `${reason.note ?? r.label} No catalogue movement that biases it fits your equipment, the Ledger and your findings: not a shortfall to fix with these (a movement outside the catalogue can still cover it).` : (reason.note ?? null);
+    (out[r.muscle] ??= []).push({ id: r.id, label: r.label, sets: r.sets, direct: r.direct, indirect: r.indirect, grade: r.grade, roughGuide: r.roughGuide, coverage: r.coverage, declared: r.declared, rule: r.rule, min: r.min, counted: r.counted, status: uncoverable ? 'uncoverable' : r.status, note });
+  }
+  return out;
+}
+
+/**
+ * Done sets as the region rules read them, from a tally judged by effort
+ * (`setsPerMuscle` with `doneEffortOf`): a set logged at RIR 4 or more, or a
+ * ladder level under the person's on that day, is not near failure; a set
+ * with no RIR logged takes the plan item's; one nothing tells about is of
+ * unknown effort, which the rules count, as an unknown effort in a plan
+ * counts.
+ */
+const doneByEffort = (o: Splits): Record<string, PlannedSplit> =>
+  Object.fromEntries(Object.entries(o).map(([k, v]) => {
+    const e = v as VolumeSplit & Partial<PlannedSplit>;
+    return [k, { direct: e.direct, indirect: e.indirect, hardDirect: e.hardDirect ?? 0, unknown: e.unknown ?? 0 }];
+  }));
+
+/**
  * Sets per muscle against the bands: this week, the last 4 weeks, and the
  * plan (also the Plan screen's source). With `since` (the cycle start) the
- * 4 weeks begin no earlier than it, averaged over at least one week. The
- * plan's rows carry its split (direct, indirect, near failure, unknown
- * effort), and a priority muscle short of direct sets near failure is
- * `directUnder`.
+ * 4 weeks begin no earlier than it, averaged over at least one week. Every
+ * view's rows carry the muscle's direct and indirect (half-credit) sets and
+ * its regions (`RegionRow`, none for a muscle with no modelled region); the
+ * plan's rows also carry its direct sets by effort (near failure, unknown),
+ * and a priority muscle short of direct sets near failure is `directUnder`.
  */
 export function volumeViews(ctx: Ctx, review: Review, date: IsoDate, since: IsoDate | null = null) {
   const { data } = ctx;
-  const priority = data.profile?.priorityMuscles ?? data.program.priorityMuscles ?? [];
+  // The effective priority muscles (a declared weak region's muscle among them), as the review and the check read them.
+  const priority = priorityMuscles(data.profile, data.program.priorityMuscles);
   const muscles = data.plan.muscles.length ? data.plan.muscles : Object.keys(review.volume.planned.value.perWeek);
-  const view = (label: string, perWeek: Record<string, number>, from: IsoDate | null, to: IsoDate | null, note: string | null, split?: PlannedSplits) => ({
+  const declared = declaredRegions(data.profile);
+  const regionOpts = { priority, declared };
+  const optionsOf = regionOptionsFor(data, date);
+  const doneRegions = (tally: Splits | undefined) => regionsByMuscle(checkRegions(doneByEffort(tally ?? {}), regionOpts), optionsOf);
+  const effort = doneEffortOf(ctx);
+  /**
+   * A view's rows. `planned`: the plan's split with its effort (checkVolume
+   * holds a priority muscle's minimum to it); without it, the done `split`
+   * (not split by effort) gives each row its direct and half-credit sets only.
+   */
+  const view = (label: string, perWeek: Record<string, number>, from: IsoDate | null, to: IsoDate | null, note: string | null, c: { planned?: PlannedSplits; split?: Splits; regions: Readonly<Record<string, RegionRow[]>> }) => ({
     label,
     from,
     to,
     note,
-    muscles: checkVolume(perWeek, { muscles, priority, ...(split ? { split } : {}) }).map((b) => ({ ...b.value, sets: r2(b.value.sets), status: volumeStatus(b.value.status), directUnder: b.value.status === 'priority-direct-under', note: b.reason.note ?? null })),
+    muscles: checkVolume(perWeek, { muscles, priority, ...(c.planned ? { split: c.planned } : {}) }).map((b) => ({
+      ...b.value,
+      ...(c.split ? { direct: r2(c.split[b.value.muscle]?.direct ?? 0), indirect: r2(c.split[b.value.muscle]?.indirect ?? 0) } : {}),
+      sets: r2(b.value.sets),
+      status: volumeStatus(b.value.status),
+      directUnder: b.value.status === 'priority-direct-under',
+      note: b.reason.note ?? null,
+      regions: c.regions[b.value.muscle] ?? [],
+    })),
   });
   const clipped = since !== null && since > addDays(date, -27) && since <= date;
   const fourFrom = clipped ? since : addDays(date, -27);
   // A cycle a few days old is averaged over one week, not stretched into a weekly rate.
-  const four = setsPerMuscle(ctx.sessions, data.program.exercises, fourFrom, daysBetween(fourFrom, date) < 6 ? addDays(fourFrom, 6) : date);
+  const four = setsPerMuscle(ctx.sessions, data.program.exercises, fourFrom, daysBetween(fourFrom, date) < 6 ? addDays(fourFrom, 6) : date, { effort });
   const fourNote = clipped ? `Since the cycle began on ${dayText(since)}${daysBetween(since, date) < 6 ? ', as one week' : ', a weekly average'}.` : null;
   // Which exercises give each muscle its planned sets, weighted as the review weights the week's templates.
   const weights = (review.volume.planned.reason.inputs as { weights?: Record<string, number> }).weights ?? {};
@@ -84,12 +144,16 @@ export function volumeViews(ctx: Ctx, review: Review, date: IsoDate, since: IsoD
     }
   }
   const top = Object.fromEntries(Object.entries(contrib).map(([m, o]) => [m, Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, sets]) => ({ name, sets: r2(sets) }))]));
+  const done = review.volume.done.value;
+  // The week's regions judged by effort (the review's own tally counts sets, not their effort).
+  const weekRegions = setsPerMuscle(ctx.sessions, data.program.exercises, done.from, done.to, { effort }).value.regions;
   return {
     priority,
     views: {
-      week: view('This week', review.volume.done.value.perWeek, review.volume.done.value.from, date, review.volume.done.reason.note ?? null),
-      four: view(clipped ? 'This cycle' : '4 weeks', four.value.perWeek, fourFrom, date, [fourNote, four.reason.note].filter(Boolean).join(' ') || null),
-      plan: view('Plan', review.volume.planned.value.perWeek, null, null, null, review.volume.planned.value.split),
+      week: view('This week', done.perWeek, done.from, date, review.volume.done.reason.note ?? null, { split: done.split, regions: doneRegions(weekRegions) }),
+      four: view(clipped ? 'This cycle' : '4 weeks', four.value.perWeek, fourFrom, date, [fourNote, four.reason.note].filter(Boolean).join(' ') || null, { split: four.value.split, regions: doneRegions(four.value.regions) }),
+      // The plan's regions are the review's own rows (what `check` reports).
+      plan: view('Plan', review.volume.planned.value.perWeek, null, null, null, { planned: review.volume.planned.value.split, regions: regionsByMuscle(review.volume.regions, optionsOf) }),
     },
     topExercises: top,
     labels: Object.fromEntries(MUSCLES.map((m) => [m.id, { label: m.label, slug: m.highlighter }])),

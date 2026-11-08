@@ -10,11 +10,13 @@
 // one lower, within the screening caps. Every swap passes the Ledger screen
 // and carries its reason.
 
-import { CATALOGUE, EQUIPMENT, type CatalogueEntry, type Equipment } from './data/exercises.ts';
+import { EQUIPMENT, STARTER_CATALOGUE, type CatalogueEntry, type Equipment } from './data/exercises.ts';
 import { normalizeEquipment, toExercise } from './plan/context.ts';
-import { explain, joinNotes, type Reason, type Result } from './reason.ts';
+import { explain, joinNotes, type Reason, type Result, type RuleFrom } from './reason.ts';
+import type { ExpressRules, HotelRules } from './rules.ts';
 import { screenExercise } from './safety.ts';
 import type { Exercise, ExerciseSlot, IsoDate, LedgerConstraint, Profile, RepRange, SessionTemplate, Unit } from './schema.ts';
+import { halfTimed, isIntervals, timedMinutes, timedSets, timedText } from './timed.ts';
 
 export const SESSION_MODES = ['full', 'express', 'hotel'] as const;
 export type SessionMode = (typeof SESSION_MODES)[number];
@@ -99,21 +101,36 @@ export function halveSr(sr: string): string {
 /**
  * Express on a short day: the short session keeps every item, each at half
  * its rounds, minutes or sets (rounded up, at least 1), so it takes about
- * half the time and never comes out empty. `srOf` gives an item's dose as the
- * plan writes it.
+ * half the time and never comes out empty; intervals at half their rounds
+ * with the same work and rest. `srOf` gives an item's dose as the plan
+ * writes it.
  */
-export function shortExpressVariant(t: SessionTemplate, srOf: (s: ExerciseSlot) => string | null): Result<{ slots: VariantSlot[] }> {
+export function shortExpressVariant(t: SessionTemplate, srOf: (s: ExerciseSlot) => string | null, opts: { rule?: ExpressRules; from?: RuleFrom } = {}): Result<{ slots: VariantSlot[] }> {
   const rule = 'variant.express';
+  const cite = opts.from ? { from: opts.from } : {};
+  if (opts.rule?.short === 'skip') {
+    return explain({ slots: [] as VariantSlot[] }, rule, { template: t.id, kind: t.kind, items: t.slots.length, skipped: true }, {
+      title: 'Express',
+      note: 'Express on a short day: the short day is skipped today.',
+      ...cite,
+    });
+  }
   const slots: VariantSlot[] = t.slots.map((s) => {
+    if (isIntervals(s.timed)) {
+      const timed = halfTimed(s.timed);
+      const sets = timedSets(timed);
+      return { ...s, sets, timed, sr: `${timedMinutes(timed)} min`, reasons: [explain(sets, rule, { exercise: s.exercise, plannedSets: s.sets, timed: s.timed, halved: timed }, { title: 'Express', note: `${timedText(timed)} instead of ${timedText(s.timed)}.` }).reason] };
+    }
     const sr = srOf(s);
     const halved = sr ? halveSr(sr) : null;
     const sets = half(s.sets);
     const note = sr && halved !== sr ? `${halved} instead of ${sr}.` : `${sets} set(s) instead of ${s.sets}.`;
-    return { ...s, sets, sr: halved, reasons: [explain(sets, rule, { exercise: s.exercise, plannedSets: s.sets, sr, halved }, { title: 'Express', note }).reason] };
+    return { ...s, sets, sr: halved, ...(s.timed ? { timed: halfTimed(s.timed) } : {}), reasons: [explain(sets, rule, { exercise: s.exercise, plannedSets: s.sets, sr, halved }, { title: 'Express', note }).reason] };
   });
   return explain({ slots }, rule, { template: t.id, kind: t.kind, items: t.slots.length }, {
     title: 'Express',
     note: 'A short day at half: every item at half its rounds, minutes or sets, rounded up, at least 1. About half the time.',
+    ...cite,
   });
 }
 
@@ -130,9 +147,14 @@ export interface HotelInput {
   tripDays?: number | null;
   /** The screening caps' lowest RIR (null: none). */
   capMinRir?: number | null;
+  /** The swaps' candidates: the starter movements without it (data/exercises.ts, STARTER_IDS). */
   catalogue?: readonly CatalogueEntry[];
   /** What travel offers (`travelEquipment`): without it, bodyweight, light dumbbells and bands. */
   travel?: TravelEquipment;
+  /** The plan's Hotel rule (swap from the catalogue or skip; a long trip's sets); the old default without it. */
+  rule?: HotelRules;
+  /** The rule, cited in the note. */
+  from?: RuleFrom;
 }
 
 /** The equipment the Hotel version may use, and where the list came from. */
@@ -157,7 +179,7 @@ export function travelEquipment(profile: Pick<Profile, 'travelEquipment'> | null
 }
 
 /** Equipment in a phrase: "bodyweight, dumbbells or a band". */
-const KIT: Readonly<Record<Equipment, string>> = { bodyweight: 'bodyweight', dumbbell: 'dumbbells', barbell: 'a barbell', cable: 'a cable', machine: 'machines', band: 'a band', bench: 'a bench', 'pull-up-bar': 'a pull-up bar', kettlebell: 'a kettlebell', rings: 'rings' };
+const KIT: Readonly<Record<Equipment, string>> = { bodyweight: 'bodyweight', dumbbell: 'dumbbells', barbell: 'a barbell', cable: 'a cable', machine: 'machines', band: 'a band', bench: 'a bench', 'pull-up-bar': 'a pull-up bar', kettlebell: 'a kettlebell', rings: 'rings', 'parallel-bars': 'parallel bars', 'trap-bar': 'a trap bar', sled: 'a sled', 'jump-rope': 'a jump rope', 'stability-ball': 'a stability ball', 'ab-wheel': 'an ab wheel', pool: 'a pool' };
 const kitList = (qs: readonly Equipment[], last: 'or' | 'and') => {
   const xs = qs.map((q) => KIT[q]);
   return xs.length <= 1 ? (xs[0] ?? 'bodyweight') : `${xs.slice(0, -1).join(', ')} ${last} ${xs.at(-1)}`;
@@ -171,9 +193,14 @@ export function hotelVariant(input: HotelInput): Result<{ slots: VariantSlot[]; 
   const travel = input.travel ?? travelEquipment(null);
   const kit: readonly string[] = travel.equipment;
   const allowed = (e: CatalogueEntry) => e.equipment.every((q) => kit.includes(q));
-  const cat = input.catalogue ?? CATALOGUE;
+  const cat = input.catalogue ?? STARTER_CATALOGUE;
+  const inCat = new Set(cat.map((e) => e.id));
+  // How far along its own progression a candidate is: its easier versions among the candidates.
+  const below = (e: CatalogueEntry) => e.easier.filter((id) => inCat.has(id)).length;
   const rule = 'variant.hotel';
-  const long = input.tripDays != null && input.tripDays >= VARIANT.longTripDays;
+  const swaps = (input.rule?.swaps ?? 'catalogue') === 'catalogue';
+  const third = (input.rule?.longTripSets ?? 'third') === 'third';
+  const long = third && input.tripDays != null && input.tripDays >= VARIANT.longTripDays;
   const floor = Math.max(VARIANT.minRir, input.capMinRir ?? 0);
   const screenSet: Record<string, Exercise> = { ...Object.fromEntries(cat.map((e) => [e.id, toExercise(e, input.unit)])), ...input.exercises };
   const nameOf = (id: string) => input.exercises[id]?.name ?? cat.find((e) => e.id === id)?.name ?? id;
@@ -199,7 +226,7 @@ export function hotelVariant(input: HotelInput): Result<{ slots: VariantSlot[]; 
         reasons: [explain(s.exercise, rule, { exercise: s.exercise, equipment: entry.equipment, longTrip: long }, { title: 'Hotel', note: joinNotes(`${nameOf(s.exercise)} needs only ${entry.equipment.join(' and ')}: kept${entry.load === 'external' ? `, ${entry.equipment.includes('dumbbell') ? 'with light dumbbells' : 'lighter'}, reps shifted up` : ''}.`, long && 'A third of the sets (a trip of a week or more).') }).reason],
       };
     }
-    const candidates = pattern
+    const candidates = pattern && swaps
       ? cat
           .filter((e) => e.pattern === pattern && allowed(e) && e.load !== 'cardio' && e.level !== 'advanced' && screenExercise(e.id, input.ledger, input.date, screenSet).value.allowed)
           // Most main muscles shared, the same kind of load, then the variation furthest along its
@@ -209,7 +236,7 @@ export function hotelVariant(input: HotelInput): Result<{ slots: VariantSlot[]; 
             return (
               shared(b.muscles.main, main) - shared(a.muscles.main, main) ||
               Number(b.load === (entry?.load ?? 'external')) - Number(a.load === (entry?.load ?? 'external')) ||
-              b.easier.length - a.easier.length ||
+              below(b) - below(a) ||
               LEVEL[a.level] - LEVEL[b.level] ||
               (a.id < b.id ? -1 : 1)
             );
@@ -221,7 +248,7 @@ export function hotelVariant(input: HotelInput): Result<{ slots: VariantSlot[]; 
         ...s,
         ...d,
         unavailable: true,
-        reasons: [explain(null, rule, { exercise: s.exercise, pattern, equipment: travel.equipment }, { note: `${nameOf(s.exercise)}: no ${pattern ?? 'matching'} option with ${kitList(travel.equipment, 'or')} passes the Ledger screen; skip it today, or do the nearest ladder level.` }).reason],
+        reasons: [explain(null, rule, { exercise: s.exercise, pattern, equipment: travel.equipment, swaps }, { note: swaps ? `${nameOf(s.exercise)}: no ${pattern ?? 'matching'} option with ${kitList(travel.equipment, 'or')} passes the Ledger screen; skip it today, or do the nearest ladder level.` : `${nameOf(s.exercise)} needs more than ${kitList(travel.equipment, 'or')}: skipped today (the plan's rule makes no Hotel swaps).` }).reason],
       };
     }
     const repRange = pick.load === 'timed' ? s.repRange : shift(s.repRange);
@@ -251,7 +278,12 @@ export function hotelVariant(input: HotelInput): Result<{ slots: VariantSlot[]; 
         ? `With what you said travel usually offers: ${kitList(travel.equipment, 'and')}.`
         : 'With bodyweight, light dumbbells and bands (the profile does not say what travel usually offers).',
       travel.unknown.length > 0 && `Not equipment the engine knows, so left out: ${travel.unknown.join(', ')}.`,
-      long ? 'A trip of a week or more: about a third of the usual volume, kept close to failure (Spiering 2021).' : 'A short or unknown trip: the usual sets; a trip of a week or more (a check-in knownBusy travel) scales them to a third.',
+      long
+        ? 'A trip of a week or more: about a third of the usual volume, kept close to failure (Spiering 2021).'
+        : third
+          ? 'A short or unknown trip: the usual sets; a trip of a week or more (a check-in knownBusy travel) scales them to a third.'
+          : 'The usual sets, whatever the trip\'s length (the plan\'s rule).',
     ),
+    ...(input.from ? { from: input.from } : {}),
   });
 }

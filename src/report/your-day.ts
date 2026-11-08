@@ -147,7 +147,13 @@ function sessionStep(m: Today, x: YourDayExtras): Draft {
  * of total, what is open now and the next card. An "after training" item
  * waits for the session (its card comes once one is logged).
  */
-function habitsStep(due: DueToday, trained: boolean): Draft | null {
+/**
+ * The habits counted for the day (Your day's step and Home's card): done of
+ * total, the names open now (in a line's case), the next card in words
+ * ("water at 13:00", "creatine after training"), and the inputs for a reason.
+ * Null when nothing is due today.
+ */
+export function habitsTally(due: DueToday, trained: boolean) {
   const items = due.habits.slots.flatMap((sl) => sl.items.map((it) => ({ name: it.name, done: it.done, at: it.later && !it.done ? sl.time : null, after: sl.key === 'after-log' && !trained && !it.done })));
   // An amount's card at the time it is now (one overdue) is open now, not next.
   const amounts = due.amounts.map((a) => ({ name: a.name, done: a.met, at: !a.met && a.next && a.next > due.now ? a.next : null, after: false }));
@@ -155,16 +161,28 @@ function habitsStep(due: DueToday, trained: boolean): Draft | null {
   if (!all.length) return null;
   const done = all.filter((x) => x.done).length;
   const total = all.length;
-  const name = `Habits: ${done} of ${total}`;
   const coming = all.filter((x) => x.at !== null).sort((a, b) => a.at!.localeCompare(b.at!));
   const nextAt = coming[0]?.at ?? null;
   const nextNames = coming.filter((x) => x.at === nextAt).map((x) => inLine(x.name));
   const afterNames = all.filter((x) => x.after).map((x) => inLine(x.name));
-  const now = all.filter((x) => !x.done && x.at === null && !x.after).map((x) => inLine(x.name));
-  const inputs = { done, total, open: now, next: nextAt ? { at: nextAt, items: nextNames } : null, afterTraining: afterNames, now: due.now };
+  const open = all.filter((x) => !x.done && x.at === null && !x.after).map((x) => inLine(x.name));
+  const next = nextAt ? `${and(nextNames)} at ${nextAt}` : afterNames.length ? `${and(afterNames)} after training` : null;
+  const inputs = { done, total, open, next: nextAt ? { at: nextAt, items: nextNames } : null, afterTraining: afterNames, now: due.now };
+  return { done, total, open, next, inputs };
+}
+
+function habitsStep(due: DueToday, trained: boolean): Draft | null {
+  const t = habitsTally(due, trained);
+  if (!t) return null;
+  const { done, total, inputs } = t;
+  const now = t.open;
+  const nextAt = inputs.next?.at ?? null;
+  const nextNames = inputs.next?.items ?? [];
+  const afterNames = inputs.afterTraining;
+  const name = `Habits: ${done} of ${total}`;
   if (done === total) return { id: 'habits', icon: 'pill', state: 'done', word: 'Done', name, line: 'Everything ticked today', action: null, reason: explain(true, 'day.habits', inputs, { note: `All ${total} of today’s supplements, ticks and amounts are done.` }).reason };
   const nowText = now.length ? `${now.length > 2 ? `${now[0]} and ${now.length - 1} more` : and(now)} open` : null;
-  const nextText = nextAt ? `next: ${and(nextNames)} at ${nextAt}` : afterNames.length ? `next: ${and(afterNames)} after training` : null;
+  const nextText = t.next ? `next: ${t.next}` : null;
   return {
     id: 'habits', icon: 'pill', state: 'open', name,
     line: cap([nowText, nextText].filter(Boolean).join(' · ')),

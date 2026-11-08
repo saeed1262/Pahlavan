@@ -6,6 +6,7 @@ import { explain, joinNotes, type Result } from '../reason.ts';
 import type { RepRange, SessionKind } from '../schema.ts';
 import type { PlanContext } from './context.ts';
 import type { SplitFamily } from './families.ts';
+import { OVERHEAD_FREE } from './self-check.ts';
 
 export type Band = 'short' | 'mid' | 'long';
 export type Role = 'main' | 'accessory';
@@ -255,8 +256,6 @@ function candidates(days: number, band: Band, ctx: PlanContext): Split[] {
 export function slotCount(minutes: number): number {
   return minutes <= 30 ? 4 : minutes <= 45 ? 5 : minutes <= 60 ? 6 : minutes <= 75 ? 7 : 8;
 }
-
-const OVERHEAD_FREE = ['landmine-press', 'incline-db-press', 'incline-push-up'];
 
 /** Applies the emphasis, posture, skill and age adjustments to a blueprint's slots. */
 function adjust(ctx: PlanContext, b: Blueprint, count: number, index: number, liftingDays: number): Blueprint {

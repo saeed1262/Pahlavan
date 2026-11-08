@@ -1,0 +1,46 @@
+{
+  "_about": "A sample coach-written draft for the made-up beginner (test/fixtures/athletes/1-beginner.json): what tools/eval-plans.mjs scores in its test.",
+  "weekTarget": { "lift": 3, "short": 0 },
+  "liftTypes": ["A", "B"],
+  "shortTypes": [],
+  "titles": { "A": "Full body A", "B": "Full body B" },
+  "focus": { "A": "Squat and push", "B": "Hinge and pull" },
+  "warmups": { "lift": "5 min brisk walk, then the first lift's lighter sets" },
+  "sessions": {
+    "A": [
+      { "name": "Goblet Squat", "sr": "3 × 8–12", "rest": "2 min", "rir": 3, "logged": true, "note": "Why: a squat you can load at home with one dumbbell." },
+      { "name": "Band Row", "sr": "3 × 10–15", "rest": "90 s", "rir": 3, "logged": true, "note": "Why: an upper pull with the bands you have." },
+      { "name": "Incline Push-up", "sr": "3 × 8–15", "rest": "90 s", "rir": 3, "note": "Why: the way to a floor push-up, hands on a counter; RIR 3 while the first mesocycle ramps in." },
+      { "name": "Band Y Raise", "sr": "2 × 12–15", "rest": "90 s", "rir": 3, "note": "Why: upper-back work the catalogue does not list; its guide entry names the muscles." },
+      { "name": "Dead Bug", "sr": "2 × 8–12", "rest": "90 s", "rir": 3, "note": "Why: trunk control for the squat and the hinge." }
+    ],
+    "B": [
+      { "name": "Dumbbell Romanian Deadlift", "sr": "3 × 8–12", "rest": "2 min", "rir": 3, "logged": true, "note": "Why: the hinge, practised with a flat back." },
+      { "name": "Dumbbell Split Squat", "sr": "2 × 8–12", "rest": "90 s", "rir": 3, "logged": true, "note": "Why: one leg at a time, for balance." },
+      { "name": "Band Row", "sr": "3 × 10–15", "rest": "90 s", "rir": 3, "note": "Why: the week's second pull." },
+      { "name": "Dumbbell Lateral Raise", "sr": "2 × 12–15", "rest": "90 s", "rir": 3, "note": "Why: side delts, which presses barely reach." },
+      { "name": "Bird Dog", "sr": "2 × 8–12", "rest": "90 s", "rir": 3, "note": "Why: trunk control." }
+    ]
+  },
+  "liftUnit": "kg",
+  "lifts": {
+    "Goblet Squat": { "short": "Goblet squat", "lo": 8, "hi": 12, "inc": 2, "progression": { "rule": "double" } },
+    "Band Row": { "short": "Band row", "lo": 10, "hi": 15, "inc": 1, "progression": { "rule": "hold" } },
+    "Dumbbell Romanian Deadlift": { "short": "DB RDL", "lo": 8, "hi": 12, "inc": 2, "progression": { "rule": "double" } },
+    "Dumbbell Split Squat": { "short": "Split squat", "lo": 8, "hi": 12, "inc": 2, "progression": { "rule": "double" } }
+  },
+  "guide": {
+    "Band Y Raise": { "muscles": { "main": ["upper-back"], "helps": ["shoulders"], "regions": ["upper-back-mid"] } }
+  },
+  "rules": {
+    "calibration": { "weeks": [1], "rir": 3, "cardio": "easy", "afterRestart": true },
+    "lightWeeks": { "every": 4, "sets": "half", "load": 0.9, "rirAdd": 3, "early": "offer" },
+    "tests": { "weeks": "phase-ends" },
+    "readiness": { "low": { "sets": -1, "rir": 1 } },
+    "soreness": "none",
+    "missed": { "easeBackAfterWeeks": 1, "restartAfterWeeks": 3, "easeBackDrop": 0.1, "easeBackRir": 1 },
+    "stall": { "response": "report" },
+    "hotel": { "swaps": "catalogue", "longTripSets": "third" }
+  },
+  "express": { "short": "half" }
+}

@@ -7,7 +7,7 @@ import { planWeekOf, type VaultData, type VaultWarning } from '../adapters/vault
 import { checkinDate, checkinsThrough, fullLoadWeeks, jointAchesOf, liftMatches, triageStart } from '../core/checkins.ts';
 import { toMinutes } from '../core/clock.ts';
 import { addDays, dayText, mondayOf } from '../core/dates.ts';
-import { DELOAD } from '../core/deload.ts';
+import { isLightWeek, lightCalendarText } from '../core/rules.ts';
 import { proteinWeek } from '../core/diet.ts';
 import { painText } from '../core/pain.ts';
 import { proteinItemOf } from '../core/protein.ts';
@@ -161,8 +161,10 @@ export function buildTemplate(data: VaultData, date: IsoDate, lastLetterIn: Last
     .map((l) => {
       const chosen = (l.triage ?? []).find((t) => t.value.chosen)?.value ?? null;
       const start = triageStart(before, [l.exercise, l.name, ...(l.short ? [l.short] : [])], sunday).value;
-      return { lift: l.name, exercise: l.exercise, lastStep: start.last, startAt: start.startAt, step: chosen?.step ?? null, stepId: chosen?.id ?? null, suggestion: chosen?.suggestion ?? null };
+      return { lift: l.name, exercise: l.exercise, lastStep: start.last, startAt: start.startAt, step: chosen?.step ?? null, stepId: chosen?.id ?? null, suggestion: chosen?.suggestion ?? null, ...(l.stallFacts ? { facts: l.stallFacts.value } : {}) };
     });
+  // The plan's stall rule: the triage ladder pre-fills a step (the old default), or nothing is pre-filled and the coach picks.
+  const stallReport = data.rules.rules.stall.response === 'report';
 
   // Deloads: the coming week's, and recent dashboard deload weeks with logged loads to ask about.
   const fullLoad = new Set(fullLoadWeeks(data.checkins.weekly, sunday));
@@ -172,13 +174,14 @@ export function buildTemplate(data: VaultData, date: IsoDate, lastLetterIn: Last
       const mon = addDays(weekStart, -7 * k);
       if (mon < data.plan.start) break;
       const pw = planWeekOf(data.plan.start, mon);
-      if (pw % DELOAD.every !== 0 || fullLoad.has(mon)) continue;
+      if (!isLightWeek(data.rules.rules.lightWeeks, pw) || fullLoad.has(mon)) continue;
       const loaded = data.sessions.filter((s) => s.date >= mon && s.date <= addDays(mon, 6) && s.exercises.some((x) => x.sets.some((y) => y.weight > 0)));
       if (loaded.length) deloadWeeksToAsk.push({ weekStart: mon, planWeek: pw, sessions: loaded.map((s) => s.date) });
     }
   }
   const comingDeload = coming.deload?.value ?? null;
-  const nextDeloadMonday = comingDeload ? addDays(addDays(sunday, 1), 7 * comingDeload.weeksToScheduled) : null;
+  const legacyLight = data.rules.sources.lightWeeks === 'legacy-default';
+  const nextDeloadMonday = comingDeload && comingDeload.weeksToScheduled !== null ? addDays(addDays(sunday, 1), 7 * comingDeload.weeksToScheduled) : null;
   const prevAches = jointAchesOf(previous);
   // The week's pain the logs already hold, with the pain rule's verdict: the pain question shows it.
   const loggedPain = review.pain.reports.filter((r) => r.value.source === 'log' && r.value.date >= weekStart).map((r) => ({ date: r.value.date, area: r.value.area, severity: r.value.severity, exercise: r.value.exercise, session: r.value.session, verdict: r.value.verdict }));
@@ -298,7 +301,11 @@ export function buildTemplate(data: VaultData, date: IsoDate, lastLetterIn: Last
       open: true,
       options: o(['Normal', []], ['Travel', [{ from: '<date>', to: '<date>', kind: 'travel' }]], ['Busy, fewer days', [{ from: '<date>', to: '<date>', kind: 'crunch', sessions: '<how many>' }]], ['Unsure', []]),
       known: { nextDeloadWeek: nextDeloadMonday, alreadyKnown: review.checkins.knownBusy },
-      answer: nextDeloadMonday ? `A busy week next to the light week (from ${dayText(nextDeloadMonday)}) moves the light week onto it; ask about the weeks around it too.` : undefined,
+      answer: !nextDeloadMonday
+        ? undefined
+        : legacyLight
+          ? `A busy week next to the light week (from ${dayText(nextDeloadMonday)}) moves the light week onto it; ask about the weeks around it too.`
+          : `The next light week is from ${dayText(nextDeloadMonday)}; a busy week is a fact for the coach, who moves a light week by editing the plan's light weeks.`,
     },
     {
       n: 10,
@@ -308,7 +315,8 @@ export function buildTemplate(data: VaultData, date: IsoDate, lastLetterIn: Last
       open: true,
       known: { lastLetter },
     },
-    ...(comingDeload?.deload
+    // Keep or cancel is the old default's: a plan's declared light week moves only when the coach edits the plan.
+    ...(comingDeload?.deload && legacyLight
       ? [
           {
             n: 11,
@@ -343,11 +351,13 @@ export function buildTemplate(data: VaultData, date: IsoDate, lastLetterIn: Last
           {
             n: 13,
             topic: 'triage',
-            question: 'Not a question: record the triage step the letter applies to each stalled lift.',
+            question: stallReport ? 'Each stalled lift: the response the coach picks from its facts; record the triage step the letter applies, if any.' : 'Not a question: record the triage step the letter applies to each stalled lift.',
             fields: ['triage'],
             open: true,
-            known: { stalled },
-            answer: 'The record is pre-filled with the step the engine chose; keep it if the letter applies it, change or drop it if not.',
+            known: { stalled, rule: review.rules.stall.text },
+            answer: stallReport
+              ? 'Nothing is pre-filled: the plan\'s stall rule reports the facts and the coach picks the response; record a step only if the letter applies one.'
+              : 'The record is pre-filled with the step the plan\'s stall rule (the triage ladder) gives; keep it if the letter applies it, change or drop it if not.',
           },
         ]
       : []),
@@ -495,7 +505,8 @@ export function addCheckins(input: { existingText: string | null; answers: unkno
     ]);
     if (input.data.plan.start) {
       const start = input.data.plan.start;
-      group('not-a-deload-week', `${r.date}: trainedAtFullLoad weeks that are not dashboard deload weeks (every ${DELOAD.every}th plan week); they change nothing.`, (r.deload?.trainedAtFullLoad ?? []).filter((m) => m < start || planWeekOf(start, m) % DELOAD.every !== 0));
+      const lw = input.data.rules.rules.lightWeeks;
+      group('not-a-deload-week', `${r.date}: trainedAtFullLoad weeks that are not the plan's light weeks (${lightCalendarText(lw)}); they change nothing.`, (r.deload?.trainedAtFullLoad ?? []).filter((m) => m < start || !isLightWeek(lw, planWeekOf(start, m))));
       if (r.deload?.cancelled) {
         const coming = mondayOf(addDays(r.date!, 1));
         const review = buildReview(input.data, coming);

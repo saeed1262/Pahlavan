@@ -11,7 +11,7 @@ export function envelope<P extends Record<string, unknown>>(command: string, pay
   return { command, engine: ENGINE_VERSION, schema: SCHEMA_VERSION, ok: errors.length === 0, ...payload, warnings, errors };
 }
 
-/** Which files were found, and the coach files' state. */
+/** Which files were found, and the coach files' state; with a draft read in place of plan-data.json, the draft's file. */
 export function sourcesOf(read: VaultRead, root: string) {
-  return { vault: root, files: read.files, coach: read.data.coach };
+  return { vault: root, files: read.files, coach: read.data.coach, ...(read.draft ? { plan: { file: read.draft.file, draft: true } } : {}) };
 }

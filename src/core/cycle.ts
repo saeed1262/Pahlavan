@@ -31,10 +31,11 @@ export function newestBaseline(dates: readonly string[], date?: IsoDate): IsoDat
 
 /**
  * The cycle on `date`: the newest baseline note on or before it, else the
- * Monday of the first logged plan session (the dashboard's week 1), else
- * none. `firstPlanSession` may be the session's date or its Monday.
+ * Monday of plan week 1 (the plan's `start` with `fromPlanStart`, else the
+ * first logged plan session: the dashboard's week 1), else none.
+ * `firstPlanSession` may be the session's date or its Monday.
  */
-export function cycleStart(input: { baselines: readonly string[]; firstPlanSession: IsoDate | null; date?: IsoDate }): Result<Cycle> {
+export function cycleStart(input: { baselines: readonly string[]; firstPlanSession: IsoDate | null; date?: IsoDate; fromPlanStart?: boolean }): Result<Cycle> {
   const baselines = [...input.baselines].filter(isIsoDate).sort();
   const b = newestBaseline(baselines, input.date);
   const inputs = { baselines, note: b ? `Baseline - ${b}.md` : null, firstPlanSession: input.firstPlanSession, date: input.date ?? null };
@@ -47,7 +48,7 @@ export function cycleStart(input: { baselines: readonly string[]; firstPlanSessi
   const first = input.firstPlanSession && isIsoDate(input.firstPlanSession) && (!input.date || input.firstPlanSession <= input.date) ? mondayOf(input.firstPlanSession) : null;
   if (first) {
     return explain<Cycle>({ start: first, source: 'plan' }, 'cycle.start', inputs, {
-      note: `No baseline note: the cycle starts on ${dayText(first)}, the Monday of the first logged plan session.`,
+      note: `No baseline note: the cycle starts on ${dayText(first)}, ${input.fromPlanStart ? 'the Monday of the plan\'s start (plan-data\'s `start`)' : 'the Monday of the first logged plan session'}.`,
     });
   }
   return explain<Cycle>({ start: null, source: 'all' }, 'cycle.start', inputs, {

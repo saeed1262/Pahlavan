@@ -6,6 +6,7 @@
 // Pure: the reports (and, for Today, what is due) are the inputs; the
 // plugin draws the panel and keeps what the user opened and folded.
 
+import { trimWords } from '../core/readiness.ts';
 import type { CoachNow, CoachStep } from '../core/coach-steps.ts';
 import { addDays, dayText, daysBetween, mondayOf, type IsoDate } from '../core/dates.ts';
 import { shortDay } from '../core/diet.ts';
@@ -135,7 +136,7 @@ type Session = ReturnType<typeof buildSession>;
 
 const BAND: Readonly<Record<string, string>> = { low: 'Low', watch: 'Watch', normal: 'Normal', good: 'Good' };
 /** The readiness actions that change the session itself. */
-const STRONG: Readonly<Record<string, string>> = { trim: 'one set fewer on the top sets, RIR +1', 'early-deload': 'an early light week is offered', 'no-hard-training': 'no hard training today' };
+const STRONG: Readonly<Record<string, string>> = { 'early-deload': 'an early light week is offered', 'no-hard-training': 'no hard training today' };
 
 /** Readiness as Today reads it: the band (today's, else the latest scored), the baseline while it builds, and whether it changes the session. */
 export function readinessNow(r: Review) {
@@ -144,15 +145,18 @@ export function readinessNow(r: Review) {
   const scored = t.band !== 'unscored' ? { date: t.date, s: t.s as number, band: t.band } : latest;
   const base = r.readiness.baseline.value;
   const active = r.readiness.actions.filter((a) => a.value.active).map((a) => a.value.action as string);
-  const big = active.filter((a) => STRONG[a]);
-  const short = big.length ? big.map((a) => STRONG[a]!).join('; ') : active.includes('no-tests') ? 'no tests or PR attempts today' : 'train as planned';
+  // A low day's change as the plan's rule (or the old default) has it.
+  const low = r.rules.readiness.value.low;
+  const strong = (a: string) => (a === 'trim' ? (low ? trimWords(low).replace(' per exercise', ' on the top sets').replace(' and RIR', ', RIR') : null) : (STRONG[a] ?? null));
+  const big = active.filter((a) => strong(a));
+  const short = big.length ? big.map((a) => strong(a)!).join('; ') : active.includes('no-tests') ? 'no tests or PR attempts today' : 'train as planned';
   // It opens by itself only when it changes the session, and only once its baseline is complete.
   const changes = !base.building && (scored?.band === 'low' || big.length > 0);
   return { scored, building: base.building, mornings: Math.min(base.mornings, base.needed), needed: base.needed, short, changes, label: scored ? (BAND[scored.band] ?? 'Not scored') : 'Not scored' };
 }
 
 /** The session's swaps for the Ledger: a planned lift ruled out and what is done in its place. */
-function swapsOf(sess: Session | null) {
+export function swapsOf(sess: Session | null) {
   return (sess?.items ?? []).filter((it) => it.replaces && it.adjustments.some((a) => a.rule === 'safety.ledger')).map((it) => ({ name: clean(it.name), replaces: clean(it.replaces!.name) }));
 }
 
@@ -370,7 +374,9 @@ export function planGlance(pm: Plan, x: PlanExtras): Glance {
   const light = now ? m.weeks.find((w) => w.kind === 'deload' && w.end >= m.date) ?? null : null;
   const tests = (m.upcoming ?? []).find((u) => u.kind === 'tests') ?? null;
   const sums: GlanceLine[] = [];
-  if (now && ph && cur) sums.push({ icon: 'layers', text: [`${name(ph)}, week `, { b: `${phWeeks.findIndex((w) => w.index === now.index) + 1} of ${phWeeks.length}` }, ` · mesocycle ${now.meso}, week ${cur.weekInMeso} of 4: ${cur.kind === 'deload' ? 'the light week' : 'a loading week'}.`] });
+  // This mesocycle's length: to its light week, on the plan's light-week calendar.
+  const mesoLength = now ? m.weeks.filter((w) => w.meso === now.meso).length : 0;
+  if (now && ph && cur) sums.push({ icon: 'layers', text: [`${name(ph)}, week `, { b: `${phWeeks.findIndex((w) => w.index === now.index) + 1} of ${phWeeks.length}` }, ` · mesocycle ${now.meso}, week ${cur.weekInMeso} of ${mesoLength}: ${cur.kind === 'deload' ? 'the light week' : 'a loading week'}.`] });
   if (x.weekTarget) sums.push({ icon: 'dumbbell', text: ['This week: ', { b: `${x.weekTarget.lift} lifting` }, ' and ', { b: `${x.weekTarget.short} short` }, ` ${x.weekTarget.short === 1 ? 'session' : 'sessions'}.`] });
   if (light) sums.push({ icon: 'deload', text: [...(light.start <= m.date ? ['This is the light week'] : ['Next: the light week, ', { b: dayText(light.start) } as Run]), tests ? `; phase tests ${dayText(tests.date)}.` : '.'] });
   const vol = m.volume?.muscles ?? [];
@@ -389,16 +395,31 @@ export function planGlance(pm: Plan, x: PlanExtras): Glance {
   const mw = m.minimumWeek?.value ?? null;
   const sections: GlanceSection[] = [
     { id: 'timeline', title: `The plan, ${m.weeks.length} weeks`, line: 'The phases week by week: light weeks, tests, decisions', status: now && ph ? dots(['Week ', { b: `${now.index} of ${m.weeks.length}` }], [`${name(ph)} ends ${dayText(ph.to)}${next ? `, then ${name(next)}` : ''}`]) : [`From ${dayText(m.weeks[0]!.start)}`], start: 'folded' },
-    { id: 'meso', title: 'This mesocycle', line: 'This block’s weeks and each session as planned', status: now && cur ? dots(['Mesocycle ', { b: String(now.meso) }, `, week ${cur.weekInMeso} of 4`], light ? [light.start <= m.date ? 'the light week now' : `light week from ${shortDay(light.start)}`] : null) : ['The sessions as planned'], start: 'open' },
+    { id: 'meso', title: 'This mesocycle', line: 'This block’s weeks and each session as planned', status: now && cur ? dots(['Mesocycle ', { b: String(now.meso) }, `, week ${cur.weekInMeso} of ${mesoLength}`], light ? [light.start <= m.date ? 'the light week now' : `light week from ${shortDay(light.start)}`] : null) : ['The sessions as planned'], start: 'open' },
     { id: 'vol', title: 'Sets per muscle', line: 'Planned weekly sets against each muscle’s band', status: dots(under.length ? [{ b: `${under.length} under the minimum` }] : short.length ? null : ['Every muscle at its minimum or more'], short.length ? [{ b: `${and(short.map((b) => lab(b.muscle)))} short of direct sets near failure` }] : null, high.length ? [`${and(high.slice(0, 2).map((b) => lab(b.muscle)))} above ${high.length === 1 ? 'its' : 'their'} band`] : null), start: 'folded' },
     { id: 'upcoming', title: 'Coming up', line: 'Dates to the phase end: tape, check-ins and the coach, tests', status: first ? dots([`${and(onFirst)} `, { b: dayText(first.date) }, `, ${inDays(m.date, first.date)}`], coach ? [`then ${stepWords(coach)}: `, { b: coach.command }] : null) : ['Nothing before the phase ends'], start: 'open' },
     ...(L ? [{ id: 'load', title: 'Training load', line: 'Weekly effort: next week’s plan and the last four', status: dots([{ b: nfmt(Math.round(L.next.knownLoad)) }, ' planned next week'], L.nextMonotony != null ? [`monotony ${L.nextMonotony.toFixed(1)}`] : null), start: 'folded' as const }] : []),
     { id: 'targets', title: ph ? `${ph.name && ph.name.trim() && ph.name.trim().toLowerCase() !== `phase ${ph.index}` ? `Phase ${ph.index} · ${ph.name.trim()}` : `Phase ${ph.index}`} targets` : 'Targets', line: 'What this phase aims for, and where you stand', status: x.targets && x.targets.total ? dots([{ b: `${x.targets.ok} of ${x.targets.total}` }, ' on track or in the band'], x.targets.others.length ? [x.targets.others.slice(0, 2).map((o) => `${lower(o.name)}: ${lower(o.status)}`).join(', ')] : null) : ['No targets yet'], start: 'folded' },
+    ...(m.rules ? [rulesSection(m.rules)] : []),
     ...(mw ? [{ id: 'minweek', title: 'The minimum week', line: 'The least that keeps a bad week on track', status: [{ b: `${mw.sessions} × Express` }, ` · about ${mw.minutes} minutes each`], start: 'folded' as const }] : []),
     ...(x.desk !== null ? [{ id: 'desk', title: 'Desk breaks', line: 'The plan’s posture breaks: when, what, why', status: [x.desk], start: 'folded' as const }] : []),
     ...(x.links ? [{ id: 'notes', title: 'The plan', line: 'The notes behind the plan, in the vault', status: [plural(x.links, 'note'), ': the roadmap, the month, the guide and more'], start: 'folded' as const }] : []),
   ];
   return { sums, sections };
+}
+
+/** The Plan's standing-rules card: how many of the rules the coach has set; the rest are Pahlavan's defaults. */
+function rulesSection(rules: Record<string, unknown> & { lifts: Record<string, { source: string }> }): GlanceSection {
+  const { lifts, ...kinds } = rules;
+  const all = [...Object.values(kinds as Record<string, { source: string }>), ...Object.values(lifts)];
+  const set = all.filter((r) => r.source === 'plan').length;
+  return {
+    id: 'rules',
+    title: 'Standing rules',
+    line: 'The coach’s rules your numbers follow',
+    status: set === all.length ? ['Every rule set by your coach'] : dots([{ b: `${set} of ${all.length}` }, ' set by your coach'], ['the rest use Pahlavan’s default']),
+    start: 'folded',
+  };
 }
 
 // ================================================================ Check-in

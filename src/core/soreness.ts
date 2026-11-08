@@ -6,7 +6,8 @@
 
 import { MUSCLES } from './data/muscles.ts';
 import { addDays } from './dates.ts';
-import { explain, joinNotes, type Result } from './reason.ts';
+import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
+import type { SorenessRules } from './rules.ts';
 import type { DailyCheckin, Exercise, ExerciseSlot, IsoDate, SorenessLevel } from './schema.ts';
 
 export const SORENESS = {
@@ -45,7 +46,14 @@ export function sorenessForSlot(
   exercises: Readonly<Record<string, Exercise>>,
   daily: readonly DailyCheckin[],
   date: IsoDate,
-  opts: { lighter?: { id: string; name: string } | null; name?: (id: string) => string } = {},
+  opts: {
+    lighter?: { id: string; name: string } | null;
+    name?: (id: string) => string;
+    /** The plan's soreness rule (its change for a sore muscle, or none; the easier variation or not); the old default without it. */
+    rule?: SorenessRules;
+    /** The rule, cited in the note. */
+    from?: RuleFrom;
+  } = {},
 ): Result<SorenessAdjustment> {
   const today = soreOn(daily, date);
   const yesterday = soreOn(daily, addDays(date, -1));
@@ -58,27 +66,40 @@ export function sorenessForSlot(
   const name = opts.name?.(slot.exercise) ?? exercises[slot.exercise]?.name ?? slot.exercise;
   const base = { muscles: hit, exercise: slot.exercise, sets: slot.sets, rir: slot.rir };
   const inputs = { date, exercise: slot.exercise, mainMuscles: main, today, yesterday };
-  const threshold = { swapAfterDays: SORENESS.swapAfterDays, setsDrop: SORENESS.setsDrop, rirAdd: SORENESS.rirAdd };
-  if (running.length && opts.lighter) {
+  const sorePlan = opts.rule ? opts.rule.sore : { sets: -SORENESS.setsDrop, rir: SORENESS.rirAdd };
+  const easier = opts.rule ? opts.rule.twoDays === 'easier' : true;
+  const threshold = { swapAfterDays: SORENESS.swapAfterDays, setsDrop: sorePlan ? -sorePlan.sets : 0, rirAdd: sorePlan ? sorePlan.rir : 0 };
+  const cite = opts.from ? { from: opts.from } : {};
+  if (running.length && opts.lighter && easier) {
     return explain<SorenessAdjustment>({ ...base, action: 'swap', exercise: opts.lighter.id }, 'soreness.swap', inputs, {
       threshold,
       note: `${list(running)} sore two days running: ${opts.lighter.name} in place of ${name} today, same sets and RIR.`,
+      ...cite,
+    });
+  }
+  if (sore.length && sorePlan) {
+    const sets = Math.max(1, slot.sets + sorePlan.sets);
+    return explain<SorenessAdjustment>({ ...base, action: 'trim', sets, rir: slot.rir + sorePlan.rir }, 'soreness.trim', inputs, {
+      threshold,
+      note: joinNotes(
+        `${list(sore)} sore today: ${name} at ${sets} set(s), RIR ${slot.rir + sorePlan.rir}.`,
+        running.length > 0 && easier && 'Sore two days running, but no lighter variation passes the equipment and Ledger checks: trimmed instead.',
+      ),
+      ...cite,
     });
   }
   if (sore.length) {
-    const sets = Math.max(1, slot.sets - SORENESS.setsDrop);
-    return explain<SorenessAdjustment>({ ...base, action: 'trim', sets, rir: slot.rir + SORENESS.rirAdd }, 'soreness.trim', inputs, {
+    return explain<SorenessAdjustment>({ ...base, action: 'note' }, 'soreness.note', inputs, {
       threshold,
-      note: joinNotes(
-        `${list(sore)} sore today: ${name} at ${sets} set(s), RIR ${slot.rir + SORENESS.rirAdd}.`,
-        running.length > 0 && 'Sore two days running, but no lighter variation passes the equipment and Ledger checks: trimmed instead.',
-      ),
+      note: `${list(sore)} sore today: ${name} as planned by the plan's rule; ease off if it hurts rather than tires (the pain rule).`,
+      ...cite,
     });
   }
   if (mild.length) {
     return explain<SorenessAdjustment>({ ...base, action: 'note' }, 'soreness.note', inputs, {
       threshold,
       note: `${list(mild)} mildly sore: ${name} as planned; ease off if it hurts rather than tires (the pain rule).`,
+      ...cite,
     });
   }
   return explain<SorenessAdjustment>({ ...base, action: 'none' }, 'soreness.none', inputs, { threshold });

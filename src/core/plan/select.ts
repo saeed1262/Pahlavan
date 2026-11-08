@@ -1,6 +1,6 @@
 // Step 4: choose exercises for a slot. Filters: equipment, level (a self-check
 // result can allow a movement above the training age), dislikes, the Ledger
-// (safety.ts screenExercise), the emphasis and self-check exclusions. Ranking, best
+// (safety.ts screenExercise), the self-check's and body assessment's exclusions. Ranking, best
 // first: preferred ids, liked, equipment for the role, level fit, unilateral
 // when there is an asymmetry, then id. Deterministic: no randomness anywhere.
 
@@ -26,9 +26,6 @@ export const FALLBACK: Partial<Record<Pattern, Pattern[]>> = {
   carry: ['core-anti-rotation'],
 };
 
-/** Pure overhead pressing, left out when overhead range is limited. */
-const OVERHEAD = new Set(['overhead-press', 'db-shoulder-press', 'machine-shoulder-press', 'pike-push-up', 'wall-handstand']);
-
 const LEVEL_RANK: Record<Level, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 const EXPERIENCE_RANK = { novice: 0, intermediate: 1, advanced: 2 } as const;
 
@@ -51,6 +48,7 @@ export interface Pick {
 function allowed(ctx: PlanContext, e: CatalogueEntry, spec: SlotSpec, date: IsoDate): boolean {
   if (!e.equipment.every((q) => q === 'bodyweight' || ctx.equipment.has(q))) return false;
   if (ctx.dislikes.has(e.id)) return false;
+  // Ruled out by the self-check or the body assessment (context.ts): a ladder's higher levels, and what a finding rules out once confirmed (pure overhead pressing for a limited reach).
   if (ctx.exclude.has(e.id)) return false;
   // A self-check result can allow a movement above the training age (5 strict pull-ups: pull-ups for a novice).
   if (LEVEL_RANK[e.level] > EXPERIENCE_RANK[ctx.experience] && !ctx.unlock.has(e.id)) return false;
@@ -58,7 +56,6 @@ function allowed(ctx: PlanContext, e: CatalogueEntry, spec: SlotSpec, date: IsoD
   if (spec.role === 'main' && e.load === 'timed') return false;
   // Holds belong in core and skill slots, or where a slot asks for them (balance work).
   if (e.load === 'timed' && !['core-anti-extension', 'core-anti-rotation', 'core-flexion', 'skill'].includes(e.pattern) && !(spec.prefer ?? []).includes(e.id)) return false;
-  if (ctx.emphasis.has('overhead-limited') && OVERHEAD.has(e.id)) return false;
   return screenExercise(e.id, ctx.ledger, date, ctx.exercises).value.allowed;
 }
 

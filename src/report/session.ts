@@ -5,22 +5,27 @@
 // a deload week and the return after missed time already applied). Every
 // adjustment carries its reason and title. Each row also carries the plan's
 // rest, its superset pair (numbered as the month plan numbers it, 4a and 4b)
-// and the note's form cue. Pure: the date is an input.
+// and the note's form cue; a timed item its structure (`timed`, with its
+// rounds as `sets`), intervals in a calibration week as easy steady minutes.
+// Pure: the date is an input.
 
 import { type VaultData } from '../adapters/vault/convert.ts';
+import { calibrateTimed, calibrationCardioNote, calibrationNote } from '../core/calibration.ts';
 import { busyPeriods } from '../core/checkins.ts';
 import { CATALOGUE_BY_ID, type CatalogueEntry } from '../core/data/exercises.ts';
-import { daysBetween, mondayOf } from '../core/dates.ts';
+import { dayText, daysBetween, mondayOf } from '../core/dates.ts';
 import { plannedEffort, typicalMinutes } from '../core/load.ts';
 import { toExercise } from '../core/plan/context.ts';
 import { effectiveSlot, weekAt } from '../core/plan.ts';
-import { noteCue, numberRows, parseNote, restOf, type SlotExtras } from '../core/plan-data.ts';
+import { itemTimed, noteCue, numberRows, parseNote, restOf, type SlotExtras } from '../core/plan-data.ts';
 import { explain, type Reason } from '../core/reason.ts';
+import { fromKind, lightDoseText } from '../core/rules.ts';
 import { screenExercise, screeningCaps } from '../core/safety.ts';
-import type { Exercise, ExerciseSlot, IsoDate, RepRange, SessionTemplate } from '../core/schema.ts';
+import type { Exercise, ExerciseSlot, IsoDate, RepRange, SessionTemplate, TimedWork } from '../core/schema.ts';
+import { halfTimed, timedMinutes, timedSets, timedView, type TimedView } from '../core/timed.ts';
 import { sorenessForSlot } from '../core/soreness.ts';
 import { expressVariant, halveSr, hotelVariant, shortExpressVariant, travelEquipment, type SessionMode, type VariantSlot } from '../core/variant.ts';
-import { buildReview, CALENDAR, context, ledgerConstraints, nameOf, sessionLabel } from './review.ts';
+import { buildReview, CALENDAR, calibrationOf, context, ledgerConstraints, nameOf, sessionLabel } from './review.ts';
 
 export interface SessionItem {
   exercise: string;
@@ -31,6 +36,13 @@ export interface SessionItem {
   main: boolean;
   /** The plan's own sets-and-reps text ("4 × 8–10", "4 rounds, 40/20"), for an item done as planned. */
   sr?: string;
+  /**
+   * A timed item: its minutes and structure as done today (Express halves
+   * it; intervals in a calibration week are easy steady minutes), `minutes`
+   * its whole length and `text` in words ("4 × 4 min hard, 3 min easy
+   * between · about 25 min"). `sets` is then its rounds, 1 for steady minutes.
+   */
+  timed?: TimedView;
   /** The plan's exercise this one replaces today. */
   replaces?: { exercise: string; name: string };
   /** The plan's line for this item, as plan-data names it ("Handstand (your level)"): the log's checklist uses it. */
@@ -73,6 +85,8 @@ export interface SessionPick {
 
 /** "8-10", or "12" when the range has one value. */
 const repsText = (r: RepRange) => (r[0] === r[1] ? `${r[0]}` : `${r[0]}-${r[1]}`);
+/** "easy, conversational." reads "Easy, conversational.". */
+const sentence = (t: string) => (t ? t[0]!.toUpperCase() + t.slice(1) : t);
 
 export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, pick: SessionPick = {}) {
   const ctx = context(data, date);
@@ -100,7 +114,10 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   const type = picked ? wanted : suggested;
   const template = type ? week?.sessions.find((t) => t.id === type.template) : undefined;
   if (!type || !template) {
-    return { date, mode, session: null, choices: [], items: [], finisher: null, warmup: null, flags, note: 'No planned session for this date (no plan week holds it, or the plan has no sessions).', ...(pickNote ? { pickNote } : {}) };
+    // Before the plan's start week: say when it begins (Today's session card shows the note).
+    const ahead = data.plan.start && date < data.plan.start ? data.plan.start : null;
+    const note = ahead ? `Your plan starts ${dayText(ahead)}: no planned session before then.` : 'No planned session for this date (no plan week holds it, or the plan has no sessions).';
+    return { date, mode, session: null, choices: [], items: [], finisher: null, warmup: null, flags, note, ...(ahead ? { planStarts: ahead } : {}), ...(pickNote ? { pickNote } : {}) };
   }
   const loggedThis = loggedToday.some((s) => (s.plan?.template ?? s.template) === type.template);
   const suggestionWhy = loggedType
@@ -109,7 +126,14 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   const why = picked
     ? `Chosen by you; ${!suggested ? 'the rotation has no suggestion today' : loggedType ? `logged today: ${suggested.label}` : `the rotation suggested ${suggested.label}`}.`
     : suggestionWhy;
-  const tpl: SessionTemplate = { ...template, slots: template.slots.map((s) => effectiveSlot(s, date).value) };
+  // A timed item starts from its structure as the plan writes it (the item's `timed`, else its sr and note), with
+  // its rounds as sets: the calibration week's easy minutes are applied below, with their reason.
+  const plannedTimed = (s: ExerciseSlot): ExerciseSlot => {
+    const own = (s as ExerciseSlot & SlotExtras)._item;
+    const t: TimedWork | null = own ? itemTimed(own) : (s.timed ?? null);
+    return t ? { ...s, timed: t, sets: timedSets(t) } : s;
+  };
+  const tpl: SessionTemplate = { ...template, slots: template.slots.map((s) => plannedTimed(effectiveSlot(s, date).value)) };
 
   // Exercises the session may use: the program's, plus the catalogue's (for swaps).
   const all: Record<string, Exercise> = { ...data.program.exercises };
@@ -141,13 +165,14 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   const srOf = (s: ExerciseSlot) => (s as ExerciseSlot & SlotExtras)._item?.sr ?? null;
   if (mode === 'express' && tpl.kind === 'short') {
     // A short day keeps its items and its own finisher, each at half.
-    const r = shortExpressVariant({ ...tpl, slots: body }, srOf);
+    const r = shortExpressVariant({ ...tpl, slots: body }, srOf, { rule: data.rules.rules.express, from: fromKind(data.rules, 'express') });
     slots = r.value.slots;
     variantReason = r.reason;
-    if (finisherSlot) {
+    if (data.rules.rules.express.short === 'skip') finisherSlot = null;
+    else if (finisherSlot) {
       const f = finisherSlot as ExerciseSlot & SlotExtras;
       const fsr = srOf(f);
-      finisherSlot = { ...f, sets: Math.max(1, Math.ceil(f.sets / 2)), ...(f._item ? { _item: { ...f._item, ...(fsr ? { sr: halveSr(fsr) } : {}) } } : {}) };
+      finisherSlot = { ...f, sets: Math.max(1, Math.ceil(f.sets / 2)), ...(f.timed ? { timed: halfTimed(f.timed) } : {}), ...(f._item ? { _item: { ...f._item, ...(fsr ? { sr: halveSr(fsr) } : {}) } } : {}) };
     }
   } else if (mode === 'express') {
     const block = data.plan.express ? { warmup: data.plan.express.warmup ?? undefined, mainSets: data.plan.express.mainSets, secondSets: data.plan.express.secondSets, ...(data.plan.express.finish ? { finish: { exercise: data.plan.express.finish.exercise, sets: data.plan.express.finish.sets, repRange: data.plan.express.finish.repRange } } : {}) } : null;
@@ -164,7 +189,7 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     const travel = busyPeriods(ctx.records, date).find((b) => b.kind === 'travel' && b.from <= date && date <= b.to);
     const tripDays = travel ? daysBetween(travel.from, travel.to) + 1 : null;
     const caps = data.profile ? screeningCaps(data.profile.screening.outcome).value : null;
-    const r = hotelVariant({ template: { ...tpl, slots: body }, exercises: data.program.exercises, catalogueOf, ledger: constraints, date, unit, tripDays, capMinRir: caps?.minRir ?? null, travel: travelKit });
+    const r = hotelVariant({ template: { ...tpl, slots: body }, exercises: data.program.exercises, catalogueOf, ledger: constraints, date, unit, tripDays, capMinRir: caps?.minRir ?? null, travel: travelKit, rule: data.rules.rules.hotel, from: fromKind(data.rules, 'hotel') });
     slots = r.value.slots;
     variantReason = r.reason;
   } else {
@@ -172,6 +197,16 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   }
   if (variantReason) flags.push(variantReason);
 
+  // A calibration week: plan week 1's slots already carry the calibration RIR; a restart's first week takes it here.
+  // Intervals that week are easy steady minutes (plan.calibration.cardio), from the plan's structure either way.
+  // The calibration rule: the plan's (its RIR, whether intervals turn easy), else the old default.
+  const calRule = data.rules.rules.calibration;
+  const calFrom = fromKind(data.rules, 'calibration');
+  const sorenessFrom = fromKind(data.rules, 'soreness');
+  const calibration = calibrationOf(ctx, review.missed.value);
+  const calibrating = calibration !== null;
+  const calibrateCardio = (t: TimedWork | undefined) => (calibration && t && calRule.cardio === 'easy' ? calibrateTimed(t, calibration) : null);
+  const plannedRir = (exercise: string, r: number) => (calibrating && kindOf(exercise) === 'strength' ? Math.max(r, calRule.rir) : r);
   const planned = new Map(template.slots.map((s) => [s.exercise, s]));
   // Where each row's plan line sits in the plan's session, for the superset pairs.
   const planAt: number[] = [];
@@ -185,8 +220,13 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     let exercise = v.exercise;
     let replaces = v.replaces ? { exercise: v.replaces, name: name(v.replaces) } : undefined;
     let sets = v.sets;
-    let rir = v.rir;
+    let rir = plannedRir(v.exercise, v.rir);
     let trimmed = false;
+    // A timed item's minutes are its dose: its rounds are its sets, and readiness never trims them.
+    const easy = calibrateCardio(v.timed);
+    const timed = easy ? easy.value : v.timed;
+    if (easy) adjustments.push(easy.reason);
+    if (timed) sets = timedSets(timed);
 
     // 2. The Ledger: swap a blocked planned exercise; keep the conditions of an allowed one (hotel swaps too).
     if (constraints.length) {
@@ -206,7 +246,7 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
       if (mode === 'hotel' && !e.equipment.every((q) => travelKit.equipment.includes(q))) return false;
       return !constraints.length || screenExercise(id, constraints, date, all).value.allowed;
     });
-    const so = sorenessForSlot({ ...v, exercise, sets, rir }, all, ctx.daily, date, { lighter: lighterId ? { id: lighterId, name: name(lighterId) } : null, name });
+    const so = sorenessForSlot({ ...v, exercise, sets, rir }, all, ctx.daily, date, { lighter: lighterId ? { id: lighterId, name: name(lighterId) } : null, name, rule: data.rules.rules.soreness, from: sorenessFrom });
     if (so.value.action !== 'none') adjustments.push(so.reason);
     if (so.value.action === 'swap') {
       replaces ??= { exercise, name: name(exercise) };
@@ -217,12 +257,14 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
       trimmed = true;
     }
 
-    // 4. Readiness: low on the smoothed score, one set fewer and RIR +1 (not on top of a soreness trim).
+    // 4. Readiness: low on the smoothed score, the plan's change (the old default: one set fewer and RIR +1), not on
+    // top of a soreness trim. Under a rule of none, trim is never active.
     const trim = review.readiness.actions.find((a) => a.value.action === 'trim');
-    if (trim?.value.active) {
+    const low = data.rules.rules.readiness.low;
+    if (trim?.value.active && low && !timed) {
       if (!trimmed) {
-        sets = Math.max(1, sets - 1);
-        rir += 1;
+        sets = Math.max(1, sets + low.sets);
+        rir += low.rir;
       }
       adjustments.push(trim.reason);
     }
@@ -232,6 +274,8 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     let target: SessionItem['target'] = null;
     if (lift?.next?.value && typeof lift.next.value === 'object') {
       const n = ((lift.returnAdjusted?.value ?? lift.next.value) as { weight: number | null; unit: string; reps: number; rir: number; action: string });
+      // A calibrated target's RIR is the item's too, so the row and its target say the same.
+      if (n.action === 'calibrate') rir = Math.max(rir, n.rir);
       target = { weight: n.weight, unit: n.unit, reps: n.reps, rir: Math.max(n.rir, rir), action: n.action };
       adjustments.push(lift.next.reason);
       if (lift.returnAdjusted) adjustments.push(lift.returnAdjusted.reason);
@@ -256,11 +300,13 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     // The plan's own line for this item (a hotel swap keeps the line it replaces): the log's checklist names it.
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- needed: TypeScript 7, this project's compiler, rejects the line without it (the linter's TypeScript 5 reads the type differently)
     const planItem = item ?? (v.replaces ? (planned.get(v.replaces) as (ExerciseSlot & SlotExtras) | undefined)?._item : undefined);
-    const asPlanned = !replaces && own && sets === own.sets && rir === own.rir && v.repRange === own.repRange;
+    const asPlanned = !replaces && own && sets === own.sets && rir === plannedRir(own.exercise, own.rir) && v.repRange === own.repRange;
     const planWhy = parseNote(planItem?.note).why;
     // The rest belongs to the slot (a swap keeps it); the form cue to the planned exercise, so a swap has none.
     const rest = restOf(planItem);
-    const cue = replaces ? null : noteCue(planItem?.note);
+    // The calibration week's intervals: their own line in place of the note's (which describes the intervals).
+    const cue = replaces ? null : easy ? sentence(`${calibrationCardioNote(calibration!)}.`) : noteCue(planItem?.note);
+    const view = timed ? timedView(timed) : null;
     return {
       exercise,
       name: name(exercise),
@@ -268,7 +314,8 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
       repRange: v.repRange,
       rir,
       main: v.main === true,
-      ...(v.sr ? { sr: v.sr } : asPlanned && item?.sr ? { sr: item.sr } : {}),
+      ...(easy ? { sr: `${timedMinutes(timed)} min` } : v.sr ? { sr: v.sr } : asPlanned && item?.sr ? { sr: item.sr } : {}),
+      ...(view ? { timed: view } : {}),
       ...(planItem?.name ? { planName: planItem.name } : {}),
       ...(replaces ? { replaces } : {}),
       ...(v.unavailable ? { unavailable: true } : {}),
@@ -293,20 +340,38 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
 
   // Session-level flags: readiness, the deload week, the calibration week, missed time.
   for (const a of review.readiness.actions) if (a.value.action !== 'trim' && a.value.active) flags.push(a.reason);
-  if (week?.kind === 'deload') flags.push(explain(true, 'deload.decide', { week: week.start }, { title: 'Light week', note: 'Two sets of everything, about 10 % lighter, at the bottom of each range, so your body catches up (what the rules call a deload).' }).reason);
-  if (week?.calibration) flags.push(explain(true, 'plan.calibration', { week: week.start }, { title: 'Calibration week', note: 'Calibration week: find working weights that leave 3 reps in reserve; no progression decisions.' }).reason);
+  // The light week as the plan's rule (or the old default) has it.
+  const lw = data.rules.rules.lightWeeks;
+  const lightFrom = fromKind(data.rules, 'lightWeeks');
+  if (week?.kind === 'deload') flags.push(explain(true, 'deload.decide', { week: week.start }, { title: 'Light week', note: 'At the bottom of each range, so your body catches up (what the rules call a deload).', from: lightFrom }).reason);
+  // The rule's own words (calFrom) already say what the week does: no second note repeating them.
+  if (week?.calibration) flags.push(explain(true, 'plan.calibration', { week: week.start }, { title: 'Calibration week', from: calFrom }).reason);
   if (review.missed.value.protocol !== 'continue' && review.missed.value.protocol !== 'start') flags.push(review.missed.reason);
 
-  // The finisher and the session's planned load (heuristic).
+  // The finisher (intervals as easy minutes in a calibration week) and the session's planned load (heuristic).
   const finisherWhy = finisherSlot ? parseNote((finisherSlot as ExerciseSlot & SlotExtras)._item?.note).why : null;
+  const finisherEasy = calibrateCardio(finisherSlot?.timed);
+  if (finisherEasy) flags.push(finisherEasy.reason);
+  const finisherTimed = finisherSlot ? timedView(finisherEasy?.value ?? finisherSlot.timed) : null;
   const finisher = finisherSlot
-    ? { exercise: finisherSlot.exercise, name: name(finisherSlot.exercise), sr: (finisherSlot as ExerciseSlot & SlotExtras)._item?.sr ?? (mode === 'express' && data.plan.express?.finish ? data.plan.express.finish.sr : `${finisherSlot.sets} × ${finisherSlot.repRange[0]}`), ...(finisherWhy ? { planWhy: { text: finisherWhy } } : {}) }
+    ? {
+      exercise: finisherSlot.exercise,
+      name: name(finisherSlot.exercise),
+      // The plan's line; a light week's copy of the slot has none, so a timed finisher says its minutes.
+      sr: finisherEasy ? `${finisherEasy.value.minutes} min` : (finisherSlot as ExerciseSlot & SlotExtras)._item?.sr ?? (finisherSlot.timed ? `${timedMinutes(finisherSlot.timed)} min` : mode === 'express' && data.plan.express?.finish ? data.plan.express.finish.sr : `${finisherSlot.sets} × ${finisherSlot.repRange[0]}`),
+      ...(finisherTimed ? { timed: finisherTimed } : {}),
+      ...(finisherWhy ? { planWhy: { text: finisherWhy } } : {}),
+    }
     : null;
   // A lifting day's minutes: its typical logged length; a short day's: as planned, from its items, with its time check.
   const time = tpl.kind === 'short' ? (review.time.sessions.find((s) => s.type === type.type) ?? null) : null;
   const usual = time ? time.estimate.value.minutes : typicalMinutes(data.sessions, type.template, date);
-  const minutes = mode === 'express' ? (tpl.kind === 'short' ? Math.max(10, Math.round((usual ?? 30) / 2)) : 20) : usual;
-  const effort = plannedEffort({ ...tpl, name: type.label }, data.program.exercises, { deload: week?.kind === 'deload' });
+  const skippedShort = mode === 'express' && tpl.kind === 'short' && data.rules.rules.express.short === 'skip';
+  const minutes = skippedShort ? 0 : mode === 'express' ? (tpl.kind === 'short' ? Math.max(10, Math.round((usual ?? 30) / 2)) : 20) : usual;
+  // A short day Express skips (the plan's rule) has no session, so no planned effort either.
+  const effort = skippedShort
+    ? explain(0, 'load.planned-effort', { template: tpl.id, kind: tpl.kind, skipped: true }, { note: 'Express on a short day skips it today (the plan\'s rule): no session, so no planned effort.' })
+    : plannedEffort({ ...tpl, name: type.label }, data.program.exercises, { deload: week?.kind === 'deload' });
 
   return {
     date,
@@ -326,7 +391,13 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     /** Every session in the plan, for a picker: the suggestion first. */
     choices: [...data.plan.types].sort((a, b) => Number(b.type === suggested?.type) - Number(a.type === suggested?.type)).map((t) => ({ type: t.type, name: t.label, kind: t.kind, suggested: t.type === suggested?.type })),
     ...(pickNote ? { pickNote } : {}),
-    week: { planWeek: review.week.planWeek, deload: week?.kind === 'deload', calibration: week?.calibration === true },
+    week: {
+      planWeek: review.week.planWeek,
+      deload: week?.kind === 'deload',
+      calibration: week?.calibration === true,
+      /** What a light week does, as the plan's rule (or the old default) says it. */
+      lightWeek: { text: lightFrom.text, dose: lightDoseText(lw), source: lightFrom.kind },
+    },
     warmup,
     items,
     finisher,

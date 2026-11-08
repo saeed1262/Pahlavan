@@ -15,10 +15,11 @@ import { busyPeriods } from '../core/checkins.ts';
 import { planSteps, type CoachStep } from '../core/coach-steps.ts';
 import { adherenceSince } from '../core/cycle.ts';
 import { addDays, daysBetween, isIsoDate } from '../core/dates.ts';
+import { CATALOGUE_BY_ID } from '../core/data/exercises.ts';
 import { effectiveSlot } from '../core/plan.ts';
-import { parseNote } from '../core/plan-data.ts';
+import { itemTimed, parseNote, type PlanDataItem } from '../core/plan-data.ts';
+import { sameTimed, timedMinutes, timedView } from '../core/timed.ts';
 import { minimumWeek } from '../core/minimum-week.ts';
-import { generatePlan } from '../core/plan/generate.ts';
 import { screeningDue } from '../core/safety.ts';
 import type { IsoDate } from '../core/schema.ts';
 import { coachStepsOf } from './checkin-screen.ts';
@@ -154,8 +155,8 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
       if (ws.length) mesocycles.push({ index: mi, name: m.name, phase: pi + 1, from: ws[0]!.start, to: ws.at(-1)!.end });
     }
     const ws = weeks.slice(first - 1);
-    // Tests in each phase's last week, the generator's rule, when the plan does not mark them.
-    if (ws.length && !ws.some((w) => w.tests)) ws.at(-1)!.tests = true;
+    // Tests in each phase's last week (the old default), unless the plan's rule lists its test weeks.
+    if (data.rules.rules.tests.weeks === null && ws.length && !ws.some((w) => w.tests)) ws.at(-1)!.tests = true;
     if (ws.length) phases.push({ index: pi + 1, name: ph.name, goal: ph.goal ?? null, from: ws[0]!.start, to: ws.at(-1)!.end });
   });
   const now = weeks.find((w) => w.start <= date && date <= w.end) ?? null;
@@ -166,7 +167,16 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
   const decisions = (typeof extra.decisions === 'string' ? parseDecisions(extra.decisions) : []).filter((d) => !cycle.since || d.date >= cycle.since);
   if (extra.decisions == null) notes.push({ code: 'no-decisions', text: 'No decision log yet (Coach/Decisions.md): the coach writes one entry per plan change.' });
   const busy = busyPeriods(data.checkins.weekly, addDays(date, 365)).map((b) => ({ from: b.from, to: b.to, kind: b.kind, label: (b as { label?: string; note?: string }).label ?? (b as { note?: string }).note ?? (b.kind === 'travel' ? 'Travel' : 'Busy') }));
-  const ledger = (data.ledger?.constraints ?? []).map((c) => ({ id: c.id, area: c.area ?? c.id, noTags: c.noTags ?? [], noMovements: c.noMovements ?? [], until: c.until ?? null, note: c.note ?? null, source: 'ledger' as const }));
+  // Each ruled-out movement by name: the catalogue's, else the plan's own, else the id in words, as the catalogue
+  // writes names. Known as the vault adapter's `unknown-movement` warning counts it: a catalogue id or a plan
+  // exercise blocks something, any other id nothing.
+  const readable = (id: string) => { const w = id.replace(/-/g, ' ').trim(); return w.charAt(0).toUpperCase() + w.slice(1); };
+  const movement = (id: string) => {
+    const cat = CATALOGUE_BY_ID.get(id);
+    const own = data.program.exercises[id];
+    return { id, name: cat?.name ?? (own ? nameOf(ctx, id) : readable(id)), known: Boolean(cat || own) };
+  };
+  const ledger = (data.ledger?.constraints ?? []).map((c) => ({ id: c.id, area: c.area ?? c.id, noTags: c.noTags ?? [], noMovements: c.noMovements ?? [], movements: (c.noMovements ?? []).map(movement), until: c.until ?? null, note: c.note ?? null, source: 'ledger' as const }));
   if (data.coach.ledger === 'missing') notes.push({ code: 'no-ledger', text: 'No Ledger yet (Coach/ledger.json): the plan’s own temporary changes are shown.' });
   const temporary = review.temporaryChanges.active.map((t) => ({ session: t.session, item: t.item, until: t.until, reason: t.reason, wayBack: t.wayBack }));
 
@@ -185,16 +195,20 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
       ...(time ? { minutes: { estimate: time.estimate, check: time.check } } : {}),
       slots: t.slots.map((raw) => {
         const s = effectiveSlot(raw, date).value;
-        const extra2 = raw as typeof raw & { _item?: { sr?: string; note?: string } };
+        const extra2 = raw as typeof raw & { _item?: PlanDataItem };
         const lf = flagged.find((f) => f.session === type && f.value.exercise === s.exercise);
+        // A timed item this week changed from the plan's (the calibration week's intervals as easy minutes): its own minutes.
+        const changed = s.timed && !sameTimed(itemTimed(extra2._item), s.timed);
         return {
           exercise: s.exercise,
           name: nameOf(ctx, s.exercise),
-          sr: extra2._item?.sr ?? null,
+          sr: changed ? `${timedMinutes(s.timed)} min` : (extra2._item?.sr ?? null),
           sets: s.sets,
           repRange: s.repRange,
           rir: s.rir,
           main: s.main === true,
+          /** A timed item's structure as this week has it (the calibration week's intervals as easy minutes): `sets` is its rounds. */
+          ...(s.timed ? { timed: timedView(s.timed) } : {}),
           progression: raw.progression ?? null,
           until: raw.until && raw.until.until >= date ? { until: raw.until.until, reason: raw.until.reason, exercise: raw.until.exercise ?? null, exerciseName: raw.until.exercise ? nameOf(ctx, raw.until.exercise) : null } : null,
           ledger: lf ? { allowed: lf.value.allowed, conditions: lf.value.conditions, note: lf.reason.note ?? null } : null,
@@ -208,14 +222,9 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
   // Planned sets per muscle against the bands (the priority rows' done sets from the cycle start).
   const volume = volumeViews(ctx, review, date, cycle.since);
 
-  // Targets: the generator's predictions on the profile, the profile's own numbers, and the standing rows.
+  // Targets: the profile's own numbers (the coach writes them) and the standing rows. The plan generator is an optional
+  // baseline the coach may run, not a source of targets.
   const profile = data.profile;
-  let generated: { measure: string; unit: string; predicted: [number, number]; by: IsoDate; goal: string; kind: string }[] | null = null;
-  if (profile && now) {
-    const g = generatePlan({ profile, today: date, options: { start: phases[0]?.from ?? date } });
-    const phaseEnd = phases[now.phase - 1]?.to ?? date;
-    generated = (g.value.proposal.targets ?? []).map((t) => ({ measure: t.measure, unit: t.unit, predicted: t.predicted, by: phaseEnd, goal: t.goal, kind: t.kind }));
-  }
   // The targets count from the cycle start (the newest baseline, else the first plan week).
   const since = cycle.since;
   const tape = tapeTrends(data.body.tape, since);
@@ -291,6 +300,8 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
     date,
     cycle,
     week: review.week,
+    /** The standing rules the plan's numbers follow: the plan's own or the old default, each in words. */
+    rules: review.rules,
     now: now ? { index: now.index, phase: now.phase, meso: now.meso } : null,
     weeks,
     phases,
@@ -303,7 +314,7 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
     // The least that keeps a bad week on track: the plan's lifting days as Express.
     minimumWeek: minimumWeek({ liftDays: data.plan.weekTarget.lift, mainSets: data.plan.express?.mainSets ?? null, shortDays: data.plan.weekTarget.short }),
     volume: { muscles: volume.views.plan.muscles, priority: volume.priority, labels: volume.labels, topExercises: volume.topExercises, pullPush: pullPushView(review.volume.pullPush) },
-    targets: { generated, profile: profileTargets, standing },
+    targets: { profile: profileTargets, standing },
     load: { ...loadView, nextMonotony },
     upcoming,
     // The coach: the step after this week's check-in and where it stands, the next ones, and every plan Sunday's (the calendar).
