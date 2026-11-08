@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { buildLogEntry, mergeLog } from '../src/adapters/vault/log-write.ts';
 import { readVault } from '../src/adapters/vault/read.ts';
+import { CALIBRATION } from '../src/core/calibration.ts';
 import { buildSession, customLogForm, inputFromForm, logFormFor, logFormFromEntry, soreChanges, topOf } from '../src/report/index.ts';
 import { ROOT } from './helpers.ts';
 
@@ -116,6 +117,16 @@ describe('a new log from today’s session', () => {
     assert.equal((r.entry['lift1'] as { planned: string }).planned, 'Romanian Deadlift');
     assert.equal(r.entry['hotel'], true);
     assert.ok((r.entry['swaps'] as { from: string }[]).some((s) => s.from === 'Bulgarian Split Squat'));
+  });
+  it('starts plan week 1 at the calibration week’s targets: the weight held, the bottom of the range, RIR 3', () => {
+    const W1 = '2026-03-05';
+    const r1 = readVault(fsIo, VAULT, { asOf: W1 });
+    const f = logFormFor(r1, buildSession(r1.data, W1, 'full', { type: 'A' }), W1)!;
+    const goblet = f.rows.find((r) => r.line === 'Goblet Squat')!;
+    assert.deepEqual([goblet.rir, goblet.target, goblet.top], [CALIBRATION.rir, { weight: 40, reps: 8, rir: CALIBRATION.rir, calibrate: true }, { weight: 40, reps: 8 }]);
+    assert.equal(goblet.targetNote, `Calibration week: start at 40 lb and adjust until 8 reps leave ${CALIBRATION.rir} in reserve.`);
+    assert.equal(CALIBRATION.rir, 3);
+    for (const r of f.rows.filter((x) => x.kind === 'load')) assert.ok(r.rir !== null && r.rir >= CALIBRATION.rir, `${r.name} RIR ${r.rir}`);
   });
   it('writes only the sore muscles that changed', () => {
     const f = formB();

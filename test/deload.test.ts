@@ -37,6 +37,46 @@ describe('deload decision', () => {
   });
 });
 
+describe('deload decision: the plan\'s light weeks', () => {
+  const start = '2026-03-02';
+  const weeks = { every: null, weeks: [5, 9] };
+
+  it('reads the listed weeks, and says when none is ahead', () => {
+    const w5 = decideDeload({ programStart: start, today: '2026-03-30', lightWeeks: weeks, legacy: false }).value;
+    assert.deepEqual([w5.planWeek, w5.scheduled, w5.deload, w5.weeksToScheduled], [5, true, true, 0]);
+    assert.equal(decideDeload({ programStart: start, today: '2026-03-25', lightWeeks: weeks, legacy: false }).value.deload, false);
+    const late = decideDeload({ programStart: start, today: '2026-05-04', lightWeeks: weeks, legacy: false });
+    assert.equal(late.value.weeksToScheduled, null);
+    assert.match(late.reason.note ?? '', /lists no light week ahead/);
+  });
+
+  it('an early signal is a fact unless the rule applies it', () => {
+    const offer = decideDeload({ programStart: start, today: '2026-03-10', lightWeeks: weeks, early: 'offer', legacy: false, earlyDeloadSignal: true, stalledMainLifts: ['a', 'b'] });
+    assert.deepEqual([offer.value.deload, offer.value.signals, offer.value.triggers], [false, ['readiness', 'stalls'], []]);
+    assert.match(offer.reason.note ?? '', /leaves it to the coach/);
+    const none = decideDeload({ programStart: start, today: '2026-03-10', lightWeeks: weeks, early: 'none', legacy: false, earlyDeloadSignal: true });
+    assert.deepEqual([none.value.deload, none.value.signals], [false, ['readiness']]);
+    const apply = decideDeload({ programStart: start, today: '2026-03-10', lightWeeks: weeks, early: 'apply', legacy: false, earlyDeloadSignal: true });
+    assert.deepEqual([apply.value.deload, apply.value.triggers], [true, ['readiness']]);
+  });
+
+  it('moves no light week onto a busy week and applies no cancel: the coach edits the plan', () => {
+    const busy = [{ from: '2026-03-23', to: '2026-03-29', kind: 'travel' as const }];
+    const moved = decideDeload({ programStart: start, today: '2026-03-23', lightWeeks: weeks, legacy: false, busy }).value;
+    assert.deepEqual([moved.deload, moved.move], [false, undefined]);
+    const c = decideDeload({ programStart: start, today: '2026-03-30', lightWeeks: weeks, legacy: false, cancelled: true });
+    assert.deepEqual([c.value.deload, c.value.cancelled], [true, false]);
+    assert.match(c.reason.note ?? '', /the coach edits the plan's light weeks/);
+  });
+
+  it('cites the rule it applies', () => {
+    const from = { kind: 'plan' as const, path: 'rules.lightWeeks', text: "The plan's rule: light weeks plan weeks 5 and 9." };
+    const r = decideDeload({ programStart: start, today: '2026-03-30', lightWeeks: weeks, legacy: false, from });
+    assert.deepEqual(r.reason.from, from);
+    assert.match(r.reason.note ?? '', /^The plan's rule: light weeks plan weeks 5 and 9\. Plan week 5: a light week \(plan weeks 5 and 9\)\./);
+  });
+});
+
 describe('deload prescription', () => {
   const slots = [slot('back-squat', 5, 5, 8, 2), slot('bench-press', 3, 6, 8, 1), slot('curl', 2, 10, 15, 1)];
 

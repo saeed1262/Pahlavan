@@ -76,7 +76,7 @@
     "options": {}
   },
   "expected": {
-    "templateId": "full-body-minimum-aba",
+    "templateId": "full-body-minimum-x3",
     "compared": [
       "full-body-minimum-x3",
       "full-body-minimum-aba"
@@ -119,6 +119,6 @@
       "intervals": false
     },
     "priority": [],
-    "why": "Thirty minutes three times a week gives minimum-dose full body; with nothing but bodyweight, the push-up ladder (level 2, floor push-ups) and the single-leg ladder (level 3, box pistols) carry pressing and single-leg work. Heels that lift give box squats and ankle mobility, ribs that flare overhead keep overhead pressing out, the 25 s hollow hold starts the core ladder at level 3, and no bar means no pull-up level. Skipped sessions lead the pre-mortem; desk work brings desk breaks."
+    "why": "Thirty minutes three times a week gives minimum-dose full body; with nothing but bodyweight, the push-up ladder (level 2, floor push-ups) and the single-leg ladder (level 3, box pistols) carry pressing and single-leg work. Heels that lift give box squats and ankle mobility, ribs that flare overhead keep overhead pressing out, the 25 s hollow hold starts the core ladder at level 3, and no bar means no pull-up level. Skipped sessions lead the pre-mortem; desk work brings desk breaks. Bridges, squats and box pistols help no hamstrings; the slider leg curl (a towel on a smooth floor will do) trains them directly at the knee: the A/B/A rotation has no free slot that can take it without dropping another muscle under its minimum, so the comparison picks A/B/C, where the slider leg curl takes the core movement's place in C and brings the hamstrings to their minimum of 4 sets, and A keeps its row."
   }
 }

@@ -35,6 +35,7 @@
         "planWeek": 2,
         "scheduled": false,
         "weeksToScheduled": 1,
+        "signals": [],
         "triggers": [],
         "deload": false,
         "cancelled": false
@@ -46,6 +47,9 @@
         "planWeek": 3,
         "scheduled": false,
         "weeksToScheduled": 0,
+        "signals": [
+          "busy-week"
+        ],
         "triggers": [
           "busy-week"
         ],
@@ -68,6 +72,7 @@
         "planWeek": 4,
         "scheduled": true,
         "weeksToScheduled": 4,
+        "signals": [],
         "triggers": [],
         "deload": false,
         "cancelled": false,
@@ -88,6 +93,7 @@
         "planWeek": 8,
         "scheduled": true,
         "weeksToScheduled": 1,
+        "signals": [],
         "triggers": [],
         "deload": false,
         "cancelled": false,
@@ -108,6 +114,9 @@
         "planWeek": 9,
         "scheduled": false,
         "weeksToScheduled": 0,
+        "signals": [
+          "busy-week"
+        ],
         "triggers": [
           "busy-week"
         ],

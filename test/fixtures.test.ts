@@ -307,7 +307,8 @@ for (const f of fixtures) {
     if (dl) {
       it('deload decision', () => {
         const v = deloadDecision().value;
-        assert.deepEqual(v, { planWeek: dl.planWeek, scheduled: dl.scheduled, weeksToScheduled: dl.weeksToScheduled, triggers: dl.triggers, deload: dl.deload, cancelled: dl.cancelled });
+        // The old default acts on every signal it reports, so its signals are its triggers.
+        assert.deepEqual(v, { planWeek: dl.planWeek, scheduled: dl.scheduled, weeksToScheduled: dl.weeksToScheduled, signals: dl.triggers, triggers: dl.triggers, deload: dl.deload, cancelled: dl.cancelled });
       });
     }
 

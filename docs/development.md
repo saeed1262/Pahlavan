@@ -38,7 +38,18 @@ npm run ship-plugin -- <vault>/.obsidian/plugins/pahlavan
 npm run ship-skill -- <vault>/.claude/skills/fitness-coach
 ```
 
-`ship-skill` copies the skill and the freshly built engine, then runs the skill's self-check against that vault (read-only dry runs).
+`ship-skill` builds the engine and runs its plan check on the made-up vault (`test/fixtures/vault`: no hard error on a date its Ledger allows, exactly the expected one while a constraint holds; anything else stops the ship), copies the skill and the engine, then runs the skill's self-check against that vault (read-only dry runs, and the docs held to the engine's `facts` from `engine --version --json`).
+
+## Scoring coach-written plans
+
+The coach (the skill) designs plans; `tools/eval-plans.mjs` scores them, so models and prompts can be compared on the same made-up athletes (`test/fixtures/athletes/`). Running a model is manual: save each draft as a whole `plan-data.json` named after its athlete (`1-beginner.json`, `1-beginner-try2.json`, or by number, `1-a.json`) in one folder, build the engine, then:
+
+```bash
+npm run build-engine
+node tools/eval-plans.mjs <drafts folder> [--athletes <folder>] [--engine dist/engine.cjs] [--date YYYY-MM-DD] [--json]
+```
+
+For each draft it makes a scratch vault (the athlete's profile, its Ledger, the draft as the plan, empty logs), runs `check --plan` and `review --plan` on the athlete's date, and prints one row per draft: hard errors, warnings by code, overrides used, priority muscles inside their band, region rules met, sessions over the profile's minutes, and pulling to pushing sets (`--json` gives every number). `tools/eval-samples/` holds a small sample draft, which the tests score.
 
 ## Rules of the codebase
 

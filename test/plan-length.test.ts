@@ -29,6 +29,10 @@ describe('the plan’s length', () => {
   it('is plan-data’s weeks, in whole mesocycles, else 24', () => {
     assert.equal(planWeeksOf({ weeks: 12 }), 12);
     assert.equal(planWeeksOf({ weeks: 14 }), 16, 'up to a whole mesocycle');
+    // The plan's own light weeks end its mesocycles: 15 weeks with light weeks 5, 10 and 15 is 15 weeks.
+    assert.equal(planWeeksOf({ weeks: 15, rules: { lightWeeks: { weeks: [5, 10, 15] } } }), 15);
+    assert.equal(planWeeksOf({ weeks: 13, rules: { lightWeeks: { every: 5 } } }), 15);
+    assert.equal(planWeeksOf({ weeks: 17, rules: { lightWeeks: { weeks: [5, 10, 15] } } }), 17, 'past the last listed light week, as written');
     assert.equal(planWeeksOf({ weeks: 0 }), 24);
     assert.equal(planWeeksOf({ weeks: '12' }), 24);
     assert.equal(planWeeksOf({}), 24);

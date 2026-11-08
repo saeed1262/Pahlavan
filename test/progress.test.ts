@@ -1,6 +1,7 @@
 // The Progress report on the synthetic vault: the five cards' data, the
-// calendar's rule for days with nothing logged, ticked or marked, and no
-// goal date without a goal weight.
+// calendar's rule for days with nothing logged, ticked or marked, no goal
+// date without a goal weight, and each muscle's direct and half-credit sets
+// and its regions in every view.
 
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -9,7 +10,7 @@ import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { readinessSeries } from '../src/core/readiness.ts';
 import { buildProgress, buildReview, CALENDAR_WEEKS, dayStateOf, volumeStatus } from '../src/report/index.ts';
-import { ROOT } from './helpers.ts';
+import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
 
 const VAULT = join(ROOT, 'test', 'fixtures', 'vault');
 const fsIo = {
@@ -122,5 +123,77 @@ describe('buildProgress', () => {
     assert.equal(empty.volume, null);
     assert.deepEqual(empty.lifts, []);
     assert.ok(empty.notes.some((n) => n.code === 'no-plan'));
+  });
+});
+
+describe('buildProgress: the direct and half-credit split, and the regions', () => {
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+  /** The fixture with a region declared weak (made up): the vasti. */
+  /** The fixture with regions declared weak; with a machine too unless `machines` is false (the leg extension is the rectus femoris's only option). */
+  const declared = (regions: string[], machines = true) => {
+    const files = fixtureFiles('v');
+    const at = 'v/3-Personal/Fitness/Coach/profile.json';
+    const profile = JSON.parse(files[at]!);
+    files[at] = JSON.stringify({ ...profile, priorityRegions: regions, equipment: machines ? [...profile.equipment, 'machines'] : profile.equipment });
+    return buildProgress(readVault(memoryIo(files, DATE), 'v', { asOf: DATE }), DATE).volume!;
+  };
+
+  it('gives every view each muscle\'s direct and half-credit sets, adding up to its total', () => {
+    for (const k of ['week', 'four', 'plan'] as const) {
+      for (const m of p.volume!.views[k].muscles) {
+        assert.ok(m.direct !== undefined && m.indirect !== undefined, `${k} ${m.muscle}`);
+        assert.ok(Math.abs(m.direct + m.indirect - m.sets) < 0.02, `${k} ${m.muscle}: ${m.direct} + ${m.indirect} vs ${m.sets}`);
+      }
+    }
+    // This week's split is the week's own tally; the plan's is the planned split, with its effort.
+    const week = p.volume!.views.week.muscles.find((m) => m.muscle === 'shoulders')!;
+    assert.deepEqual([week.direct, week.indirect], [r2(review.volume.done.value.split['shoulders']!.direct), r2(review.volume.done.value.split['shoulders']!.indirect)]);
+    assert.ok(week.indirect! > 0);
+    assert.equal(week.hardDirect, undefined, 'a done view is not split by effort');
+    assert.notEqual(p.volume!.views.plan.muscles.find((m) => m.muscle === 'glutes')!.hardDirect, undefined);
+  });
+
+  it('gives each muscle its modelled regions in order, and none to a muscle without', () => {
+    const plan = p.volume!.views.plan.muscles;
+    const of = (muscle: string) => plan.find((m) => m.muscle === muscle)!.regions;
+    assert.deepEqual(of('shoulders').map((r) => r.id), ['shoulders-front', 'shoulders-side', 'shoulders-rear']);
+    assert.deepEqual(of('biceps'), []);
+    assert.equal(of('shoulders')[2]!.grade, 'heuristic');
+    assert.ok(of('upper-back').every((r) => r.roughGuide));
+    // The plan's regions are the review's own rows, what `check` reports.
+    for (const r of review.volume.regions) {
+      const row = of(r.value.muscle).find((x) => x.id === r.value.id)!;
+      assert.deepEqual([row.sets, row.direct, row.indirect, row.status], [r.value.sets, r.value.direct, r.value.indirect, r.value.status], r.value.id);
+    }
+    // No priority muscle has a region here and none is declared: every region is reported only.
+    assert.ok(plan.flatMap((m) => m.regions).every((r) => r.rule === null && r.status === 'reported'));
+    const week = p.volume!.views.week.muscles.find((m) => m.muscle === 'quads')!.regions.find((r) => r.id === 'quads-vasti')!;
+    assert.equal(week.sets, r2(review.volume.done.value.regions!['quads-vasti']!.direct));
+  });
+
+  it('holds a declared region to 6 and its muscle\'s coverage regions to 4, in every view', () => {
+    const v = declared(['quads-vasti']);
+    for (const k of ['week', 'four', 'plan'] as const) {
+      const quads = v.views[k].muscles.find((m) => m.muscle === 'quads')!.regions;
+      const [rf, vasti] = quads;
+      assert.equal(vasti!.declared, true, k);
+      assert.equal(vasti!.rule, 'declared');
+      assert.equal(vasti!.min, 6);
+      assert.equal(vasti!.status, 'ok', `${k}: ${vasti!.counted}`);
+      // The declared region makes the quads a priority for the region rules: the rectus femoris, with no leg extension, falls short.
+      assert.deepEqual([rf!.rule, rf!.min, rf!.counted, rf!.status], ['coverage', 4, 0, 'short'], k);
+      assert.match(rf!.note ?? '', /under the 4 direct sets/);
+      // The hamstrings are not a priority: reported only.
+      assert.ok(v.views[k].muscles.find((m) => m.muscle === 'hamstrings')!.regions.every((r) => r.rule === null));
+    }
+    // The fixture's logged sets give no RIR and its items none either: of unknown effort, counted as the rule counts them.
+    const week = v.views.week.muscles.find((m) => m.muscle === 'quads')!.regions[1]!;
+    assert.equal(week.counted, week.direct);
+    assert.match(week.note ?? '', /of unknown effort, counted/);
+  });
+
+  it('a declared region with no work in the plan is short of its 6', () => {
+    const side = declared(['shoulders-side']).views.plan.muscles.find((m) => m.muscle === 'shoulders')!.regions.find((r) => r.id === 'shoulders-side')!;
+    assert.deepEqual([side.declared, side.counted, side.min, side.status], [true, 0, 6, 'short']);
   });
 });

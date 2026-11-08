@@ -30,6 +30,7 @@
         "planWeek": 4,
         "scheduled": true,
         "weeksToScheduled": 0,
+        "signals": [],
         "triggers": [],
         "deload": false,
         "cancelled": true
@@ -41,6 +42,7 @@
         "planWeek": 8,
         "scheduled": true,
         "weeksToScheduled": 0,
+        "signals": [],
         "triggers": [],
         "deload": true,
         "cancelled": false

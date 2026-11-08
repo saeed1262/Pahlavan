@@ -40,7 +40,7 @@
     "options": {}
   },
   "expected": {
-    "templateId": "full-body-minimum-aba",
+    "templateId": "full-body-minimum-x3",
     "liftingDays": 3,
     "extraDays": 0,
     "minutes": 30,
@@ -71,6 +71,6 @@
     ],
     "calibrationWeek": 1,
     "start": "2026-04-06",
-    "why": "3 days x 30 min or less is the full-body minimum dose x3 in planning.md's table; the comparison picks its nearest option, the minimum dose as A/B/A, because a novice gains most from practising the same main lifts more often (1.5 times a week against once). Conservative: full body only, RIR 4 or more, no vigorous work, no max tests, no calibration sets to failure. Every fixture also asserts: all checks pass (volume bands, concurrent placement, schema, equipment, Ledger, time, constant main lifts), deloads every 4th week, a calibration week first, tests at each phase end, and identical output on a second run."
+    "why": "3 days x 30 min or less is the full-body minimum dose x3 in planning.md's table, and the comparison keeps it: the minimum dose as A/B/A would practise the same main lifts more often, but with bodyweight only its A/B/A weeks leave the hamstrings at 2 sets (bridges and squats help no hamstrings; split squats do), under the minimum dose's 4, so its volume check fails. Conservative: full body only, RIR 4 or more, no vigorous work, no max tests, no calibration sets to failure. Every fixture also asserts: all checks pass (volume bands, concurrent placement, schema, equipment, Ledger, time, constant main lifts), deloads every 4th week, a calibration week first, tests at each phase end, and identical output on a second run."
   }
 }

@@ -119,6 +119,16 @@ describe('JSON Schema', () => {
     for (const [name, values] of Object.entries(enums)) assert.deepEqual(schema.$defs[name]!.enum, [...values], name);
   });
 
+  it('takes the answers to the findings as true or false: per body-assessment row, and per self-check test with a finding', async () => {
+    const { SELF_CHECK_FINDINGS } = await import('../src/core/findings.ts');
+    assert.deepEqual(schema.$defs['emphasis']!.properties!['confirmed'], { type: 'boolean', description: (schema.$defs['emphasis']!.properties!['confirmed'] as { description: string }).description });
+    assert.deepEqual(schema.$defs['selfCheck']!.properties!['confirmed'], { $ref: '#/$defs/selfCheckConfirmed' });
+    const answers = schema.$defs['selfCheckConfirmed']!;
+    assert.deepEqual(Object.keys(answers.properties!), [...SELF_CHECK_FINDINGS]);
+    for (const k of SELF_CHECK_FINDINGS) assert.deepEqual(answers.properties![k], { type: 'boolean' }, k);
+    for (const k of SELF_CHECK_FINDINGS) assert.ok(k in schema.$defs['selfCheck']!.properties!, `${k} is a self-check test`);
+  });
+
   it('uses the validator\'s key patterns for nudges and sitting', async () => {
     const { NUDGE_KEY, SKIP_KEY, MAC_NAME } = await import('../src/core/validate.ts');
     const days = (schema.$defs['nudges']!.properties!['days'] as Def).patternProperties!;

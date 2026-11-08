@@ -48,7 +48,7 @@ describe('Express on the fixture’s short days', () => {
   it('S3: the circuit at 2 rounds and its cool-down at 2 minutes', () => {
     const s = buildSession(read.data, DATE, 'express', { type: 'S3' });
     assert.deepEqual(s.items.map((i) => [i.name, i.sr]), [['Circuit: squat jump · burpee', '2 rounds, 40/20']]);
-    assert.deepEqual(s.finisher, { exercise: 'cool-down-walk-or-bike', name: 'Cool-down walk or bike', sr: '2 min' });
+    assert.deepEqual(s.finisher, { exercise: 'cool-down-walk-or-bike', name: 'Cool-down walk or bike', sr: '2 min', timed: { minutes: 2, text: '2 min' } });
     assert.ok(s.flags.some((f) => f.rule === 'variant.express' && f.title === 'Express'));
     assert.equal(s.items[0]!.adjustments[0]!.note, '2 rounds, 40/20 instead of 4 rounds, 40/20.');
   });
@@ -56,7 +56,9 @@ describe('Express on the fixture’s short days', () => {
     const full = buildSession(read.data, DATE, 'full', { type: 'S1' });
     const s = buildSession(read.data, DATE, 'express', { type: 'S1' });
     assert.equal(s.items.length, full.items.length);
-    assert.deepEqual(s.items.map((i) => [i.sets, i.sr]), [[2, '3 min'], [2, '2 × 6–12'], [2, '2 × 8/side']]);
+    // The handstand's 6 minutes are one timed block (1 set), not a set per 2 minutes.
+    assert.deepEqual(s.items.map((i) => [i.sets, i.sr]), [[1, '3 min'], [2, '2 × 6–12'], [2, '2 × 8/side']]);
+    assert.deepEqual(s.items[0]!.timed, { minutes: 3, text: '3 min' });
     assert.equal(s.warmup, full.warmup);
     const mins = (x: typeof s) => ('plannedLoad' in x ? x.plannedLoad.minutes : null);
     assert.ok(mins(s)! < (mins(full) ?? Infinity));

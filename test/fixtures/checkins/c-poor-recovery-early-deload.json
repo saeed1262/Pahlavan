@@ -36,6 +36,9 @@
         "planWeek": 3,
         "scheduled": false,
         "weeksToScheduled": 1,
+        "signals": [
+          "recovery"
+        ],
         "triggers": [
           "recovery"
         ],
@@ -49,6 +52,7 @@
         "planWeek": 2,
         "scheduled": false,
         "weeksToScheduled": 2,
+        "signals": [],
         "triggers": [],
         "deload": false,
         "cancelled": false

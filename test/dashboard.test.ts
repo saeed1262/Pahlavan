@@ -9,10 +9,13 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { mergeMorning, morningFrom } from '../src/adapters/vault/body-write.ts';
 import { mergeTodayChecklist } from '../src/adapters/vault/log-write.ts';
+import { canonicalTags } from '../src/adapters/vault/muscle-tags.ts';
 import {
   checklistTargets, choiceFromChecklist, chosenChecklist, dashboardReminders, dashChecklist, followChoice, guideFor, levelsText, nextTargetDash, planLinks, planNoteDash, planText, recentSessions, recordsIn, sessionsThisMonth, todayChecklistOf, toggledChecklist,
 } from '../src/report/index.ts';
-import { ROOT } from './helpers.ts';
+import { readVault } from '../src/adapters/vault/read.ts';
+import { buildSession } from '../src/report/session.ts';
+import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
 
 const FIT = join(ROOT, 'test', 'fixtures', 'vault', '3-Personal', 'Fitness');
 const PLAN = JSON.parse(readFileSync(join(FIT, 'plan-data.json'), 'utf8'));
@@ -55,13 +58,53 @@ describe('the dashboard’s functions, against view.js (golden)', () => {
     for (const c of G.records) assert.deepEqual(recordsIn(c.entry, LOG, PLAN), c.out, c.name);
   });
   it('guideEntries: titles, works, setup, do, avoid and the video, ladders set and unset', () => {
+    // `works` names the muscles that count: for a catalogue movement whose guide copy differs (muscle-tags-differ), the
+    // catalogue's, so the card agrees with Review and Progress; everywhere else the dashboard's own words.
+    const retagged = (title: string) => {
+      const key = title.replace(/^.* · L\d+ /, ''); // a ladder item's title names its level's guide entry last
+      const t = canonicalTags(key, PLAN.guide[key]);
+      return t.source === 'catalogue' && t.differs !== undefined;
+    };
+    let seen = 0;
     for (const c of G.guide) {
       const log = clone(LOG);
       if (c.unset) delete log.ladders;
       const mine = guideFor(PLAN, log, c.name).map((e) => ({ title: e.title, unset: e.unset, works: e.works, setup: e.setup, do: e.do, avoid: e.avoid, video: e.video.url }));
-      assert.deepEqual(mine, c.out, c.name);
+      const expected = (c.out as { title: string; works: string }[]).map((o, i) => (retagged(o.title) ? { ...o, works: mine[i]?.works } : o));
+      assert.deepEqual(mine, expected, c.name);
+      for (const [i, o] of (c.out as { title: string; works: string }[]).entries()) {
+        if (retagged(o.title)) {
+          assert.notEqual(mine[i]!.works, o.works, o.title);
+          seen++;
+        }
+      }
     }
+    assert.ok(seen > 0);
+    assert.equal(guideFor(PLAN, LOG, 'Face Pull')[0]!.works, 'Upper back · helps shoulders');
+    assert.equal(guideFor(PLAN, LOG, 'Goblet Squat')[0]!.works, 'Quads, glutes · helps abs, upper back');
     assert.ok(G.guide.some((c: { out: unknown[] }) => c.out.length > 0));
+  });
+});
+
+describe('the movement guide\'s body map', () => {
+  it('draws the catalogue\'s tags for a movement it knows, the guide\'s for one it does not', () => {
+    // The guide says face pulls mainly work the shoulders; the catalogue counts them as upper back, helping the shoulders.
+    const face = guideFor(PLAN, LOG, 'Face Pull')[0]!;
+    assert.deepEqual([face.main, face.helps], [['trapezius'], ['deltoids']]);
+    // Squats help no hamstrings (the catalogue's evidence audit), whatever the guide's copy still says.
+    const squat = guideFor(PLAN, LOG, 'Barbell Back Squat')[0]!;
+    assert.deepEqual([squat.main, squat.helps], [['quadriceps', 'gluteal'], ['lower-back', 'abs']]);
+    // Band external rotation is not in the catalogue: the guide's own tags.
+    const band = guideFor(PLAN, LOG, 'Band External Rotation')[0]!;
+    assert.deepEqual([band.main, band.helps], [['deltoids'], ['trapezius']]);
+  });
+
+  it('draws an override entry\'s own tags', () => {
+    const plan = clone(PLAN);
+    plan.guide['Face Pull'].muscles.override = 'rear delts counted as shoulders here';
+    const face = guideFor(plan, LOG, 'Face Pull')[0]!;
+    assert.deepEqual([face.main, face.helps], [['deltoids', 'trapezius'], []]);
+    assert.equal(face.works, 'Shoulders, upper back');
   });
 });
 
@@ -107,6 +150,22 @@ describe('planText', () => {
     assert.equal(s1.split('\n')[1], 'Deload week: 2 sets of everything, about 10% lighter. S3 is 20 min easy Zone 2 + abs.');
     assert.equal(s1.split('\n').at(-1), levelsText(PLAN, LOG, 'S1'));
     assert.match(levelsText(PLAN, LOG, 'S1'), /^Your levels: .+ L3 · .+ · .+ L2 · .+$/);
+  });
+
+  it('with Today’s session, says a RIR the plan keeps in the item’s rir field, as Today’s row does (not for holds)', () => {
+    const f = fixtureFiles('v');
+    const doc = JSON.parse(f['v/3-Personal/Fitness/plan-data.json']!);
+    doc.sessions.B[2] = { ...doc.sessions.B[2], rir: 1 };
+    f['v/3-Personal/Fitness/plan-data.json'] = JSON.stringify(doc);
+    const date = '2026-04-10';
+    const read = readVault(memoryIo(f, date), 'v', { asOf: date });
+    const session = buildSession(read.data, date, 'full', { type: 'B' });
+    const bss = session.items.find((i) => i.name === 'Bulgarian Split Squat')!;
+    const plain = buildSession(readVault(memoryIo(fixtureFiles('v'), date), 'v', { asOf: date }).data, date, 'full', { type: 'B' }).items.find((i) => i.name === 'Bulgarian Split Squat')!;
+    assert.equal(bss.rir, plain.rir - 1, 'the field\'s RIR 1, not the default 2');
+    const lines = planText({ plan: read.raw!.plan, log: read.raw!.log, date, type: 'B', express: false, deload: false, dayLabel: date, shortDay: (d) => d, session }).split('\n');
+    assert.ok(lines.includes(`4. Bulgarian Split Squat: 3 × 8/leg @ RIR ${bss.rir}`), lines.join('\n'));
+    assert.ok(lines.includes('5. Side Plank: 3 × 20–40 s/side'));
   });
 });
 

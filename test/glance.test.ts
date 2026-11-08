@@ -147,8 +147,9 @@ describe('At a glance: Progress and the Plan', () => {
     const plan = buildPlan(r, DATE, {}, 'v');
     const G = planGlance(plan, { weekTarget: { lift: 3, short: 1 }, targets: { ok: 4, total: 5, others: [{ name: 'Wall gap', status: 'Not measured yet' }] }, desk: '4 a day, every 90 min from 10:00 to 15:00, weekdays', links: 6 });
     plain(G);
-    assert.deepEqual(G.sections.map((s) => [s.id, s.start]), [['timeline', 'folded'], ['meso', 'open'], ['vol', 'folded'], ['upcoming', 'open'], ['load', 'folded'], ['targets', 'folded'], ['minweek', 'folded'], ['desk', 'folded'], ['notes', 'folded']]);
+    assert.deepEqual(G.sections.map((s) => [s.id, s.start]), [['timeline', 'folded'], ['meso', 'open'], ['vol', 'folded'], ['upcoming', 'open'], ['load', 'folded'], ['targets', 'folded'], ['rules', 'folded'], ['minweek', 'folded'], ['desk', 'folded'], ['notes', 'folded']]);
     assert.equal(G.sections[0]!.title, 'The plan, 24 weeks');
+    assert.equal(words(G.sections.find((s) => s.id === 'rules')!.status), '0 of 14 set by your coach · the rest use Pahlavan’s default');
     assert.match(words(G.sums[2]!.text), /^Next: the light week, Mon 20 Apr; phase tests Sat 25 Apr\.$/);
     // Coming up names the coach step after the first Sunday's check-in.
     assert.equal(words(G.sections.find((s) => s.id === 'upcoming')!.status), 'Tape and Sunday check-in Sun 12 Apr, in 2 days · then the week’s letter: /fitness-coach checkin');

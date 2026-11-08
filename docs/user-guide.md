@@ -1,8 +1,8 @@
 # Pahlavan user guide
 
-Pahlavan is a training coach that lives in your Obsidian vault. It has two parts that work on the same files. The **plugin** is a tab in Obsidian with five screens (Today, Progress, Plan, Check-in and Food) and reminder cards that pop up through the day. The **coach** is an AI skill you run in Claude Code with `/fitness-coach`: it interviews you, designs your plan, reviews your week and writes you a letter every Sunday. You use the plugin by hand every day; the coach does the thinking and makes the plan changes. Everything stays in your vault as plain files, with no account and no server.
+Pahlavan is a training coach that lives in your Obsidian vault. It has two parts that work on the same files. The **plugin** is a tab in Obsidian with five screens (Today, Progress, Plan, Check-in and Food) and reminder cards that pop up through the day. The **coach** is an AI skill you run in Claude Code with `/fitness-coach`: it interviews you, designs your plan, reviews your week and writes you a letter every Sunday. Behind both is the **engine**: it does every calculation (sets per muscle, targets, readiness), checks every plan against the safety rules and the evidence, and holds the evidence library the coach designs from. The coach designs; the engine calculates and checks. You use the plugin by hand every day; the coach does the thinking and makes the plan changes. Everything stays in your vault as plain files, with no account and no server.
 
-This guide covers plugin 0.25.2 and engine 0.25.2. The screenshots come from a practice vault with made-up data, so your numbers will differ.
+This guide covers plugin 0.27.0 and engine 0.27.0. The screenshots come from a practice vault with made-up data, so your numbers will differ.
 
 > [!WARNING] Safety
 > Pahlavan is a general fitness tool for adults 18 and over, not medical advice. If you have a health condition, check with a doctor before you start, and stop any exercise that hurts.
@@ -27,7 +27,7 @@ This guide covers plugin 0.25.2 and engine 0.25.2. The screenshots come from a p
 
 ## What you need
 
-- **Obsidian 1.5 or later on a desktop computer.** Pahlavan doesn't run on phones yet, but an iPhone can send it what you log (see [Logging from the phone](#logging-from-the-phone)).
+- **Obsidian 1.7.2 or later on a desktop computer.** Pahlavan doesn't run on phones yet, but an iPhone can send it what you log (see [Logging from the phone](#logging-from-the-phone)).
 - **A Mac, for every reminder to work.** macOS notifications, stand-ups and sitting time (they read keyboard and mouse activity) and photo conversion (iPhone HEIC to JPEG) use the Mac. On another computer the cards still appear inside Obsidian, but stand-ups and sitting time don't count.
 - **Claude Code, opened in your vault's folder, for the coach.** The coach writes your plan, so without it Pahlavan has no session to show.
 - **Node.js and Python 3** on the computer where you run the coach. Its scripts use both.
@@ -42,7 +42,7 @@ Pahlavan isn't in Obsidian's community plugin list yet, so you install it by han
 1. In your vault, create the folder `.obsidian/plugins/pahlavan/`.
 2. Copy the plugin's three files into it: `main.js`, `manifest.json` and `styles.css`. From the project folder, `npm run ship-plugin -- <your vault>/.obsidian/plugins/pahlavan` builds the files and copies them there.
 3. In Obsidian, open **Settings**, then **Community plugins**, and turn on **Pahlavan**. If Obsidian asks, turn on community plugins first.
-4. Click Pahlavan's icon in the left ribbon (two crossed clubs), or run **Pahlavan: Open** from the command palette. Pahlavan opens in a tab and remembers the screen you used last.
+4. Click Pahlavan's icon in the left ribbon (two crossed clubs), or run **Pahlavan: Open** from the command palette. Pahlavan opens in a tab on **Home**, the overview; after that it opens on the screen you used last.
 
 To install the coach, copy the `fitness-coach` skill folder into `.claude/skills/` in your vault. Run `npm run ship-skill -- <the skill folder>` from the project to put the current engine in the skill's `scripts/` folder.
 
@@ -67,6 +67,8 @@ The coach asks in short rounds of up to four questions. Answer in plain words. "
    - **Full:** every set, with reps in reserve.
 
    The coach never pushes you to a higher level.
+
+   With a muscle you care most about (say, shoulders), the coach also asks whether there's a **part of it** you most want to bring up, offering only the parts training studies show growing differently (for the shoulders: the front and side delts; see [Muscle regions](#muscle-regions)). Name an idea the studies don't support, such as the "inner chest" or the "VMO", and the coach says why in one line and offers the nearest part that is supported.
 5. **Body history and preferences.** Injuries, niggles or surgeries that still affect your training (each gets a few follow-up questions and an entry in your **Ledger**, the record of injuries and the limits they put on exercises); exercises you enjoy and ones you'd rather never do; week layouts you've liked or disliked; the cardio you'll actually do; and what usually happens when a week goes badly.
 
 Then comes the body assessment (next section). If your vault already holds training history, one last question asks whether to use it for starting weights or to start clean.
@@ -81,7 +83,7 @@ Give your weight and waist in kilograms and centimetres, or in pounds and inches
 
 A coach looks before planning, so the intake asks for photos and a five-minute movement check.
 
-**The photos are optional.** They show posture, the balance between your two sides and areas that lag behind, which shapes the plan's emphasis. They stay in your vault, in `Fitness/Progress Photos/<date>/`. When the coach looks at them, they go to the AI model for that conversation, like anything else it reads. If you'd rather not, say so: the plan then relies on the self-check.
+**The photos are optional.** They show posture, the balance between your two sides and areas that lag behind, which shapes the plan's emphasis. Everything the coach sees is a question for you first, never a diagnosis: "your overhead reach showed rib flare: does pressing overhead hurt or arch your back?" Your answer decides whether it changes the plan, and no photo can show that part of a muscle lags. They stay in your vault, in `Fitness/Progress Photos/<date>/`. When the coach looks at them, they go to the AI model for that conversation, like anything else it reads. If you'd rather not, say so: the plan then relies on the self-check.
 
 Take them the same way every time, so later sets compare:
 
@@ -114,15 +116,19 @@ When the intake is done, the coach offers the next step. You can also type:
 /fitness-coach plan
 ```
 
-The coach drafts your plan with the **engine** (the tested rules behind every number in Pahlavan), then makes it yours:
+The coach designs your plan itself, from your answers and Pahlavan's evidence library (the graded training rules and the exercises to choose from), and the **engine** measures and checks every option. You see every engine command it runs.
 
-- it compares at least two ways of laying out your week and picks one from your answers;
+**First, its questions, all in one message.** Before it designs anything, the coach asks what your files don't settle: a yes or no for each finding from your photos or self-check you haven't answered yet, which priority muscles come first when you named more than your week has room for (the rest wait under **Later priorities** for the next phase), the day your plan starts (for a new start only), and "picture week 6: the plan has failed. Why?" It waits for your answers, then:
+
+- it designs at least three ways of laying out your week and picks one from your answers, each big decision with its evidence and how strong that evidence is;
 - it sizes the week to what you can really do;
-- it builds the long view: **phases** of 8 weeks, each made of two 4-week blocks (a **mesocycle** each) of three normal weeks and one light week. The plan's length (often 24 weeks) is what the top bar's "Week 6 of 24" counts against;
-- it picks exercises from your self-check and your Ledger;
-- it runs a **pre-mortem**: "it's week 6 and this failed: why?" It asks for your answer too, then builds a countermeasure into the plan for each risk.
+- it builds the long view: **phases** of two blocks (a **mesocycle** each), each block ending in a light week (every fourth week unless the plan sets another rhythm). The plan's length (often 24 weeks) is what the top bar's "Week 6 of 24" counts against;
+- it picks exercises from your self-check, your Ledger and what you like, and makes sure the studied parts of a muscle you prioritise get direct work (see [Muscle regions](#muscle-regions));
+- it measures each option with the engine (sets per muscle, minutes a session) and runs the engine's **check**: a movement your Ledger or the safety screen rules out always blocks a plan, and going outside an evidence range (more sets than the cap, say) needs a stated reason, which you see;
+- it writes the plan's **standing rules**: how each lift progresses, when the light weeks fall, and what a low-readiness day, missed time or a stalled lift does. Pahlavan then follows them, and the Plan screen shows them;
+- it builds a countermeasure into the plan for each risk the **pre-mortem** found, yours and its own.
 
-You get one proposal, led by "How your data shaped this plan", with a one-line reason for every exercise. Ask for changes; nothing is written before your yes. Each exercise's reason then shows in Pahlavan too: under **Why** on Today and the Plan screen, as **From the plan**.
+You get one proposal, led by "How your data shaped this plan", with a one-line reason for every exercise and every number from the engine. If your situation needs something Pahlavan's library doesn't cover (a specific condition or sport), the coach may look up research reviews, labels the finding "outside the library", and asks you before relying on it; it never puts your personal details into a search. Ask for changes; nothing is written before your yes. Each exercise's reason then shows in Pahlavan too: under **Why** on Today and the Plan screen, as **From the plan**.
 
 ### What appears in your vault
 
@@ -153,7 +159,7 @@ Don't edit the JSON files by hand. Pahlavan and the coach merge their changes in
 
 Expect two things in a new cycle.
 
-- **Week 1 is a calibration week.** Today's session says "Calibration week: find working weights that leave 3 reps in reserve; no progression decisions." Pick loads that leave you about three more clean reps. Nothing progresses or stalls that week.
+- **Week 1 is a calibration week.** Today's session says "Calibration week: find a load that leaves 3 reps in reserve at the bottom of each range; no progression or stall decisions." Every exercise shows RIR 3 or more, and a lift you have logged before shows its last weight at the bottom of its range: start there and adjust until you have about three more clean reps. Nothing progresses or stalls that week. Week 1 is the Monday-to-Sunday week holding your plan's start date (the day you chose), so a plan started on a Saturday calibrates for two days; before the start week, Today shows no session, only the day your plan starts. Later blocks keep that start: week 9 follows week 8. The first week back after three or more weeks off is a calibration week too, for 7 days from your first session back.
 - **Readiness builds your baseline.** The Readiness card shows "Building your baseline" with a count, such as "5 of 14 morning check-ins this cycle". It needs 14 mornings in this cycle before it can compare a morning with your usual. Meanwhile it says "Train as planned", and the safety rules (short sleep, a high resting heart rate, illness) still apply.
 
 ![Today in the first week of a cycle: Week 1, Foundation, Building your baseline, and the calibration week note](user-guide/first-week.png)
@@ -270,7 +276,7 @@ Pahlavan tells you what to run. Before you save, the Sunday check-in says **Save
 
 ## The light week, every four weeks
 
-Every fourth week of the plan is a **light week** (the training rules call it a deload): two sets of everything, about 10 % lighter, so your body can catch up with the training. It isn't time off. The Plan screen marks it with an L.
+Every fourth week of the plan is a **light week** (the training rules call it a deload), so your body can catch up with the training: by default two sets of everything, about 10 % lighter; your coach may set another shape (half the sets, easier effort) or another rhythm in the plan's standing rules. It isn't time off. The Plan screen marks it with an L.
 
 The light week is also when you measure:
 
@@ -286,19 +292,19 @@ The check-in that ends a light week is the **mesocycle review** (a mesocycle is 
 /fitness-coach review
 ```
 
-The coach asks how each muscle group felt over the four weeks (barely worked, recovered in time, still sore, or a joint ache), asks for the result of your **RIR calibration set** (see [RIR](#rir-reps-in-reserve)), writes a dated progress report from your photos, tape and numbers, and proposes next month's plan. On your yes, it builds it.
+The coach asks how each muscle group felt over the four weeks (barely worked, recovered in time, still sore, or a joint ache), asks for the result of your **RIR calibration set** (see [RIR](#rir-reps-in-reserve)), writes a dated progress report from your photos, tape and numbers, and designs next month's plan from what it found, checked by the engine before you see it. On your yes, it writes it.
 
-At the end of each phase (weeks 8, 16 and 24), the **phase review** takes its place: the tests, the photos again (with the movement photos), what was predicted against what happened, what to keep, change or try, and the plan for the next phase. At the plan's last week (week 24) it also plans the next cycle with you.
+At the end of each phase (every second light week: weeks 8, 16 and 24 by default), the **phase review** takes its place: the tests, the photos again (with the movement photos), what was predicted against what happened, what to keep, change or try, and the plan for the next phase. At the plan's last week (week 24) it also plans the next cycle with you.
 
 The Plan screen's **Coming up** names the step after each Sunday's check-in, with its command, and so does each week in the plan's calendar.
 
 ## The screens
 
-The five tabs sit at the top of Pahlavan, with the **?** (help), the plan week and the date on the right. The week counts against the plan's length ("Week 6 of 24"; past its end, "Week 26, after the plan's 24"). Each screen opens with a banner: the week and phase, the screen's main numbers as small pills, its main action, and a ring. Under it, **At a glance** sums the screen up (see [At a glance and folding](#at-a-glance-and-folding)). Hover almost anything for details: most cards also have a **Table** button that shows the same numbers as a table.
+The six tabs sit at the top of Pahlavan, **Home** first, with the **?** (help), the plan week and the date on the right. Pahlavan opens on Home; after that it opens on the tab you used last. The week counts against the plan's length ("Week 6 of 24"; past its end, "Week 26, after the plan's 24"). Each screen opens with a banner: the week and phase, the screen's main numbers as small pills, its main action, and a ring. Under it (on every tab but Home, which is a summary already), **At a glance** sums the screen up (see [At a glance and folding](#at-a-glance-and-folding)). Hover almost anything for details: most cards also have a **Table** button that shows the same numbers as a table.
 
 ### At a glance and folding
 
-Under each banner, **At a glance** gives two or three lines on where things stand (today's session, what's still open and readiness on Today; the week, the waist and strength on Progress; and so on), and **What's on this tab**: one row per section, top to bottom, with a line on what it shows. Click a row to go to that section; if it's folded, it opens. **Open all** and **Fold all** do every section of the tab at once, and the chevron folds the panel itself to one line. The panel is open for your first three visits to a tab, then folded; once you open or fold it yourself, it stays that way.
+Under each banner, **At a glance** gives two or three lines on where things stand (today's session, what's still open and readiness on Today; the week, the waist and strength on Progress; and so on), and **What's on this tab**: one row per section, top to bottom, with a line on what it shows. Click a row to go to that section; if it's folded, it opens. **Open all** and **Fold all** do every section of the tab at once, and the chevron folds the panel itself to one line. The panel is open for your first three visits to a tab, then folded; on Today it starts folded, since Home gives the overview. Once you open or fold it yourself, it stays that way.
 
 Every section card folds too. The chevron in its top-right corner folds it to one line: its name and its status in plain words, such as "This week: Lifting 2 of 3, short 1 of 1". Click the line to open it again. Each tab starts with what you need now open and the rest folded:
 
@@ -309,6 +315,18 @@ Every section card folds too. The chevron in its top-right corner folds it to on
 - **Food:** A day on your plan, Today and Coach's tips open; Your plan in a minute open for your first few visits, then folded; How it's going folded.
 
 A section with something due opens on a new day even if you folded it before. Your choices live in `Coach/help.json` in your vault, so both computers show the same.
+
+### Home
+
+Home is the overview: the main things in plain words, each a click away from the tab with the details. You only need the other tabs when you want more.
+
+![Home: today's session with the week's ring, Needs you, Food and habits, Progress in three tiles and Your tabs](user-guide/home.png)
+
+- **Banner:** today's session ("Full Body B"), about how long it takes, how many exercises, and whether it's next in your plan or your own pick. Under it, at most two lines: what your morning check-in changes today, only when it changes something ("Go a little easier today. Your morning check-in was a bit low, so no record attempts."), and a swap your Ledger makes ("One swap: Single-leg dumbbell RDL instead of Romanian Deadlift"). **Log session** opens the Log panel; **See the workout** opens Today. On the right, the week's ring (one segment per planned session, filled when done) and how much is left: "Today's session finishes the week", "2 more this week" or "Week done". A session already logged today says so, and a rest day says "Rest day".
+- **Needs you:** up to three things to do or check, most pressing first, each opening the tab that settles it: the morning check-in, last Sunday's check-in if it isn't saved yet or the coach's next step once it is, this week's check-in from Friday to Sunday, a tape, photo or test day that's due, and a lift entry that looks like a kg and lb mix-up. The count says how many there are in all, and **Show 1 more** (or however many) lists the rest; with nothing left, "Nothing needs you today."
+- **Food and habits:** your protein target for today (ticked or not), with **Food**, and today's habits done of all, with the next card ("Next: water at 13:02") and **Due today**, which takes you to the tick boxes on Today.
+- **Progress:** one sentence on where you stand ("You're getting stronger and your weight is slowly coming down.") and three tiles: **Strength** (how many of your lifts with a trend are going up, and one that has stopped), **Body weight** (the smoothed trend and its weekly pace) and **Showing up** (the lifting sessions done this cycle, as a share of those planned). Each tile has a small line of its history and opens Progress, as does **All of it in Progress**.
+- **Your tabs:** a short guide to the other five tabs, one tile each (a row each in a narrow pane): the tab's name, what it's for, and where it stands now, such as "Week 6 of 24 · light week in 2 weeks" on Plan or "Due Sunday" on Check-in. A blue dot means something to do there, an amber dot something to check. Click a tile to open its tab.
 
 ### Today
 
@@ -335,14 +353,14 @@ A section with something due opens on a new day even if you folded it before. Yo
 
 Progress shows how the training is going over weeks.
 
-![Progress, Overview](user-guide/progress-overview.png)
+![Progress, Overview: the body map with the Abs tooltip open (direct sets and half credit from helping lifts), the Regions list beside it, readiness and consistency](user-guide/progress-overview.png)
 
 The banner shows your **Weight trend**, the change in your **Waist** (both in your units), **Lifting** and **Short** sessions done against the plan, and the **Strength** ring: the average change in estimated one-rep max across your logged lifts.
 
 Under the banner are six sections: **Overview**, **Training**, **Body**, **Health**, **Skills** and **Habits**. On the right, the range switch: **This cycle** (the default, counting from the day your current cycle began, with its date) or **All** (earlier cycles too). Each section remembers its own choice, and nothing is deleted either way. Habits has no switch: each item counts from its own start.
 
 - **Overview:**
-  - **Weekly sets per muscle:** a body map shaded by hard sets a week, with **This week**, **4 weeks** and **Plan** views (early in a cycle, **4 weeks** reads **This cycle**), and the muscles **Below target**, **Over target** and **In target**;
+  - **Weekly sets per muscle:** a body map shaded by hard sets a week, with **This week**, **4 weeks** and **Plan** views (early in a cycle, **4 weeks** reads **This cycle**), and the muscles **Below target**, **Over target** and **In target**. Hover a muscle for its sets split in two: direct sets (exercises where it is a main muscle, 1 a set) and half credit from helping lifts (0.5 a set), then a row for each of its regions. Under the statuses, **Regions** (one line until you click it, saying how many are under) lists each muscle with a region that got sets or has an aim, and each region's sets a week. A region with an aim gets **Under** or **OK**: 4 direct sets for a priority muscle's region, 6 near failure for a region you declared weak (starred). The regions no training study has measured (the rear delts, the upper traps and the mid-back) are marked **rough guide**. The sets done are not split by effort, so in **This week** and **4 weeks** every direct set counts toward a declared region's 6;
   - **Readiness, 28 days** (or **Readiness, this cycle** in a young cycle): the smoothed line, with a dot for each morning on its own;
   - **Consistency:** 26 weeks of days as a calendar, with the same marks as This week;
   - **Strength trends:** your estimated one-rep max from each session's top set, per logged lift, marked **Up**, **Flat**, **Stalled**, **Down**, **Check units** (a weight that looks like the wrong unit) or **Too few sessions**, with records and light weeks shown;
@@ -375,7 +393,8 @@ The Plan screen shows the whole plan and where you are in it.
 - **Banner:** the block and week ("Mesocycle 2, week 2 of 4"), the **Phase** and your week in it, the next **Light week**, **A week** (the sessions the plan asks for each week, and the minimum week on hover) and the next **Phase tests**. The ring shows your week inside the current block.
 - **The plan, N weeks:** a timeline with the phases, the 4-week blocks (mesocycles) and every week: **C** marks the calibration week, **L** a light week and a flag the tests. A line marks today. Below the weeks: **Decisions** (diamonds: hover one to see what changed, why, and when it will be checked), **Busy weeks** from your check-ins, and **Limits** (your Ledger's limits and temporary changes, with their end dates).
 - **This mesocycle:** the four weeks of the current block, and each session's exercises with their sets, reps and RIR. Small tags say how each exercise moves on: **double**, **linear** or **ladder** (see [Key ideas](#key-ideas-in-plain-words)), **until** a date for a temporary change, and **Ledger: ruled out** or **Ledger: conditions**. **Why** after the tags opens the plan's reason for the exercise. A name opens its movement guide. Each short day's panel says about how long it takes ("about 33 min", from its cardio minutes, sets and rests), and **N min over** when that runs over the short-day length in your profile; hover it for what takes the time.
-- **Sets per muscle:** the sets a week the plan gives each muscle, against the bands (under 4 is below the minimum; a priority muscle aims for 10 to 16). A priority muscle's row also says how many of its sets are direct and near failure, for example "22.5 · 12 direct, near failure": only those count toward its 10. A set is near failure at RIR 3 or less; a hold when its longest time is at least 75% of your tested best (a rule of thumb); an exercise below your level on a ladder never is; and the half sets an exercise gives the muscles it only helps do not count. A row with fewer than 10 is flagged **Too few direct sets near failure**. The line under the chart compares the week's pulling sets with its pushing sets: with a posture emphasis your plan aims for about 2 to 1 and holds at least 1.8.
+- **Sets per muscle:** the sets a week the plan gives each muscle, against the bands (under 4 is below the minimum; a priority muscle aims for 10 to 16). A priority muscle's row also says how many of its sets are direct and near failure, for example "22.5 · 12 direct, near failure": only those count toward its 10. A set is near failure at RIR 3 or less; a hold when its longest time is at least 75% of your tested best (a rule of thumb); an exercise below your level on a ladder never is; and the half sets an exercise gives the muscles it only helps do not count. A row with fewer than 10 is flagged **Too few direct sets near failure**. A region you declared weak has its own line under its muscle, for example "Side delts: 6 direct, aim 6", and hovering a bar lists every region of that muscle with its sets. The line under the chart compares the week's pulling sets with its pushing sets: with a posture emphasis your plan aims for about 2 to 1 and holds at least 1.8.
+- **Standing rules:** the rules your numbers follow, each in words: the calibration week, the light weeks, the tests, what a low-readiness day or a sore muscle changes, time off, stalls, Hotel, Express on short days, and how each logged lift progresses. Your coach writes them with the plan and revises them at the Sunday check-in; one your coach hasn't set yet is marked **default: your coach hasn't set this** and uses Pahlavan's old default.
 - **Phase targets** (titled with the phase, for example "Phase 1 targets"): each target with its baseline, the predicted value by the phase's end, the current value and a status (**On track**, **Ahead**, **Behind**, **Not measured yet**). **Heuristic** marks a prediction that is an estimate, not a promise.
 - **Training load:** next week as planned, beside the last four. Load is session RPE times minutes.
 - **Coming up:** the dates to the end of the phase: tape, Sunday check-ins, the light week, tests, photos, the phase review.
@@ -415,6 +434,8 @@ Until the coach adds your day's times, the meal ideas, the reasons and the tips,
 Pahlavan's tab in Obsidian's settings holds only what applies to every reminder. Each item's own reminder is set in Habits, the morning check-in's time on its card in Check-in, and the tape, photo and test dates in the Body record. The note at the top links to each of these. Above it, **New to Pahlavan? Read the user guide** opens this guide, and **Show the first-run tips again** brings the tips back.
 
 ![Pahlavan's settings](user-guide/settings.png)
+
+- **Beta user since:** the day Pahlavan was first installed in this vault (for a vault from before 0.27, the day it updated). Pahlavan is free during the beta; 1.0 will be paid, and everyone who installs before 1.0 keeps it free. The date stays in the vault's settings file; nothing leaves your Mac.
 
 - **Reminders:** cards and notifications on or off. Off, nothing pops up, and Today still lists what's due.
 - **Remind on this Mac:** kept on each computer, not synced. Turn it off on a computer where you don't want cards.
@@ -507,6 +528,7 @@ Open the command palette and type "Pahlavan":
 |---|---|
 | Open | Opens the Pahlavan tab |
 | Open the user guide | This guide: your vault's copy when there is one, else the published page |
+| Write the exercise catalogue | Every movement Pahlavan knows (244), each with its muscles, regions, tools, easier and harder versions, and how to set up, do it and what to avoid, as `Exercise catalogue.md` in your fitness folder; it opens when written. Run it again after an update. The same list is [on the web](exercise-catalogue.md) |
 | Open check-in | The morning card until today's is saved, then the Check-in screen |
 | Open the morning check-in | The morning check-in card |
 | Add progress photos | The photo card |
@@ -592,7 +614,8 @@ Pahlavan reminds you of both: Today's **Ask the coach** card and, in the evening
 How the coach works with you:
 
 - **It shows you every change before it writes it,** and writes on your yes: one question for a batch, not one per change.
-- **Its numbers come from the engine,** never from memory, and each comes with its reason.
+- **It designs; the engine calculates and checks.** The coach designs every plan from the evidence and your answers. Its numbers come from the engine, never from memory, each with its reason and the command it came from. Every plan change runs the engine's **check** first: a movement your Ledger rules out always stops it, and anything outside an evidence range needs a reason you can see.
+- **It writes the plan's standing rules** (how each lift progresses, the light weeks, what a bad day or a stall does) and revises them at the Sunday check-in.
 - **Every plan change gets an entry in `Coach/Decisions.md`,** with the date to check whether it worked. The Sunday check-in looks back at it on that date.
 - **A gap in your log means "not logged", not "didn't train".** The coach asks before treating a blank day as missed.
 - **You decide.** It proposes and explains; it never pushes a higher logging or eating level than you chose.
@@ -635,7 +658,7 @@ Week 1 of a new plan, and the first week back after three or more weeks off, is 
 
 ### Light weeks
 
-Every fourth week is lighter: two sets of everything, about 10 % lighter. The training rules call it a deload; Pahlavan and this guide say light week. It gives your body time to recover and catch up with the training. It's also when you measure (tape, photos, and tests at a phase's end). If you're run down, the coach may offer one early, and a busy week next to a light week can become the light week. Either way, you decide.
+Every fourth week is lighter: by default two sets of everything, about 10 % lighter. The training rules call it a deload; Pahlavan and this guide say light week. It gives your body time to recover and catch up with the training. It's also when you measure (tape, photos, and tests at a phase's end). The light weeks are one of the plan's standing rules: your coach may set another rhythm or shape, and moves a light week by changing the rule (if you're run down, one can come early; a busy week next to a light week can become the light week). Either way, you decide.
 
 ### Ladders
 
@@ -651,7 +674,7 @@ A lift has **stalled** when its e1RM moves less than 2 % over three sessions. Th
 
 ### The week clock and cycles
 
-The plan counts weeks from **week 1**, the Monday your current cycle began. Weeks group into 4-week **mesocycles** (three normal weeks and one light week), and two mesocycles make an 8-week **phase**, such as Foundation, Build and Peak. The top bar counts against the plan's length: a 24-week plan reads "Week 6 of 24".
+The plan counts weeks from **week 1**, the Monday your current cycle began. Weeks group into **mesocycles**, each ending with a light week (by default four weeks: three normal weeks and one light week), and two mesocycles make a **phase** (8 weeks by default), such as Foundation, Build and Peak. The top bar counts against the plan's length: a 24-week plan reads "Week 6 of 24".
 
 A **cycle** is one fresh start: a new intake and a new plan. Pahlavan dates it from the newest note called `Baseline - <date>.md` in your fitness folder. Every screen counts from the cycle's start, so earlier history stays out of view until you switch a Progress section to **All**. Nothing is deleted. The coach counts from it too: how many of your planned sessions you did covers only the cycle's full weeks (after a first perfect week it reads 100 %, not 25 %), and fitness tests from before it don't move a ladder.
 
@@ -659,9 +682,19 @@ A **cycle** is one fresh start: a new intake and a new plan. Pahlavan dates it f
 
 Your Ledger is the record of injuries and niggles, each with the limits it puts on your training ("no high-strain lifts until 19 Apr") and, where it applies, an end date. Pahlavan swaps out an exercise the Ledger rules out and keeps the conditions on one it allows. Today shows "in place of" and the reason; the Plan shows the limits on its timeline.
 
+### Muscle regions
+
+Parts of some muscles grow differently with the exercise: a leg extension grows the rectus femoris (the middle of the front of the thigh), which squats barely touch, and lateral raises grow the side delts, which the bench press grows least. Pahlavan knows the parts training studies support: the quads' rectus femoris and vasti, the hamstrings at the hip and at the knee, the calves' gastrocnemius and soleus, the triceps long head, the front and side delts, the upper chest, and, as a rough guide, the rear delts, the upper traps and the mid-back. Each has an evidence grade, and none is graded strong (no region has a meta-analysis of its own).
+
+- For a muscle you prioritise, each part in the coverage rule (all of the above but the upper chest and the rough guides) gets at least 4 direct sets a week; a part you say you want to bring up, the upper chest or a rough guide included, gets at least 6 direct sets taken near failure. The engine's check warns when a plan misses either, with exercises that would cover it.
+- A part is your word, never read from a photo: no tested way spots a lagging part from photos or a tape.
+- Popular ideas the studies don't support (the inner or outer chest, the lower chest, the "VMO" or inner quad, upper or lower lats, the biceps peak, upper or lower glutes) aren't planned for; the coach explains why and offers the nearest supported part. You can still do a pec fly because you like it.
+
+On Progress, hover a muscle for its regions, and open **Regions** under the body map for the list.
+
 ### A reason behind every number
 
-Every target, swap, trim and card comes with its reason, from the same engine the coach uses. On Today, **Why** opens an exercise's reasons, the plan's own first (**From the plan**). On the Plan, the **Why** after an exercise's tags does the same, and hovering a decision diamond says what changed. On a card, the line with the ⓘ says why it came. In Habits, hover **Suggested by your coach**. On Food, hover any number (see [Where do I find the reasons behind my plan?](#where-do-i-find-the-reasons-behind-my-plan)).
+Every target, swap, trim and card comes with its reason, from the same engine the coach uses. Each standing rule your coach set is named in the reason ("The plan's rule: ..."), and a rule it hasn't set says "Pahlavan's default". On Today, **Why** opens an exercise's reasons, the plan's own first (**From the plan**). On the Plan, the **Why** after an exercise's tags does the same, and hovering a decision diamond says what changed. On a card, the line with the ⓘ says why it came. In Habits, hover **Suggested by your coach**. On Food, hover any number (see [Where do I find the reasons behind my plan?](#where-do-i-find-the-reasons-behind-my-plan)).
 
 ### "No entry" is not a rest day
 

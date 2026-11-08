@@ -12,6 +12,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
+import { calibrationNote } from '../src/core/calibration.ts';
+import { ownNote } from '../src/core/reason.ts';
 import { buildToday } from '../src/report/index.ts';
 import { fixtureFiles, LIVE_VAULT, memoryIo } from './helpers.ts';
 
@@ -50,7 +52,12 @@ describe('week 1 of the plan', () => {
     const f = files([], ['2026-11-04']);
     const t = buildToday(readVault(memoryIo(f, '2026-11-04'), 'v', { asOf: '2026-11-04' }), '2026-11-04', 'full');
     assert.deepEqual([t.review!.week.planWeek, t.review!.week.phase, t.review!.week.planStart], [1, 1, '2026-11-02']);
-    assert.ok(t.session!.flags.some((x) => x.rule.startsWith('plan.calibration') || /calibration/i.test(x.title)), 'week 1 is the calibration week');
+    const flag = t.session!.flags.find((x) => x.rule === 'plan.calibration');
+    assert.ok(flag, 'week 1 is the calibration week');
+    // The note is the rule's own citation, said once (no repeated sentence of its own).
+    assert.equal(ownNote(flag), undefined);
+    assert.ok(flag.note?.includes('3 reps in reserve'));
+    assert.equal(flag.from?.kind, 'legacy-default');
   });
 });
 

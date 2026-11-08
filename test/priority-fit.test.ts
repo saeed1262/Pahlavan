@@ -20,7 +20,7 @@ import { generatePlan } from '../src/core/plan/generate.ts';
 import { pick } from '../src/core/plan/select.ts';
 import { selfCheckPlan } from '../src/core/plan/self-check.ts';
 import type { Blueprint } from '../src/core/plan/template.ts';
-import { fitVolume, hardDirectVolume } from '../src/core/plan/volume-fit.ts';
+import { fitVolume, hardDirectVolume, layoutVolume } from '../src/core/plan/volume-fit.ts';
 import type { Profile, Program } from '../src/core/schema.ts';
 import { setEffort, type EffortContext } from '../src/core/volume.ts';
 import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
@@ -70,17 +70,26 @@ describe('priority muscles: every one the profile lists is kept', () => {
     assert.deepEqual(w.muscles, FOUR);
     assert.equal(w.reason.rule, 'plan.priority-room');
     assert.deepEqual(w.reason.inputs, { priority: FOUR, liftingDays: 4, minutes: 60, shortSessions: [] });
-    assert.match(w.reason.note!, /^4 priority muscles named in the profile \(Upper back, Lats, Quads, Abs\) on 4 lifting day\(s\) of 60 min, where the week has room for 3 .*all are kept/);
+    assert.match(w.reason.note!, /^4 priority muscles \(Upper back, Lats, Quads, Abs\) on 4 lifting day\(s\) of 60 min, where the week has room for 3 .*all are kept/);
     assert.match(w.reason.note!, /Abs and obliques trained on the short days \(cardio and core\) would not count against it\./);
     assert.equal(buildContext(owner).priorityRoom, 3);
   });
 
-  it('does not count a priority muscle the plan trains on its short sessions (abs on cardio-and-core days)', () => {
-    const sources = priorityFor(owner.profile, owner.profile.goals, true, 3);
-    assert.equal(priorityOverRoom(sources, 3, ['abs', 'obliques'], { liftingDays: 4, minutes: 60 }), null);
-    const two = priorityOverRoom(sources, 2, ['abs'], { liftingDays: 3, minutes: 60 })!;
+  it('does not count a priority muscle the plan trains only on its short sessions (abs on cardio-and-core days)', () => {
+    const named = priorityFor(owner.profile, owner.profile.goals, true, 3).map((s) => s.value.muscle);
+    assert.equal(priorityOverRoom(named, 3, { short: ['abs', 'obliques'] }, { liftingDays: 4, minutes: 60 }), null);
+    const two = priorityOverRoom(named, 2, { short: ['abs'] }, { liftingDays: 3, minutes: 60 })!;
     assert.deepEqual([two.value.counted, two.value.shortSessions], [['upper-back', 'lats', 'quads'], ['abs']]);
-    assert.match(two.reason.note!, /Abs on the short sessions do not count against the room\./);
+    assert.match(two.reason.note!, /Abs, trained only on the short sessions, do not count against the room\./);
+    // Direct sets on a lifting day count, whatever the short days add.
+    const lifted = priorityOverRoom(named, 3, { short: ['abs'], lifting: ['abs', 'quads'] }, { liftingDays: 4, minutes: 60 })!;
+    assert.deepEqual([lifted.value.counted, lifted.value.shortSessions], [FOUR, []]);
+  });
+
+  it('counts the effective priority muscles, as check does: a declared region\'s muscle too', () => {
+    const declared: PlanInput = { ...owner, profile: { ...owner.profile, priorityMuscles: ['upper-back', 'lats', 'quads'], priorityRegions: ['shoulders-side'] } };
+    const w = generatePlan(declared).value.proposal.warnings.find((x) => x.code === 'priority-over-room')!;
+    assert.deepEqual(w.muscles, ['upper-back', 'lats', 'quads', 'shoulders']);
   });
 
   it('reaches the CLI\'s warnings, with the muscles as items', () => {
@@ -138,7 +147,8 @@ describe('no slot picks a lower level of a ladder than the user\'s', () => {
   it('replaces only the slots that picked a lower level: the 0.14.0 desk recomp athlete loses its dead bug and nothing else', () => {
     const plan = generatePlan(athlete.input).value;
     const light = plan.proposal.sessions.find((s) => s.id === 'light-hinge')!;
-    assert.deepEqual(light.slots.map((s) => s.exercise), ['single-leg-rdl', 'lat-pulldown', 'landmine-press', 'reverse-lunge', 'hollow-hold', 'db-lateral-raise', 'band-pull-apart', 'zone2-bike']);
+    // The rear-delt slot rotates over the catalogue's rear-delt movements, the reverse pec deck among them.
+    assert.deepEqual(light.slots.map((s) => s.exercise), ['single-leg-rdl', 'lat-pulldown', 'landmine-press', 'reverse-lunge', 'hollow-hold', 'db-lateral-raise', 'reverse-pec-deck', 'zone2-bike']);
   });
 });
 
@@ -189,9 +199,21 @@ describe('the fit\'s swap and its guards', () => {
   it('swaps the curl for a Pallof press: abs from 8 to 10 direct near failure, the later session first', () => {
     const r = fitVolume({ ...input, templates: sessions(), swaps: offer(['pallof-press']) });
     assert.equal(hardDirectVolume(r.value.templates, ['a', 'b'], hard)['abs'], 10);
-    assert.deepEqual(r.value.swaps, [{ template: 'b', from: 'db-curl', to: 'pallof-press', muscle: 'abs' }]);
+    assert.deepEqual(r.value.swaps, [{ template: 'b', from: 'db-curl', to: 'pallof-press', muscle: 'abs', for: 'priority' }]);
     assert.deepEqual(r.value.shortfalls, []);
     assert.match(r.reason.note!, /Swapped for a priority muscle's direct sets near failure: b\/db-curl -> pallof-press \(abs\)\./);
+  });
+
+  it('swaps a free accessory for a movement that helps a major muscle under its minimum dose, when nothing trains it', () => {
+    // No slot trains or helps the hamstrings: the curls make way for split squats (which help them) until the minimum of 4 is met.
+    const legs = (): BuiltTemplate[] => ['a', 'b'].map((id) => ({ blueprint: bp(id), minimumDose: true, finisher: null, capacity: 60, slots: [s('back-squat', 3, 0, { role: 'main' }), s('db-curl', 2, 1)] }));
+    const base = { layouts: [['a', 'b']], priority: [], pullPush: null, minimumDose: true };
+    const none = fitVolume({ ...base, templates: legs() }).value;
+    assert.deepEqual(none.swaps, []);
+    const r = fitVolume({ ...base, templates: legs(), cover: offer(['split-squat']) });
+    assert.ok(r.value.swaps.length > 0 && r.value.swaps.every((x) => x.from === 'db-curl' && x.to === 'split-squat' && x.muscle === 'hamstrings' && x.for === 'minimum'), JSON.stringify(r.value.swaps));
+    assert.ok((layoutVolume(r.value.templates, ['a', 'b'])['hamstrings'] ?? 0) >= 4);
+    assert.match(r.reason.note!, /Swapped for a major muscle's minimum of 4 sets: .*db-curl -> split-squat \(hamstrings\)/);
   });
 
   it('keeps every other muscle in its band: a lateral raise under the shoulders\' 6 is not given up', () => {

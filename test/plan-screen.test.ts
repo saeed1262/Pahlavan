@@ -61,9 +61,24 @@ describe('buildPlan', () => {
     const rdl = r.templates.find((t) => t.type === 'B')!.slots.find((s) => s.exercise === 'romanian-deadlift')!;
     assert.equal(rdl.ledger!.allowed, false);
   });
-  it('gives planned sets per muscle, the generator’s phase targets on the profile, the load and what comes up', () => {
+  it('names the Ledger’s ruled-out movements and marks an id the engine does not know, keeping the ids', () => {
+    const shoulder = r.ledger.find((l) => l.id === 'shoulder')!;
+    assert.deepEqual(shoulder.noMovements, ['overhead-press', 'ring-dip-unknown']);
+    assert.deepEqual(shoulder.movements, [
+      { id: 'overhead-press', name: 'Standing barbell press', known: true },
+      { id: 'ring-dip-unknown', name: 'Ring dip unknown', known: false },
+    ]);
+    assert.deepEqual(r.ledger.find((l) => l.id === 'abdominal-wall')!.movements, []);
+    // One of the plan's own ids blocks that exercise: known, by the plan's name.
+    const own = io();
+    const ledgerOwn = buildPlan(readVault({ ...own, readText: (p: string) => (p.endsWith('ledger.json') ? JSON.stringify({ schemaVersion: 1, constraints: [{ id: 'back', noMovements: ['romanian-deadlift'] }] }) : own.readText(p)) }, VAULT, { asOf: DATE }), DATE, { decisions: null }) as Built;
+    assert.deepEqual(ledgerOwn.ledger[0]!.movements, [{ id: 'romanian-deadlift', name: 'Romanian Deadlift', known: true }]);
+  });
+  it('gives planned sets per muscle, the profile\'s targets (never the generator\'s), the standing rules, the load and what comes up', () => {
     assert.ok(r.volume!.muscles.length > 10);
-    assert.deepEqual(r.targets!.generated!.map((t) => [t.measure, t.by]), [['waist (tape)', '2026-04-26'], ['wall gap', '2026-04-26']]);
+    assert.ok(!('generated' in r.targets!), 'the plan generator is an optional baseline, not a source of targets');
+    assert.equal(r.rules!.lightWeeks.source, 'legacy-default');
+    assert.deepEqual(Object.keys(r.rules!.lifts).length, 5);
     // Next week's short day at its minutes as planned (12, from its items), the lifting days at their typical logged 60.
     assert.equal(r.load!.next.load, 1476);
     assert.deepEqual(r.load!.next.daily.reduce((a, v) => a + v, 0), 1476);
@@ -90,7 +105,7 @@ describe('buildPlan', () => {
   it('says so calmly without a decision log, a profile or a Ledger', () => {
     const bare = buildPlan(readVault(io(/Coach\//), VAULT, { asOf: DATE }), DATE, { decisions: null }) as Built;
     assert.deepEqual(bare.notes.map((n) => n.code), ['no-decisions', 'no-ledger', 'no-profile']);
-    assert.equal(bare.targets!.generated, null);
+    assert.equal(bare.targets!.profile, null);
     assert.ok(bare.temporary!.length === 1);
   });
 });

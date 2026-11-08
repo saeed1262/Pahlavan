@@ -44,3 +44,25 @@ describe('core purity', () => {
     }
   });
 });
+
+// The engine and the plugin serve any vault: their text and comments never
+// send anyone to a script only one vault has (the log and plan scripts it
+// had before Pahlavan); the engine's own commands do that work.
+describe('no vault-local script names', () => {
+  const sources = ['src', join('plugin', 'src')].flatMap((dir) =>
+    readdirSync(join(ROOT, dir), { recursive: true })
+      .filter((f) => f.endsWith('.ts'))
+      .map((f) => ({ name: join(dir, f), text: readFileSync(join(ROOT, dir, f), 'utf8') })),
+  );
+
+  it('finds the engine and plugin sources', () => {
+    assert.ok(sources.some((f) => f.name.startsWith('src')) && sources.some((f) => f.name.startsWith(join('plugin', 'src'))));
+    assert.ok(sources.length >= 50);
+  });
+
+  it('names neither fitness_log.py nor gen-fitness-plan anywhere under src/ or plugin/src/', () => {
+    for (const { name, text } of sources) {
+      for (const re of [/fitness_log\.py/, /gen-fitness-plan/]) assert.doesNotMatch(text, re, `${name} matches ${re}`);
+    }
+  });
+});

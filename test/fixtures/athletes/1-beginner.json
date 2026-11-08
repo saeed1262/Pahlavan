@@ -95,7 +95,7 @@
     "options": {}
   },
   "expected": {
-    "templateId": "full-body-aba",
+    "templateId": "full-body-undulating",
     "compared": [
       "full-body-aba",
       "full-body-undulating",
@@ -150,6 +150,6 @@
       "intervals": false
     },
     "priority": [],
-    "why": "No push-up yet: the push-up ladder starts at level 1 and, with no bench for a dumbbell press, incline push-ups carry the pressing; floor push-ups wait. A hard sit-to-stand gives box squats, a back that rounds in the hinge gives glute bridges instead of Romanian deadlifts, an 8 s hang (and no bar) leaves the pull-up ladder at level 1, a 20 s plank starts the core ladder at dead bugs, and balance under 30 s on one side keeps split squats with both feet down and adds a balance hold to the warm-up. Go, ramped keeps the first mesocycle at RIR 3; confidence 6 and \"I stop for a while\" lead the pre-mortem."
+    "why": "No push-up yet: the push-up ladder starts at level 1 and, with no bench for a dumbbell press, incline push-ups carry the pressing; floor push-ups wait. A hard sit-to-stand gives box squats, a back that rounds in the hinge gives glute bridges instead of Romanian deadlifts, an 8 s hang (and no bar) leaves the pull-up ladder at level 1, a 20 s plank starts the core ladder at dead bugs, and balance under 30 s on one side keeps split squats with both feet down and adds a balance hold to the warm-up. With no Romanian deadlifts the hamstrings are trained only through split squats (bridges and squats help no hamstrings): the A/B/A rotation leaves them under 4 sets in its A/B/A weeks, so the comparison picks the undulating full body. Go, ramped keeps the first mesocycle at RIR 3; confidence 6 and \"I stop for a while\" lead the pre-mortem."
   }
 }

@@ -1,91 +1,60 @@
 {
   "title": "The coach designs a plan, recorded",
-  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach plan asks which priorities come first, compares five candidate plans with the engine, and proposes a 24-week plan with the reason behind every choice.",
+  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach plan asks its open questions first (a movement finding, which priorities come first, the start date, what could derail it), then designs three candidate plans, checks each with the engine and writes the pick through plan-write on a yes.",
   "window": "Claude Code · a demo vault, a made-up athlete",
   "steps": [
     {
       "user": "/fitness-coach plan"
     },
     {
-      "tool": "Read(.claude/skills/fitness-coach/references/planning.md)"
-    },
-    {
-      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs plan --json --profile Fitness/Coach/profile.json --ledger Fitness/Coach/ledger.json --weeks 24 --vault . …)"
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs evidence --json --topic volume | jq …)"
     },
     {
       "say": [
-        "Before I build the full proposal, I need four answers from you.",
+        "Step A is your questions, and I can't start designing until you answer. …",
         "",
-        "1. **Priority muscles.** On 3 lifting days a week, there's room for **2** priority muscles (a heuristic). You named three: upper back, quads, shoulders. …",
-        "   - **Upper back and quads now, shoulders in phase 2** (recommended).",
-        "   - **All three now**, knowing the other muscles get less.",
-        "3. **What could derail this?** Picture week 6, and the plan has failed. …"
-      ],
-      "hold": 3
-    },
-    {
-      "user": "1: upper back and quads now, shoulders in phase 2. 2: start Mon 9 Nov. 3: the holidays in late December, and a packed gym on Monday evenings. …"
-    },
-    {
-      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs plan --json --pretty --profile <draft>/profile-tts.json --ledger Fitness/Coach/ledger.json --start 2026-11-09 --weeks 24 …)"
-    },
-    {
-      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs validate Fitness/Coach/profile.json --kind profile --json)"
-    },
-    {
-      "say": [
-        "**Your plan: 24 weeks, Mon 9 Nov 2026 to Sun 25 Apr 2027**",
-        "",
-        "**1. How your data shaped this plan**",
-        "Goal 1, build strength (9/8) · Main lifts in the 3–6 rep range · Load for strength, Strong",
-        "3 days × 60 min; Monday evenings packed · Lifting on Tue, Thu, Sat, with a rest day between sessions",
-        "Overhead reach: lower back arches · No overhead pressing yet: landmine and incline presses instead",
-        "",
-        "**Candidates compared** (engine scores, all on Tue/Thu/Sat):",
-        "Full body: heavy, moderate and volume days ✔ · 5 · all pass",
-        "Full body A/B/A · 1 · upper-back volume fails",
-        "Push/pull/legs · 0 · pass · Each muscle only once a week; 56 min"
+        "**1. Overhead reach (a self-check result you haven't confirmed).** … **Does pressing overhead hurt, or make your lower back arch? Yes or no.**",
+        "**2. Priority muscles: three named, room for two.** … **Which two come first this phase?** …",
+        "**3. Start date.** … My suggestion is **Mon 2026-11-09**. …",
+        "**4. Pre-mortem: picture week 6, this plan has failed. Why?** …"
       ],
       "hold": 4
     },
     {
+      "user": "1: yes, it makes my lower back arch. 2: upper back and quads now, shoulders in phase 2. 3: Mon 9 Nov; yes, Tue, Thu and Sat. 4: the holidays in late December, and a packed gym on Monday evenings."
+    },
+    {
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs check --plan <scratch>/plan-data.c1-heavy-light.json --vault . --json | jq …)"
+    },
+    {
       "say": [
-        "**2. Phases**",
-        "1 Accumulation (more sets, 6–10 reps on accessories) · 9 Nov – 3 Jan · 30 Nov, 28 Dec · Sat 2 Jan",
-        "2 Intensification (3–5 reps on main lifts, fewer sets) · 4 Jan – 28 Feb · 25 Jan, 22 Feb · Sat 27 Feb",
-        "3 Realization (heavy work and tests) · 1 Mar – 25 Apr · 22 Mar, 19 Apr · Sat 24 Apr",
-        "Each mesocycle (a 4-week block) is 3 normal weeks and then a **light week**: 2 sets of everything at about 10% lighter.",
+        "**Three candidates, measured with `check --plan` and `review --plan`:**",
+        "Candidate · Hard errors · What it costs · Minutes",
+        "**C1, heavy/light full body (the pick)** · 0 · Biceps at 3.5 sets while the ladder counts as a dead hang (see 7); obliques overridden · 50 / 43 / 46",
+        "C2, upper/lower/full · 0 · 9 shoulder sets in one session (over about 8); calves at 3; the lower day has no pulling · 42 / 46 / 42",
+        "C3, specialization block · 0 · Upper back at 21 sets, over the cap of 20; pull to push 4 to 1; triceps and abs under the minimum · 49 / 41 / 38",
         "",
-        "**A: Heavy day (Tue), about 50 min plus the finisher**",
-        "Back squat (logged) · 3 × 3–5 · Goal 1 (squat 100 × 5); you like squats; easy sit-to-stand",
-        "Barbell row · 3 × 6–10 · Upper-back priority; you like rows",
-        "Face pull · 3 × 10–15 · Posture goal: rear-delt work every session"
+        "**Tue · A, the heavy day (about 50 min)**",
+        "Barbell back squat (logged) · 4 × 4–6 · 2 · 3 min",
+        "Pull-ups, ladder level 6 · 4 × 3–8 · 2 · 2–3 min",
+        "Incline dumbbell press (logged) · 3 × 6–10 · 2 · 2 min · …",
+        "Overhead reach arches your back (yes) · No overhead pressing. Incline dumbbell and landmine pressing instead; upper-back and lat stretches in the warm-up",
+        "Every exercise's note ends with its \"Why:\" line, and `check` finds none missing.",
+        "",
+        "**Write it as proposed?** Yes, or tell me what to change, …"
       ],
-      "hold": 4.5
+      "hold": 6.5
     },
     {
       "user": "Yes, go with it as it is."
     },
     {
-      "tool": "Bash(node <draft>/build-plan.cjs <draft>/plandata.json <draft>/plan-data.final.json)"
-    },
-    {
-      "tool": "Bash(cp <draft>/plan-data.final.json Fitness/plan-data.json)"
-    },
-    {
-      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs log ladder --vault . --json --id pullup --level 6 --date 2026-11-09 --write)"
-    },
-    {
-      "tool": "Write(Fitness/6-Month Roadmap.md)"
+      "tool": "Bash(node .claude/skills/fitness-coach/scripts/engine.cjs plan-write --file <scratch>/plan-data.pick.json --vault . --json --write | jq …)"
     },
     {
       "say": [
-        "I've written your plan. It starts **Tue 10 Nov**, the first session of week 1 (Mon 9 Nov is a rest day), and lifting is on Tue, Thu and Sat.",
-        "",
-        "**What I wrote**",
-        "- **`Fitness/plan-data.json`**: three full-body sessions (A Heavy, B Moderate, C Volume), each ending with an 8-min finisher on the bike or incline walk.",
-        "- **Fitness/6-Month Roadmap**: how your answers shaped the plan, the five candidates compared, phases, check-ins, targets and the pre-mortem.",
-        "- **Fitness/Coach/Decisions**: the plan Decision, to be reviewed on Sun 6 Dec."
+        "Your plan is written and starts **Monday 9 November**. Week 1 finds your working weights, so your first session is Tue 10 Nov.",
+        "The check on the plan as written (`engine check`) found no hard errors and no warnings. The biceps warning cleared once your pull-up level 6 was logged: …"
       ],
       "hold": 4.5
     }

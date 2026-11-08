@@ -10,9 +10,13 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
+import { CATALOGUE_BY_ID } from '../src/core/data/exercises.ts';
 import { LADDER_BY_ID } from '../src/core/data/ladders.ts';
-import type { PlanInput } from '../src/core/plan/context.ts';
+import { emphasisQuestion } from '../src/core/findings.ts';
+import { buildContext, type PlanInput } from '../src/core/plan/context.ts';
 import { generatePlan, planCandidates, type GeneratedPlan } from '../src/core/plan/generate.ts';
+import { findingsToConfirm, OVERHEAD_PRESSES, selfCheckFindings } from '../src/core/plan/self-check.ts';
+import { pullPushAim } from '../src/core/volume.ts';
 import type { Profile, Program } from '../src/core/schema.ts';
 import { ROOT } from './helpers.ts';
 
@@ -321,5 +325,149 @@ describe('four full-body days: A/B and A/B/C/D are both built', () => {
     assert.equal(ab.proposal.checks.find((c) => c.id === 'concurrent')!.passed, false);
     const row = runs.get(a.name)!.proposal.templates.find((t) => t.id === 'full-body-ab-x2')!;
     assert.ok(row.failedChecks.includes('concurrent'));
+  });
+});
+
+describe('findings ask before they act', () => {
+  const by = (n: string) => athletes.find((a) => a.name === n)!;
+  const edit = (a: Athlete, f: (p: Profile) => void): PlanInput => {
+    const x = clone(a.input);
+    f(x.profile as Profile);
+    return x;
+  };
+  const presses = (r: GeneratedPlan) => Object.keys(r.program!.exercises).filter((id) => OVERHEAD_PRESSES.includes(id));
+  const asked = (r: GeneratedPlan) => r.proposal.warnings.filter((w) => w.code === 'finding-unconfirmed');
+  const usesOf = (r: GeneratedPlan) => new Map(r.proposal.personalization.map((u) => [u.input, u]));
+  /** Every finding the profile holds, answered "it holds". */
+  const confirmAll = (p: Profile) => {
+    for (const e of p.emphasis) if (emphasisQuestion(e)) e.confirmed = true;
+    if (p.selfCheck) p.selfCheck.confirmed = Object.fromEntries(selfCheckFindings(p.selfCheck).map((f) => [f.test, true]));
+  };
+
+  it('a profile from before the question plans as before, with one warning per finding carrying its question', () => {
+    for (const a of athletes) {
+      const r = runs.get(a.name)!;
+      const yes = generatePlan(edit(a, confirmAll)).value;
+      assert.equal(signature(yes), signature(r), `${a.name}: confirming every finding plans as before the question`);
+      assert.deepEqual(asked(r).map((w) => w.finding!.input), findingsToConfirm(a.input.profile).map((f) => f.input), a.name);
+      for (const w of asked(r)) assert.match(w.reason.note ?? '', /Ask: .*\?.*Pahlavan applies it as before\./, a.name);
+      assert.deepEqual(asked(yes), [], `${a.name}: nothing left to ask`);
+    }
+    assert.deepEqual(athletes.map((a) => asked(runs.get(a.name)!).length), [3, 4, 1, 0, 2]);
+    const reach = asked(runs.get('5-bodyweight-30')!).find((w) => w.finding!.input === 'selfCheck.overheadReach')!;
+    assert.equal(reach.finding!.question, 'Your overhead reach showed rib flare. Does pressing overhead hurt, or make your lower back arch?');
+    assert.equal(reach.finding!.answer, 'selfCheck.confirmed.overheadReach');
+  });
+
+  it('an overhead reach the user declines brings the overhead presses back, with its warm-up', () => {
+    // Without the body-assessment rows, the warm-up lines can only come from the self-check.
+    const before = generatePlan(edit(by('2-desk-recomp'), (p) => { p.emphasis = []; })).value;
+    const input = edit(by('2-desk-recomp'), (p) => {
+      p.emphasis = [];
+      p.selfCheck!.confirmed = { overheadReach: false };
+    });
+    const after = generatePlan(input).value;
+    assert.deepEqual(presses(before), []);
+    assert.ok(presses(after).length > 0, 'overhead pressing is back');
+    assert.equal(after.proposal.status, 'ok', JSON.stringify(after.proposal.checks.filter((c) => !c.passed)));
+    for (const id of ['thoracic-extension', 'lat-stretch']) {
+      const line = CATALOGUE_BY_ID.get(id)!.name;
+      assert.ok(before.proposal.warmUp.includes(line) && after.proposal.warmUp.includes(line), `${line} stays in the warm-up`);
+    }
+    const uses = usesOf(after);
+    assert.deepEqual([...uses.keys()].sort(), inputsOf(input), 'the answers are an input the audit names');
+    assert.equal(uses.get('selfCheck.overheadReach')!.confirmation, 'declined');
+    assert.match(uses.get('selfCheck.confirmed')!.effect, /Declined, so warm-ups only: the overhead reach/);
+    assert.equal(uses.get('selfCheck.confirmed')!.used, true);
+    assert.notEqual(signature(generatePlan(mutate(input, 'selfCheck.confirmed')!).value), signature(after), 'without the answer, the presses are out again');
+    assert.deepEqual(asked(after), []);
+  });
+
+  it('a body-assessment row the user declines is left out: no exclusion, no 2-to-1 aim, no priority', () => {
+    const lagging = { area: 'Hamstrings', seen: 'Hamstrings look small next to the quads', confidence: 'low' as const, emphasis: 'A priority', kind: 'lagging-area' as const, muscles: ['hamstrings'] };
+    const input = edit(by('2-desk-recomp'), (p) => {
+      for (const e of p.emphasis) if (e.kind === 'overhead-limited' || e.kind === 'forward-head-rounded-shoulders') e.confirmed = false;
+      p.selfCheck!.confirmed = { overheadReach: false };
+      p.emphasis.push({ ...lagging, confirmed: false });
+    });
+    const ctx = buildContext(input);
+    assert.equal(ctx.emphasis.has('overhead-limited'), false);
+    assert.equal(ctx.emphasis.has('forward-head-rounded-shoulders'), false);
+    assert.ok(ctx.emphasis.has('low-back-arch'), 'a row not declined still counts');
+    assert.equal(OVERHEAD_PRESSES.some((id) => ctx.exclude.has(id)), false);
+    assert.equal(ctx.pullPush?.why, 'goal', 'the posture goal alone: pull at least equal to push, not 2 to 1');
+    assert.equal(ctx.priority.includes('hamstrings'), false);
+    assert.ok(buildContext(edit(by('2-desk-recomp'), (p) => { p.emphasis.push({ ...lagging, confirmed: true }); })).priority.includes('hamstrings'), 'confirmed, it is a priority');
+    const r = generatePlan(input).value;
+    assert.ok(presses(r).length > 0);
+    const uses = usesOf(r);
+    for (const k of ['emphasis.overhead-limited', 'emphasis.forward-head-rounded-shoulders', 'emphasis.lagging-area']) {
+      assert.equal(uses.get(k)!.confirmation, 'declined', k);
+      assert.equal(uses.get(k)!.used, false, k);
+    }
+    assert.equal(uses.get('emphasis.low-back-arch')!.confirmation, 'unconfirmed');
+    assert.deepEqual(asked(r).map((w) => w.finding!.input), ['emphasis.low-back-arch']);
+  });
+
+  it('a finding not asked yet, in a profile that records an answer elsewhere, rules nothing out', () => {
+    const beginner = by('1-beginner');
+    const before = buildContext(beginner.input);
+    const open = buildContext(edit(beginner, (p) => { p.selfCheck!.confirmed = {}; }));
+    const fromFindings = ['back-squat', 'rdl', 'db-rdl', 'single-leg-rdl', 'deadlift', 'box-pistol', 'pistol-squat', 'bulgarian-split-squat'];
+    assert.deepEqual(fromFindings.filter((id) => !before.exclude.has(id)), [], 'before the question: ruled out as before');
+    assert.deepEqual(fromFindings.filter((id) => open.exclude.has(id)), [], 'not asked yet: nothing ruled out');
+    assert.ok(open.exclude.has('push-up'), 'a ladder level still holds floor push-ups back');
+    // One answer on a body-assessment row makes the profile ask too.
+    const input = edit(by('2-desk-recomp'), (p) => { p.emphasis.find((e) => e.kind === 'forward-head-rounded-shoulders')!.confirmed = true; });
+    const ctx = buildContext(input);
+    assert.equal(OVERHEAD_PRESSES.some((id) => ctx.exclude.has(id)), false);
+    assert.ok(ctx.emphasis.has('overhead-limited'), 'the overhead-free presses still rank first');
+    const r = generatePlan(input).value;
+    assert.equal(r.proposal.status, 'ok');
+    assert.ok(Object.keys(r.program!.exercises).includes('landmine-press'), 'landmine pressing ranked first');
+    assert.ok(presses(r).length > 0, 'and overhead pressing is allowed');
+    assert.deepEqual(asked(r).map((w) => w.finding!.input), ['selfCheck.overheadReach', 'emphasis.overhead-limited', 'emphasis.low-back-arch']);
+    for (const w of asked(r)) assert.match(w.reason.note ?? '', /it only ranks its regression first and adds its warm-up: it rules no movement out and sets no priority or pull-to-push aim\./);
+    const uses = usesOf(r);
+    assert.equal(uses.get('emphasis.forward-head-rounded-shoulders')!.confirmation, 'confirmed');
+    assert.match(uses.get('emphasis.overhead-limited')!.effect, /overhead pressing not ruled out/);
+  });
+
+  it('an unanswered lagging area or posture finding, in a profile that asks, sets no priority and no 2-to-1 aim', () => {
+    const lagging = { area: 'Hamstrings', seen: 'Hamstrings look small next to the quads', confidence: 'low' as const, emphasis: 'A priority', kind: 'lagging-area' as const, muscles: ['hamstrings'] };
+    const asking = (p: Profile) => { p.selfCheck!.confirmed = {}; };
+    // Before the question: the lagging area is a priority, as it always was.
+    assert.ok(buildContext(edit(by('2-desk-recomp'), (p) => { p.emphasis.push(lagging); })).priority.includes('hamstrings'));
+    const open = buildContext(edit(by('2-desk-recomp'), (p) => { asking(p); p.emphasis.push(lagging); }));
+    assert.equal(open.priority.includes('hamstrings'), false, 'its own question asks whether the user wants it');
+    // The posture row unanswered: the posture goal's floor (at least 1 to 1), not the finding's 2 to 1.
+    assert.deepEqual(open.pullPush, { target: 1.2, floor: 1, why: 'goal' });
+    // Without a posture goal: no aim and no rear-delt work, but the row's warm-up stays.
+    const noGoal = edit(by('2-desk-recomp'), (p) => { asking(p); p.goals = p.goals.filter((g) => g.kind !== 'posture'); });
+    const ctx = buildContext(noGoal);
+    assert.equal(ctx.pullPush, null);
+    assert.equal(ctx.posture, false);
+    assert.equal(pullPushAim(noGoal.profile), null, 'review and check read the same aim');
+    const r = generatePlan(noGoal).value;
+    assert.ok(r.proposal.warmUp.includes(CATALOGUE_BY_ID.get('chest-doorway-stretch')!.name), 'the warm-up line stays');
+    assert.equal(usesOf(r).get('emphasis.forward-head-rounded-shoulders')!.used, true);
+    assert.match(usesOf(r).get('emphasis.forward-head-rounded-shoulders')!.effect, /no 2-to-1 pull to push/);
+    // Confirmed, the finding sets 2 to 1 again.
+    assert.equal(pullPushAim(edit(by('2-desk-recomp'), (p) => { asking(p); p.emphasis[0]!.confirmed = true; }).profile)?.why, 'finding');
+  });
+
+  it('old profiles: what the findings rule out and shape is what it was before the question', () => {
+    // Recorded from the engine before confirmations existed (pure overhead pressing was then left out in select.ts).
+    const before: Record<string, { ruledOut: string[]; emphasis: string[]; priority: string[]; pullPush: string | null; weakSide: string | null }> = {
+      '1-beginner': { ruledOut: ['assisted-pull-up', 'back-squat', 'box-pistol', 'bulgarian-split-squat', 'db-rdl', 'deadlift', 'hollow-hold', 'negative-pull-up', 'pistol-squat', 'pull-up', 'push-up', 'rdl', 'scapular-pull-up', 'single-leg-rdl'], emphasis: ['waist-fat'], priority: [], pullPush: null, weakSide: null },
+      '2-desk-recomp': { ruledOut: ['db-shoulder-press', 'machine-shoulder-press', 'overhead-press', 'pike-push-up', 'wall-handstand'], emphasis: ['forward-head-rounded-shoulders', 'low-back-arch', 'overhead-limited', 'waist-fat'], priority: ['upper-back', 'lats', 'quads'], pullPush: 'finding', weakSide: null },
+      '3-knee-62': { ruledOut: ['assisted-pull-up', 'box-pistol', 'bulgarian-split-squat', 'negative-pull-up', 'pistol-squat', 'pull-up', 'single-leg-rdl'], emphasis: [], priority: [], pullPush: null, weakSide: 'right' },
+      '4-runner': { ruledOut: ['pull-up'], emphasis: [], priority: [], pullPush: null, weakSide: null },
+      '5-bodyweight-30': { ruledOut: ['db-shoulder-press', 'machine-shoulder-press', 'overhead-press', 'pike-push-up', 'wall-handstand'], emphasis: ['overhead-limited', 'squat-heels-lift'], priority: [], pullPush: null, weakSide: null },
+    };
+    for (const a of athletes) {
+      const ctx = buildContext(a.input);
+      assert.deepEqual({ ruledOut: [...ctx.exclude.keys()].sort(), emphasis: [...ctx.emphasis].sort(), priority: ctx.priority, pullPush: ctx.pullPush?.why ?? null, weakSide: ctx.weakSide }, before[a.name], a.name);
+    }
   });
 });

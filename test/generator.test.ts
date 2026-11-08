@@ -1,21 +1,24 @@
 // Unit tests for the plan generator's steps (src/core/plan/).
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { CATALOGUE_BY_ID } from '../src/core/data/exercises.ts';
 import { conditioningPlan, layoutDays } from '../src/core/plan/conditioning.ts';
 import { buildContext, incrementFor, normalizeEquipment, toExercise, type PlanInput } from '../src/core/plan/context.ts';
-import { baseRir, fitTime, progressionRule, repRange, type BuiltTemplate } from '../src/core/plan/dose.ts';
+import { baseRir, fitTime, ISOLATION, progressionRule, repRange, type BuiltTemplate } from '../src/core/plan/dose.ts';
 import { generatePlan } from '../src/core/plan/generate.ts';
 import { buildMacrocycle } from '../src/core/plan/macrocycle.ts';
 import { calendar, targets } from '../src/core/plan/schedule.ts';
 import { pick, rankCandidates } from '../src/core/plan/select.ts';
 import { sizeWeek } from '../src/core/plan/size.ts';
 import { chooseTemplate, templateCandidates } from '../src/core/plan/template.ts';
-import { selfCheckPlan } from '../src/core/plan/self-check.ts';
+import { findingsToConfirm, OVERHEAD_PRESSES, selfCheckPlan, type SelfCheckEffect } from '../src/core/plan/self-check.ts';
 import { priorityFor } from '../src/core/plan/context.ts';
 import { compareTemplates } from '../src/core/plan/compare.ts';
 import type { Profile, Session } from '../src/core/schema.ts';
+import { ROOT } from './helpers.ts';
 
 const profile = (p: Partial<Profile> = {}): Profile => ({
   schemaVersion: 1,
@@ -150,6 +153,23 @@ describe('step 4: exercise selection', () => {
     assert.deepEqual([noBar.pattern, noBar.fallback], ['horizontal-pull', true]);
   });
 
+  it('never puts an isolation movement in a main slot: a machines-only plan with its chest press out presses with push-ups, never the pec deck', () => {
+    const machines = ctxOf({ equipment: ['machines', 'cable'], preferences: { dislikes: ['machine-chest-press'] } });
+    const main = pick(machines, { pattern: 'horizontal-push', role: 'main' }, '2026-04-06', new Set(), new Set(), 0)!;
+    assert.deepEqual([main.id, main.pattern], ['incline-push-up', 'horizontal-push'], 'a novice\'s push-up level');
+    assert.equal(E('pec-deck').pattern, 'chest-fly');
+    // The whole plan: no main slot holds an isolation movement.
+    const athlete = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'athletes', '3-knee-62.json'), 'utf8')) as { input: PlanInput };
+    const input = JSON.parse(JSON.stringify(athlete.input)) as PlanInput;
+    input.profile.equipment = ['machines', 'cable'];
+    input.profile.preferences = { ...input.profile.preferences, dislikes: ['machine-chest-press'] };
+    const plan = generatePlan(input).value;
+    const mains = plan.proposal.sessions.flatMap((s) => s.slots.filter((x) => x.main).map((x) => x.exercise));
+    assert.ok(mains.length > 0);
+    for (const id of mains) assert.ok(!ISOLATION.has(E(id).pattern), `${id} (${E(id).pattern}) is a main lift`);
+    assert.ok(!plan.proposal.sessions.some((s) => s.slots.some((x) => x.exercise === 'pec-deck')), 'no pressing slot takes the pec deck');
+  });
+
   it('rotates by offset and skips avoided and crowded picks', () => {
     const acc = { pattern: 'horizontal-pull' as const, role: 'accessory' as const };
     const c = ctxOf();
@@ -268,6 +288,79 @@ describe('the self-check', () => {
     assert.deepEqual(pull.secondary, { pattern: 'vertical-pull', id: 'scapular-pull-up' }, 'beside the pulldown, not in its place');
     assert.deepEqual(selfCheckPlan({ date: '2026-11-02', pullUps: 5 }, kit).effects[0]!.value.unlock, ['pull-up']);
     assert.deepEqual(selfCheckPlan(undefined, kit), { date: null, ladders: [], effects: [] });
+  });
+
+  describe('a finding acts as the user answered it', () => {
+    const sc = { date: '2026-11-02', sitToStand: { easy: false, heelsDown: true }, hingeFlatBack: false, overheadReach: { clean: false, ribFlare: true }, balanceS: { left: 30, right: 18 } };
+    const tests = ['sitToStand', 'hingeFlatBack', 'overheadReach', 'balanceS'] as const;
+    const all = (v: boolean) => Object.fromEntries(tests.map((t) => [t, v]));
+    const findings = (p: ReturnType<typeof selfCheckPlan>) => p.effects.map((e) => e.value).filter((e) => e.confirmation !== undefined);
+    const by = (p: ReturnType<typeof selfCheckPlan>, input: string) => p.effects.map((e) => e.value).filter((e) => e.input === input);
+    const choice = ({ confirmation: _c, note: _n, ...rest }: SelfCheckEffect) => rest;
+    const legacy = selfCheckPlan(sc, kit);
+
+    it('before the question (no answer anywhere): as before, each finding marked not asked', () => {
+      assert.deepEqual(findings(legacy).map((e) => [e.input, e.confirmation]), tests.map((t) => [t, 'unconfirmed']));
+      assert.ok(by(legacy, 'overheadReach')[0]!.exclude!.includes('overhead-press'), 'a limited overhead reach leaves pure overhead pressing out');
+      assert.deepEqual(by(legacy, 'overheadReach')[0]!.exclude, OVERHEAD_PRESSES);
+    });
+
+    it('confirmed: the same choices as before the question', () => {
+      const yes = selfCheckPlan({ ...sc, confirmed: all(true) }, kit);
+      assert.deepEqual(yes.effects.map((e) => choice(e.value)), legacy.effects.map((e) => choice(e.value)));
+      assert.ok(findings(yes).every((e) => e.confirmation === 'confirmed'));
+      assert.equal(yes.effects.find((e) => e.value.input === 'overheadReach')!.reason.inputs['confirmed'], true);
+    });
+
+    it('declined: only the warm-up lines stay, with a note saying so', () => {
+      const no = selfCheckPlan({ ...sc, confirmed: all(false) }, kit);
+      for (const e of findings(no)) {
+        assert.equal(e.confirmation, 'declined');
+        assert.deepEqual(Object.keys(e).filter((k) => !['input', 'value', 'confirmation', 'note', 'warmUp'].includes(k)), [], `${e.input}: warm-ups only`);
+        assert.match(e.note, /you said it does not hold/);
+      }
+      assert.deepEqual(by(no, 'overheadReach')[0]!.warmUp, ['thoracic-extension', 'lat-stretch']);
+      assert.deepEqual(by(no, 'balanceS').map((e) => e.warmUp), [['single-leg-stance']], 'no weaker side from a declined balance finding');
+      assert.equal(by(no, 'sitToStand')[0]!.warmUp, undefined);
+      assert.equal(no.effects.some((e) => e.value.asEmphasis || e.value.exclude?.length || e.value.prefer), false);
+    });
+
+    it('not asked yet in a profile that asks: preferences and warm-ups, nothing ruled out', () => {
+      const open = selfCheckPlan({ ...sc, confirmed: {} }, kit);
+      for (const e of findings(open)) {
+        assert.equal(e.confirmation, 'unconfirmed');
+        assert.equal(e.exclude, undefined, `${e.input}: nothing ruled out`);
+        assert.ok(e.prefer, `${e.input}: its regression ranked first`);
+        assert.match(e.note, /Not confirmed with you yet/);
+      }
+      assert.equal(by(open, 'overheadReach')[0]!.asEmphasis, 'overhead-limited');
+      assert.deepEqual(by(open, 'overheadReach')[0]!.warmUp, ['thoracic-extension', 'lat-stretch']);
+      assert.ok(by(open, 'balanceS').some((e) => e.weakSide === 'right'), 'the weaker side still goes first');
+      // The profile asks when an answer is recorded anywhere, a body-assessment row included.
+      assert.deepEqual(selfCheckPlan(sc, kit, true).effects.map((e) => e.value.exclude), open.effects.map((e) => e.value.exclude));
+    });
+
+    it('leaves the ladders alone: their levels are counts, which the calibration week checks', () => {
+      const ladders = (x: ReturnType<typeof selfCheckPlan>) => x.ladders.map((l) => l.value);
+      for (const v of [true, false]) assert.deepEqual(ladders(selfCheckPlan({ ...sc, pushUps: 0, confirmed: all(v) }, kit)), ladders(selfCheckPlan({ ...sc, pushUps: 0 }, kit)));
+      assert.ok(by(selfCheckPlan({ ...sc, pushUps: 0, confirmed: all(false) }, kit), 'pushUps').some((e) => e.exclude?.includes('push-up')), 'floor push-ups still wait for the ladder');
+    });
+
+    it('asks each finding as a question, and only the unanswered ones', () => {
+      const q = (s: Partial<NonNullable<Profile['selfCheck']>>) => findingsToConfirm({ emphasis: [], selfCheck: { date: '2026-11-02', ...s } }).map((f) => [f.input, f.answer, f.question]);
+      assert.deepEqual(q({ overheadReach: { clean: false, ribFlare: true } }), [['selfCheck.overheadReach', 'selfCheck.confirmed.overheadReach', 'Your overhead reach showed rib flare. Does pressing overhead hurt, or make your lower back arch?']]);
+      assert.deepEqual(q(sc).map((x) => x[0]), tests.map((t) => `selfCheck.${t}`));
+      assert.deepEqual(q({ ...sc, confirmed: { overheadReach: false, balanceS: true } }).map((x) => x[0]), ['selfCheck.sitToStand', 'selfCheck.hingeFlatBack']);
+      assert.deepEqual(q({ sitToStand: { easy: true, heelsDown: true }, hingeFlatBack: true, overheadReach: { clean: true }, balanceS: { left: 30, right: 30 } }), [], 'clean results raise no question');
+      const rows: Profile['emphasis'] = [
+        { area: 'Where fat is carried', seen: 'At the waist', confidence: 'high', emphasis: 'No change', kind: 'waist-fat' },
+        { area: 'Posture', seen: 'Head forward', confidence: 'medium', emphasis: 'Pull 2:1', kind: 'forward-head-rounded-shoulders' },
+        { area: 'Overhead', seen: 'Ribs flare', confidence: 'medium', emphasis: 'Landmine', kind: 'overhead-limited', confirmed: true },
+        { area: 'Glutes', seen: 'Glutes lag', confidence: 'low', emphasis: 'Priority', kind: 'lagging-area', muscles: ['glutes'] },
+      ];
+      assert.deepEqual(findingsToConfirm({ emphasis: rows }).map((f) => [f.input, f.answer]), [['emphasis.forward-head-rounded-shoulders', 'emphasis[1].confirmed'], ['emphasis.lagging-area', 'emphasis[3].confirmed']]);
+      assert.match(findingsToConfirm({ emphasis: rows })[1]!.question, /^The body assessment noted "Glutes lag"\. Do you want glutes brought up as a priority/);
+    });
   });
 });
 

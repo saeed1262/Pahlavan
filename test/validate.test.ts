@@ -76,6 +76,18 @@ describe('validate', () => {
     assert.match(errors.map((e) => e.message).join(' | '), /joint:<name>/);
   });
 
+  it('checks a slot\'s timed structure: minutes, or rounds with workMin, and nothing else', () => {
+    const g = program();
+    const slot = g.macrocycle.phases[0]!.mesocycles[0]!.weeks[0]!.sessions[0]!.slots[0] as unknown as Record<string, unknown>;
+    slot['timed'] = { minutes: 30, rounds: 4, workMin: 4, restMin: 3, warmupMin: 3, cooldownMin: 2 };
+    assert.deepEqual(validateProgram(g), []);
+    const errors = () => validateProgram(g).map((e) => `${e.path.replace(/^.*slots/, 'slots')}: ${e.message}`).sort();
+    slot['timed'] = { rounds: 4 };
+    assert.deepEqual(errors(), ['slots[0].timed: needs minutes, or rounds with workMin']);
+    slot['timed'] = { minutes: 0, laps: 2 };
+    assert.deepEqual(errors(), ['slots[0].timed.laps: unknown key', 'slots[0].timed.minutes: must be above 0']);
+  });
+
   it('requires a unit and an increment for strength exercises only', () => {
     const g = program() as { exercises: Record<string, unknown> };
     g.exercises['row'] = { name: 'Row' };
@@ -172,5 +184,24 @@ describe('profile: the self-check, the bad-week answer, short days and split pre
     const p = full() as Record<string, any>;
     delete p['selfCheck'].date;
     assert.deepEqual(paths(validateProfile(p)), ['selfCheck.date']);
+  });
+
+  it('takes the user\'s answers to the findings: per self-check test and per body-assessment row, true or false', () => {
+    const p = full() as Record<string, any>;
+    p['selfCheck'].confirmed = { sitToStand: true, hingeFlatBack: false, overheadReach: false, balanceS: true, _note: 'asked on 2026-11-02' };
+    p['emphasis'] = [{ area: 'Overhead', seen: 'Ribs flare', confidence: 'medium', emphasis: 'Landmine pressing', kind: 'overhead-limited', confirmed: false }];
+    assert.deepEqual(validateProfile(p), []);
+    p['selfCheck'].confirmed = {};
+    assert.deepEqual(validateProfile(p), [], 'an empty map: nothing asked yet');
+  });
+
+  it('rejects an answer that is not true or false, and a test with no finding to confirm', () => {
+    const p = full() as Record<string, any>;
+    p['selfCheck'].confirmed = { overheadReach: 'yes', pushUps: true };
+    p['emphasis'] = [{ area: 'Overhead', seen: 'Ribs flare', confidence: 'medium', emphasis: 'Landmine pressing', confirmed: 1 }];
+    assert.deepEqual(paths(validateProfile(p)).sort(), ['emphasis[0].confirmed', 'selfCheck.confirmed.overheadReach', 'selfCheck.confirmed.pushUps']);
+    p['selfCheck'].confirmed = true;
+    p['emphasis'] = [];
+    assert.deepEqual(paths(validateProfile(p)), ['selfCheck.confirmed']);
   });
 });

@@ -71,6 +71,19 @@ describe('a session’s minutes from its items', () => {
     assert.deepEqual([odd.value.untimed, odd.value.minutes], [['Mobility flow'], 3]);
   });
 
+  it('intervals: warm-up, rounds of work, the easy minutes between and cool-down, from the timed field or the note', () => {
+    const fields = short([{ name: 'Bike intervals', sr: '30 min', rest: '—', timed: { rounds: 4, workMin: 4, restMin: 3, warmupMin: 5, cooldownMin: 5 } }]);
+    assert.deepEqual(fields.value.items.map((x) => [x.minutes, x.how]), [[35, '5 min easy warm-up, 4 × 4 min hard, 3 min easy between, 5 min easy cool-down']]);
+    assert.equal(fields.value.minutes, 38);
+    // Before the field: the note's intervals (25 min) over sr's 22, which is less than they take.
+    const old = short([{ name: 'Uphill intervals, 4 x 4 min', sr: '22 min', rest: '—', note: '4 × 4 min hard, 3 min easy between, warm-up and cool-down easy. Why: you chose intervals.' }, ...SHORT.intervals!.slice(1)]);
+    assert.deepEqual(old.value.items.map((x) => [x.name, x.minutes]), [['Uphill intervals, 4 x 4 min', 25], ['Hollow hold (your level)', 3.75], ['Side Plank', 6]]);
+    assert.equal(old.value.minutes, 38);
+    assert.match(old.reason.note!, /^About 38 min: a 3-min warm-up, 25 min of Uphill intervals, 4 x 4 min \(4 × 4 min hard, 3 min easy between\), and 9\.75 min of sets/);
+    // Without intervals in the note, its minutes as before.
+    assert.equal(short(SHORT.intervals!).value.items[0]!.minutes, 22);
+  });
+
   it('the time check: over the short day’s length is flagged with its reason; within it, said so; no profile, no limit', () => {
     const av = { daysPerWeek: 7, minutesPerSession: 60, shortSessions: { days: 3, minutes: 30 } };
     const rows = timeCheck([

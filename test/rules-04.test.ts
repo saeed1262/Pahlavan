@@ -147,6 +147,15 @@ describe('soreness per muscle', () => {
     assert.match(r.reason.note ?? '', /^Glutes sore today: Goblet Squat at 3 set\(s\), RIR 3\./);
   });
 
+  it('the plan\'s soreness rule: its amounts, none, or no easier variation', () => {
+    const c = f.cases.find((x: Json) => x.expected.action === 'swap') as Json;
+    const same = sorenessForSlot(c.slot, f.exercises, f.daily, f.date, { lighter: c.lighter, rule: { sore: { sets: 0, rir: 2 }, twoDays: 'same' } });
+    assert.deepEqual([same.value.action, same.value.sets, same.value.rir], ['trim', c.slot.sets, c.slot.rir + 2]);
+    const none = sorenessForSlot(c.slot, f.exercises, f.daily, f.date, { lighter: c.lighter, rule: { sore: null, twoDays: 'same' } });
+    assert.deepEqual([none.value.action, none.value.sets, none.value.rir], ['note', c.slot.sets, c.slot.rir]);
+    assert.match(none.reason.note ?? '', /as planned by the plan's rule/);
+  });
+
   it('counts sore days per muscle for the mesocycle review', () => {
     assert.deepEqual(soreDays(f.daily, f.soreDays.from, f.soreDays.to).value, f.soreDays.expected);
   });

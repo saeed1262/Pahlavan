@@ -191,6 +191,19 @@ describe('readinessKey', () => {
     }
   });
 
+  it('the plan\'s low-day rule: its amounts, or none (trim never active)', () => {
+    const lowDay = steady('2026-03-01', 20).concat(days('2026-03-21', [{ sleepH: 4, sleepQ: 1, energy: 1, rhr: 70, soreness: 5 }]));
+    const from = { kind: 'plan' as const, path: 'rules.readiness', text: "The plan's rule: x." };
+    const two = action(readinessActions(lowDay, '2026-03-21', { low: { sets: -2, rir: 2 }, from }), 'trim');
+    assert.equal(two.value.active, true);
+    assert.match(two.reason.note ?? '', /^The plan's rule: x\. Readiness is low: 2 sets fewer per exercise and RIR \+2/);
+    const none = action(readinessActions(lowDay, '2026-03-21', { low: null }), 'trim');
+    assert.equal(none.value.active, false);
+    assert.match(none.reason.note ?? '', /leaves the session as planned/);
+    assert.equal(readinessKey(null).value.bands.find((b) => b.band === 'low')!.effect, 'Train as planned (the plan’s rule)');
+    assert.equal(readinessKey({ sets: 0, rir: 2 }).value.bands.find((b) => b.band === 'low')!.effect, 'RIR +2');
+  });
+
   it('the low band says what the trim action does', () => {
     const low = readinessKey().value.bands.find((b) => b.band === 'low')!;
     const trim = action(readinessActions(steady('2026-03-01', 20).concat(days('2026-03-21', [{ sleepH: 4, sleepQ: 1, energy: 1, rhr: 70, soreness: 5 }])), '2026-03-21'), 'trim');

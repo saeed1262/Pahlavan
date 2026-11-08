@@ -171,3 +171,64 @@ describe('the load-jump cap in progression', () => {
     assert.equal(r.reason.inputs['next'], 'decline-push-up');
   });
 });
+
+// A lift's standing rule from plan-data.json (`lifts[name].progression`): the
+// plan's own does the rule's arithmetic and sets the step; the old default is
+// cited and keeps the load cap.
+describe('the plan\'s lift rules', () => {
+  const plan = (rule: Record<string, unknown>, from = 'The plan\'s rule: test.') => ({
+    standing: { rule: { onMiss: { after: 2, drop: 0.1 }, onStall: 'report', ...rule } as never, source: 'plan' as const, from: { kind: 'plan' as const, path: 'lifts["Squat"].progression', text: from } },
+  });
+
+  it('cites the rule, the plan\'s or the old default', () => {
+    const r = nextTarget(input([logged('2026-03-02', [set(60, 6)])], plan({ rule: 'double' })));
+    assert.equal(r.reason.rule, 'progression.double');
+    assert.match(r.reason.note ?? '', /^The plan's rule: test\. Inside the range/);
+    const legacy = nextTarget(input([logged('2026-03-02', [set(60, 6)])], { standing: { rule: { rule: 'double', onMiss: { after: 2, drop: 0.1 }, onStall: 'report' }, source: 'legacy-default', from: { kind: 'legacy-default', path: 'x', text: 'Pahlavan\'s default (the plan sets none): double.' } } }));
+    assert.deepEqual(legacy.value, nextTarget(input([logged('2026-03-02', [set(60, 6)])])).value);
+    assert.equal(legacy.reason.from?.kind, 'legacy-default');
+  });
+
+  it('linear: the weight up every session each set reaches the top, the reps stay there', () => {
+    const up = nextTarget(input([logged('2026-03-02', [set(60, 8, 'kg', 2), set(60, 8, 'kg', 2)], 'full')], plan({ rule: 'linear' })));
+    assert.deepEqual([up.value.action, up.value.weight, up.value.reps, up.reason.rule], ['increase', 62.5, 8, 'progression.linear']);
+    const short = nextTarget(input([logged('2026-03-02', [set(60, 8, 'kg', 2), set(60, 7, 'kg', 2)], 'full')], plan({ rule: 'linear' })));
+    assert.deepEqual([short.value.action, short.value.weight, short.value.reps], ['hold', 60, 8]);
+  });
+
+  it('hold: reps up to the top, never a weight step', () => {
+    const r = nextTarget(input([logged('2026-03-02', [set(60, 8, 'kg', 2), set(60, 8, 'kg', 2)], 'full')], plan({ rule: 'hold' })));
+    assert.deepEqual([r.value.action, r.value.weight, r.value.reps], ['hold', 60, 8]);
+    assert.match(r.reason.note ?? '', /adds no weight/);
+  });
+
+  it('target: the coach\'s numbers, met or not, never moved on', () => {
+    const t = plan({ rule: 'target', target: { weight: 70, reps: 6, rir: 2 } });
+    const before = nextTarget(input([logged('2026-03-02', [set(65, 6)])], t));
+    assert.deepEqual([before.value.action, before.value.weight, before.value.reps, before.value.rir, before.value.targetMet], ['target', 70, 6, 2, false]);
+    const met = nextTarget(input([logged('2026-03-02', [set(70, 6)])], t));
+    assert.deepEqual([met.value.weight, met.value.targetMet], [70, true]);
+    assert.match(met.reason.note ?? '', /holds until the coach sets the next one/);
+    const fresh = nextTarget(input([], t));
+    assert.deepEqual([fresh.value.action, fresh.value.weight], ['target', 70]);
+  });
+
+  it('onMiss: after the rule\'s sessions, the rule\'s drop; or hold', () => {
+    const one = nextTarget(input([logged('2026-03-02', [set(80, 4)])], plan({ rule: 'double', onMiss: { after: 1, drop: 0.05 } })));
+    assert.deepEqual([one.value.action, one.value.weight], ['lighter', 75]);
+    assert.match(one.reason.note ?? '', /^The plan's rule: test\. A session under 5 reps: 75 kg x 5, 6\.3 % lighter\./);
+    const hold = nextTarget(input([logged('2026-03-02', [set(80, 4)]), logged('2026-03-05', [set(80, 4)])], plan({ rule: 'double', onMiss: 'hold' })));
+    assert.deepEqual([hold.value.action, hold.value.weight], ['hold', 80]);
+  });
+
+  it('the plan\'s step is never capped: an increase over the load-jump guide is reported', () => {
+    const big = { unit: 'kg' as const, increment: 10 };
+    const sessions = [logged('2026-03-02', [set(40, 8)])];
+    const legacy = nextTarget(input(sessions, { exercise: big, date: '2026-03-03' }));
+    const own = nextTarget(input(sessions, { exercise: big, date: '2026-03-03', ...plan({ rule: 'double' }) }));
+    assert.equal(legacy.reason.title, 'Big jump');
+    assert.equal(own.value.weight, 50);
+    assert.equal((own.reason.inputs['loadCap'] as { applied: boolean }).applied, false);
+    assert.match(own.reason.note ?? '', /reported, the plan's rule sets the step/);
+  });
+});
