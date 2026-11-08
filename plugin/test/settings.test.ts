@@ -14,7 +14,7 @@ describe('settings defaults', () => {
   it('start with no pick of session, reminders on and the 30-minute snooze', () => {
     const d = defaultPluginData(GIT);
     assert.equal(DEFAULT_SETTINGS.pick, null);
-    assert.deepEqual({ lastTab: d.lastTab, mode: d.mode, pick: d.pick }, { lastTab: 'today', mode: 'full', pick: null });
+    assert.deepEqual({ lastTab: d.lastTab, mode: d.mode, pick: d.pick, homeShown: d.homeShown }, { lastTab: 'home', mode: 'full', pick: null, homeShown: true });
     assert.deepEqual(d.reminders, { on: true, notifications: true, snoozeMinutes: 30, quiet: { on: true, from: '22:30', to: '07:00' }, didYouTrain: true, didYouTrainAt: '20:00' });
     assert.equal(d.version, SETTINGS_VERSION);
   });
@@ -34,16 +34,28 @@ describe('settings defaults', () => {
 describe('loadPluginData', () => {
   it('keeps the view state of data.json from plugin 0.5 and adds the new options', () => {
     const { data, migrated } = loadPluginData({ lastTab: 'today', mode: 'hotel', pick: null, progressSection: 'body' }, GIT);
-    assert.deepEqual({ lastTab: data.lastTab, mode: data.mode, pick: data.pick, progressSection: data.progressSection }, { lastTab: 'today', mode: 'hotel', pick: null, progressSection: 'body' });
+    // Saved before Home existed: Home opens once, the rest of the view's state is kept.
+    assert.deepEqual({ lastTab: data.lastTab, mode: data.mode, pick: data.pick, progressSection: data.progressSection }, { lastTab: 'home', mode: 'hotel', pick: null, progressSection: 'body' });
     assert.deepEqual(data.reminders, DEFAULT_REMINDERS);
     assert.deepEqual(data.sync, { pullBefore: true, syncAfter: true });
     assert.equal(data.version, SETTINGS_VERSION);
     assert.equal(migrated, true);
   });
 
+  it('records the install date once: today for a vault without one (saved through migrated), never moved after', () => {
+    const first = loadPluginData({ version: 2, lastTab: 'today', homeShown: true }, { ...GIT, today: '2026-11-08' });
+    assert.equal(first.data.installedOn, '2026-11-08');
+    assert.equal(first.migrated, true);
+    const later = loadPluginData(JSON.parse(JSON.stringify(first.data)), { ...GIT, today: '2027-02-01' });
+    assert.equal(later.data.installedOn, '2026-11-08');
+    assert.equal(later.migrated, false);
+    assert.equal(loadPluginData({ installedOn: 'soon' }, { ...GIT, today: '2026-11-09' }).data.installedOn, '2026-11-09', 'a malformed date is replaced');
+    assert.equal(loadPluginData({}, GIT).data.installedOn, undefined, 'no date known: none recorded');
+  });
+
   it('reads the oldest shape (the tab and the mode) and a day’s pick', () => {
     assert.equal(loadPluginData({ lastTab: 'plan', mode: 'express' }, NO_GIT).data.pick, null);
-    const { data } = loadPluginData({ lastTab: 'checkin', mode: 'full', pick: { date: '2026-04-10', type: 'S3' } }, NO_GIT);
+    const { data } = loadPluginData({ lastTab: 'checkin', mode: 'full', pick: { date: '2026-04-10', type: 'S3' }, homeShown: true }, NO_GIT);
     assert.deepEqual([data.lastTab, data.pick], ['checkin', { date: '2026-04-10', type: 'S3' }]);
   });
 
@@ -72,10 +84,20 @@ describe('loadPluginData', () => {
 
   it('replaces malformed values with the defaults', () => {
     const { data } = loadPluginData({ lastTab: 'habits', mode: 'weird', pick: 'A', progressSection: 'photos', reminders: { snoozeMinutes: 45, quiet: { on: 'yes', from: '25:00', to: '7:00' }, didYouTrain: 1 }, sync: 'on' }, NO_GIT);
-    assert.deepEqual([data.lastTab, data.mode, data.pick, data.progressSection], ['today', 'full', null, undefined]);
+    assert.deepEqual([data.lastTab, data.mode, data.pick, data.progressSection], ['home', 'full', null, undefined]);
     assert.deepEqual(data.reminders, DEFAULT_REMINDERS);
     assert.deepEqual(data.sync, { pullBefore: false, syncAfter: false });
     assert.deepEqual(loadPluginData(null, NO_GIT).data, defaultPluginData(NO_GIT));
+  });
+
+  it('opens Home once after the update that added it, then keeps the last tab', () => {
+    const before = { ...JSON.parse(JSON.stringify(defaultPluginData(GIT))), lastTab: 'progress' };
+    delete before.homeShown;
+    const first = loadPluginData(before, GIT);
+    assert.deepEqual([first.data.lastTab, first.data.homeShown, first.migrated], ['home', true, true], 'Home first, saved once');
+    const later = loadPluginData({ ...JSON.parse(JSON.stringify(first.data)), lastTab: 'progress' }, GIT);
+    assert.deepEqual([later.data.lastTab, later.migrated], ['progress', false], 'then the last tab is remembered');
+    assert.equal(loadPluginData({ ...later.data, lastTab: 'home' }, GIT).data.lastTab, 'home');
   });
 
   it('does not ask for a save when the stored data is already current, in any key order', () => {

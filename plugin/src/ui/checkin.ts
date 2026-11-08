@@ -419,11 +419,13 @@ function sundayCard(c: CheckinScreen, sun: Sunday, st: CheckinState, ctx: Checki
   }
   const trQ = ask(sun, 'triage');
   if (trQ) {
-    const stalled = ((trQ.known ?? {}) as { stalled?: { lift: string; step: number | null; suggestion: string | null }[] }).stalled ?? [];
+    const stalled = ((trQ.known ?? {}) as { stalled?: { lift: string; step: number | null; suggestion: string | null; facts?: unknown }[] }).stalled ?? [];
     for (const x of stalled) {
       const sel = h('select', { class: 'pv-sel', 'aria-label': `${x.lift}: triage step`, onchange: (ev: Event) => { a.triage[x.lift] = Number((ev.target as HTMLSelectElement).value); change(); }, ...kb(`s-tr-${x.lift}`) },
         [0, 1, 2, 3, 4].map((v) => h('option', { value: v, selected: (a.triage[x.lift] ?? 0) === v }, v ? TRIAGE_STEP[v] : 'No step on record')));
-      qs.push(q(num(), `${x.lift} has stalled: the triage step`, [x.step ? h('div', { class: 'pv-q-sub' }, `The engine chose step ${x.step}${x.suggestion ? `: ${clean(x.suggestion)}` : ''}`) : null, sel], { prefilled: true, note: 'Not a question: the step the letter applies, kept on record; the next check-in starts one step later.' }));
+      // The plan's stall rule gives a step (the triage ladder), or reports the facts and leaves the response to the coach.
+      const sub = x.step ? `The plan's stall rule gives step ${x.step}${x.suggestion ? `: ${clean(x.suggestion)}` : ''}` : x.facts ? 'Your coach picks the response at the check-in; record the step the letter applies, if any' : null;
+      qs.push(q(num(), `${x.lift} has stalled: the triage step`, [sub ? h('div', { class: 'pv-q-sub' }, sub) : null, sel], { prefilled: !x.facts, note: 'The step the letter applies, kept on record; the next check-in starts one step later.' }));
     }
   }
 

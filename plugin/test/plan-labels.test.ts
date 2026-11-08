@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { temporaryLabel } from '../src/ui/plan.ts';
+import { ledgerMovements, temporaryLabel } from '../src/ui/plan.ts';
 import { bannerKicker, phaseLabel, phaseTitle } from '../src/ui/banner.ts';
 
 describe('plan timeline: temporary-change labels', () => {
@@ -9,6 +9,13 @@ describe('plan timeline: temporary-change labels', () => {
   });
   it('an "until" note that is not a swap names the item alone, never "in for null"', () => {
     assert.equal(temporaryLabel({ item: 'Barbell Back Squat', wayBack: null }), 'Barbell Back Squat');
+  });
+});
+
+describe('plan timeline: the Ledger’s movements', () => {
+  it('names each ruled-out movement and marks one the engine does not recognise', () => {
+    assert.equal(ledgerMovements([{ name: 'Standing barbell press', known: true }, { name: 'Ring dip unknown', known: false }]), 'Standing barbell press, Ring dip unknown (not recognised)');
+    assert.equal(ledgerMovements([]), '');
   });
 });
 

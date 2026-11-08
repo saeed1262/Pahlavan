@@ -3,7 +3,10 @@
 The coach's rules in one place, with where each comes from. The plan-design
 rules (plan structure, split families, goal modifiers, volume, effort, load,
 rest, order, range of motion, progression, light weeks, concurrent training)
-were checked against 62 sources, each one opened, on 2026-11-03.
+were checked against 62 sources, each one opened, on 2026-11-03; the
+Regions section against MRI and ultrasound training studies (about 50
+sources opened) on 2026-11-07. `engine evidence` gives the same rules as
+data, each with the number the engine checks with (`numbers.md`).
 
 **Grades:** **Strong** (consistent meta-analyses), **Moderate** (a
 meta-analysis, or several trials with some inconsistency), **Weak** (few or
@@ -16,7 +19,9 @@ Weak spots to be honest about: per-person volume landmarks and the 0.5 weight
 for indirect sets are assumptions; Pelland 2025's tier numbers come from its
 open preprint (the published tables are paywalled); the per-session cap rests
 on one preprint; readiness thresholds are heuristics; light-week timing has no
-evidence-based schedule; RIR is less accurate above 12 reps.
+evidence-based schedule; RIR is less accurate above 12 reps; no muscle region
+has a meta-analysis of its own, and the region credit and the coverage
+numbers are heuristics.
 
 ## Plan structure
 
@@ -32,6 +37,7 @@ evidence-based schedule; RIR is less accurate above 12 reps.
 | Mesocycle | 3 loading weeks + 1 light week (deload); its timing: "Deloads" | **(H)** |
 | Undulation (heavy/light days) | Each main lift heavy once and lighter once a week (four full-body days: a heavy pair at 5–8 reps and a lighter pair at 10–15 with variations, a lighter day after each heavy one). An advantage only for a trained lifter with a strength goal: undulating beat linear only in trained people (ES 0.61), and periodization added nothing for muscle. For a muscle goal it is a preference, never a score | [Moesgaard 2022](https://doi.org/10.1007/s40279-021-01636-1) · **Moderate** (trained strength) |
 | Exercise changes | Only at mesocycle boundaries; main lifts kept for a whole phase; rotate at most half the accessories at a time. Systematic variation helps regional growth and strength; frequent random rotation may hurt (8 studies, all young men) | [Kassiano 2022](https://doi.org/10.1519/JSC.0000000000004258) · **Weak** |
+| Planned variation | Planned variation changes **where** a muscle grows, not how much: an exercise chosen to bias a region (the leg extension for the rectus femoris, a lateral raise for the side delts) is kept for the whole phase. Random variation doesn't help: rotating exercises at random each session gave no more growth | [Costa 2021](https://doi.org/10.1055/a-1308-3674), [Fonseca 2014](https://doi.org/10.1519/jsc.0000000000000539), [Kassiano 2022](https://doi.org/10.1519/JSC.0000000000004258); random rotation [Baz-Valle 2019](https://doi.org/10.1371/journal.pone.0226989) · **Moderate** |
 
 ## Split families
 
@@ -40,22 +46,14 @@ matched weekly sets they build the same muscle ("equivalence" below:
 [Schoenfeld 2019a](https://doi.org/10.1080/02640414.2018.1555906),
 [Ramos-Campo 2024](https://doi.org/10.1519/JSC.0000000000004774), **Strong**),
 so what separates them is cost: exposures per muscle, sets per session,
-fatigue, skip risk and interference. The engine's `plan` draft builds and
-scores, beside the full-body variants (heavy/light among them), by lifting
-days: at 2, upper/lower once each; at 3, upper/lower/full, push/pull/legs once
-each and upper/lower rotating; at 4, upper/lower twice, torso/limbs,
-upper/lower plus a full-body pair (the second day lighter) and a body-part
-split; at 5, push/pull/legs plus upper/lower, U/L/U/L/F and a body-part split;
-at 6, push/pull/legs plus upper/lower, push/pull/legs twice and a body-part
-split. At 5–6 days (a trained lifter: a novice lifts on 4 days at most) it
-also builds 4 lifting days with the rest as conditioning;
-sessions of 30 min or less get only the minimum-dose templates. The
-specialization block and HIFT are the coach's to build; concurrent training,
-circuits and calisthenics skill blocks the engine builds only in part
-(`proposal.families` says which part). Each candidate's row carries its
-families' fit against the Fits column below (`templates[].fit`: what the week
-and the person meet and miss) and their Costs (`templates[].costs`), as flags,
-not points: the points are the Scoring row above.
+fatigue, skip risk and interference. The coach designs each candidate from
+a family whose Fits column the week and the person meet, or names the
+mismatch as a cost; the Costs are flags in the comparison, not points (the
+points are the Scoring row above). At 30 minutes or less a session holds a
+minimum-dose week; a novice lifts on 4 days at most **(H)**. The generator's
+optional baseline (`engine plan`) builds some of these families itself
+(`proposal.families` says which), as one comparison, never as the reason
+for a pick.
 
 | Family | Structure | Fits | Costs | Evidence |
 |---|---|---|---|---|
@@ -106,7 +104,7 @@ numbers).
 |---|---|---|
 | Minimum dose | 4 | Maintenance; the floor for any muscle (the minimum effective dose) |
 | Efficient | 5–10 | Most muscles, most of the time (the most growth per set) |
-| Priority | 10–16 | Up to 2–3 priority muscles per phase: the ones the user names first, then from a muscle or recomposition goal **(H: which muscles)**. The minimum is met by **direct sets taken near failure** (0–3 RIR, the "Muscle" row above): half-credit from compound lifts and easy work don't fill it; a hold counts when it is at least 75% of the user's tested best **(H: the 75%)**, a ladder item when it is at the user's level. With the posture emphasis, upper back and lats may run to the cap to keep pull at about twice push |
+| Priority | 10–16 | Up to 2–3 priority muscles per phase: the ones the user names first, then from a muscle or recomposition goal **(H: which muscles)**; the week's room is 3 with 4 or more lifting days, 2 with 3, 1 with 2 or 30-minute sessions **(H)**, and `check` warns `priority-room` past it (the user picks which come first, the rest wait under Later priorities). The minimum is met by **direct sets taken near failure** (0–3 RIR, the "Muscle" row above): half-credit from compound lifts and easy work don't fill it; a hold counts when it is at least 75% of the user's tested best **(H: the 75%)**, a ladder item when it is at the user's level. With the posture emphasis, upper back and lats may run to the cap to keep pull at about twice push |
 | Cap **(H)** | 20–24 | Never planned above. Returns keep falling with no clear plateau and few studies go past about 25 sets, so the cap is for fatigue and time, not a ceiling on growth. Above 20 only as a short deliberate block (a specialization block) |
 | Per session **(Weak)** | ≤ 6–8 direct sets per muscle | Past about 8 direct sets in one session, more sets were unlikely to add a detectable effect (one preprint): a muscle needing more than about 16 a week needs 2+ sessions |
 | Strength | More exposures (frequency), not more sets | Strength gains little past about 4 weekly sets |
@@ -173,7 +171,66 @@ Sources: [Refalo 2023](https://doi.org/10.1007/s40279-022-01784-y), [Grgic 2022]
 | Tempo | Rep speed matters little for size: 0.5 to 8 s per rep gives similar growth; very slow reps (over 10 s) do worse. The plan's default: lower under control in about 2 to 3 s, no bouncing at the bottom, lift with intent; a pause only where a note asks for one (the stretch on isolation lifts) | [Schoenfeld 2015](https://doi.org/10.1007/s40279-015-0304-0) · **Moderate** (size); the 2 to 3 s default **(H)** |
 | Order | The goal's priority lift first (a strength-goal lift, or a priority muscle's main exercise): strength gains are largest in the exercises done first, and size is unaffected by order. Otherwise order for safety and logistics | [Nunes 2021](https://doi.org/10.1080/17461391.2020.1733672) · **Moderate** |
 | Range of motion | Full range of motion, with the lengthened (stretched) position emphasised; lengthened partials as an option (a load ceiling, a painful end range); never short-range partials as main work | [Wolf 2023](https://doi.org/10.47206/ijsc.v3i1.182), [Kassiano 2023](https://doi.org/10.1519/JSC.0000000000004415), [Pedrosa 2022](https://doi.org/10.1080/17461391.2021.1927199), [Wolf 2025](https://doi.org/10.7717/peerj.18904) · **Moderate** (full ROM), **Weak** (lengthened partials) |
-| Exercise choice | By equipment, the Ledger, liking and the lift the user wants strong: free weights and machines build equal strength and size, specific to the mode trained **Moderate**. Prefer versions that load the muscle long (a seated leg curl over a lying one) **Weak**. The time-efficient core: a squat or leg press, an upper pull, an upper push | [Haugen 2023](https://doi.org/10.1186/s13102-023-00713-4), [Maeo 2021](https://doi.org/10.1249/MSS.0000000000002523), [Iversen 2021](https://doi.org/10.1007/s40279-021-01490-1) |
+| Exercise choice | By equipment, the Ledger, liking and the lift the user wants strong: free weights and machines build equal strength and size, specific to the mode trained **Moderate**. The time-efficient core: a squat or leg press, an upper pull, an upper push | [Haugen 2023](https://doi.org/10.1186/s13102-023-00713-4), [Iversen 2021](https://doi.org/10.1007/s40279-021-01490-1) |
+| Two-joint muscles long | Two-joint muscles grow more trained at a long length: the seated leg curl (hip bent) over the lying one for the hamstrings, overhead triceps extensions over pushdowns for the long head, standing calf raises (knees straight) over seated ones for the gastrocnemius, the leg extension leaning back for the rectus femoris. `engine catalogue` lists these versions first (`longLength`) | [Maeo 2021](https://doi.org/10.1249/MSS.0000000000002523), [Maeo 2023](https://doi.org/10.1080/17461391.2022.2100279), [Kinoshita 2023](https://doi.org/10.3389/fphys.2023.1272106), [Larsen 2025b](https://doi.org/10.1080/02640414.2024.2444713) · **Moderate** |
+
+## Regions
+
+A muscle can grow unevenly with the exercise: a leg extension grows the
+rectus femoris that squats barely touch. The regions below are the ones MRI
+and ultrasound training studies support; no region has a meta-analysis of
+its own, so nothing regional is **Strong**. The whole-muscle tiers
+("Volume") stay where the strong evidence is: regions add a coverage rule
+and never change a muscle's own sets. `engine evidence --topic regions`
+gives each region with its grade, sources and the catalogue movements that
+bias it; `engine catalogue --region <region>` searches them.
+
+| Region (id) | What biases it | Grade | In the coverage rule | Sources |
+|---|---|---|---|---|
+| Quads: rectus femoris (`quads-rf`) and vasti (`quads-vasti`) | The leg extension (more so leaning back) grows the rectus femoris; squats and the leg press grow the vasti and barely the rectus femoris | **Moderate** | Yes | [Ema 2013](https://doi.org/10.1007/s00421-013-2700-1), [Kubo 2019](https://doi.org/10.1007/s00421-019-04181-y), [Kinoshita 2026](https://doi.org/10.1249/MSS.0000000000003957), [Larsen 2025b](https://doi.org/10.1080/02640414.2024.2444713) |
+| Hamstrings: at the hip (`hamstrings-hip`) and at the knee (`hamstrings-knee`) | Hip extension (RDLs, back extensions) for the long head; leg curls at the knee, the seated curl over the lying one; squats and hip thrusts give little | **Moderate** | Yes | [Maeo 2021](https://doi.org/10.1249/MSS.0000000000002523), [Maeo 2024](https://doi.org/10.1249/mss.0000000000003490), [Bourne 2017](https://doi.org/10.1136/bjsports-2016-096130), [Plotkin 2023](https://doi.org/10.3389/fphys.2023.1279170) |
+| Calves: gastrocnemius (`calves-gastroc`) and soleus (`calves-soleus`) | Standing raises grow the gastrocnemius; seated raises don't (the soleus) | **Weak** | Yes | [Kinoshita 2023](https://doi.org/10.3389/fphys.2023.1272106) |
+| Triceps long head (`triceps-long`) | Overhead extensions over pushdowns | **Weak** | Yes | [Maeo 2023](https://doi.org/10.1080/17461391.2022.2100279) |
+| Delts: front (`shoulders-front`) and side (`shoulders-side`) | Presses and the bench grow the front; the side grew least with the bench press; lateral raises grow the side | **Weak** | Yes | [Lanza 2024](https://doi.org/10.1016/j.jbmt.2024.07.054), [Larsen 2025a](https://doi.org/10.3389/fphys.2025.1611468) |
+| Rear delts (`shoulders-rear`) | Face pulls, reverse flyes, pull-aparts: not measured for growth | **(H)** | No (reported) | none |
+| Upper chest (`chest-upper`) | Incline pressing beat flat at 1 of 3 sites | **Weak** | No: declarable | [Chaves 2020](https://doi.org/10.70252/fdnb1158), [Pinto 2025](https://doi.org/10.1519/jsc.0000000000005045) |
+| Upper back: upper traps (`upper-back-traps`) and mid-back (`upper-back-mid`) | Shrugs and carries; rows, face pulls and pull-aparts | **(H)**, a rough guide | No: declarable | none |
+| Adductors (a muscle, not a region) | Deep squats and the leg press credit them | **Moderate** | No (the credit) | [Kubo 2019](https://doi.org/10.1007/s00421-019-04181-y), [Plotkin 2023](https://doi.org/10.3389/fphys.2023.1279170) |
+
+- **Region credit (H):** a set counts 1 for each region its movement
+  biases when the region's muscle is a main muscle of it, half when the
+  muscle only helps; the muscles' own counts never change.
+- **Coverage (H):** each region of a priority muscle that is in the
+  coverage rule gets at least 4 direct sets a week from a movement that
+  biases it; a region the user declares weak gets at least 6 direct sets
+  near failure, inside its muscle's 10–16. `engine check` warns
+  `region-coverage` and `region-declared-short`, each with catalogue options
+  that fit the equipment, the Ledger, the dislikes and what a confirmed
+  finding rules out. The rear delts, the
+  upper chest and the upper back's regions are reported, never held to it,
+  unless the user declares them.
+- **Planned variation (Moderate):** the movement that biases a declared
+  region stays for the whole phase ("Plan structure", Planned variation).
+- **Muscle activity alone is Weak at most:** a claim resting on EMG, with no
+  training study measuring growth (overhead presses for the side delts), is
+  capped at **Weak**
+  ([Vigotsky 2022](https://doi.org/10.1007/s40279-021-01619-2)).
+- **Declared, never diagnosed (Weak):** only imaging measures a region
+  reliably; no validated way spots a lagging region from photos or the tape,
+  so a weak region is the user's word and photos only prompt the question
+  ([Stokes 2021](https://doi.org/10.14814/phy2.14683)).
+
+**Not modelled, and why.** The popular ideas the evidence doesn't support
+are explained, with the nearest supported option, never planned for:
+
+| Idea | Why not | Nearest option |
+|---|---|---|
+| Inner or outer chest | A pec deck grew both heads of the chest evenly ([Pinto 2025](https://doi.org/10.1519/jsc.0000000000005045)); no exercise is shown to grow one side | The chest as a whole (the upper chest, if declared) |
+| Lower chest | No training study shows decline presses or dips growing it more | The chest as a whole |
+| Inner quad (VMO), outer quad, "quad sweep" | The vasti grow together; no stance or foot position targets one, even in muscle-activity studies ([Smith 2009](https://doi.org/10.1080/09593980802686953), an EMG review) | The vasti (`quads-vasti`) |
+| Upper or lower lats | No growth data (a trial is registered, not yet enrolling) | The lats as a whole |
+| Biceps long or short head, the peak | No reliable way shown to grow one head more | The biceps as a whole |
+| Upper or lower glutes | Hip thrusts and squats grew the upper, middle and lower glutes about alike ([Plotkin 2023](https://doi.org/10.3389/fphys.2023.1279170)) | The glutes as a whole |
 
 ## Progression
 
@@ -247,11 +304,11 @@ volume and effort and keeping frequency and exercises. **Weak** (mostly H).
 
 | Rule | Detail |
 |---|---|
-| Default **(H)** | Every 4th plan week (weeks 4, 8, 12, …): the schedule the engine, Pahlavan and the calendar run, inside the surveyed range |
-| Early | When a trigger fires (`checkin.md`, deload triggers): low readiness 5 days running with a falling e1RM; stalls on 2+ main lifts; 2 check-ins running with poor recovery and joint aches **(H)** |
-| Skipped or moved | When no trigger is met, the check-in or the review may skip a scheduled light week (`deload.cancelled`, on `checkin.md`'s cancel conditions) or move it onto a known busy or travel week (`busy-week`); the user decides and a Decision records it. Never two mesocycles running without one **(H)** |
-| Shape | Half the sets, RIR +3, same exercises and frequency, never a full week off |
-| Pahlavan's light week | 2 sets of everything and about 10% lighter (the same idea for 3–4-set exercises); its screens keep the fixed week whatever the check-in decides (see `planning.md`, limits) |
+| Timing **(H)** | The plan's own: the coach writes `rules.lightWeeks` (every N weeks, or the weeks listed; `formats.md`, "The plan's standing rules"). Every 4th plan week (weeks 4, 8, 12, …), inside the surveyed range, is Pahlavan's default when the plan sets none |
+| Early | When a signal fires (`checkin.md`, deload triggers): low readiness 5 days running with a falling e1RM; stalls on 2+ main lifts; 2 check-ins running with poor recovery and joint aches **(H)**. Under the plan's own rule a signal is a fact for the coach (`rules.lightWeeks.early`), who moves a light week by editing the plan |
+| Skipped or moved | The coach edits `rules.lightWeeks.weeks` (a busy or travel week, or no signal met), the user decides and a Decision records it. Under the old default the check-in may still cancel one (`deload.cancelled`) or move it onto a busy week (`busy-week`). Never two mesocycles running without one **(H)**; `engine check` warns `no-light-week` past 6 loading weeks running |
+| Shape | Half the sets, RIR +3, same exercises and frequency, never a full week off: the plan writes it as `rules.lightWeeks` `sets: "half"`, `rirAdd: 3` |
+| Pahlavan's default | With no light-week rule, 2 sets of everything and about 10% lighter (the same idea for 3–4-set exercises), and `review` warns `legacy-default` until the coach writes one |
 
 Sources: [Coleman 2024](https://doi.org/10.7717/peerj.16777), [Bell 2023](https://doi.org/10.1186/s40798-023-00633-0), [Rogerson 2024](https://doi.org/10.1186/s40798-024-00691-y).
 

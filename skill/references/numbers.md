@@ -5,10 +5,14 @@ this skill (`scripts/engine.cjs`, version in `scripts/VERSION`). It runs on any
 machine with Node and needs nothing else. Run it from the vault root:
 
 ```bash
-node .claude/skills/fitness-coach/scripts/engine.cjs review    --vault . --json [--date YYYY-MM-DD] [--pretty]
+node .claude/skills/fitness-coach/scripts/engine.cjs review    --vault . --json [--date YYYY-MM-DD] [--plan <draft.json>] [--pretty]
 node .claude/skills/fitness-coach/scripts/engine.cjs readiness --vault . --json [--date D]
-node .claude/skills/fitness-coach/scripts/engine.cjs session   --vault . --json [--date D] [--mode full|express|hotel] [--type T] [--freeze [--lift1 L] [--lift2 L] [--skip "<name>,<name>"]]
+node .claude/skills/fitness-coach/scripts/engine.cjs session   --vault . --json [--date D] [--mode full|express|hotel] [--type T] [--plan <draft.json>] [--freeze [--lift1 L] [--lift2 L] [--skip "<name>,<name>"]]
 node .claude/skills/fitness-coach/scripts/engine.cjs next      --vault . --json --lift "<name or short name>" [--date D]
+node .claude/skills/fitness-coach/scripts/engine.cjs check     --vault . --json [--plan <draft.json>] [--date D]
+node .claude/skills/fitness-coach/scripts/engine.cjs plan-write --vault . --json --file <draft.json> [--date D] [--write]
+node .claude/skills/fitness-coach/scripts/engine.cjs evidence  --json [--topic volume|effort|load|rest|tempo|order|range-of-motion|exercise-choice|progression|light-weeks|calibration|concurrent|activity|regions|findings|standing-rules]
+node .claude/skills/fitness-coach/scripts/engine.cjs catalogue --json [--pattern <pattern>] [--region <region>] [--muscle <muscle>] [--equipment <e1,e2>] [--level beginner|intermediate|advanced] [--query <text>] [--vault .] [--md]
 node .claude/skills/fitness-coach/scripts/engine.cjs plan      --json --profile <fitness>/Coach/profile.json [--ledger <fitness>/Coach/ledger.json] [--start D] [--weeks 12|16|24] [--history] [--vault .] [--format engine|plan-data]
 node .claude/skills/fitness-coach/scripts/engine.cjs validate  <file> --json [--kind profile|program|session|checkin|body|ledger|tracking|nudges|sitting|eating|inbox|letter]
 node .claude/skills/fitness-coach/scripts/engine.cjs checkin template --vault . --json [--date D] [--time HH:MM]
@@ -31,6 +35,12 @@ node .claude/skills/fitness-coach/scripts/engine.cjs inbox     --vault . --json 
 node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
 ```
 
+- **Run each line directly, one command per call.** Each command is run as
+  it stands above, in the shell, one per call, so the user sees what ran
+  and what it said: never inside a script of the coach's (a node or Python
+  file that runs the engine), never several in one call (SKILL.md house
+  rule 22). `evidence` is asked by topic (`evidence --json --topic volume`);
+  the whole library only when a design truly needs it.
 - **It only reads,** except these writes, each a dry run until `--write`
   (after the user's yes): `log add`, `log ladder` and `log fix --write`
   write `fitness-log-data.json` (`log.md`; `log add` also the day's Workout
@@ -42,8 +52,10 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   `eating --write` writes `Coach/eating-plan.json` (the eating plan as
   data; "The eating plan" below), and `inbox --write` applies the phone's
   entries through the same merges and moves them ("The phone's inbox"
-  below), each those files and nothing else. Every other write is a
-  propose-then-write step (`plan-files.md`).
+  below), and `plan-write --write` writes `plan-data.json` (the whole file,
+  once the plan check finds no hard error; "The plan check" below), each
+  those files and nothing else. Every other write is a propose-then-write
+  step (`plan-files.md`).
 - **It reads the check-in answers** (`Coach/checkins.json`) when they exist:
   confirmed sessions, recovery and joint aches, the triage steps the letters
   took, deload cancels, busy weeks, weeks trained at full load, reported RIR,
@@ -66,11 +78,46 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   missing or invalid file); 2 a usage error (a wrong flag, an unknown lift
   name, one of the vault's own files given to `validate`; `errors` says
   which).
+- **No plan yet** (a fresh vault after the intake, no `plan-data.json`):
+  expected, not an error. `review`, `readiness`, `session`, `tracked`,
+  `due`, `habits`, `bring-over`, `food`, `checkin template`, `track day`
+  and `catalogue --vault .` answer (exit 0) with a `no-plan` warning
+  saying what waits for the plan; `check` has nothing to check (a `no-plan`
+  note, exit 0); `plan --format plan-data --vault .` is a fresh export; a
+  draft works as on any vault (`review --plan`, `session --plan`, `check
+  --plan`, `plan-write --file`). What needs the plan's own sessions, lifts
+  or ladders is exit 1 with a `no-plan` error (and `review` gives no plan
+  week, phase or mesocycle): `session --type` or
+  `--freeze`, `next` for a lift never logged, `log ladder`, `log fix`.
+  `log add` takes a custom session only.
 - **`warnings`** are things the engine read around, never a crash: exercises
   not in its catalogue (no abdominal-strain tag), free-text equipment, a test
-  result that isn't a number, values out of range, missing coach files. Mention
-  the ones that touch the answer.
-- **The self-check:** `scripts/selfcheck.mjs` runs every line of the block above (placeholders filled with safe values, `--write` dropped, so nothing is written), checks that the fields the next table names are in the output and that each command's flags match `--help`; `npm run ship-skill` runs it after each ship, and each failure names what to fix.
+  result that isn't a number, values out of range, missing coach files,
+  `muscle-tags-differ` (a guide entry whose `muscles` copy disagrees with the
+  catalogue's tags, which are the ones that count: one item per entry, "Face
+  Pull: guide main shoulders, upper-back | catalogue main upper-back, helps
+  shoulders"), `muscle-tags-overridden` (for information: the entries that
+  keep their own tags, each with its `override` reason),
+  `muscle-tags-override-ignored` (an `override` that isn't a non-empty reason
+  beside a main muscle: the catalogue's tags count) and
+  `muscle-tags-uncounted` (a cardio or mobility entry for a movement the
+  catalogue counts as strength work: not counted), `unknown-region` and
+  `unsupported-region` (a guide entry's `muscles.regions` value that isn't a
+  region id, or names a region the evidence doesn't support: it counts
+  nowhere; an unsupported one's item gives the nearest supported option and
+  why, `formats.md`), `region-parent-missing` (a guide region whose muscle
+  the entry doesn't tag in main or helps: it counts nowhere),
+  `legacy-default` (the
+  standing rules the plan leaves to Pahlavan's old default, one item per
+  rule, and the lifts without a progression rule: write them at the next
+  check-in, `formats.md`), `rules-invalid` (a rule written in a way
+  Pahlavan can't read: the old default stands until it's fixed),
+  `generator-baseline` (`plan`'s output is an optional baseline; the coach
+  designs the plan), `draft-plan` (the numbers come from the draft
+  `--plan` names, not the plan as written) and `no-plan` (no
+  `plan-data.json` yet: what waits for one). Mention the ones that
+  touch the answer.
+- **The self-check:** `scripts/selfcheck.mjs` runs every line of the block above (placeholders filled with safe values, `--write` dropped, so nothing is written), checks that the fields the next table names are in the output and that each command's flags match `--help`, and holds the docs to the engine's facts (`engine --version --json` gives `facts`: the calibration RIR, the volume tiers, the default light week, the region rules, plan-data's keys and every `unexpressible` kind, read from the engine's own constants); `npm run ship-skill` runs it after each ship, and each failure names what to fix.
 
 ## Which command answers which question
 
@@ -88,11 +135,20 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
 | One lift's target, e1RM and stall | `next --lift "<name>"` | `lift` |
 | Weight pace against the goal | `review` | `weight.rate`, `weight.band` |
 | Sets per muscle, planned and done | `review` | `volume` |
-| Pulling against pushing sets (the posture emphasis's pull:push) | `review` (a draft: `plan`) | `volume.pullPush` (`proposal.volume[].pullPush`) |
+| Pulling against pushing sets (the posture emphasis's pull:push) | `review` (a draft: `review --plan <draft.json>`) | `volume.pullPush` (`proposal.volume[].pullPush`) |
 | Is a deload due, after missed time what now | `review` | `deload`, `deloadPrescription`, `missed` |
-| A new plan and its proposal | `plan` | `program`, `proposal` |
-| How the profile shaped a new plan, the candidates the engine built and compared (`planning.md`, step 1, adds the coach's), the ladders' starting levels | `plan` | `proposal.personalization`, `proposal.templates`, `proposal.ladders`, `proposal.priority` |
-| A new plan's sets per muscle as Pahlavan counts them | `plan --vault .` | `proposal.volume`, `proposal.volumeMap` |
+| The standing rules the numbers follow (the plan's own, or the old default the plan leaves) | `review` | `rules`, `lifts[].progressionRule` |
+| Is a plan, or a draft, inside the guardrails (hard errors stop a write; evidence warnings with their rule and grade; the overrides applied) | `check [--plan <draft.json>]` | `findings`, `summary` |
+| A draft's numbers before it is written (sets per muscle, each session's minutes, the targets): what Pahlavan will show once it is | `review --plan <draft.json>` | `volume`, `time`, `lifts[].next`, `sources.plan` |
+| Write a draft plan, after the user's yes (the check again, the diff) | `plan-write --file <draft.json>` (then `--write`) | `result`, `diff`, `overrides`, `findings`, `written` |
+| The rules a plan is designed from, as data: each rule's number (the engine's own), grade, note and sources, and the `check` warnings that hold a plan to it | `evidence` | `rules[].value`, `.grade`, `.note`, `.sources` |
+| The muscle regions with their grades and the catalogue movements that bias each; the regions the evidence doesn't support, with the nearest supported option | `evidence --topic regions` | `regions.list[].movements`, `regions.unsupported[].nearest` |
+| How a finding is confirmed, and where the answer goes | `evidence --topic findings` | `findings.answers`, `findings.selfCheck`, `findings.emphasis` |
+| The standing rules a plan can declare, and the old default each falls back to | `evidence --topic standing-rules` | `standingRules.kinds[].legacyDefault`, `standingRules.lift` |
+| Movements for a pattern, region, muscle, the equipment at hand or a level (options, never a choice), with their muscles, regions, strain tag, level, easier and harder versions, other names, demand tags and guide text; the ladders | `catalogue --region <region> --equipment <e1,e2>` | `movements[].muscles`, `.regions`, `.abdominalStrain`, `.easier`, `.harder`, `.aliases`, `.risk`, `.guide`, `.fit`, `ladders` |
+| A baseline plan to compare against (optional: the coach designs the plan) | `plan` | `program`, `proposal` |
+| The generator's baseline, as a comparison only (the coach designs the candidates, `planning.md`, step 1): how it read the profile, the templates it built and scored, the ladders' starting levels | `plan` | `proposal.personalization`, `proposal.templates`, `proposal.ladders`, `proposal.priority` |
+| A new plan's sets per muscle as Pahlavan counts them | `plan --vault .` | `proposal.volume[].perWeekVault`, `proposal.volumeMap` |
 | The plan as `plan-data.json` | `plan --format plan-data --vault .` | `planData`, `unexpressible` |
 | Is a coach file well formed (the engine's own kinds; the vault's own files are refused) | `validate <file>` | `kind`, `valid`, `errors` (`vaultFile` for a refused one) |
 | What to ask at the check-in, and what's already known | `checkin template` | `record`, `ask`, `known` |
@@ -119,16 +175,17 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
 
 | Field | What it is |
 |---|---|
-| `week` | `planWeek` (counted from the first logged plan session, as Pahlavan counts; until the current cycle has a plan session, from the cycle start's Monday, so a fresh start is week 1 from its first day), `phase`, `mesocycle`, `weekInMesocycle`, `deload` (every 4th plan week), `deloadNext` |
+| `week` | `planWeek` (counted from the plan's `start` when plan-data has one, the week holding it being week 1, and null before it; else from the first logged plan session, as Pahlavan counts, and until the current cycle has a plan session, from the cycle start's Monday, so a fresh start is week 1 from its first day), `planStart` (week 1's Monday), `phase`, `mesocycle`, `weekInMesocycle`, `mesocycleWeeks` (to its light week; null after the plan's last listed one), `deload` (the plan's light weeks, `rules.lightWeeks`; every 4th plan week by default), `deloadNext` |
 | `thisWeek` | The week's sessions (type, lifts, minutes, rating, skipped items, notes); `lifting` and `short` `{done, target}`, `custom`, `cardioMin`, `trainedTicks` and `proteinTicks` (the habit ticks) |
 | `adherence` | The 4 complete weeks ending on the Sunday on or before the date: per week `lift`, `short`, `custom`, `days`, `habitDays`, `ticksWithoutLog`, `gaps {unlogged, missed, rest}`; `lifting` and `short` `{done, planned, pct}`; `meanSessionsPerWeek`, `meanTrainingDays`. A lower bound: ask about gaps first |
 | `readiness` | This cycle's mornings only (`since`, the cycle start): `baseline` (`mornings` this cycle, `needed` 14, `building` until then, with the note to quote: "Building your baseline: n of 14"), `today` (the date's score), `latestScored` (date, R, S, band, z per signal, flags), `last14` (the last 14 days with a readiness signal), `scoredDays`, `actions` (`trim`, `early-deload`, `no-hard-training`, `no-tests`, each `active` with its note; a stale check-in is named; nothing trims while the baseline builds) |
 | `weight` | `trend` (EWMA from the cycle start, the newest `Baseline - <date>.md`), `rate` (the least-squares slope over 28 days: `kgPerWeek`, `pctPerWeek`, or why not yet), `band` (the rate against the profile goal's band, or the roadmap's -0.25 to -0.5 kg/wk without a profile; `source` says which), `dashboard` (the old dashboard's 7-day trend and rate, for reference only), `protein` (the range by goal with its reason: lifting goals 1.6–2.2 g/kg, health-only or endurance 1.2–1.6, the upper half in a deficit, PROT-AGE's floor at 65+; `value.gPerKg`, `grams`, `targetG`), `proteinFloorG` (the range's floor at the trend weight: the protein item's target and the check-in's protein question), `tape` (this cycle), `last7` (sleep, steps, floors, resting HR: mean, days covered, through) |
-| `lifts[]` | This week's main lifts, then every other lift with a logged top set: `unit`, `increment`, `repRange`, `last` top set, `sessions`; `e1rm` (Epley, best of 3, `change` over 3 sessions, `verdict` up / down / noise, `unitFlag` for a likely kg/lb mix-up with `ignored` older top sets); `stall` (`stalled`, or why not: progressing, an adherence question, too few sessions); `triage` (the four steps, `chosen` the one for this check-in) when stalled; `next` (action, weight, reps, RIR, with the load cap applied); `returnAdjusted` in the first week back after missed time |
-| `volume` | `planned` (this week's plan, each session type weighted by target / types; `overSession` lists more than 8 direct sets for one muscle in a session; `notCounted`), `done` (the week's sessions, an estimate from the plan snapshots minus skipped items), `bands` (planned sets per muscle against the tiers: under 4, 4-10, 10-16, 16-20, over 20; `priority-low` for a priority muscle under 10), `doneTiers`, `pullPush` (the planned week's pulling against pushing sets, counted as `plan` counts them: by movement pattern, or by main muscles for an exercise with none; `pull`, `push`, `ratio`, `target` 2 and `floor` 1.8 under the posture emphasis (null without it), `status` `ok`, `below`, `no-target` or `no-pushing`, `pulling` and `pushing` per exercise; its reason's note says how many sets would reach the floor) |
-| `deload` | `planWeek`, `scheduled`, `weeksToScheduled`, `triggers` (readiness low 5 days with a falling e1RM; stalls on 2+ main lifts), `deload` |
-| `deloadPrescription` | When a deload is this week or next: where Pahlavan's light week (2 sets) and rules.md's deload (half the sets, RIR +3) differ |
-| `missed` | The return protocol: `continue`, `ease-back` (1-2 weeks off: 0.9x and RIR +1 for the first week), `restart` (3+ weeks: mesocycle week 1 with calibration); days off and gap days ticked or marked |
+| `lifts[]` | This week's main lifts, then every other lift with a logged top set: `unit`, `increment`, `repRange`, `last` top set, `sessions`; `e1rm` (Epley, best of 3, `change` over 3 sessions, `verdict` up / down / noise, `unitFlag` for a likely kg/lb mix-up with `ignored` older top sets); `stall` (`stalled`, or why not: progressing, an adherence question, too few sessions); `triage` (the four steps, `chosen` the one for this check-in) when stalled; `next` (action, weight, reps, RIR, with the load cap applied); in a calibration week (plan week 1, or the 7 days from the first session back after 3+ weeks off) `next` is the calibrated target (action `calibrate` at the bottom of the range and RIR 3 or more: the last weight held, or the lighter ease-back one; after a restart only a weight found since coming back, else none), `heldProgression` what progression would have given, and `stall.status` is `calibration` (no stall feeds triage or the deload triggers); the e1RM trend starts at the latest calibration week; `returnAdjusted` in the first week back after 1-2 weeks off, except in plan week 1, where the lighter weight is already in `next`. `progressionRule` is the lift's rule (`lifts[name].progression`, else the old default's double progression); `next`'s note starts with that rule, the plan's or the default. Rule `target` gives action `target` with `targetMet`; under the plan's own rule an increase over the load-jump guide is reported (`loadCap.applied: false`), never capped. A stall the rule answers with a drop gives the lighter `next` and `stallReset` (what progression gave). Under `rules.stall.response: "report"` `triage` is null and `stallFacts` holds the facts for the coach (sleep, readiness, recovery, aches, the weight rate, weeks to the light week and the mesocycle end, the muscle's weekly sets) |
+| `volume` | Every count uses one set of muscle tags: the catalogue's for a movement it knows, the guide's for one it doesn't or with a `muscles.override` reason, on plan-data's 14 groups with a main muscle never also a helper (`muscle-tags-differ` lists guide copies that disagree). `planned` (this week's plan, each session type weighted by target / types; `overSession` lists more than 8 direct sets for one muscle in a session; `notCounted`), `done` (the week's sessions, an estimate from the plan snapshots minus skipped items), `bands` (planned sets per muscle against the tiers: under 4, 4-10, 10-16, 16-20, over 20; `priority-low` for a priority muscle under 10), `doneTiers`, `pullPush` (the planned week's pulling against pushing sets, counted as `plan` counts them: by movement pattern, or by main muscles for an exercise with none; `pull`, `push`, `ratio`, `target` 2 and `floor` 1.8 under the posture emphasis (null without it), `status` `ok`, `below`, `no-target` or `no-pushing`, `pulling` and `pushing` per exercise; its reason's note says how many sets would reach the floor), `regions` (every modelled muscle region, in `formats.md`'s order, each a reason object: `id`, `muscle`, `label`, `grade`, `coverage`, `roughGuide`, `declared` (the profile's `priorityRegions` and the regions of an `emphasis` row not declined), `priority` (its muscle a priority muscle, or the muscle of a declared region); the planned `sets`, `direct` (its muscle main: 1 a set), `indirect` (its muscle helping: half), `hardDirect` and `unknown` (the direct sets by effort); `done` `{sets, direct, indirect}`, the week's; `rule` `declared` (`min` 6, `counted` the direct sets near failure, an unknown effort counted), `coverage` (a priority muscle's coverage region: `min` 4, `counted` the direct sets) or null; `status` `ok`, `short` or `reported` (no rule: a muscle that isn't a priority, the heuristic and rough-guide regions, the upper chest); the reason's note is the target in words). `planned.value.regions` and `done.value.regions` are the tallies under it (left out when nothing biases a region); the muscles' own counts never change with them |
+| `deload` | `planWeek`, `scheduled`, `weeksToScheduled` (null when the plan lists no light week ahead), `signals` (every early signal that fired: readiness low 5 days with a falling e1RM, stalls on 2+ main lifts, poor recovery; and a busy-week move), `triggers` (the signals acted on: all of them under the old default, none unless the plan's `rules.lightWeeks.early` is `"apply"`), `deload`. Under the plan's own light weeks no busy week moves one and no check-in cancels one: the coach edits the plan |
+| `deloadPrescription` | Only under the old default, when a deload is this week or next: where Pahlavan's light week (2 sets) and rules.md's deload (half the sets, RIR +3) differ |
+| `rules` | Each standing rule the review applied (`calibration`, `lightWeeks`, `tests`, `readiness`, `soreness`, `missed`, `stall`, `hotel`, `express`, and `lifts` by name): `source` (`plan`, or `legacy-default` where the plan sets none), `path` (where it's written in plan-data.json), `value`, `text` (the rule in words, as reasons cite it) |
+| `missed` | The return protocol by the plan's `rules.missed` (else the old default): `continue`, `ease-back` (1-2 weeks off by default: the first week `loadFactor` lighter, 0.9x, and `rirAdd` more RIR, +1), `restart` (3+ weeks by default: mesocycle week 1 with a calibration week, or easing back when `rules.calibration.afterRestart` is false); days off and gap days ticked or marked |
 | `nextInRotation` | The next lift and short session type |
 | `concurrent` | The plan week on the user's real week (`concurrent.week`, rule `concurrent.week`: each session on the weekday the cycle's log shows it most often over 2 to 4 complete weeks, else the profile's `availability.fixedDays`, else the fixed layout, lift Mon, Tue, Thu, Fri and short Wed, Sat, Sun; `layout[].source` is `log`, `available` or `default`) and its flags: conditioning before lifting, hard leg intervals under 24 h before heavy legs, the same muscle hard two days running. A muscle trained hard two days running is flagged unless the second day is the lighter one for it; a set at RIR 4 or more is not hard (hard: a main lift or a compound pattern, not a hold). `backToBack` lists every such pair, allowed and flagged: `first`, `second`, `muscle`, `firstLoad` and `secondLoad` (each day's heaviest work for it as the reps its load allows, the bottom of the range plus RIR; null when a prescription is missing), `lighter` (true: allowed, a heavy day followed by its lighter day) and `suggestion`. `plan` checks its draft with the same rule |
 | `temporaryChanges` | `due` (until date on or before the date) and `active`; each with the session, item, reason and `wayBack` (the item a "Replaces" note names) |
@@ -141,6 +198,139 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
 | `skips` | The last 4 weeks' skipped items by exercise with their reasons (`checklist.why`: time, pain, equipment, energy) and `flags`: the same exercise skipped for pain twice (the pain rule's swap), for equipment twice (suggest a swap), time on 2 or more sessions of a week (with `time`'s minutes), energy on a low-readiness day (a note only); pain and equipment are one `skip-pain` and one `skip-equipment` warning. Hotel sessions (`thisWeek` sessions' `hotel`, `lifts[].hotel`) are left out of the e1RM trend, the stall check and `next`; a session logged with every set feeds each lift's best set to the trend and its logged RIR to `next` |
 | `checkins` | What the check-in answers contribute: the file's state, the latest record, `fatigue` (recovery and joint aches), `recoveryTrigger`, `knownBusy`, `cancelledDeloadWeeks`, `trainedAtFullLoad`. Each lift's `triageStart` says where its triage resumed |
 
+## The plan check: `check`, drafts and `plan-write`
+
+The coach designs the plan; the engine calculates and checks it. Three
+commands, in this order for every plan change (`plan-files.md`, step 3), on
+a draft: a whole `plan-data.json` saved as a scratch file outside the vault,
+read in place of the vault's through exactly the same reading.
+
+- **`check [--plan <draft.json>]`**: the plan (or the draft) on the date
+  against the guardrails. `findings`, each `{code, level, message, items,
+  rule, grade, reason, override}`, errors first; `summary` `{errors,
+  warnings, info, overridden, ok}`; the same findings in the envelope's
+  `errors` (the hard ones) and `warnings` (the rest, each with its
+  `level`). Exit 1 on a hard error. With no plan yet and no `--plan`,
+  nothing to check: one `no-plan` note (information), exit 0. **It screens on `--date`** (default
+  today): the Ledger's constraints active that day, the plan's temporary
+  changes as they stand that day. A draft for the weeks after a constraint
+  ends is checked with `--date` in those weeks.
+- **`review --plan <draft.json>`** (and `session --plan`): the draft's
+  numbers, what Pahlavan will show once it is written (sets per muscle and
+  region, each session's minutes, the targets); `sources.plan` is
+  `{file, draft: true}` and a `draft-plan` warning says so. A draft works
+  the same on a vault with no `plan-data.json` yet (a first plan).
+- **`plan-write --file <draft.json>`**: the draft checked as `check
+  --plan` checks it (a hard error refuses it: `result: "refused"`, exit 1),
+  `overrides` (the warnings an override turned into information, with the
+  reason), and `diff`, key by key against `plan-data.json` as it is
+  (`{path, change, before, after}`: `sessions.A["Face Pull"].sr` changed
+  from "3 × 15" to "4 × 15", `lifts["Goblet Squat"]` added, `sessions.B`
+  reordered). `result` `unchanged` writes nothing. With `--write`, after the
+  user's yes: the whole file (the draft's keys in its order, two-space
+  indent) through a temporary file renamed over it, read back.
+
+| Level | What | Codes |
+|---|---|---|
+| `error` | Blocks a write; no override clears it | `ledger-blocked` (a movement an active Ledger constraint rules out, by id or abdominal-strain tag, with swaps), `screening-blocked`, `screening-limit` (the screen's RIR floor, full-body sessions, easy cardio only), `invalid-data` (an item with no name or `sr`, a field of the wrong type, an unknown item or lifts key, a session type the sessions don't hold, a malformed `overrides`), `plan-item-field`, `muscle-tags-duplicate` (a muscle in main and helps of an entry whose tags count), `unknown-ladder`, `rules-invalid`, `lift-entry`, `plan-data`, `until`, `no-lift-entry` (a logged lift with no `lifts` entry), `override-without-reason`, and the plan, profile or Ledger file unreadable (`json`, `profile`, `ledger`) |
+| `warning` | Evidence or the person's own limits; an override with a reason makes it information | `volume-below-minimum` (Moderate), `volume-over-cap` (H), `priority-under` and `priority-over` (the priority muscles, the profile's, declared regions' muscles and confirmed lagging areas, against 10–16, the minimum counting direct sets near failure; Moderate), `priority-room` (more of those priority muscles than the week has room for: 3 with 4 or more lifting days, 2 with 3, 1 with 2 or 30-minute sessions, at the profile's minutes, a priority trained only on the short sessions not counted (direct sets on a lifting day count); the generator's `priority-over-room` counts the same list; H: ask which come first, the rest under Later priorities; at a check-in, raised once), `session-cap` (Weak), `rir-by-type` (H), `rep-range` (Strong), `rep-range-rir` (Moderate), `rest` (Moderate; core, skill and carry work aside), `rest-heavy` (Weak), `pull-push` (H), `no-light-week` (more than 6 loading weeks running; H), `time-over` (the profile's day lengths), `plan-rule` (the profile's `planRules`), `load-jump` (H), `exercise-change` (against the plan as written, with `--plan`, inside a mesocycle, main lifts inside a phase; Weak), `start-changed` (against the plan as written, with `--plan`: the draft drops or moves its `start`, which would restart plan week 1; a reset answers it with an override), `rir-differs` and `timed-differs` (a field its note or `sr` contradicts; RIR compared only when the note names one), `session-unlisted` (a session neither type list names: never shown or counted), `ladder-start` (a ladder item with no level in the log and no `startLevel` on its ladder: counted as the ladder's lowest level; formats.md, "A ladder's starting level"), `region-coverage` (a coverage region of a priority muscle, or of a declared region's muscle, under 4 direct sets a week; H), `region-declared-short` (a declared weak region under 6 direct sets near failure a week; H), each item with up to 5 options: catalogue movements that bias the region and fit the profile's equipment, the Ledger, the dislikes and the findings acting in full (a confirmed limited overhead reach leaves the overhead presses out), best first, "(in the plan)" where more sets would do; `no-why`, `week-override-in-note`, `logged-count`, `no-muscles`, `muscle-tags-differ`, and the adapter's other plan notes |
+| `info` | Read around, or answered | `region-uncoverable` (a region short of its rule that no catalogue movement can cover with the equipment and the Ledger, with what ruled each out: not a failure), `muscle-tags-overridden`, `rir-in-note`, `timed-in-note`, `unknown-exercise`, `snapshot-rebuilt`, `legacy-default`, `ledger-conditions`, `draft-plan`, `override-unused`, and every warning an override answered (with `override`) |
+
+- **What is checked:** the plan's ordinary loading week (not its light or
+  calibration weeks, which derive from it), each session weighted by the
+  weekly target as `review` weighs it, temporary changes as on the date. The
+  log's and the body record's single-record notes stay `review`'s.
+- **Overrides:** the plan's `overrides: [{code, item?, reason,
+  decision?}]` (`formats.md`). One matching a warning's code (and its item,
+  when it names one: a muscle by id or label, "A Face Pull", a session
+  type) turns that warning, or that item, into information carrying the
+  override; the rule and grade stay with it. It never applies to a hard
+  error, an override without a reason is one, and one matching nothing is
+  listed in `override-unused`.
+- Quote a finding's `reason` and grade, never a range from memory.
+
+## The evidence library and the catalogue: `evidence`, `catalogue`
+
+The coach designs the plan from these two and measures each draft with
+`review --plan` and `check --plan` ("The plan check" above). Both only
+read, and neither chooses anything for anyone.
+
+**Ask `evidence` by topic.** The whole library is about 50 KB of JSON,
+read whole only when a design truly needs all of it;
+`--topic volume` (or `effort`, `regions`, `standing-rules`, ...) gives the
+part a question needs (every output's `topics` says what each covers). Quote a rule's `value` with its `grade` and a source; never a range
+from memory.
+
+- **`evidence [--topic T]`**: the rules the coach designs from, as data.
+  `rules[]`, each `{id, topic, title, value, unit, grade, note, sources,
+  engine, checks, libraryOnly}`: `value` is the number the engine computes
+  and checks with (a number, a `[lo, hi]` range, a few named numbers such as
+  RIR by exercise type `{compound, isolation, strength}`, a list, a word, or
+  null for a rule without one), read from the engine's own constant
+  (`engine` names it), so it never differs from what `review` and `check`
+  use; with `libraryOnly` it is the library's own number, which no engine
+  calculation uses (the 80 % of 1RM, the tempo); `grade` is rules.md's
+  scale (`strong`, `moderate`, `weak`, `heuristic`); `sources` are
+  `{label, doi}` or `{label, url}`; `checks` names the `check` warnings
+  that hold a plan to the rule, each carrying this grade. With no
+  topic, or the topic named: `regions` (`list[]`, every modelled region
+  `{id, muscle, label, grade, coverage, roughGuide, aliases, note, sources,
+  movements}`, its `movements[]` the catalogue movements that bias it in
+  `catalogue`'s order, each with its region `credit`, 1 when the region's
+  muscle is a main muscle and 0.5 when it helps, and `longLength`; and
+  `unsupported[]`, `{phrases, nearest, nearestText, why, sources}`),
+  `findings` (the three `answers`, confirmed `true`, declined `false` and
+  unconfirmed left out, with what each does; the self-check tests and the
+  body-assessment kinds that are findings, and where each answer goes) and
+  `standingRules` (each kind a plan declares, `{kind, path, legacyDefault,
+  text}`, and the lift `progression` rules); else null. `topics` and
+  `grades` say what each topic and grade covers. Quote a rule's value with
+  its grade and a source; its rules.md row is the longer story.
+- **`catalogue`**: the movements that fit every filter given. `--pattern`;
+  `--region` (an id or another name, "side delts"; an unsupported one such
+  as "inner chest" searches its nearest option, with an `unsupported-region`
+  warning saying why); `--muscle` (main or helping, by id or label);
+  `--equipment` (only movements needing nothing else, in the profile's
+  words, comma-separated; a tool that stands in for the defining one, a
+  kettlebell for a goblet squat's dumbbell, counts); `--query` (words in its
+  name, other names, pattern, muscles or regions). `--level` (or the
+  profile's `novice`) orders but removes nothing: a harder movement is
+  marked. All 244 movements, the starter set and the exercise library
+  (`docs/exercise-library.md` in the repository). `movements[]`:
+  `{id, name, pattern, equipment, muscles {main, helps}, regions,
+  longLength, abdominalStrain, level, load, unilateral, easier, harder,
+  aliases, alsoWith, risk, uses, hotel, guide, fit}`: `alsoWith` the tools
+  that stand in for the first of `equipment`; `risk` what it asks of the
+  body (`joint:` and `demand:` tags, `vocabulary.risk` saying what each
+  means: facts to weigh with the person, never a diagnosis, and nothing
+  screens on them); `uses` its roles (`warm-up`, `cool-down`, `posture`,
+  `balance`, `desk-break`); `hotel` whether it fits a hotel room; `guide`
+  `{setup, do, avoid}`, its guide text; `fit` saying why it sits where it
+  does (`query` `exact`, `name` or `other`; `role` `main` or `helps`;
+  `longLength`; `aboveLevel`). The order is for display only (`order` says so): exact text
+  matches, the muscle as main before helping, the versions that load a
+  two-joint muscle long (the seated leg curl before the lying one, overhead
+  triceps extensions before pushdowns, standing calf raises before seated
+  ones for the calves), at or under the level, the most targeted, then
+  catalogue order. `check`'s region options come in the same order.
+  `ladders[]`: each ladder with a level among the results (all with no
+  filter), each level with the catalogue movement it counts as: the four
+  the self-check starts (`source` `engine`), the catalogue's 20 chains of
+  movements along their harder links (`source` `catalogue`, not logged by
+  level), and with `--vault .` the plan's own (`source` `plan`).
+  `vocabulary`: the patterns, equipment ids and words, levels, muscles and
+  regions the filters take, and the meanings of the `risk` tags and the
+  `uses`. An unknown pattern, region, muscle or level is exit 2 naming
+  the known ones; an unknown equipment word is left out with an
+  `unknown-equipment` warning; no match is a `no-match` warning.
+- **`catalogue --md`** adds `markdown`: the readable page (by pattern: each movement's muscles, regions, tools, level, easier and harder, setup, do and avoid; then the ladders and what each demand means), the whole catalogue with no filter, else the movements found. It's for the user: Pahlavan's command **Write the exercise catalogue** writes the same page into their fitness folder, so point them there rather than pasting it.
+- **A movement outside the catalogue** counts like one in it once its
+  guide entry gives `muscles` (and `regions` for the parts of a muscle it
+  biases): sets per muscle and per region, the region rules, pull to push.
+  `check` notes it as `unknown-exercise` (information: it has no
+  abdominal-strain tag, so the Ledger screens it by name only) and warns
+  only when its entry gives no muscles (`no-muscles`).
+
 ## `readiness`, `next`, `plan`, `validate`
 
 - **`session --freeze`** (with `--type`, `--date`, `--lift1`/`--lift2` for a swap's lift done, and `--skip "<line>,<line>"` for items not done): the exercise list and the checklist Pahlavan's Log panel would freeze into that day's log entry (`freeze.value.exercises`, `{name, sets}`; `freeze.value.checklist`, `{done, total, skipped}`), read-only. `log add` writes both into the entry itself; a custom session has none (exit 2). A paired line is named "A + B", a ladder line by its plan item name.
@@ -151,7 +341,15 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   `adjustments`: titled reasons for the temporary change, the Ledger,
   soreness, readiness, progression and the load cap, a unit check, the
   return after time off), `finisher`, `flags` (readiness, deload,
-  calibration, missed time) and `plannedLoad` (heuristic). `--mode express`:
+  calibration, missed time) and `plannedLoad` (heuristic). A timed item
+  (cardio, intervals) has `timed`: its structure (`minutes`, its whole
+  length, and for intervals `rounds`, `workMin`, `restMin`, `warmupMin`,
+  `cooldownMin`) and `text`, the dose in words ("4 × 4 min hard, 3 min easy
+  between · about 25 min"); its `sets` are its rounds, 1 for steady minutes,
+  never minutes halved (the log's own count, `--freeze`'s `sets`, stays a
+  set per 2 minutes). In a calibration week an interval item is easy steady
+  minutes, the same total, with a `plan.calibration.cardio` adjustment and
+  its line as the `cue`. Quote `timed.text` for the dose. `--mode express`:
   the plan's Express block; `--mode hotel`: bodyweight, light dumbbells and
   bands, each swap with its reason, a third of the sets on a trip of a week
   or more (a check-in's `knownBusy` travel). `--type T` picks another of the
@@ -174,7 +372,9 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   `usage`), listing the known lifts. A lift with no logged top sets that
   is not in this week's plan comes with a `lift-not-in-plan` warning (its
   numbers are empty, not zero), naming this week's lifts in `items`.
-- **`plan`**: needs `Coach/profile.json`. `program` (schema v1: phases,
+- **`plan`**: an optional baseline (the coach designs the plan,
+  `planning.md`); its output carries a `generator-baseline` note. Needs
+  `Coach/profile.json`. `program` (schema v1: phases,
   mesocycles, weeks, sessions, slots with sets, rep range, RIR, progression,
   and `pair` on a superset's second slot) and `proposal` (`why`, `template`,
   `week` and the minimum week, `phases` with dates, `sessions` (a lifting
@@ -182,6 +382,13 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   mesocycle (with its `pullPush`, `{pull, push}`), `progression`, `calibration`, `conditioning`, `calendar`, `targets`,
   `preMortem`, `warmUp`, `checks` with each failed check's detail). With
   `--history --vault .` the log sizes the week, only if the profile opted in.
+  `--start D` starts the program on the Monday of the week holding D, and
+  `--format plan-data` then writes that Monday as plan-data's `start`
+  (`formats.md`, "The plan's start"); without `--start`, an export over the
+  plan as written (`--vault .`) carries its `start`, and one with no plan to
+  export over has none.
+  With `--vault .` on a vault with no plan yet, the export is a fresh one
+  (exit 0, a `no-plan` warning: nothing carried over).
   The proposal also has:
   - `personalization`: one entry per profile input (`input` such as
     `selfCheck.pullUps`, `goals.<id>`, `emphasis.<kind>`, `ledger.<id>`;
@@ -212,10 +419,23 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
     session slot on a ladder carries `ladder` (`id`, `level`, `name`).
   - `priority`: each priority muscle with its `source` (`profile`,
     `lagging-area`, `goal`, `posture`) and `reason`.
-  - `volumeMap`: `source` (`vault` with `--vault .`, else `catalogue`),
-    `fromVault` (each movement and the guide entry its muscles came from)
-    and `fromCatalogue`. With `vault`, `volume` is counted as `engine
-    review` will count the written plan.
+  - `volumeMap`: `source` (always `catalogue`: the catalogue's muscle tags;
+    `--format plan-data` gives just that word as `proposal.volumeMap`) and
+    `overrides` (with `--vault .`, each catalogue movement whose guide entry
+    of the same name keeps its own tags: `exercise`, `guide`, `reason`; an
+    override on another key counts only for items named by it). With
+    `--vault .` the plan is fitted and checked on plan-data's 14 groups (a
+    main muscle never also a helper), as `engine review` will count the
+    written plan, and each `volume` row's `perWeekVault` names that count
+    (the same as its `perWeek`); without it, `perWeek` is the engine's own
+    count (the adductors among its muscles).
+  - Each program exercise's `muscles` carries `regions` (the muscle regions
+    it biases, from the catalogue; left out when none), and `--format
+    plan-data` writes the same into each guide entry's `muscles.regions`.
+    Each `volume` row's `regions` is the week's region sets by the region
+    credit (as `review` counts them; left out when nothing biases a
+    region): reported only, since the generator doesn't plan by region, and
+    the sets per muscle are unchanged.
   - `preMortem` entries carry `from`, the profile input each came from.
   `--format plan-data` returns `planData` (plan-data.json's keys in its order,
   with the current file's warm-ups, ladders and guide text carried over by
@@ -223,12 +443,22 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   and a superset's second item with `pair: true`, both resting "90 s after
   each pair" with "Superset with X: a set of each, then rest." in their
   notes; a generated plan's `phases` names and its length in `weeks`,
-  and its desk breaks as `deskRoutine` and `deskTiming`: the generator's
+  each ladder a slot starts at a level with that level as its
+  `startLevel`, and its desk breaks as `deskRoutine` and `deskTiming`: the generator's
   default timing is every 90 minutes, 10:00 to 15:00, whatever the
   user's working hours, so the plan job fits it, `planning.md`) and
-  `unexpressible` (what plan-data can't hold: later phases, RIR in notes,
-  the deload shape, the calibration week, new guide text, the desk breaks'
-  reasons).
+  `unexpressible` (`{what, detail}`: what plan-data can't hold for this
+  plan, such as the `later weeks`, new `guide text`, the items without a
+  "Why:" line (`why lines`), `swaps`, the `ladder levels` to set in the log;
+  `engine --version --json`'s `facts.unexpressible` lists every `what`).
+  With `--vault .` the export is made over the plan as written: a movement
+  the plan's `lifts`, the log or the guide already names keeps that name
+  (its history is matched by name) with its sheet and short names; a
+  logged lift keeps it even when its guide entry has an override, whose tags
+  then count (`muscle override` says so). An item unchanged in its session
+  (the same movement, sets and reps) keeps its "Why:" line; the form cues and
+  temporary changes of the notes as written that the export leaves out are
+  listed (`note cues`, `temporary changes`).
 - **`validate`**: the engine's own files (the `--kind` list above): `kind`
   (inferred unless `--kind`), `valid`, `errors`. The vault's own files are
   refused, not judged: `plan-data.json`, the log (`fitness-log-data.json`),
@@ -238,7 +468,13 @@ node .claude/skills/fitness-coach/scripts/engine.cjs folders   --vault . --json
   `review --vault .`, whose warnings say what it can't use; the body log:
   `body`). `--kind body` is the engine's own body schema, not the body
   record file `engine body` takes: check a record with a `body` dry run. `Coach/help.json` is Pahlavan's and has no kind (exit 1, "pass
-  --kind"): leave it.
+  --kind"): leave it. A valid profile or program can still carry warnings:
+  `unknown-region` (a `priorityRegions`, emphasis-row or exercise `regions`
+  value that isn't a region id; an alias such as "side delts" names the id
+  to use), `unsupported-region` (a region the evidence doesn't support,
+  such as "inner chest", with the nearest supported option and why) and,
+  for a program, `region-parent-missing` (an exercise's region whose muscle
+  it doesn't tag in main or helps).
 - **`checkin template`**: the check-in reviewing the week that ends on the
   Sunday on or before the date. `record` (the skeleton, or the saved record
   when `existing`), `ask` (the questions, each with `open`, `fields`,
@@ -440,47 +676,9 @@ see why an entry was refused.
 
 ## Not in the engine yet: snippets
 
-Run from the vault root as `python3 - <<'EOF' … EOF`. They only read.
-
-### Planned sets for a plan change that isn't written yet
-
-The engine reads the written `plan-data.json`, and `plan`'s proposal has its
-own `volume` (on the vault's map with `--vault .`). For a change not
-written yet (a swap, the next month, a hand edit of the draft), save the proposed
-`plan-data.json` as a scratch copy (never over the real file) and point
-`PLAN` at it: it counts as `engine review` does.
-
-```python
-import json, re
-from pathlib import Path
-PLAN = Path("/tmp/plan-data.proposed.json")      # the scratch copy
-plan = json.loads(PLAN.read_text())
-FIT = Path("Fitness")                              # the fitness folder: `engine.cjs folders` prints it
-log = json.loads((FIT / "fitness-log-data.json").read_text())
-G, lad = plan["guide"], {l["id"]: l for l in plan["ladders"]}
-def muscles(n):
-    return (G.get(n) or {}).get("muscles") or {}
-def name(it):
-    h = log.get("ladders", {}).get(it.get("ladder"), [])
-    return lad[it["ladder"]]["levels"][h[-1]["level"] - 1]["name"] if it.get("ladder") and h else it["name"]
-sets = lambda sr: int(m.group(1)) if (m := re.match(r"\s*(\d+)\s*×", sr)) else 0
-tot, over = {}, []
-for kind, types in (("lift", plan["liftTypes"]), ("short", plan["shortTypes"])):
-    for t in types:
-        direct = {}
-        for it in plan["sessions"][t]:
-            m, n, k = muscles(name(it)), sets(it["sr"]), plan["weekTarget"][kind] / len(types)
-            for g in m.get("main", []):
-                tot[g] = tot.get(g, 0) + n * k
-                direct[g] = direct.get(g, 0) + n
-            for g in m.get("helps", []):
-                tot[g] = tot.get(g, 0) + 0.5 * n * k
-        over += [f"{t} {g} {v}" for g, v in direct.items() if v > 8]
-tier = lambda v: "under 4" if v < 4 else "4-10" if v <= 10 else "10-16" if v <= 16 else "16-20" if v <= 20 else "over 20"
-for g in plan["muscles"]:
-    print(f"{g:<13} {tot.get(g, 0):>6.1f}  {tier(tot.get(g, 0))}")
-print("more than 8 direct sets in a session:", ", ".join(over) or "none")
-```
+Run from the vault root as `python3 - <<'EOF' … EOF`. It only reads. A
+draft plan's sets per muscle come from `review --plan <draft.json>` ("The
+plan check" above), never from a snippet.
 
 ### Energy and protein
 

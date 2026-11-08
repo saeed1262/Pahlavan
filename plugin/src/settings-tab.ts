@@ -42,6 +42,12 @@ export interface SettingsHost {
 
 const SNOOZE_LABEL = (m: number) => (m < 60 ? `${m} minutes` : m === 60 ? '1 hour' : `${m / 60} hours`);
 
+/** "8 Nov 2026" from "2026-11-08". */
+function betaDay(d: string): string {
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${Number(d.slice(8, 10))} ${MONTHS[Number(d.slice(5, 7)) - 1] ?? ''} ${d.slice(0, 4)}`;
+}
+
 export class PahlavanSettingTab extends PluginSettingTab {
   private readonly host: SettingsHost;
 
@@ -64,6 +70,8 @@ export class PahlavanSettingTab extends PluginSettingTab {
     el.append(h('div', { class: 'pv-st-help' },
       h('span', {}, 'New to Pahlavan? ', host.openGuide ? h('a', { href: '#', onclick: (ev: Event) => { ev.preventDefault(); host.openGuide!(); } }, 'Read the user guide') : h('b', {}, 'Read the user guide'), '.'),
       host.resetTips ? h('button', { class: 'mod-cta-quiet pv-st-tips', onclick: () => host.resetTips!() }, 'Show the first-run tips again') : null));
+    // The beta's promise, with the date that keeps it: free now, and free after 1.0 for everyone who installed before it.
+    if (host.data.installedOn) el.append(h('p', { class: 'pv-st-beta' }, h('b', {}, `Beta user since ${betaDay(host.data.installedOn)}.`), ' Pahlavan is free during the beta. 1.0 will be paid, and everyone who installs before 1.0 keeps it free, so you do.'));
     el.append(h('div', { class: 'pv-st-callout' }, icon('info'), h('div', {},
       h('b', {}, 'Set where it lives.'), ' What you track and each item’s reminder: ', link('Progress, Habits', 'progress', 'habits'),
       '. The morning check-in’s time: its card on ', link('Check-in', 'checkin'),

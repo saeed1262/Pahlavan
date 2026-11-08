@@ -16,6 +16,20 @@
 // 4. Every vault path the skill names exists, and every /command.
 // 5. scripts/VERSION, the engine's --help header and (when the checkout
 //    exists) the repo's src/core/version.ts agree.
+// 6. The docs agree with the engine's facts (`engine --version --json`'s
+//    `facts`, read from the constants it computes with): every calibration
+//    RIR, volume tier, light-week default and region number the docs quote;
+//    no "no field" claim names a field the engine has; every `unexpressible`
+//    kind named exists; no Python block but the allowlisted snippets (the
+//    engine replaces the rest); and no engine output names a vault-only
+//    script (fitness_log.py, gen-fitness-plan).
+//
+// A vault with no plan yet (a fresh vault after the intake) is expected: the
+// commands answer with a no-plan warning, the draft runs (check --plan,
+// review --plan, plan-write --file) read a fresh `plan --format plan-data`
+// export, and what needs the plan's own sessions, lifts or ladders (log fix,
+// log ladder, next, session --type or --freeze) must give its documented
+// exit 1 with a no-plan error.
 //
 // Read only: the engine never gets --write, scratch files go to os.tmpdir(),
 // and the files the engine can write are hashed before and after the runs.
@@ -70,6 +84,12 @@ if (!LAYOUT) usage(`the engine could not read the folders of ${VAULT}: run from 
 const FITNESS = join(VAULT, LAYOUT.fitness);
 const COACH = join(VAULT, LAYOUT.coach);
 if (!existsSync(FITNESS)) usage(`${VAULT} has no fitness folder (${LAYOUT.fitness}): run from the vault root or pass --vault`);
+// No plan yet (a fresh vault after the intake): expected, not a failure. The
+// commands answer with a no-plan warning; the draft commands run on a fresh
+// export of the profile; what needs the plan's own sessions, lifts or ladders
+// is held to its documented no-plan error.
+const FRESH = !existsSync(join(VAULT, LAYOUT.plan));
+const FRESH_NOTE = 'no plan yet (a fresh vault)';
 
 const read = (p) => readFileSync(p, 'utf8');
 const readJson = (p) => {
@@ -101,6 +121,7 @@ const CHECKS = {
   3: 'job sections',
   4: 'paths and /commands',
   5: 'version',
+  6: 'docs vs engine facts',
 };
 const results = [];
 const record = (check, status, what, reason) => results.push({ check, status, what, reason });
@@ -373,7 +394,7 @@ function parseHelp(text) {
 // ---------- the vault's facts, for safe values ----------
 
 async function vaultContext() {
-  const plan = readJson(join(FITNESS, 'plan-data.json')) ?? {};
+  const plan = readJson(join(VAULT, LAYOUT.plan)) ?? {};
   const liftTypes = plan.liftTypes ?? [];
   const types = [...liftTypes, ...(plan.shortTypes ?? [])];
   let lift = null;
@@ -396,6 +417,7 @@ async function vaultContext() {
   const dayItems = (day.json?.items ?? []).map((i) => i.value ?? i);
   const ctx = {
     types,
+    draftTypes: [],
     lift,
     loggedOf: (type) => (plan.sessions?.[type] ?? []).filter((x) => x.logged).map((x) => x.name),
     items: items.map((i) => i.id),
@@ -436,6 +458,16 @@ async function vaultContext() {
     from: 'selfcheck',
   });
   ctx.files.changes = write('changes.json', { morning: { at: ctx.morningAt }, bodyRecord: { schedule: 'plan' } });
+  // The vault's own plan as a draft (check --plan, review --plan, plan-write): unchanged, so plan-write finds nothing to write.
+  // A fresh vault's draft is the generator's export over it, as a first plan's drafts start (planning.md).
+  if (!FRESH) ctx.files.draft = readJson(join(VAULT, LAYOUT.plan)) ? write('draft.json', plan) : null; // an unreadable plan-data.json has no draft to stand for it
+  else if (existsSync(join(VAULT, LAYOUT.profile))) {
+    const exported = await engine(['plan', '--json', '--profile', LAYOUT.profile, '--format', 'plan-data', '--vault', '.']);
+    const draft = exported.code === 0 ? exported.json?.planData : null;
+    ctx.files.draft = draft ? write('draft.json', draft) : null;
+    ctx.draftTypes = draft ? [...(draft.liftTypes ?? []), ...(draft.shortTypes ?? [])] : [];
+    record(1, draft ? 'pass' : 'fail', 'engine.cjs plan --format plan-data --vault . (no plan yet)', draft ? 'exit 0, a fresh export: the draft the plan-check runs read' : `exit ${exported.code}: ${firstError(exported)}`);
+  } else ctx.files.draft = null;
   return ctx;
 }
 
@@ -467,11 +499,23 @@ class Unfillable extends Error {}
 // The values that stand in for a placeholder; more than one gives one run each.
 function fill(pair, where, ctx) {
   const { flag, value } = pair;
+  // The plan check and plan-write exit 1 on the plan's own hard errors (judge passes those, naming them).
+  if ((where.key === 'check' || where.key === 'plan-write') && !where.expect) where.expect = { code: 0, findings: true };
   if (value === undefined) return [[flag]];
   // log fix's --lift picks its lift below (the expectation follows that lift).
   if (isEnum(value) && !(where.key === 'log fix' && flag === '--lift')) return [[flag, value.split('|')[0]]];
   const placeholder = /^<.*>$/.test(value) || /^(?:[A-Z]|N|D|T|HH:MM|YYYY-MM-DD)$/.test(value);
-  if (where.key === 'log fix') {
+  // No plan yet: what needs the plan's sessions, lifts or ladders gives the documented no-plan error (argvs sets the expectation).
+  if (where.noPlan) {
+    if (flag === '--date' || flag === '--start') return [[flag, TODAY]];
+    if (flag === '--type') return [[flag, 'A']];
+    if (flag === '--label' || flag === '--lift1' || flag === '--lift2' || flag === '--skip') return [[]];
+    if (flag === '--lift') return [[flag, where.key === 'log fix' ? value.split('|')[0] : 'Selfcheck probe lift']];
+    if (flag === '--id') return [[flag, 'selfcheck-probe']];
+    if (flag === '--level') return [[flag, '1']];
+    if (flag === '--weight' || flag === '--reps') return [[flag, '0']];
+  }
+  if (where.key === 'log fix' && !where.noPlan) {
     const t = ctx.fix;
     if (!t) throw new Skip('no logged session with a logged lift');
     // Nothing to change: the documented exit 1.
@@ -497,8 +541,12 @@ function fill(pair, where, ctx) {
     if (!ctx.ladder) throw new Skip('plan-data.json has no ladder');
     return [[flag, ctx.ladder]];
   }
-  if (flag === '--level') return [[flag, '1']];
-  if (flag === '--type') return [[flag, ctx.types.includes(value) ? value : (ctx.types[0] ?? 'A')]];
+  if (flag === '--level' && where.key === 'log ladder') return [[flag, '1']];
+  if (flag === '--type') {
+    // A fresh vault: a draft's session with --plan.
+    const types = FRESH && where.flags.has('--plan') ? ctx.draftTypes : ctx.types;
+    return [[flag, types.includes(value) ? value : (types[0] ?? 'A')]];
+  }
   if (!placeholder) return [[flag, value]];
   switch (flag) {
     case '--date':
@@ -542,14 +590,29 @@ function fill(pair, where, ctx) {
       }
       break;
     }
+    case '--plan': {
+      if (!ctx.files.draft) throw new Skip(FRESH ? `${FRESH_NOTE}, and no profile to export a draft from` : 'plan-data.json is not valid JSON: no draft to read');
+      return [[flag, ctx.files.draft]];
+    }
     case '--file': {
-      const file = { 'checkin add': 'answers', body: 'record', eating: 'plan', 'log add': 'session', 'track suggest': 'items', 'track add': 'items', 'track decline': 'items', 'track apply': 'changes' }[
+      const file = { 'checkin add': 'answers', body: 'record', eating: 'plan', 'log add': 'session', 'track suggest': 'items', 'track add': 'items', 'track decline': 'items', 'track apply': 'changes', 'plan-write': 'draft' }[
         where.key
       ];
       if (file && ctx.files[file]) return [[flag, ctx.files[file]]];
       if (file) throw new Skip(`no example ${file} file`);
       break;
     }
+    // catalogue's filters: values that meet in the catalogue (the seated, lying and slider leg curls), so every form finds movements.
+    case '--pattern':
+      return [[flag, 'hinge']];
+    case '--region':
+      return [[flag, 'hamstrings-knee']];
+    case '--muscle':
+      return [[flag, 'hamstrings']];
+    case '--equipment':
+      return [[flag, 'machine,band']];
+    case '--query':
+      return [[flag, 'leg curl']];
     case '--profile':
       return [[flag, LAYOUT.profile]];
     case '--ledger':
@@ -579,6 +642,16 @@ function forms(cmd, exclusive) {
 // Every argv a form gives (a placeholder with alternatives multiplies it).
 function argvs(cmd, pairs, ctx) {
   const where = { key: cmdKey(cmd), sub: cmd.words[1], flags: new Set(pairs.map((p) => p.flag)) };
+  // No plan yet (and no draft in its place): the commands that need the plan's own sessions, lifts or ladders exit 1 with no-plan (numbers.md, "No plan yet").
+  const needsPlan =
+    where.key === 'log fix' ||
+    where.key === 'log ladder' ||
+    where.key === 'next' ||
+    (where.key === 'session' && !where.flags.has('--plan') && (where.flags.has('--type') || where.flags.has('--freeze')));
+  if (FRESH && needsPlan) {
+    where.noPlan = true;
+    where.expect = { code: 1, error: 'no-plan', why: `${FRESH_NOTE}: ${where.key} needs the plan` };
+  }
   let out = [[...cmd.words, ...cmd.positional]];
   for (const p of pairs) {
     const alts = fill(p, where, ctx);
@@ -591,6 +664,9 @@ function judge(r, expect = { code: 0 }) {
   if (!r.json || typeof r.json !== 'object') return ['fail', `no JSON on stdout (exit ${r.code}): ${firstError(r)}`];
   if (r.json.written === true) return ['fail', 'it wrote without --write'];
   if (r.json.dryRun === false) return ['fail', 'not a dry run without --write'];
+  // The plan check exits 1 on the plan's hard errors: the command works, the plan needs them fixed.
+  const hard = expect.findings && r.code === 1 && Array.isArray(r.json.findings) ? [...new Set(r.json.findings.filter((x) => x.level === 'error').map((x) => x.code))] : [];
+  if (hard.length) return ['pass', `exit 1 on the plan's hard errors (${hard.join(', ')}): the check works, the plan needs them fixed`];
   if (r.code !== expect.code) return ['fail', `exit ${r.code}, expected ${expect.code}: ${firstError(r)}`];
   if (expect.code === 0 && r.json.ok !== true) return ['fail', `exit 0 but ok is ${r.json.ok}: ${firstError(r)}`];
   if (expect.error && !(r.json.errors ?? []).some((e) => e.code === expect.error)) return ['fail', `exit ${r.code} without the ${expect.error} error: ${firstError(r)}`];
@@ -627,6 +703,7 @@ function writeTargets() {
     join(COACH, 'nudges.json'),
     join(FITNESS, 'body-data.json'),
     join(FITNESS, 'fitness-log-data.json'),
+    join(FITNESS, 'plan-data.json'),
     join(VAULT, LAYOUT.habits),
   ];
   const walk = (d) => {
@@ -797,6 +874,8 @@ async function checkCommands(help) {
         const [status, reason] = judge(r, built.expect);
         if (status !== 'pass') return record(1, status, `table "${question.slice(0, 50)}": engine.cjs ${short(argv.join(' '))}`, reason);
         if (!fields.length) return record(1, 'pass', `table: ${first}`, 'runs (no fields named)');
+        // A documented error (no plan yet, say): its fields come with what it waits for.
+        if (built.expect && built.expect.code !== 0) return record(1, 'pass', `table: ${first}`, `${reason}; ${fields.join(', ')} wait for it`);
         const missing = [];
         const notes = [];
         for (const f of fields) {
@@ -1121,6 +1200,301 @@ function checkVersion(helpText) {
   else record(5, 'pass', 'scripts/VERSION vs the repo', `${rv} in ${versionTs.replace(homedir(), '~')}`);
 }
 
+// ---------- check 6: the docs against the engine's facts ----------
+
+// The skill's own text: SKILL.md and every reference file.
+function skillDocs() {
+  const files = [['SKILL.md', join(SKILL, 'SKILL.md')]];
+  for (const f of readdirSync(REFS).filter((x) => x.endsWith('.md')).sort()) files.push([`references/${f}`, join(REFS, f)]);
+  return files.map(([name, path]) => ({ name, text: read(path) }));
+}
+
+// Prose as sentences: fenced blocks dropped, each paragraph, list item and
+// table row joined onto one line, then split at sentence ends. Each sentence
+// keeps the heading it sits under and maps a place in it back to its line.
+function sentences(text) {
+  const out = [];
+  let block = [];
+  let heading = '';
+  const flush = () => {
+    if (!block.length) return;
+    let joined = '';
+    const starts = [];
+    for (const b of block) {
+      if (joined) joined += ' ';
+      starts.push([joined.length, b.line]);
+      joined += b.text.replace(/\s+/g, ' ');
+    }
+    const lineAt = (off) => starts.reduce((l, [o, ln]) => (o <= off ? ln : l), starts[0][1]);
+    let from = 0;
+    const parts = [];
+    for (const m of joined.matchAll(/(?<=[.!?](?:\*\*)?)\s+(?=[A-Z*`"(])/g)) {
+      parts.push([from, joined.slice(from, m.index)]);
+      from = m.index + m[0].length;
+    }
+    parts.push([from, joined.slice(from)]);
+    for (const [off, part] of parts) if (part.trim()) out.push({ line: lineAt(off), text: part, heading, lineOf: (i) => lineAt(off + i) });
+    block = [];
+  };
+  prose(text)
+    .split('\n')
+    .forEach((line, i) => {
+      const t = line.trim();
+      const opens = !t || /^(#{1,6}\s|[-*]\s|\d+\.\s|\|)/.test(t);
+      if (opens) flush();
+      if (/^#{1,6}\s/.test(t)) heading = t.replace(/^#+\s+/, '');
+      if (t) {
+        block.push({ line: i + 1, text: t });
+        if (t.startsWith('|') || t.startsWith('#')) flush();
+      }
+    });
+  flush();
+  return out;
+}
+
+// A range of whole numbers, not a decimal, a "12–18+" or one counting minutes, reps, weeks or a load.
+const RANGE = /(?<![\d.])\b(\d+)\s*(?:–|-|to)\s*(\d+)\b(?![.\d+])(?!\s*(?:%|min\b|reps?\b|s\b|weeks?\b|kg\b|lb\b|direct sets))/g;
+const inRange = (n, lo, hi) => n >= lo && n <= hi;
+// Every match of the patterns in a sentence: its value and where it is.
+const hits = (text, res, value) => res.flatMap((re) => [...text.matchAll(re)].map((m) => ({ got: value(m), at: m.index })));
+const ranges = (text, keep) => hits(text, [RANGE], (m) => [Number(m[1]), Number(m[2])]).filter((h) => keep(...h.got));
+
+// The doc rules: each finds the numbers a sentence quotes for one fact (`when`
+// sees the sentence and the heading above it).
+function numberRules(facts) {
+  const v = facts.volume;
+  const lw = facts.lightWeeks;
+  const lighter = Math.round((1 - lw.load) * 100);
+  const notBias = (t) => !/\bbias\b|calibration set|rirCalibration/i.test(t);
+  return [
+    {
+      what: 'the calibration RIR',
+      want: facts.calibration.rir,
+      when: (s) => (/calibrat/i.test(s.text) || /calibrat/i.test(s.heading)) && notBias(s.text),
+      find: (t) => hits(t, [/\b(\d+) reps? in reserve/g, /(?<![+\d])\bRIR (?:≥ ?|of )?(\d+)\b(?!\s*[–-])/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the priority tier',
+      want: v.priority,
+      when: (s) => /priorit/i.test(s.text),
+      find: (t) => ranges(t, (lo, hi) => inRange(lo, 8, 12) && inRange(hi, 12, 20) && !(lo === v.efficient[1] && hi === v.efficient[1])),
+    },
+    {
+      what: 'the efficient tier',
+      want: v.efficient,
+      when: (s) => /\b(?:the rest|efficient)\b/i.test(s.text) && /\bsets?\b|tier/i.test(s.text),
+      find: (t) => ranges(t, (lo, hi) => inRange(lo, 4, 6) && inRange(hi, 8, 12)),
+    },
+    {
+      what: 'the cap',
+      want: v.cap,
+      when: (s) => /\b(?:cap|over|above)\b/i.test(s.text),
+      find: (t) => ranges(t, (lo, hi) => inRange(lo, 18, 22) && inRange(hi, 22, 28)),
+    },
+    {
+      what: 'the minimum dose',
+      want: v.minimum,
+      when: () => true,
+      find: (t) => hits(t, [/\b(?:none|never|no muscle)\s+under\s+(\d+)\b(?![.\d–-])/gi], (m) => Number(m[1])),
+    },
+    {
+      what: 'the tier edges',
+      want: [v.minimum, v.minimum, v.efficient[1], v.efficient[1], v.priority[1], v.priority[1], v.cap[0], v.cap[0]],
+      when: () => true,
+      find: (t) => hits(t, [/under (\d+), (\d+)-(\d+), (\d+)-(\d+), (\d+)-(\d+), over (\d+)/g], (m) => m.slice(1).map(Number)),
+    },
+    {
+      what: 'the per-session cap',
+      want: v.perSessionDirect,
+      when: (s) => /session/i.test(s.text),
+      find: (t) => hits(t, [/(?:at most|≤|more than|past about|about)\s*(?:\d+\s*[–-]\s*)?(\d+)\s+direct sets/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the default light week\'s sets',
+      want: lw.sets,
+      when: () => true,
+      find: (t) => hits(t, [/\b(\d+) sets of everything/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the default light week\'s load',
+      want: lighter,
+      when: (s) => /light[- ]?weeks?|deload|sets of everything/i.test(s.text) || /light week|deload/i.test(s.heading),
+      find: (t) => hits(t, [/about (\d+) ?% lighter/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the default light-week timing',
+      want: lw.every,
+      when: (s) => /default/i.test(s.text) && (/light[- ]?weeks?|deload|lighter|sets of everything/i.test(s.text) || /light week|deload/i.test(s.heading)),
+      find: (t) => hits(t, [/every (\d+)(?:st|nd|rd|th) (?:plan )?weeks?/gi], (m) => Number(m[1])),
+    },
+    {
+      what: 'the light week\'s added RIR',
+      want: lw.rirAdd,
+      when: (s) => /light week|deload|half the sets/i.test(s.text),
+      find: (t) => hits(t, [/RIR \+(\d+)/g, /target \+ (\d+)/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the region coverage rule',
+      want: facts.regions.coverage,
+      when: (s) => /region|coverage/i.test(s.text),
+      find: (t) => hits(t, [/at least (\d+) direct sets a week/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'a declared region\'s sets',
+      want: facts.regions.declared,
+      when: (s) => /region|declared/i.test(s.text),
+      find: (t) => hits(t, [/\b(\d+) direct sets near failure/g], (m) => Number(m[1])),
+    },
+  ];
+}
+
+// The JSON examples' numbers, in an example the prose above it calls the
+// default (the standing rules' example is the old default; an example of a
+// coach's own rule may hold any valid value).
+function jsonRules(facts) {
+  const lw = facts.lightWeeks;
+  return [
+    { what: 'the calibration RIR (JSON)', re: /"calibration":\s*\{[^}]*?"rir":\s*(\d+(?:\.\d+)?)/g, want: facts.calibration.rir },
+    { what: 'the light week\'s timing (JSON)', re: /"lightWeeks":\s*\{[^}]*?"every":\s*(\d+(?:\.\d+)?)/g, want: lw.every },
+    { what: 'the light week\'s sets (JSON)', re: /"lightWeeks":\s*\{[^}]*?"sets":\s*(\d+(?:\.\d+)?)/g, want: lw.sets },
+    { what: 'the light week\'s load (JSON)', re: /"lightWeeks":\s*\{[^}]*?"load":\s*(\d+(?:\.\d+)?)/g, want: lw.load },
+    { what: 'the light week\'s added RIR (JSON)', re: /"lightWeeks":\s*\{[^}]*?"rirAdd":\s*(\d+(?:\.\d+)?)/g, want: lw.rirAdd },
+  ];
+}
+// The prose just above a fenced block (back to the heading or block before it).
+function introOf(text, fence) {
+  const lines = text.split('\n');
+  const out = [];
+  for (let i = fence.start - 3; i >= 0; i--) {
+    const t = lines[i].trim();
+    if (/^#{1,6}\s/.test(t) || /^(`{3,}|~{3,})/.test(t)) break;
+    out.unshift(t);
+  }
+  return out.join(' ');
+}
+
+// Words a "no field" claim may use for a field the engine has.
+const FIELD_WORDS = [
+  [/\bRIR\b(?! wave)|reps in reserve/i, 'rir'],
+  [/interval structure|\bintervals\b/i, 'timed'],
+  [/\blight[- ]weeks?\b|\bdeloads?\b/i, 'lightWeeks'],
+  [/calibration week/i, 'calibration'],
+  [/\btest weeks?\b/i, 'tests'],
+  [/\bprogression rule/i, 'progression'],
+  [/\boverrides?\b/i, 'overrides'],
+  [/\bphase names\b/i, 'phases'],
+  [/\bstanding rules\b/i, 'rules'],
+];
+const NO_FIELD = /\b(?:is|are) not a field\b|\bha(?:s|ve) no field\b|\bno field for\b|\bcan'?t be set in `?plan-data|\bcannot be set in `?plan-data/i;
+
+// A backticked phrase starting with one of these is a command line, not an unexpressible kind.
+const COMMAND_WORDS = new Set(['npm', 'node', 'engine', 'plan', 'plan-write', 'review', 'check', 'catalogue', 'evidence', 'log', 'track', 'checkin', 'validate', 'session', 'body', 'eating', 'inbox', 'folders', 'baseline', 'food', 'tracked', 'habits', 'due', 'next', 'readiness', 'bring-over']);
+
+// The Python blocks the engine doesn't replace yet, by file and the heading above them.
+const PYTHON_ALLOWED = [
+  ['references/numbers.md', 'Energy and protein'],
+  ['references/tracking.md', 'Amounts: water'],
+];
+
+async function checkFacts() {
+  const v = await engine(['--version', '--json']);
+  const facts = v.json?.facts;
+  if (!facts) return record(6, 'fail', 'engine.cjs --version --json', 'no `facts` in its output: ship an engine of 0.26 or later (npm run ship-skill)');
+  record(6, 'pass', 'engine.cjs --version --json', `facts: ${Object.keys(facts).join(', ')}`);
+  const docs = skillDocs();
+
+  // Numbers in prose, and in the JSON examples.
+  const rules = numberRules(facts);
+  const seen = new Map(rules.map((r) => [r.what, 0]));
+  for (const { name, text } of docs) {
+    for (const s of sentences(text)) {
+      for (const r of rules) {
+        if (!r.when(s)) continue;
+        for (const { got, at } of r.find(s.text)) {
+          seen.set(r.what, seen.get(r.what) + 1);
+          const near = s.text.slice(Math.max(0, at - 50), at + 70);
+          if (JSON.stringify(got) !== JSON.stringify(r.want)) record(6, 'fail', `${name}:${s.lineOf(at)}`, `${r.what} is ${JSON.stringify(r.want)} in the engine, the text says ${JSON.stringify(got)}: "…${near}…"`);
+        }
+      }
+    }
+    for (const f of fences(text).filter((x) => /default/i.test(introOf(text, x)))) {
+      for (const r of jsonRules(facts)) {
+        for (const m of f.text.matchAll(r.re)) {
+          seen.set(r.what, (seen.get(r.what) ?? 0) + 1);
+          const line = f.start + (f.text.slice(0, m.index).match(/\n/g)?.length ?? 0);
+          if (Number(m[1]) !== r.want) record(6, 'fail', `${name}:${line}`, `${r.what} is ${r.want} in the engine, the example of the default says ${m[1]}`);
+        }
+      }
+    }
+  }
+  for (const [what, n] of seen) record(6, 'pass', `numbers: ${what}`, n ? `${n} mention(s) checked` : 'not quoted');
+
+  // "No field" claims, and the unexpressible kinds the docs name.
+  const keys = new Set([...facts.planData.keys, ...facts.planData.itemKeys, ...facts.planData.liftKeys, ...facts.planData.ruleKinds]);
+  const kinds = new Set(facts.unexpressible);
+  let claims = 0;
+  let named = 0;
+  for (const { name, text } of docs) {
+    for (const s of sentences(text)) {
+      if (NO_FIELD.test(s.text)) {
+        claims++;
+        const ids = [...spans(s.text).map((x) => x.replace(/^.*\./, '')), ...FIELD_WORDS.filter(([re]) => re.test(s.text)).map(([, k]) => k)];
+        const has = [...new Set(ids)].filter((k) => keys.has(k));
+        if (has.length) record(6, 'fail', `${name}:${s.lineOf(NO_FIELD.exec(s.text)?.index ?? 0)}`, `says there is no field, but the engine has ${has.map((k) => `\`${k}\``).join(', ')}: "${s.text.slice(0, 120)}"`);
+      }
+      if (s.text.includes('`unexpressible`')) {
+        for (const k of spans(s.text).filter((x) => / /.test(x) && !x.includes('--') && /^[A-Za-z][A-Za-z' -]*$/.test(x) && !COMMAND_WORDS.has(x.split(' ')[0]))) {
+          named++;
+          if (!kinds.has(k)) record(6, 'fail', `${name}:${s.lineOf(Math.max(0, s.text.indexOf(`\`${k}\``)))}`, `names the unexpressible kind \`${k}\`, which the engine never lists (it lists: ${[...kinds].join(', ')})`);
+        }
+      }
+    }
+  }
+  record(6, 'pass', '"no field" claims', `${claims} checked against the engine's plan-data keys`);
+  record(6, 'pass', 'unexpressible kinds', `${named} named, checked against the engine's list`);
+
+  // Python blocks.
+  for (const { name, text } of docs) {
+    const lines = prose(text).split('\n');
+    for (const f of fences(text).filter((x) => x.lang === 'python')) {
+      const above = lines.slice(0, f.start - 1).reverse().find((l) => /^#{1,6}\s/.test(l));
+      const heading = above ? above.replace(/^#+\s+/, '').trim() : '';
+      const ok = PYTHON_ALLOWED.some(([file, h]) => file === name && heading.startsWith(h));
+      record(6, ok ? 'pass' : 'fail', `${name}:${f.start}`, ok ? `the allowlisted "${heading}" snippet` : `a Python block under "${heading}": the engine has the command for it, or it goes into PYTHON_ALLOWED with a reason`);
+    }
+  }
+
+  // Engine output naming a vault-only script (every run this self-check made).
+  // A vault's own words carried through (its plan file's `_about` note, say)
+  // are its own: only the engine's text counts, so those strings come out first.
+  const SCRIPT = /fitness_log\.py|gen-fitness-plan/;
+  const echoed = vaultPlanStrings().filter((s) => SCRIPT.test(s));
+  const engineText = (t) => echoed.reduce((acc, s) => acc.split(JSON.stringify(s).slice(1, -1)).join('').split(s).join(''), t);
+  const all = await Promise.all([...runs.entries()].map(async ([key, p]) => [JSON.parse(key)[1], await p]));
+  const named2 = all.filter(([, r]) => SCRIPT.test(engineText(`${r.stdout}\n${r.stderr}`)));
+  if (named2.length) for (const [args] of named2) record(6, 'fail', `engine.cjs ${args.join(' ')}`, 'its output names a vault-only script (fitness_log.py or gen-fitness-plan): the engine\'s own command does that work');
+  else record(6, 'pass', 'engine output', `${all.length} runs name no vault-only script`);
+}
+
+/** Every string value in the vault's own plan file (none when it can't be found or read). */
+function vaultPlanStrings() {
+  try {
+    const folders = JSON.parse(execFileSync('node', [ENGINE, 'folders', '--vault', VAULT, '--json'], { encoding: 'utf8' }));
+    const rel = folders?.paths?.plan;
+    if (typeof rel !== 'string') return [];
+    const out = [];
+    const walk = (v) => {
+      if (typeof v === 'string') out.push(v);
+      else if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') Object.values(v).forEach(walk);
+    };
+    walk(JSON.parse(readFileSync(resolve(VAULT, rel), 'utf8')));
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 // ---------- run ----------
 
 async function main() {
@@ -1136,6 +1510,7 @@ async function main() {
   checkSections();
   notes[4] = checkPaths();
   checkVersion(helpText);
+  await checkFacts();
 
   const count = (list, s) => list.filter((r) => r.status === s).length;
   const passed = count(results, 'pass');
@@ -1143,10 +1518,11 @@ async function main() {
   const skipped = count(results, 'skip');
   const version = /pahlavan engine (\S+)/.exec(helpText)?.[1] ?? '?';
   if (opts.json) {
-    const out = { ok: failed === 0, engine: version, vault: VAULT, date: TODAY, passed, failed, skipped, engineRuns: runs.size, results };
+    const out = { ok: failed === 0, engine: version, vault: VAULT, date: TODAY, fresh: FRESH, passed, failed, skipped, engineRuns: runs.size, results };
     console.log(JSON.stringify(out, null, 2));
   } else {
     const lines = [`fitness-coach selfcheck: ${passed} passed, ${failed} failed, ${skipped} skipped (engine ${version}, ${runs.size} engine runs, ${TODAY})`];
+    if (FRESH) lines.push(`  ${FRESH_NOTE}: the commands answer with a no-plan warning, the draft runs read a fresh export, and what needs the plan's sessions, lifts or ladders is held to its documented no-plan error`);
     for (const [n, name] of Object.entries(CHECKS)) {
       const mine = results.filter((r) => r.check === Number(n));
       const extra = n === '2' ? ` (${notes[2]} not whole records)` : n === '4' && notes[4] ? ` (${notes[4]} placeholder paths not checked)` : '';

@@ -1,7 +1,7 @@
 // The preview harness: the real PahlavanView, opened in a plain page against
 // the synthetic vault (its files are bundled in by tools/build-preview.mjs),
 // with the date fixed to 2026-04-10. The look comes from the URL:
-//   ?isfahan=1&phase=workday | ?isfahan=0&mode=dark [&hour=11] [&tab=today] [&session=full] [&pick=S3]
+//   ?isfahan=1&phase=workday | ?isfahan=0&mode=dark [&hour=11] [&tab=home|today|progress|plan|checkin|food] [&session=full] [&pick=S3]
 //   [&log=new|edit] [&logstate=summary|full|skip|swap]: opens the Log panel (writes go to memory only)
 //   [&logdate=YYYY-MM-DD]: then changes the panel's date, as the date field does
 //   [&units=lb]: the profile's body units in lb and inches
@@ -52,6 +52,10 @@
 //   plank) with the coach's notes: rest, an RIR and a progression sentence, a form cue, "Why: ..."
 //   [&abs=old|new]: a week of ab work with abs a priority (test/fixtures/ab-work.ts): the old one short of
 //   direct sets near failure, the new one at 12 (the Plan's Sets per muscle)
+//   [&regions=open]: Progress's Regions list (beside the body map) opened, as its toggle does; &rich=1 declares
+//   the vasti weak, so the list has a declared region and the rectus femoris, now a coverage region, falls short
+//   [&tip=<muscle id>]: that muscle's tooltip shown, on Progress's body map or the Plan's Sets per muscle (shoot it
+//   with headless Chrome's --force-prefers-reduced-motion, or the tooltip is caught in its fade)
 
 import { fixedOffsetClock, momentAt } from '../../src/core/clock.ts';
 import { habitCheckinKey } from '../../src/core/tracking.ts';
@@ -103,6 +107,9 @@ if (params.get('rich') === '1' || CARD) {
   const fit = '3-Personal/Fitness';
   const prof = JSON.parse(files[`${fit}/Coach/profile.json`]!);
   prof.targets = { waistDropCm: [4, 6], weightDropKg: [3, 5], rhrDropBpm: [3, 6], tests: { pushups: 25, pullups: 5, hollowS: 45, handstandS: 45, sidePlankS: 60 } };
+  // A region declared weak: the vasti, over their 6 direct sets; it makes the quads a priority for the region rules,
+  // so the rectus femoris (no leg extension in the plan) shows short of its 4.
+  prof.priorityRegions = ['quads-vasti'];
   files[`${fit}/Coach/profile.json`] = JSON.stringify(prof);
   const body = JSON.parse(files[`${fit}/body-data.json`]!);
   body.tape.push({ date: '2026-03-10', waist: 95.2, hips: 97.6, chest: 101, arm: 33 }, { date: '2026-04-07', waist: 93.6, hips: 96.4, chest: 101.5, arm: 33.5 });
@@ -227,7 +234,7 @@ if (params.get('rich') === '1' || CARD) {
     // (and the Food tab's plan folded); by default a first visit, the panel open.
     const glance = params.get('glance') === 'folded' ? Object.fromEntries(['today', 'progress', 'plan', 'checkin', 'food'].map((t) => [t, { visits: 3 }])) : undefined;
     // [&open=going,sets]: those sections of the open tab opened by the user (Progress's as "<view>.<section>").
-    const tab = params.get('tab') ?? (params.get('sec') ? 'progress' : 'today');
+    const tab = params.get('tab') ?? (params.get('sec') ? 'progress' : 'home');
     const opened = (params.get('open') ?? '').split(',').filter(Boolean);
     const folds = opened.length ? { [tab]: Object.fromEntries(opened.map((id) => [id, { folded: false, on: '2026-04-01' }])) } : undefined;
     files[`${fit}/Coach/help.json`] = JSON.stringify({ schemaVersion: 1, tips: all, welcomeHidden: help === 'welcome' ? null : '2026-04-01', ...(glance ? { glance } : {}), ...(folds ? { folds } : {}) });
@@ -475,7 +482,7 @@ const view = new PahlavanView(new WorkspaceLeaf() as never, {
       },
     },
   } : {}),
-  settings: { lastTab: (params.get('tab') as Section) ?? (params.get('sec') ? 'progress' : 'today'), mode: (params.get('session') as SessionMode) ?? 'full', pick: params.get('pick') ? { date: TODAY, type: params.get('pick')! } : null, progressSection: (params.get('sec') as ProgressSection | null) ?? 'overview', ...(params.get('range') === 'all' ? { progressScopes: { overview: 'all', training: 'all', body: 'all', health: 'all', skills: 'all' } } : {}) },
+  settings: { lastTab: (params.get('tab') as Section) ?? (params.get('sec') ? 'progress' : 'home'), mode: (params.get('session') as SessionMode) ?? 'full', pick: params.get('pick') ? { date: TODAY, type: params.get('pick')! } : null, progressSection: (params.get('sec') as ProgressSection | null) ?? 'overview', ...(params.get('range') === 'all' ? { progressScopes: { overview: 'all', training: 'all', body: 'all', health: 'all', skills: 'all' } } : {}) },
   saveSettings: () => {},
   today: () => TODAY,
   hour: () => Number(params.get('hour') ?? 11),
@@ -574,6 +581,21 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
     if (el) {
       const r = el.getBoundingClientRect();
       el.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.bottom }));
+    }
+  }
+  if (params.get('regions') === 'open') {
+    await wait(30);
+    click('[data-k="bm-regions"]');
+    await wait(30);
+  }
+  const TIP = params.get('tip');
+  if (TIP) {
+    await wait(30);
+    // Hover cannot be shot: the muscle's tooltip shown by a made-up pointer at its shape or bar.
+    const el = activeDocument.querySelector(`[data-muscle="${CSS.escape(TIP)}"][data-tip]`);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      el.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
     }
   }
   const HAND = params.get('hand');

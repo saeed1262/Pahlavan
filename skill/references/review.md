@@ -6,11 +6,17 @@ that week's letter, with the extra sections in `formats.md`.
 
 ## Mesocycle review
 
-The check-in that closes a deload week (plan weeks 4, 8, 12, …). What is due
-that week (the tape, photos, and the tests at a phase's end) comes from
-`engine tracked`'s `bodyRecord` (`--date` the light week's Sunday), never a
-fixed cadence; the review then builds the month that starts the next day. At
-plan weeks 8, 16 and 24 the phase review below replaces it.
+The check-in that closes a light week (the plan's `rules.lightWeeks`;
+plan weeks 4, 8, 12, … by default). What is due that week (the tape,
+photos, and the tests at a phase's end) comes from `engine tracked`'s
+`bodyRecord` (`--date` the light week's Sunday), never a fixed cadence; the
+review then designs the block that starts the next day. At a phase's end
+(every second light week) the phase review below replaces it.
+
+0. **The plan check** (`check --vault . --json --date <the light week's
+   Sunday>`), as every check-in starts (`checkin.md`): a hard error first;
+   its warnings (region gaps, sets outside the tiers, a plan rule broken)
+   are inputs to step 5.
 
 1. **Numbers** (`engine review --date <the deload week's Sunday>`,
    `numbers.md`): 4-week adherence (`adherence`); e1RM per lift over the
@@ -38,17 +44,26 @@ plan weeks 8, 16 and 24 the phase review below replaces it.
 4. **Progress report:** tape if it's due, then the `progress` job
    (`progress.md`: photos renamed, every source read, the dated report).
    Read that report's numbers and verdicts into the review; don't redo them.
-5. **Decide:** volume per muscle, accessory rotation (main lifts stay in the
-   phase, at most half the accessories change), rep-range changes, RIR targets
-   corrected for bias.
+5. **Decide, coach-first:** the coach designs the next block from steps
+   1–4, the evidence (`evidence --topic volume`, `exercise-choice`,
+   `regions`, ...) and the options (`catalogue`): volume per muscle,
+   accessory rotation (main lifts stay in the phase, at most half the
+   accessories change; a region-biasing movement stays for the phase),
+   rep-range changes, RIR targets corrected for bias, and the standing rules
+   revised (each lift's progression, the stall response, the next light
+   week). It goes into a draft, measured with `review --plan` and `check
+   --plan` (`planning.md`, step 1.4): every number in the proposal from those
+   runs, and any warning gone past with its override and reason.
 6. **Write** the review as that week's letter (`type: mesocycle-review`),
-   propose the next month as one list, and on yes build it through
-   `plan-files.md` ("The next month"); Decisions for each change.
+   propose the next block as one list (each change with its reason from the
+   data and its evidence grade), and on yes build it through `plan-files.md`
+   ("The next month", written with `plan-write`); Decisions for each change.
 
 ## Phase review
 
-At the end of each phase (plan weeks 8, 16, 24), in place of that week's
-mesocycle review (it includes steps 1–5 above).
+At the end of each phase (every second light week: plan weeks 8, 16, 24
+by default), in place of that week's mesocycle review (it includes steps
+0–5 above).
 
 1. **Tests:** the roadmap's tests (push-ups, pull-ups, hollow, side plank,
    handstand, wall test, pistol, resting HR) under test conditions (not after
@@ -65,9 +80,15 @@ mesocycle review (it includes steps 1–5 above).
 5. **Ledger, screening, eating plan:** update Ledger statuses; re-screen if
    12 months have passed or health changed; check the eating plan against the
    phase's goal (`diet.md`).
-6. **Next phase** through the `plan` job (`planning.md`: `engine plan`, a new
-   pre-mortem, the proposal, the write through `plan-files.md` with `--format
-   plan-data`). Write the review as that week's letter (`type: phase-review`).
+6. **Next phase** through the `plan` job, coach-first (`planning.md`: at
+   least three candidates the coach designs from the evidence and the
+   catalogue, each measured with `review --plan` and `check --plan`, the
+   standing rules, a new pre-mortem, the proposal, the write through
+   `plan-files.md` with `plan-write`; `engine plan` only as an optional
+   baseline). The next phase keeps the plan's `start`: its weeks run on from
+   the last, so no new week 1 and no calibration week (`check --plan` warns
+   `start-changed` on a draft that moves it). Write the review as that week's
+   letter (`type: phase-review`).
 
 Week 24 ends the current roadmap's cycle: the next macrocycle needs a new
 cycle start (`planning.md`, "Build the macrocycle"); plan it with the user.

@@ -49,6 +49,8 @@ import { PahlavanView, VIEW_TYPE } from './view.ts';
 import { findFoldersAsync, paths, useFolders } from '../../src/adapters/vault/layout.ts';
 import { COACH_FILES } from 'virtual:coach-files';
 import { coachState, findNode, nodeOk, setUpCoach, type CoachState } from './coach-setup.ts';
+import { CATALOGUE } from '../../src/core/data/exercises.ts';
+import { catalogueMarkdown } from '../../src/report/catalogue-doc.ts';
 
 const RELOAD_DELAY_MS = 600;
 const TICK_MS = 60_000;
@@ -87,9 +89,9 @@ export default class PahlavanPlugin extends Plugin {
 
   override async onload(): Promise<void> {
     const gitSynced = await this.gitSynced();
-    const { data, migrated } = loadPluginData(await this.loadData(), { gitSynced });
+    const { data, migrated } = loadPluginData(await this.loadData(), { gitSynced, today: localToday() });
     this.settings = data;
-    // Older data (the view's state alone) gains the reminder and sync options once.
+    // Older data (the view's state alone) gains the reminder and sync options, and the install date, once.
     if (migrated) await this.saveData(this.settings);
     // Where the vault keeps Pahlavan's files: the setting, else looked for (an install from before the setting keeps its folders).
     if (this.settings.folders) useFolders(this.settings.folders);
@@ -166,6 +168,7 @@ export default class PahlavanPlugin extends Plugin {
     this.addRibbonIcon(PAHLAVAN_ICON_ID, 'Open Pahlavan', () => void this.activate());
     this.addCommand({ id: 'open', name: 'Open', callback: () => void this.activate() });
     this.addCommand({ id: 'open-guide', name: 'Open the user guide', callback: () => void this.openGuide() });
+    this.addCommand({ id: 'write-exercise-catalogue', name: 'Write the exercise catalogue', callback: () => void this.writeCatalogue() });
     // "Open check-in" is what Isfahan's new-tab Check-in row runs: the morning card until today's is in, then the Check-in screen.
     this.addCommand({ id: 'open-checkin', name: 'Open check-in', callback: () => void reminders.openCheckin() });
     this.addCommand({ id: 'morning-checkin', name: 'Open the morning check-in', callback: () => void reminders.openCard('morning') });
@@ -289,6 +292,26 @@ export default class PahlavanPlugin extends Plugin {
   }
 
   /** The user guide: the vault's copy when it exists (a note in a tab), else the published page in the browser. */
+  /**
+   * "Write the exercise catalogue": every movement Pahlavan knows, as a note
+   * in the fitness folder (written over the last copy, which says not to
+   * edit it), from this version's engine; then the note opens.
+   */
+  private async writeCatalogue(): Promise<void> {
+    const dir = paths().fitness;
+    const path = `${dir}/Exercise catalogue.md`;
+    const text = catalogueMarkdown({ stamp: `Written by Pahlavan ${this.manifest.version} on ${localToday()}. After an update, run "Pahlavan: Write the exercise catalogue" again for the new version's list.` });
+    try {
+      if (!(await this.app.vault.adapter.exists(dir))) await this.app.vault.adapter.mkdir(dir);
+      await this.app.vault.adapter.write(path, text);
+    } catch (e) {
+      new Notice(`The exercise catalogue could not be written: ${(e as Error).message}`);
+      return;
+    }
+    new Notice(`Exercise catalogue written: ${CATALOGUE.length} movements, in ${path}.`);
+    await this.app.workspace.openLinkText(path, '', 'tab');
+  }
+
   private async openGuide(): Promise<void> {
     if (await this.app.vault.adapter.exists(paths().guide)) {
       (this.app as unknown as { setting?: { close?: () => void } }).setting?.close?.();

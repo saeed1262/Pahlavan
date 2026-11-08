@@ -488,7 +488,7 @@ function skills(sk: Skills, ctx: MoreContext): HTMLElement {
     const gKey = `skills:${l.id}`;
     const entries = l.levelName && ctx.guide ? ctx.guide(l.levelName) : [];
     const gOpen = Boolean(ctx.openGuides?.has(gKey)) && entries.length > 0;
-    // The dashboard's ▲ and ▼: one level up, or down as a correction, written as fitness_log.py ladder writes it.
+    // The dashboard's ▲ and ▼: one level up, or down as a correction, written as `engine log ladder` writes it.
     const moves = ctx.onMoveLadder ? h('div', { class: 'pv-sk-moves' },
       h('button', { class: 'pv-sk-move', 'aria-label': `${l.name}: down a level`, 'data-tip': 'Down a level|A correction', disabled: l.level <= 1, onclick: () => ctx.onMoveLadder!(l.id, l.level - 1) }, icon('down')),
       h('button', { class: 'pv-sk-move', 'aria-label': `${l.name}: up a level`, 'data-tip': l.level ? 'Up a level' : 'Set level 1', disabled: l.level >= l.path.length, onclick: () => ctx.onMoveLadder!(l.id, l.level + 1) }, icon('up'))) : null;
@@ -497,7 +497,7 @@ function skills(sk: Skills, ctx: MoreContext): HTMLElement {
     h('ol', { class: 'pv-sk-path', 'aria-label': `${l.name} levels` }, l.path.map((p) => h('li', { class: `pv-sk-node is-${p.state}`, 'data-tip': tip(`L${p.n} · ${clean(p.name)}`, stateLabel[p.state], p.reached ? `Reached ${fmt.wd(p.reached)}` : null, p.state === 'unlocked' ? 'Move up after the top of the reps on every set, two sessions in a row' : null) }, h('span', { class: 'pv-sk-dot' }, p.state === 'mastered' ? icon('check') : p.state === 'locked' ? icon('lock') : String(p.n)), h('span', { class: 'pv-sk-lbl' }, clean(p.name))))),
     testCell(l.test, l.tests, l.goal),
     l.testShowsLevel ? h('div', { class: 'pv-sk-hint' }, icon('alert'), h('span', {}, `The latest test is ahead of the ladder: it shows level ${l.testShowsLevel.level}, ${clean(l.testShowsLevel.name)}.`),
-      // The level moves as fitness_log.py ladder writes it (the dashboard's ▲).
+      // The level moves as `engine log ladder` writes it (the dashboard's ▲).
       ctx.onMoveLadder ? h('button', { class: 'pv-btn-quiet', onclick: () => ctx.onMoveLadder!(l.id, l.testShowsLevel!.level) }, icon('up'), `Move to level ${l.testShowsLevel.level}`) : null) : null,
     gOpen ? h('div', { class: 'pv-sk-guide' }, guidePanel(entries)) : null,
   );

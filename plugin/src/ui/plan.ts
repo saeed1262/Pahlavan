@@ -16,12 +16,15 @@ import { addDays, clean, daysBetween, fmt } from './format.ts';
 import type { GuideEntry } from '../../../src/report/dashboard.ts';
 import { guideName, guidePanel } from './guide.ts';
 import { cardHead, niceTicks, scale, statusChip, table, tip, type ProgressContext } from './progress.ts';
+import { regionAim, regionAimValue, regionTipLines } from './regions.ts';
 import { deskCard, type DeskCardContext } from './desk-card.ts';
 import { planWhyPanel } from './today.ts';
 import { bodyFmt, type BodyUnits } from './units.ts';
 import { MESOCYCLE, SHORT } from './terms.ts';
 import { stepWords } from './coach.ts';
 import { COACH_COMMANDS } from '../../../src/core/coach-steps.ts';
+import { calibrationNote } from '../../../src/core/calibration.ts';
+import { lightDoseText } from '../../../src/core/rules.ts';
 
 /** The Plan's context: Progress's, plus the movement guide and the plan's notes. */
 export interface PlanContext extends ProgressContext {
@@ -66,6 +69,11 @@ export function temporaryLabel(t: { item: string; wayBack: string | null }): str
   return t.wayBack ? `${t.item} in for ${t.wayBack}` : t.item;
 }
 
+/** A Ledger limit's ruled-out movements by name; one the engine does not recognise is marked, since it blocks nothing. */
+export function ledgerMovements(movements: readonly { name: string; known: boolean }[]): string {
+  return movements.map((x) => (x.known ? x.name : `${x.name} (not recognised)`)).join(', ');
+}
+
 function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   const W = inner(width);
   const weeks = m.weeks;
@@ -74,7 +82,10 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   const wk = (W - left - 14) / weeks.length;
   const x = (d: string) => left + (daysBetween(start, d) / 7) * wk;
   const xEnd = left + weeks.length * wk;
-  const spans = [...m.ledger.map((c) => ({ kind: 'ledger' as const, label: `${c.area}: ${c.noTags.length ? 'no high-strain lifts' : c.noMovements.length ? `no ${c.noMovements.join(', ')}` : 'limit'}`, until: c.until, tip: tip(`Ledger · ${c.area}`, c.noTags.length ? `Ruled out: ${c.noTags.join(', ')}` : c.noMovements.length ? `Ruled out: ${c.noMovements.join(', ')}` : null, c.note, c.until ? `Until ${fmt.wd(c.until)}` : 'No end date', 'In force before the plan began (the Ledger keeps no start date)') })),
+  const spans = [...m.ledger.map((c) => {
+    const unknown = c.movements.filter((x) => !x.known);
+    return { kind: 'ledger' as const, label: `${c.area}: ${c.noTags.length ? 'no high-strain lifts' : c.movements.length ? `no ${ledgerMovements(c.movements)}` : 'limit'}`, until: c.until, tip: tip(`Ledger · ${c.area}`, c.noTags.length ? `Ruled out: ${c.noTags.join(', ')}` : c.movements.length ? `Ruled out: ${ledgerMovements(c.movements)}` : null, unknown.length ? `Not recognised (neither an engine movement nor one of the plan’s), so it rules out nothing: ${unknown.map((x) => x.id).join(', ')}` : null, c.note, c.until ? `Until ${fmt.wd(c.until)}` : 'No end date', 'In force before the plan began (the Ledger keeps no start date)') };
+  }),
     ...m.temporary.map((t) => ({ kind: 'change' as const, label: temporaryLabel(t), until: t.until, tip: tip(`Temporary change · ${t.session}`, t.wayBack ? `${t.item} in place of ${t.wayBack}` : null, clean(t.reason), `Until ${fmt.wd(t.until)}`, 'From the plan’s "until" note') }))];
   const Y = { today: 2, phase: 22, meso: 58, weeks: 84, num: 132, month: 148, dec: 172, busy: 200, ledger: 228 };
   const H = Y.ledger + 22 * Math.max(1, spans.length) + 4;
@@ -108,7 +119,7 @@ function timeline(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
     const cw = wk - 3;
     const when = w.end < today ? 'is-past' : m.now?.index === w.index ? 'is-now' : 'is-future';
     const st = stepOf.get(w.end);
-    out.push(s('rect', { class: `pv-tl-week is-${w.kind}${w.calibration ? ' is-calibration' : ''} ${when}`, x: x0, y: Y.weeks, width: cw, height: 34, rx: 4, 'data-tip': tip(`Week ${w.index} · ${range(w.start, w.end)}`, [w.kind === 'deload' ? 'Light week' : 'Loading', w.calibration && 'calibration', w.tests && 'tests'].filter(Boolean).join(', '), `${phaseTitle(w.phase, m.phases.find((p) => p.index === w.phase)?.name)}, mesocycle ${w.meso}, week ${w.weekInMeso}`, w.calibration ? 'Calibration: find working weights at RIR 3; no progression or stall checks' : null, w.tests ? 'Tests at the end of the phase (the generator’s rule)' : null, st ? `Sunday: ${st.title} · ${st.command}` : null) }));
+    out.push(s('rect', { class: `pv-tl-week is-${w.kind}${w.calibration ? ' is-calibration' : ''} ${when}`, x: x0, y: Y.weeks, width: cw, height: 34, rx: 4, 'data-tip': tip(`Week ${w.index} · ${range(w.start, w.end)}`, [w.kind === 'deload' ? 'Light week' : 'Loading', w.calibration && 'calibration', w.tests && 'tests'].filter(Boolean).join(', '), `${phaseTitle(w.phase, m.phases.find((p) => p.index === w.phase)?.name)}, mesocycle ${w.meso}, week ${w.weekInMeso}`, w.calibration ? `Calibration: ${calibrationNote(m.rules.calibration.value.rir)}` : null, w.tests ? clean(m.rules.tests.text) : null, st ? `Sunday: ${st.title} · ${st.command}` : null) }));
     const letter = w.calibration ? 'C' : w.kind === 'deload' ? 'L' : '';
     if (letter) out.push(s('text', { class: `pv-tl-letter ${when}`, x: x0 + (w.tests ? cw / 2 - 6 : cw / 2), y: Y.weeks + 21 }, letter));
     if (w.tests) out.push(iconGroup('flag', `translate(${x0 + cw / 2 + 1},${Y.weeks + 11}) scale(0.5)`, `pv-tl-flag ${when}`));
@@ -174,6 +185,8 @@ function sessions(m: Ok, ctx: PlanContext): HTMLElement {
   const mw = m.weeks.filter((w) => w.meso === m.now?.meso);
   const strip = h('div', { class: 'pv-meso-strip' }, mw.map((w) => h('span', { class: `pv-meso-wk${m.now?.index === w.index ? ' is-now' : ''}${w.end < m.date ? ' is-past' : ''}` }, h('b', {}, `Week ${w.index}`), ` ${range(w.start, w.end)} · ${w.kind === 'deload' ? 'light' : 'loading'}${w.tests ? ', tests' : ''}`)));
   const dose = (sl: Ok['templates'][number]['slots'][number]): Child => {
+    // Intervals in words ("4 × 4 min hard, 3 min easy between · about 25 min").
+    if (sl.timed && (sl.timed.rounds ?? 0) >= 2) return clean(sl.timed.text);
     const sr = clean(sl.sr ?? '');
     if (sr && !/^\d+\s*×\s*\d/.test(sr)) return sr;
     if (sr && /s\/side|min|rounds/.test(sr)) return sr;
@@ -216,7 +229,7 @@ function sessions(m: Ok, ctx: PlanContext): HTMLElement {
     const ts = m.templates.filter((t) => (t.kind === 'lift') === (kind === 'lift'));
     return ts.length ? h('div', { class: `pv-tpl-group is-${kind}` }, h('div', { class: 'pv-tpl-group-h' }, label), h('div', { class: 'pv-tpl-grid' }, ts.map(block))) : null;
   });
-  return h('section', { class: 'pv-card pv-span-8', 'data-sec': 'meso' }, headNoTable('This mesocycle', meso ? `Mesocycle ${meso.index}: ${range(meso.from, meso.to)}, a 4-week block of three normal weeks and a light week. The sessions as planned this week.` : 'The session templates as planned this week.'), m.templates.length ? [strip, ...groups] : calm('No sessions planned this week.'));
+  return h('section', { class: 'pv-card pv-span-8', 'data-sec': 'meso' }, headNoTable('This mesocycle', meso ? `Mesocycle ${meso.index}: ${range(meso.from, meso.to)}, ${mesoWords(m, meso.index)} The sessions as planned this week.` : 'The session templates as planned this week.'), m.templates.length ? [strip, ...groups] : calm('No sessions planned this week.'));
 }
 
 // ================================================================ planned sets
@@ -228,6 +241,9 @@ export function directLine(b: Pick<VolumeRow, 'priority' | 'hardDirect' | 'unkno
   return `${fmt.sets(b.hardDirect)} direct, near failure${b.unknown ? `, ${fmt.sets(b.unknown)} of unknown effort` : ''}`;
 }
 
+/** A row's declared regions with their aim ("Side delts: 6 direct, aim 6"), each drawn on its own line under the row. */
+const declaredLines = (b: VolumeRow) => b.regions.filter((r) => r.declared).map((r) => ({ r, text: regionAim(r) })).filter((x): x is { r: VolumeRow['regions'][number]; text: string } => x.text !== null);
+
 function volume(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   const v = m.volume;
   const bands = [...v.muscles].sort((a, b) => b.sets - a.sets);
@@ -236,10 +252,11 @@ function volume(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
   const val = 54;
   const x = scale(0, 24, lab, W - val);
   const rowH = 22;
-  // A priority row has a second line, the card's full width: the total beside its direct sets near failure.
+  // A priority row has a second line, the card's full width: the total beside its direct sets near failure;
+  // a region declared weak has a line of its own under its muscle's row.
   const subH = 13;
   const top = 18;
-  const heights = bands.map((b) => rowH + (directLine(b) ? subH : 0));
+  const heights = bands.map((b) => rowH + ((directLine(b) ? 1 : 0) + declaredLines(b).length) * subH);
   const H = top + heights.reduce((a, n) => a + n, 0) + 4;
   const out: Child[] = [];
   for (const [a, b, c] of [[0, 4, 'z-low'], [4, 10, 'z-a'], [10, 16, 'z-b'], [16, 20, 'z-a'], [20, 24, 'z-high']] as const) out.push(s('rect', { class: `pv-vz ${c}`, x: x(a), y: top - 4, width: x(b) - x(a), height: H - top }));
@@ -253,17 +270,29 @@ function volume(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
     out.push(s('text', { class: 'pv-vlabel', x: 0, y: y + 13 }, `${name}${b.priority ? ' *' : ''}`));
     const w = Math.max(2, x(Math.min(24, b.sets)) - x(0));
     const split = b.direct !== undefined ? `${fmt.sets(b.direct ?? 0)} direct, ${fmt.sets(b.indirect ?? 0)} from helping (half credit)` : null;
-    out.push(s('path', { class: 'pv-vbar', d: `M${x(0)},${y + 6}h${Math.max(0, w - 4)}a4,4 0 0 1 4,4v0a4,4 0 0 1 -4,4h${-Math.max(0, w - 4)}z`, 'data-tip': tip(`${name}${b.priority ? ' (priority)' : ''}`, `${fmt.sets(b.sets)} planned sets a week`, split, direct, label(b), b.note ? clean(b.note) : null) }));
+    out.push(s('path', { class: 'pv-vbar', 'data-muscle': b.muscle, d: `M${x(0)},${y + 6}h${Math.max(0, w - 4)}a4,4 0 0 1 4,4v0a4,4 0 0 1 -4,4h${-Math.max(0, w - 4)}z`, 'data-tip': tip(`${name}${b.priority ? ' (priority)' : ''}`, `${fmt.sets(b.sets)} planned sets a week`, split, direct, label(b), b.note ? clean(b.note) : null, ...regionTipLines(b.regions, name)) }));
     out.push(s('text', { class: 'pv-vval', x: W - val + 8, y: y + 13 }, fmt.sets(b.sets)));
     if (b.status !== 'in') out.push(iconGroup(b.status === 'below' ? 'below' : 'over', `translate(${W - 16},${y + 3}) scale(0.58)`, `pv-vst is-${b.status === 'above' ? 'below' : b.status}`));
-    if (direct) out.push(s('text', { class: `pv-vsub${b.directUnder ? ' is-under' : ''}`, x: 0, y: y + rowH + 6 }, `${fmt.sets(b.sets)} · ${direct}${b.directUnder ? ': under 10' : ''}`));
+    let sy = y + rowH + 6;
+    if (direct) {
+      out.push(s('text', { class: `pv-vsub${b.directUnder ? ' is-under' : ''}`, x: 0, y: sy }, `${fmt.sets(b.sets)} · ${direct}${b.directUnder ? ': under 10' : ''}`));
+      sy += subH;
+    }
+    for (const { r, text } of declaredLines(b)) {
+      out.push(s('text', { class: `pv-vsub pv-vsub-region${r.status === 'short' ? ' is-under' : ''}`, 'data-region': r.id, x: 0, y: sy, 'data-tip': tip(`${r.label} (declared weak)`, r.note ? clean(r.note) : null) }, text));
+      sy += subH;
+    }
     y += heights[i]!;
   });
+  const aim = bands.flatMap(declaredLines)[0]?.r.min ?? null;
   return card('vol', 'pv-span-4', ctx, cardHead('vol', 'Sets per muscle', 'Planned, a week, against the bands', ctx),
-    [s('svg', { class: 'pv-chart', viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Planned sets per muscle' }, out), h('div', { class: 'pv-chart-key' }, keySw('pv-vz z-low', 'Under 4: below the minimum'), keySw('pv-vz-priority', '* Priority muscle, 10–16, at least 10 of them direct and near failure')), pullPushLine(v.pullPush)],
-    table([{ t: 'Muscle' }, { t: 'Sets a week', r: true }, { t: 'Status' }], bands.map((b) => {
+    [s('svg', { class: 'pv-chart', viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Planned sets per muscle' }, out), h('div', { class: 'pv-chart-key' }, keySw('pv-vz z-low', 'Under 4: below the minimum'), keySw('pv-vz-priority', '* Priority muscle, 10–16, at least 10 of them direct and near failure'), aim !== null ? h('span', {}, `A region you declared weak has its own line: ${aim} direct sets near failure a week`) : null), pullPushLine(v.pullPush)],
+    table([{ t: 'Muscle' }, { t: 'Sets a week', r: true }, { t: 'Status' }], bands.flatMap((b) => {
       const direct = directLine(b);
-      return [`${v.labels[b.muscle]?.label ?? b.muscle}${b.priority ? ' (priority)' : ''}`, direct ? `${fmt.sets(b.sets)} · ${direct}` : fmt.sets(b.sets), label(b)];
+      return [
+        [`${v.labels[b.muscle]?.label ?? b.muscle}${b.priority ? ' (priority)' : ''}`, direct ? `${fmt.sets(b.sets)} · ${direct}` : fmt.sets(b.sets), label(b)],
+        ...declaredLines(b).map(({ r }) => [`${r.label} (declared weak)`, regionAimValue(r) ?? '', r.status === 'short' ? 'Under its aim' : r.status === 'uncoverable' ? 'No option you can do now' : 'Meets its aim']),
+      ];
     })));
 }
 
@@ -292,15 +321,6 @@ function targetRows(m: Ok, units?: BodyUnits): TRow[] {
   const cv = (unit: string): ((v: number) => number) | null => (unit === 'cm' ? F.lv : unit === 'kg' ? F.wv : null);
   const lab = (unit: string) => (unit === 'cm' ? F.l : unit === 'kg' ? F.w : unit);
   const num = (unit: string, v: number) => { const f = cv(unit); return f ? Math.round(f(v) * 10) / 10 : v; };
-  for (const g of t.generated ?? []) {
-    if (g.kind === 'recomposition' && st.baselineWaist) {
-      const base = st.baselineWaist.value;
-      const lo = base + g.predicted[0];
-      const hi = base + g.predicted[1];
-      const cur = st.currentWaist?.value ?? null;
-      rows.push({ name: 'Waist', sub: 'Recomposition, tape at the navel', heuristic: true, unit: 'cm', base, baseWhen: st.baselineWaist.date, lo, hi, by: g.by, cur, curWhen: st.currentWaist?.date ?? null, status: cur === null ? ['neutral', 'Not measured yet'] : cur < lo ? ['in', 'Ahead'] : cur <= hi ? ['in', 'On track'] : ['below', 'Behind'], dom: [lo - 1.5, base + 1] });
-    } else rows.push({ name: g.measure.charAt(0).toUpperCase() + g.measure.slice(1), sub: `${g.goal}, the generator’s prediction`, heuristic: true, unit: g.unit, by: g.by, predictedText: `${fmt.signed(num(g.unit, g.predicted[0]), cv(g.unit) ? 1 : 0)} to ${fmt.signed(num(g.unit, g.predicted[1]), cv(g.unit) ? 1 : 0)} ${lab(g.unit)}`, status: ['neutral', 'Not measured yet'], note: 'Measured at the phase review' });
-  }
   for (const p of t.profile ?? []) {
     if (p.kind === 'drop') rows.push({ name: p.label, sub: 'The profile’s target, a drop from the cycle’s start', unit: p.unit, base: p.base ?? null, lo: p.base != null ? p.base - p.hi! : undefined, hi: p.base != null ? p.base - p.lo! : undefined, cur: p.cur, status: p.status === 'met' ? ['in', 'Met'] : p.status === 'on-the-way' ? ['in', 'On the way'] : p.status === 'no-data' ? ['neutral', 'No data yet'] : ['below', 'Not yet'], dom: p.base != null ? [p.base - p.hi! * 1.3, p.base + p.hi! * 0.3] : undefined, predictedText: `−${num(p.unit, p.lo!)} to −${num(p.unit, p.hi!)} ${lab(p.unit)}` });
   }
@@ -335,7 +355,7 @@ function targets(m: Ok, ctx: ProgressContext): HTMLElement {
   const rows = targetRows(m, ctx.units);
   const f = (r: TRow, v: number | null | undefined) => (v == null ? '–' : r.f ? r.f(v) : fmt.num(v));
   const phase = m.phases.find((p) => p.index === m.now?.phase);
-  const noProfile = !m.targets.generated && !m.targets.profile;
+  const noProfile = !m.targets.profile;
   const lines = rows.map((r) => h('div', { class: 'pv-tg-row' },
     h('div', { class: 'pv-tg-name' }, h('b', {}, r.name), r.heuristic ? h('span', { class: 'pv-tag is-heur' }, 'Heuristic') : null, h('div', { class: 'pv-tg-sub' }, r.sub)),
     h('div', { class: 'pv-tg-num' }, h('span', { class: 'pv-tg-l' }, 'Baseline'), r.base != null ? [`${f(r, r.base)} ${r.unit}`, r.baseWhen ? h('small', {}, fmt.day(r.baseWhen)) : null] : h('span', { class: 'pv-faint' }, '–')),
@@ -344,10 +364,34 @@ function targets(m: Ok, ctx: ProgressContext): HTMLElement {
     h('div', { class: 'pv-tg-chart' }, miniRange(r)),
     h('div', { class: 'pv-tg-st' }, statusChip(r.status[0], r.status[1])),
   ));
-  return card('targets', 'pv-span-12', ctx, cardHead('targets', phase ? `${phaseTitle(phase.index, phase.name)} targets` : 'Targets', phase ? `${phaseLabel(phase.index, phase.name)} ends ${fmt.day(phase.to)}. Predictions marked heuristic are the generator’s estimates, not promises.` : null, ctx),
+  return card('targets', 'pv-span-12', ctx, cardHead('targets', phase ? `${phaseTitle(phase.index, phase.name)} targets` : 'Targets', phase ? `${phaseLabel(phase.index, phase.name)} ends ${fmt.day(phase.to)}. The targets are the ones your coach set in the profile.` : null, ctx),
     [h('div', { class: 'pv-tg' }, lines), noProfile ? calm('No coach profile yet: the phase targets come from the intake (/fitness-coach intake). The rows above come from the log.') : null,
       h('div', { class: 'pv-chart-key' }, keySw('pv-tg-range', 'Predicted range or target band'), h('span', {}, s('svg', { viewBox: '0 0 18 12' }, s('line', { class: 'pv-tg-base', x1: 9, x2: 9, y1: 0, y2: 12 })), 'Baseline'), h('span', {}, s('svg', { viewBox: '0 0 18 12' }, s('circle', { class: 'pv-tg-cur is-neutral', cx: 9, cy: 6, r: 4.5 })), 'Current'))],
     table([{ t: 'Target' }, { t: 'Baseline', r: true }, { t: 'Predicted or target' }, { t: 'Current', r: true }, { t: 'Status' }], rows.map((r) => [`${r.name}${r.heuristic ? ' (heuristic)' : ''}`, r.base != null ? `${f(r, r.base)} ${r.unit}` : '–', `${r.predictedText ?? `${f(r, r.lo)} to ${f(r, r.hi)} ${r.unit}`}${r.by ? ` by ${fmt.day(r.by)}` : ''}`, r.curText ?? (r.cur != null ? `${f(r, r.cur)} ${r.unit}` : '–'), r.status[1]])));
+}
+
+// ================================================================ standing rules
+/**
+ * The standing rules the plan's numbers follow: each kind and each logged
+ * lift, the plan's own rule in words, or "default" where the coach has not
+ * set one yet (Pahlavan then uses its old default, said beside it).
+ */
+function rulesCard(m: Ok, ctx: ProgressContext): HTMLElement {
+  const KIND_LABEL: Record<string, string> = { calibration: 'Calibration', lightWeeks: 'Light weeks', tests: 'Tests', readiness: 'Low readiness', soreness: 'Soreness', missed: 'Time off', stall: 'Stalls', hotel: 'Hotel', express: 'Express, short days' };
+  const { lifts, ...kinds } = m.rules;
+  const rows = [
+    ...Object.entries(kinds).map(([k, r]) => ({ label: KIND_LABEL[k] ?? k, r })),
+    ...Object.entries(lifts).map(([name, r]) => ({ label: name, r })),
+  ];
+  const ownText = (r: { source: string; text: string }) => clean(r.text.replace(/^(The plan's rule|Pahlavan's default \(the plan sets none\)): /, ''));
+  const set = rows.filter((x) => x.r.source === 'plan').length;
+  return card('rules', 'pv-span-12', ctx, cardHead('rules', 'Standing rules', set === rows.length ? 'Your coach set every rule your numbers follow.' : `Your coach has set ${set} of ${rows.length}; the rest use Pahlavan's default until the next check-in.`, ctx),
+    h('ul', { class: 'pv-rules' }, rows.map((x) => h('li', { class: `pv-rule is-${x.r.source}`, 'data-tip': tip(x.label, x.r.path) },
+      h('b', {}, x.label),
+      x.r.source === 'plan' ? null : h('span', { class: 'pv-tag is-heur' }, 'default: your coach hasn’t set this'),
+      h('span', { class: 'pv-rule-text' }, ownText(x.r)),
+    ))),
+    table([{ t: 'Rule' }, { t: 'From' }, { t: 'What it does' }], rows.map((x) => [x.label, x.r.source === 'plan' ? 'Your plan' : 'Default', ownText(x.r)])));
 }
 
 // ================================================================ load
@@ -394,7 +438,7 @@ function load(m: Ok, width: number, ctx: ProgressContext): HTMLElement {
 const EVENT: Record<string, [string, string, string]> = {
   tape: ['tape', 'Tape', 'Waist, hips, chest and arm'],
   checkin: ['clipboard', 'Sunday check-in', 'The week in a few questions'],
-  deload: ['deload', 'Light week', 'Two sets of everything, about 10 % lighter'],
+  deload: ['deload', 'Light week', 'Lighter sessions, as the plan\'s rule says'],
   tests: ['flag', 'Phase tests', 'Push-ups, wall gap and the other tests'],
   photos: ['camera', 'Progress photos', 'Front, side and back, same light'],
   'phase-review': ['history', 'Phase review', 'The phase ends; the next one is planned'],
@@ -402,6 +446,21 @@ const EVENT: Record<string, [string, string, string]> = {
   'ledger-end': ['shield', 'Ledger limit ends', 'Re-screen the lifts, back in at light-week loads'],
   'change-end': ['clock', 'Temporary change ends', ''],
 };
+/** A mesocycle in words from its weeks on the plan's light-week calendar: "a 4-week block of three normal weeks and a light week." */
+function mesoWords(m: Ok, index: number): string {
+  const ws = m.weeks.filter((w) => w.meso === index);
+  const light = ws.filter((w) => w.kind === 'deload').length;
+  const normal = ws.length - light;
+  const n = (k: number) => (['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'][k] ?? String(k));
+  return `a ${ws.length}-week block of ${n(normal)} normal week${normal === 1 ? '' : 's'}${light ? ` and ${light === 1 ? 'a' : n(light)} light week${light === 1 ? '' : 's'}` : ' (no light week: the plan lists none here)'}.`;
+}
+
+/** What a light week does, as the plan's rule (or the old default) says it: "2 sets of everything, about 10 % lighter, RIR +3". */
+const lightDose = (m: Ok) => {
+  const t = lightDoseText(m.rules.lightWeeks.value);
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
 /** Coming up: each Sunday's check-in names the coach step after it and its command; the phase review says what it plans. */
 function upcoming(m: Ok): HTMLElement {
   const items = m.upcoming.map((u) => {
@@ -410,7 +469,8 @@ function upcoming(m: Ok): HTMLElement {
     const c = x.coach;
     const sub: Child = u.kind === 'change-end' ? `${x.wayBack} returns`
       : u.kind === 'checkin' && c ? [`Then ${stepWords(c)}: `, h('code', {}, c.command)]
-        : u.kind === 'phase-review' && c?.nextCycle ? 'The plan ends; the next cycle is planned' : e[2];
+        : u.kind === 'phase-review' && c?.nextCycle ? 'The plan ends; the next cycle is planned'
+          : u.kind === 'deload' ? lightDose(m) : e[2];
     return { date: u.date, ic: e[0], title: u.kind === 'change-end' ? `${x.item} change ends` : u.kind === 'ledger-end' ? `Ledger limit ends: ${x.item}` : e[1], sub };
   });
   const shown = items.slice(0, 8);
@@ -457,9 +517,9 @@ function hero(m: PlanModel, o: PlanHero): HTMLElement {
     ...(now && cur ? { subTip: tip('Mesocycle', MESOCYCLE) } : {}),
     chips: [
       now && ph ? { icon: 'layers', label: 'Phase', value: `${now.phase} of ${phases.length}, week ${phWeeks.findIndex((w) => w.index === now.index) + 1} of ${phWeeks.length}`, tip: tip(`${phaseTitle(ph.index, ph.name)}${ph.goal ? `: ${clean(ph.goal)}` : ''}`, range(ph.from, ph.to)) } : null,
-      deload ? { icon: 'deload', label: 'Light week', value: deload.index === now?.index ? 'this week' : fmt.wd(deload.start), tip: tip('Light week', `${range(deload.start, deload.end)}: ${lowerFirst(EVENT['deload']![2])}`, 'Every fourth week, so your body catches up') } : null,
+      deload ? { icon: 'deload', label: 'Light week', value: deload.index === now?.index ? 'this week' : fmt.wd(deload.start), tip: tip('Light week', `${range(deload.start, deload.end)}: ${lowerFirst(lightDose(m as Ok))}`, `${clean((m as Ok).rules.lightWeeks.text)} So your body catches up.`) } : null,
       t ? { sw: 'lift', label: 'A week', value: `${t.lift} lifting + ${t.short} short`, tip: tip('Sessions a week', 'The plan’s weekly target', SHORT, 'minimumWeek' in m && m.minimumWeek?.value ? `The minimum week: ${m.minimumWeek.value.sessions} Express sessions` : null) } : null,
-      tests ? { icon: 'flag', label: 'Phase tests', value: fmt.wd(tests.date), tip: tip('Phase tests', `In the phase’s last week: ${lowerFirst(EVENT['tests']![2])}`) } : null,
+      tests ? { icon: 'flag', label: 'Phase tests', value: fmt.wd(tests.date), tip: tip('Phase tests', `${clean((m as Ok).rules.tests.text)} ${EVENT['tests']![2]}.`) } : null,
     ],
     ring: cur
       ? { segs, n: `${cur.weekInMeso}/${meso.length}`, label: 'WEEK', aria: `Week ${cur.weekInMeso} of ${meso.length} in mesocycle ${now!.meso}` }
@@ -489,7 +549,7 @@ export function renderPlan(root: HTMLElement, m: PlanModel, ctx: PlanContext): v
   const span = (n: number) => (narrow ? total : col * n + gap * (n - 1));
   const folded = ctx.folded;
   const mw = minimumCard(ok);
-  const wide = [targets(ok, ctx), mw, ctx.desk ? deskCard(ctx.desk) : null, ctx.links?.length ? planNotes(ctx) : null].filter((c): c is HTMLElement => c !== null);
+  const wide = [targets(ok, ctx), rulesCard(ok, ctx), mw, ctx.desk ? deskCard(ctx.desk) : null, ctx.links?.length ? planNotes(ctx) : null].filter((c): c is HTMLElement => c !== null);
   if (!folded || narrow) {
     grid.append(timeline(ok, span(12), ctx), sessions(ok, ctx), volume(ok, span(4), ctx), wide[0]!, load(ok, span(7), ctx), upcoming(ok), ...wide.slice(1));
     return;

@@ -9,8 +9,8 @@
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-support-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/saeedghorbani70608)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png">
-  <img alt="Pahlavan's Today screen: the week so far, your day, today's session with its targets and swaps, and what's due today" src="docs/images/today-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png">
+  <img alt="Pahlavan's Home screen: today's session with its length, a readiness note and a swap, the week's ring, what needs you, food and habits, and progress in three small tiles" src="docs/images/home-light.png">
 </picture>
 
 <sub>Shown with <a href="https://community.obsidian.md/plugins/isfahan-look">Isfahan Look</a>, my free plugin for Obsidian's look: Persian tilework, palettes that follow the sun and a book-like page. Pahlavan works with any theme.</sub>
@@ -24,7 +24,7 @@ The name is Persian for a champion, the wrestlers and heroes of the old stories.
 
 ## What it does
 
-Pahlavan has two parts that work on the same files: a **plugin**, the screens you see in Obsidian, and a **coach** you talk to in [Claude Code](https://claude.com/claude-code).
+Pahlavan has two parts that work on the same files: a **plugin**, the screens you see in Obsidian, and a **coach** you talk to in [Claude Code](https://claude.com/claude-code). Under both sits one **engine**. The coach designs your plan; the engine does the numbers and checks the plan against the safety rules and the evidence.
 
 ### Today: what to do now
 
@@ -32,13 +32,13 @@ The session to do, with how to do each movement and why it's in your plan, the s
 
 ### Progress: how it's going
 
-A body map of the sets each muscle got this week against its target, your strength trend for each logged lift, your consistency over the months, your weight trend, your body record and progress photos.
+A body map of the sets each muscle got this week against its target (split into direct sets and half credit from helping lifts, with the parts of a muscle that training studies support, such as the side delts or the hamstrings at the knee), your strength trend for each logged lift, your consistency over the months, your weight trend, your body record and progress photos.
 
-![Progress: the body map of weekly sets per muscle with the muscles below, in and over their target, the consistency grid and the strength trends](docs/images/progress.png)
+![Progress: the body map of weekly sets per muscle with the muscles below, in and over their target and the folded Regions list, the consistency grid and the strength trends](docs/images/progress.png)
 
 ### Plan: 24 weeks, block by block, with its reasons
 
-Your plan as phases of 8 weeks, each made of 4-week **mesocycles**: three loading weeks and a light week, with tests at the end of each phase. Below it, this block's sessions with their sets, reps and effort, what's coming up, and the reason behind every exercise.
+Your plan as phases, each made of two **mesocycles** that end in a light week (by default 4-week blocks of three loading weeks and a light week, so 8-week phases), with tests at the end of each phase. Below it, this block's sessions with their sets, reps and effort, the plan's standing rules (how each lift progresses, when the light weeks fall, what a bad day does), what's coming up, and the reason behind every exercise.
 
 ![Plan: the 24-week timeline of phases, mesocycles, light weeks and tests, this mesocycle's lifting and short days, and what's coming up](docs/images/plan.png)
 
@@ -53,7 +53,7 @@ Supplements, water, protein and your own ticks, each with its reminder and its h
 The `/fitness-coach` skill in Claude Code:
 
 - **Intake:** a safety screen, a short interview and an optional body assessment from photos.
-- **Plan:** a plan designed for you, compared against other options, with the evidence for each choice.
+- **Plan:** the coach designs your plan from your answers and the evidence: at least three options, each measured and checked by the engine, with the evidence and its grade for each choice, and the plan's standing rules written with it.
 - **Sunday check-in:** reads your week and writes you a short letter with one thing to focus on.
 - **Reviews, progress reports, an eating plan and habit suggestions**, when you want them.
 - **Logging and questions:** tell it what you did, or ask how things are going.
@@ -66,9 +66,9 @@ Recorded from real sessions in a demo vault, with a made-up athlete: Sam, 34, at
 
 ![The coach's intake in Claude Code: the screening questions, goals and priority muscles, the movement self-check, and the profile written on a yes](docs/images/coach-intake.svg)
 
-**Plan:** which priorities come first, five candidate plans compared by the engine, then 24 weeks with the reason behind every choice.
+**Plan:** the open questions first (a movement finding, which priorities come first, the start date, what could derail it), then three candidate plans the coach designed and checked with the engine, and the plan written on a yes.
 
-![The coach's plan in Claude Code: how the athlete's data shaped the plan, the candidates compared, the phases and mesocycles, and the first session's exercises with their reasons](docs/images/coach-plan.svg)
+![The coach's plan in Claude Code: the questions asked before any design, the athlete's answers, three candidate plans checked with the engine, the first session's lifts with a reason, and the plan written through plan-write on a yes](docs/images/coach-plan.svg)
 
 **Eating plan:** a screen first, then a plan built around the athlete's own meals and day.
 
@@ -76,7 +76,11 @@ Recorded from real sessions in a demo vault, with a made-up athlete: Sam, 34, at
 
 ### Built on research, and honest about it
 
-The coach's rules live in one file, each with where it comes from: **79 linked sources**, most of them from 2020 or later, from meta-analyses and reviews to trials. The rules that shape a plan (volume per muscle, effort in reps in reserve, load, rest, exercise order, progression, light weeks, cardio alongside lifting) were checked against 62 sources, each one read. Rules are graded: **strong** (consistent meta-analyses), **moderate** or **weak**, and a rule that's only a sensible default is called a **heuristic**, not dressed up as science. When the coach proposes your plan, each major choice comes with its evidence and its grade.
+The coach's rules live in one file, each with where it comes from: **98 linked sources**, most of them from 2020 or later, from meta-analyses and reviews to trials. The rules that shape a plan (volume per muscle, effort in reps in reserve, load, rest, exercise order, progression, light weeks, cardio alongside lifting) were checked against 62 sources, each one read. Rules are graded: **strong** (consistent meta-analyses), **moderate** or **weak**, and a rule that's only a sensible default is called a **heuristic**, not dressed up as science. When the coach proposes your plan, each major choice comes with its evidence and its grade.
+
+- **The evidence is data.** The engine holds the graded rules and the exercises to choose from, and the coach designs from them; the numbers the engine checks a plan with are the ones it gives the coach, and a self-check, run each time the coach is built, fails when its docs say otherwise.
+- **Muscle regions only where studies show them.** Parts of a muscle are modelled only where MRI and ultrasound training studies support them (none is graded strong). Popular ideas without that support, such as the inner chest or the VMO, are explained with the nearest supported option, not planned for, and a lagging part is your word, never read from a photo.
+- **The engine checks; it doesn't decide.** A movement your injury limits rule out always blocks a plan. Going outside an evidence range is allowed only with a reason you can read, and anything the coach takes from outside Pahlavan's library is labelled so and needs your yes.
 
 ## How it works
 
@@ -85,7 +89,7 @@ The coach's rules live in one file, each with where it comes from: **79 linked s
   <img alt="How it works: the Pahlavan plugin in Obsidian and the coach in Claude Code both read and write plain files in your vault, and both take their numbers from one engine" src="docs/images/how-it-works-light.png">
 </picture>
 
-The plugin and the coach read and write the same files in your vault, and both get their numbers from one engine, so a number on a screen and a number in a letter always agree. Every number comes with its reason: why this weight, why a light week now, why this exercise is in your plan.
+The plugin and the coach read and write the same files in your vault, and both get their numbers from one engine, so a number on a screen and a number in a letter always agree. Every number comes with its reason: why this weight, why a light week now, why this exercise is in your plan. The coach designs the plan and its standing rules; the engine calculates, checks every plan before it is written, and follows the coach's rules, naming the rule behind each target.
 
 ## What you need
 
@@ -106,13 +110,13 @@ The plugin and the coach read and write the same files in your vault, and both g
 3. Open Claude Code in your vault's folder and type `/fitness-coach intake`. Answer its questions; it writes your profile.
 4. Type `/fitness-coach plan`. The coach designs your plan and, once you say yes, writes it. Today shows your first session.
 
-Each step ticks itself once its file is there. The [user guide](docs/user-guide.md) walks through every screen.
+Each step ticks itself once its file is there. The [user guide](docs/user-guide.md) walks through every screen, and the [exercise catalogue](docs/exercise-catalogue.md) lists the 244 movements the coach chooses from, with how to do each (the command **Pahlavan: Write the exercise catalogue** puts the same list in your vault).
 
 ## Questions
 
 **Do I need Claude Code?** The screens open without it, but your plan comes from the coach's intake and plan steps, so you need it to use Pahlavan fully.
 
-**What does it cost?** Pahlavan is free during the beta. Claude Code comes with Anthropic's Claude plans, which are separate from Pahlavan.
+**What does it cost?** Pahlavan is free during the beta. 1.0 will be paid, and everyone who installs before 1.0 keeps it free: Pahlavan records the day it was first installed in your vault (nothing leaves your Mac), and its Settings tab shows it. Claude Code comes with Anthropic's Claude plans, which are separate from Pahlavan.
 
 **Where does my data go?** Into plain JSON and Markdown files in your vault, nowhere else. The plugin makes no network requests. When you talk to the coach, Claude Code sends your messages and the files it reads to Anthropic under your own account, as it does for anything you do in Claude Code.
 
@@ -144,7 +148,7 @@ The coach screens for risks before it plans anything. It doesn't coach anyone un
 
 ## Support
 
-Pahlavan is free. If it helps you, you can [buy me a coffee on Ko-fi](https://ko-fi.com/saeedghorbani70608). Bugs and ideas go in [GitHub issues](../../issues).
+Pahlavan is free during the beta, and stays free for everyone who installs before 1.0. If it helps you, you can [buy me a coffee on Ko-fi](https://ko-fi.com/saeedghorbani70608). Bugs and ideas go in [GitHub issues](../../issues).
 
 ## License
 

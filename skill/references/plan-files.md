@@ -7,9 +7,10 @@ only how it gets into the files. Swaps, a temporary change (an injury, a week
 away), or the next month (its own recipe, below).
 
 The plan lives in `plan-data.json` (in the fitness folder): Pahlavan's Plan
-screen and Today read it. When `Coach/local.md` names notes made from the
-plan and how to regenerate them, that runs after every change below; such
-notes are never edited by hand.
+screen and Today read it. It is written only through `engine plan-write`,
+after the plan check (step 3), never by hand. When `Coach/local.md` names
+notes made from the plan and how to regenerate them, that runs after every
+change below; such notes are never edited by hand.
 
 ## A change to the plan
 
@@ -19,11 +20,15 @@ notes are never edited by hand.
    line, `planning.md`); a changed item gets its reason updated too. A **new movement** also needs:
    - a `guide` entry (`setup`, `do`, `avoid`, `q`, and `muscles: {main,
      helps}` using the ids in `muscles`), or the Exercise Guide and the muscle
-     map won't know it;
-   - a `lifts` entry (`lo`, `hi`, `inc`, `db`) if it's one of the session's
-     `logged` lifts, so Pahlavan and the engine can suggest its next weight:
-     `inc` a step that exists in its unit, and `unit` only if that isn't
-     `liftUnit`.
+     map won't know it; for a catalogue movement, its `guide` in `engine
+     catalogue` is a starting point for `setup`, `do` and `avoid`, in the
+     plan's own words;
+   - a `lifts` entry (`lo`, `hi`, `inc`, `db`, `progression`) if it's one of
+     the session's `logged` lifts, so Pahlavan and the engine can suggest its
+     next weight: `inc` a step that exists in its unit, `unit` only if that
+     isn't `liftUnit`, and `progression` the lift's standing rule
+     (`formats.md`, "The plan's standing rules"; without it, the default's
+     double progression and a `legacy-default` warning).
    **A temporary change** carries `until YYYY-MM-DD: <why>` at the start of the
    item's `note`; the weekly check-in finds it when the date has passed and
    proposes the way back (`checkin.md`).
@@ -32,18 +37,57 @@ notes are never edited by hand.
    date and its Decision, and into `Coach/profile.json` `preferences`
    (`likes`, `dislikes`) when the engine's catalogue has an id for it
    (`formats.md`); then `engine.cjs validate <fitness>/Coach/profile.json
-   --kind profile --json`. Otherwise the next `engine plan` draft brings the
-   old choice back.
-3. On the user's yes, edit `plan-data.json` (keep its formatting and key
-   order), then what `Coach/local.md` says runs after a plan change (if
-   anything), and report the files written. A
-   whole designed plan comes as an object from `engine plan --format
-   plan-data --vault .` (`planning.md`): it keeps the keys and their order;
-   write it after filling what its `unexpressible` list asks for. A ladder
+   --kind profile --json`. The next plan's design starts from them, so the
+   old choice doesn't come back (nor in `engine plan`'s baseline, which
+   reads `preferences`).
+3. **Write it through the check.** The change goes into a draft: the
+   whole `plan-data.json` with the change made (its keys in their order),
+   saved as a scratch file outside the vault, never over the real file, with
+   the plan's standing rules written or revised in the same draft (`rules`, a
+   lift's `progression`; `formats.md`, "The plan's standing rules"). Then
+   (`numbers.md`, "The plan check"):
+   1. `check --plan <draft> --vault . --json`. A hard error (`level:
+      "error"`: a movement the Ledger or the screen rules out, data Pahlavan
+      can't read, a logged lift with no `lifts` entry) stops the write: fix
+      the draft and check again. It screens on `--date` (default today): a
+      draft for the weeks after a Ledger constraint ends takes `--date` in
+      those weeks, here and in step 4. Each warning carries its rule, grade and
+      reason: change the draft, or, when the plan goes outside the range on
+      purpose, add an override with the reason to the draft (`overrides:
+      [{code, item, reason, decision}]`, `formats.md`) and a Decisions entry.
+      An override needs a reason and never clears a hard error.
+   2. `review --plan <draft> --vault . --json`: the draft's numbers as
+      Pahlavan will show them (sets per muscle, each session's minutes, the
+      targets); every number the proposal quotes comes from this run.
+   3. Show the user the change (step 2's list), the warnings and the
+      overrides with their reasons, and the dry run's `diff` (`plan-write
+      --file <draft> --vault . --json`): what changes, key by key.
+   4. On the user's yes, `plan-write --file <draft> --vault . --json
+      --write`: it checks the draft again (a hard error refuses it), writes
+      the whole file and reads it back. Then `check --vault . --json` once
+      more, on the plan as written: a hard error there stops the job until
+      it's fixed (SKILL.md house rule 20). Then what `Coach/local.md` says
+      runs after a plan change (if anything), and report the files written.
+   A whole designed plan is the pick's draft (`planning.md`, step 1),
+   written the same way: a fresh start's or a reset's with its new `start`
+   (formats.md, "The plan's start"), every other change (a swap, the next
+   month, a phase review's next block) keeping the `start` the file has
+   (`check --plan` warns `start-changed` otherwise). On a vault with no
+   `plan-data.json` yet (a first plan), every step here works on the draft:
+   `check --plan`, `review --plan`, and `plan-write`, whose diff lists every
+   key as added. A baseline from `engine plan --format plan-data
+   --vault .` keeps plan-data's keys and their order, the plan's names and
+   the "Why:" lines of unchanged items; fill what its `unexpressible` list
+   asks for (guide text, `why lines`) before it is a draft. A ladder
    item is written as `"<Ladder> (your level)"` with its `ladder` id and is
-   never one of the two logged lifts; its starting level goes into the log
-   with `log ladder --id <id> --level <level> --date <D> --write` (`unexpressible`
-   names the line under "ladder levels").
+   never one of the two logged lifts. Its ladder in `ladders` carries the
+   level this plan starts it at as `"startLevel": N` (formats.md, "A
+   ladder's starting level"; a baseline export writes it), so `check
+   --plan` and `review --plan` count the item at that level before the log
+   holds one; without it they count the lowest level and warn
+   `ladder-start`. The starting level also goes into the log with `log
+   ladder --id <id> --level <level> --date <D> --write` (`unexpressible`
+   names the line under "ladder levels"), where the level history starts.
 4. **The targets.** Every new or changed plan writes `targets` in
    `Coach/profile.json` (where Pahlavan's Progress and Plan screens read them;
    the fields in `formats.md`: `by`, `waistDropCm`, `weightDropKg`,
@@ -55,29 +99,34 @@ notes are never edited by hand.
 
 ## The next month
 
-Each month covers four plan weeks and ends on a light week: month N is
-plan weeks 4N−3 to 4N (Month 2 is weeks 5–8, Month 3 weeks 9–12). Take its
+Each month is one mesocycle and ends on a light week (`rules.lightWeeks`;
+with light weeks every 4th week, month N is plan weeks 4N−3 to 4N). Take its
 dates from `engine review` when building it, never from an earlier note or
-cycle: week 1's Monday is `week.planStart`, so month N starts 4(N−1) weeks
-later (worked out in the shell); `engine review --date <that Monday>` shows
-`week.planWeek` 4N−3, and `--date` on the month's last Sunday shows the light
-week (`week.deload` true). Build it when the current month's last week is over
+cycle: week 1's Monday is `week.planStart` (the Monday of the plan's
+`start` when it has one), `engine review --date <a
+Monday>` shows its `week.planWeek`, `week.mesocycle` and
+`week.mesocycleWeeks` (the weeks to its light week), and `--date` on the
+month's last Sunday shows the light week (`week.deload` true). Build it when the current month's last week is over
 (the check-in says when, and the `review` job comes first). Propose the whole
 month as one list; on the user's yes:
 
 1. **The roadmap.** Read the phase the new weeks fall in (`6-Month Roadmap.md`:
    the Phases table and that phase's bullets) and the Check-ins rows that land
-   in them. Phases turn over at weeks 9 and 17, so Months 3 and 5 carry the
+   in them. A month that starts a new phase (the one after every second
+   light week: weeks 9 and 17 with light weeks every 4th week) carries the
    bigger changes.
 2. **`plan-data.json`**, through steps 2–3 above:
    - `sessions`: the phase's set, rep and round changes (`sr`). A logged lift
      whose rep range changes needs its `lifts` `lo`/`hi` changed too, or the
      next-weight suggestions keep the old range.
    - `weekTarget` (`lift`, `short`): only if the roadmap changes the week's
-     cadence (it's 4 + 3 through week 24 in the current roadmap).
-   - The light week is not a field: Pahlavan and `review` make every 4th
-     plan week a light week (`week.deload`). `deloadS3` is
-     what S3 becomes that week; change it only if the phase changes S3.
+     cadence (say, from 4 lifting and 3 short sessions to 3 and 2).
+   - The light weeks are the plan's `rules.lightWeeks` (formats.md, "The
+     plan's standing rules"; `review`'s `week.deload`): a light week moves,
+     or its shape changes, by editing it in the draft. `deloadS3` is what S3
+     becomes that week; change it only if the phase changes S3.
+   - The standing rules the review revised (a lift's `progression`, the
+     stall response, the light weeks) go into the same draft.
    - Temporary notes: settle the due ones first (the check-in's way back) and
      carry the rest with their `until` dates.
 3. **Notes made from the plan** for a new month (a month note, a calendar):

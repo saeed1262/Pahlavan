@@ -13,8 +13,8 @@ import type { SessionPickSetting, SwapsSetting } from './pick.ts';
 import type { ProgressSection } from './ui/progress-more.ts';
 import { foldersOf, type Folders } from '../../src/adapters/vault/layout.ts';
 
-export type Section = 'today' | 'progress' | 'plan' | 'checkin' | 'food';
-const SECTIONS: readonly Section[] = ['today', 'progress', 'plan', 'checkin', 'food'];
+export type Section = 'home' | 'today' | 'progress' | 'plan' | 'checkin' | 'food';
+const SECTIONS: readonly Section[] = ['home', 'today', 'progress', 'plan', 'checkin', 'food'];
 const PROGRESS_SECTIONS: readonly ProgressSection[] = ['overview', 'training', 'body', 'health', 'skills', 'habits'];
 
 /** The Progress views with a range switch (Habits counts from each item's own start). */
@@ -33,6 +33,12 @@ export interface PahlavanSettings {
   progressSection?: ProgressSection;
   /** Each Progress view's range when it is not the default (this cycle): `all` shows the earlier data too. */
   progressScopes?: Partial<Record<ScopedSection, Scope>>;
+  /**
+   * Home has opened once: data.json saved before Home existed lacks it, so
+   * the first load after the update opens Home; after that, the last tab is
+   * remembered as before.
+   */
+  homeShown?: boolean;
 }
 
 /** A Progress view's range: what the user chose for it, else this cycle. Habits always counts from each item's start. */
@@ -49,7 +55,7 @@ export function setProgressScope(settings: PahlavanSettings, section: ScopedSect
   else delete settings.progressScopes;
 }
 
-export const DEFAULT_SETTINGS: PahlavanSettings = { lastTab: 'today', mode: 'full', pick: null };
+export const DEFAULT_SETTINGS: PahlavanSettings = { lastTab: 'home', mode: 'full', pick: null, homeShown: true };
 
 /** What Snooze, and closing a card, can wait, in minutes. */
 export const SNOOZE_CHOICES = [10, 30, 60, 120] as const;
@@ -95,11 +101,20 @@ export interface PluginData extends PahlavanSettings {
   guideUrl: string;
   /** Where the vault keeps Pahlavan's files; missing until the plugin has looked for them once (then saved). */
   folders?: Folders;
+  /**
+   * The first day this vault ran a Pahlavan that records it (YYYY-MM-DD),
+   * set once and never moved. Everyone who installs before 1.0 keeps
+   * Pahlavan free, so this is the date that shows it. A vault from before
+   * the field gets the day it updated, which is still in the beta.
+   */
+  installedOn?: string;
 }
 
 /** What the plugin detects when it loads: a vault that is a git repository with obsidian-git enabled. */
 export interface SettingsEnv {
   gitSynced: boolean;
+  /** Today's local date (YYYY-MM-DD): a vault without an install date gets it. */
+  today?: string;
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
@@ -130,6 +145,7 @@ const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !
 const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const isTime = (v: unknown): v is string => typeof v === 'string' && TIME.test(v);
+const isDay = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 /**
  * data.json as stored, into the current shape. Version 1 (no `version`:
@@ -141,7 +157,8 @@ export const isTime = (v: unknown): v is string => typeof v === 'string' && TIME
 export function loadPluginData(raw: unknown, env: SettingsEnv): { data: PluginData; migrated: boolean } {
   const d = defaultPluginData(env);
   const r = isObj(raw) ? raw : {};
-  if (SECTIONS.includes(r['lastTab'] as Section)) d.lastTab = r['lastTab'] as Section;
+  // Home opens once after the update that added it; from then on the last tab is kept.
+  if (r['homeShown'] === true && SECTIONS.includes(r['lastTab'] as Section)) d.lastTab = r['lastTab'] as Section;
   if ((SESSION_MODES as readonly unknown[]).includes(r['mode'])) d.mode = r['mode'] as SessionMode;
   const pick = r['pick'];
   if (isObj(pick) && typeof pick['date'] === 'string' && typeof pick['type'] === 'string') d.pick = { date: pick['date'], type: pick['type'] };
@@ -174,6 +191,9 @@ export function loadPluginData(raw: unknown, env: SettingsEnv): { data: PluginDa
   if (isWebAddress(r['guideUrl'])) d.guideUrl = (r['guideUrl']).trim();
   const folders = foldersOf(r);
   if (folders) d.folders = folders;
+  // The install date is kept as stored; without one, today (saved once, through `migrated`).
+  if (isDay(r['installedOn'])) d.installedOn = r['installedOn'];
+  else if (isDay(env.today)) d.installedOn = env.today;
   return { data: d, migrated: JSON.stringify(canonical(raw)) !== JSON.stringify(canonical(d)) };
 }
 

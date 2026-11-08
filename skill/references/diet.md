@@ -264,10 +264,9 @@ Markdown's twin (fields in `formats.md`). Build it from the agreed plan:
   meal, the session by the plan's rotation, the drinks) and `checks`.
 
 ```bash
-E=".claude/skills/fitness-coach/scripts/engine.cjs"
-node $E eating --vault . --json --file <plan.json>           # a dry run: result, changed, plan, warnings
-node $E eating --vault . --json --file <plan.json> --write   # after the user's yes
-node $E food --vault . --json [--date D]                     # what the Food tab shows
+node .claude/skills/fitness-coach/scripts/engine.cjs eating --vault . --json --file <plan.json>           # a dry run: result, changed, plan, warnings
+node .claude/skills/fitness-coach/scripts/engine.cjs eating --vault . --json --file <plan.json> --write   # after the user's yes
+node .claude/skills/fitness-coach/scripts/engine.cjs food --vault . --json [--date D]                     # what the Food tab shows
 ```
 
 `eating` validates, merges the given parts into the file as it is (objects

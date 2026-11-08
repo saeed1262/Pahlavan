@@ -37,10 +37,10 @@ tags: [fitness, coach]
 ## Body assessment (2026-11-01)
 Photos: `Progress Photos/2026-11-01/` (front, side, back, posture-closeup, move-squat-side, move-squat-front, move-overhead-side).
 
-| Area | Seen | Confidence | Plan emphasis |
-|---|---|---|---|
-| Posture | Head forward, shoulders rounded | high | Pull:push about 2:1; face pulls, rear delts; chest stretch |
-| Movement | Heels lift at the bottom of the squat | medium | Heel-elevated goblet squat; ankle mobility |
+| Area | Seen | Confidence | Plan emphasis | Confirmed |
+|---|---|---|---|---|
+| Posture | Head forward, shoulders rounded | high | Pull:push about 2:1; face pulls, rear delts; chest stretch | yes: "my neck aches by the afternoon" |
+| Movement | Heels lift at the bottom of the squat | medium | Heel-elevated goblet squat; ankle mobility | no: squats deep with the heels down (left out of the plan) |
 
 ## Screening
 - **2026-11-01: Go.** Regular exerciser: yes. Known heart, metabolic or kidney condition: no. Warning signs: none. Other: none.
@@ -69,16 +69,17 @@ Standard: the top set of the two logged lifts per lifting session. The coach can
 - When a week goes badly: "I just miss it" → the minimum week and if-then plans.
 
 ## Standing plan rules
-The user's own rules for every plan (sets, session structure, preferred tools, a load ceiling), one line each with its source and date; the plan job reads them first.
+The user's own rules for every plan (sets, session structure, preferred tools, a load ceiling), one line each with its source and date; the plan job reads them first. The ones the engine can check also go in `profile.json` `planRules`, and `engine check` reports a plan that breaks one.
 
 ## Later priorities
 Priority muscles the user named past this phase's room, in their order (`intake.md` Round 2, question 5; `planning.md` step 5): "Glutes (named 2026-11-05): for phase 2." The phase review offers the next one; it moves into `profile.json` `priorityMuscles` only on the user's yes.
 
 ## Movement self-check (2026-11-01)
-| Test | Result | Starting point |
-|---|---|---|
-| Push-ups | 30 | Push-up ladder level 4 (deficit push-ups) |
-| Hang and pull | 40 s hang, 5 strict pull-ups | Pull-up ladder level 6: pull-ups as the main vertical pull |
+| Test | Result | Starting point | Confirmed |
+|---|---|---|---|
+| Push-ups | 30 | Push-up ladder level 4 (deficit push-ups) | (a count: not asked) |
+| Hang and pull | 40 s hang, 5 strict pull-ups | Pull-up ladder level 6: pull-ups as the main vertical pull | (a count: not asked) |
+| Overhead reach | Ribs flare, lower back arches | Landmine or incline pressing; upper-back extension and a lat stretch in the warm-up | no: "pressing overhead doesn't hurt or arch my back" (overhead presses stay in; the warm-up lines stay) |
 
 ## RIR calibration
 | Exercise | Date | Predicted RIR | Actual RIR | Bias |
@@ -142,13 +143,14 @@ starting with `_` are allowed as notes.
   "trackingLevel": "standard",
   "screening": { "outcome": "go", "date": "2026-11-01" },
   "emphasis": [
-    { "area": "Posture", "seen": "Head forward, shoulders rounded", "confidence": "high",
+    { "area": "Posture", "seen": "Head forward, shoulders rounded", "confidence": "high", "confirmed": true,
       "emphasis": "Pull:push about 2:1; face pulls, rear delts; chest stretch", "kind": "forward-head-rounded-shoulders" }
   ],
   "priorityMuscles": ["glutes"],
   "experience": "intermediate",
   "preferences": { "likes": ["goblet-squat"], "dislikes": [], "cardio": ["zone2-bike"] },
-  "useHistory": false
+  "useHistory": false,
+  "planRules": { "setsPerExercise": 3, "liftSession": { "patterns": ["squat|lunge|hinge", "chest", "upper-back|lats", "shoulders"] }, "shortDayCore": true }
 }
 ```
 
@@ -161,8 +163,9 @@ starting with `_` are allowed as notes.
 | `equipment` | Equipment | words the engine knows: bodyweight, dumbbells, barbell (and plates), cable (machine), machines, leg press, bands, bench, pull-up bar, kettlebells, rings or TRX; anything else is reported as free text and not used |
 | `trackingLevel` | Tracking level | `light`, `standard`, `full` |
 | `screening` | Screening | `outcome`: `go`, `go-ramped`, `conservative`, `blocked`; `date` (re-screen by +12 months); optional `limits` |
-| `emphasis[]` | Body assessment, one per row | `confidence`: `high`, `medium`, `low`; `kind` (the intake.md row): `forward-head-rounded-shoulders`, `overhead-limited`, `squat-heels-lift`, `knees-in`, `low-back-arch`, `asymmetry` (with `side`: `left` or `right`, the weaker), `lagging-area` (with `muscles`), `waist-fat` |
+| `emphasis[]` | Body assessment, one per row | `confidence`: `high`, `medium`, `low`; `kind` (the intake.md row): `forward-head-rounded-shoulders`, `overhead-limited`, `squat-heels-lift`, `knees-in`, `low-back-arch`, `asymmetry` (with `side`: `left` or `right`, the weaker), `lagging-area` (with `muscles`), `waist-fat`; `regions`: optional region ids, a part of the row's muscle the user named (`intake.md`, Round 2, question 5; never from the photos), declared weak like `priorityRegions` unless the row is declined; `confirmed`: the user's answer (`intake.md`, "Confirm each finding"), asked so that yes means the finding holds: yes is `true` and the plan acts on it; no is `false` and the plan leaves the row out; left out, not asked yet (see below) |
 | `priorityMuscles` | Goals and lagging areas | muscle ids: `chest`, `shoulders`, `biceps`, `triceps`, `forearms`, `abs`, `obliques`, `upper-back`, `lats`, `lower-back`, `glutes`, `quads`, `hamstrings`, `calves` |
+| `priorityRegions` | Regions the user declares weak (never diagnosed from photos) | optional; region ids (below). An `emphasis[]` row may name its own as `regions` (they count only when the row acts in full: confirmed, or any row in a profile that records no answers; a declined row, or one not answered yet in a profile that records answers, doesn't count). `review` reports each and `check` holds it to 6 direct sets near failure a week (`region-declared-short`); its muscle counts as a priority muscle everywhere (the 10–16 bands, the region rules, Progress and Plan) |
 | `experience` | Training age, by how fast they progress | `novice`, `intermediate`, `advanced` |
 | `preferences` | Preferences | exercise ids from the engine's catalogue (lowercase, dashes: `goblet-squat`, `zone2-bike`); an unknown id is a warning |
 | `useHistory` | History used | `true` only when the user chose to use their history |
@@ -170,9 +173,10 @@ starting with `_` are allowed as notes.
 | `work` | `tracking.md`'s desk-work questions | `{desk: true or false, sittingHours?}`: hours at a computer on a work day; the plan proposes desk breaks for desk work |
 | `targets` | The plan's targets (the roadmap's Targets table), written by every new or changed plan (`plan-files.md`, step 4) | `{by?, waistDropCm?, weightDropKg?, rhrDropBpm?, stepsPerDay?, sleepHours?, tests?}`: `by` the date they are for (the plan's last day when left out); the drops `[lo, hi]` from the cycle's first value; `stepsPerDay` and `sleepHours` a 7-day average to hold; `tests` `{"<test id>": n}` (`pushups`, `pullups`, `hollowS`, `handstandS`, `sidePlankS`). Pahlavan's Progress and Plan screens measure against them; what they can't hold (the wall gap) stays in the roadmap |
 | `availability.shortSessions` | Availability: some days shorter | `{days, minutes}`: how many of the `daysPerWeek` are short and their minutes (`days` under `daysPerWeek`, `minutes` under `minutesPerSession`); lifting goes on the long days |
-| `preferences.splits` | Preferences: splits liked or disliked before | `{likes?, dislikes?}`, each a list of `full-body`, `upper-lower`, `push-pull-legs`, `heavy-and-light-days`, `body-part`, `torso-limbs`, `upper-lower-full`, `specialization`, `hift`, `circuit`, `calisthenics` (`rules.md`'s split families); scored in the candidate comparison (`planning.md`, step 1) on the templates of that kind: an upper/lower/full template and push/pull/legs plus upper/lower count as `upper-lower` too, a minimum-dose one as `circuit`. The engine builds no `specialization`, `hift` or `calisthenics` week, so those weigh on the coach's own candidates (the engine reads them only for the families' fit). Anything the kinds can't say stays in the Athlete profile's Preferences, in the user's words |
+| `preferences.splits` | Preferences: splits liked or disliked before | `{likes?, dislikes?}`, each a list of `full-body`, `upper-lower`, `push-pull-legs`, `heavy-and-light-days`, `body-part`, `torso-limbs`, `upper-lower-full`, `specialization`, `hift`, `circuit`, `calisthenics` (`rules.md`'s split families); weighed in the coach's candidate comparison (`planning.md`, step 1) for the candidates of that kind; the generator's optional baseline also scores its own templates on them (an upper/lower/full template and push/pull/legs plus upper/lower count as `upper-lower` too, a minimum-dose one as `circuit`). Anything the kinds can't say stays in the Athlete profile's Preferences, in the user's words |
 | `badWeek` | Preferences: when a week goes badly | `{usually: [...], note?}`: `skips-sessions`, `shortens-sessions`, `stops-for-a-while`, `travel`, `eats-off-plan`, `sleeps-badly`, and the answer in the user's words; it sets the split's skip risk and the pre-mortem's first risks |
 | `selfCheck` | Movement self-check | The results with the date (below); the engine reads it for the ladders' starting levels and the exercise choices `intake.md` lists |
+| `planRules` | Standing plan rules, the ones the engine can check | `{setsPerExercise?, liftSession?, shortDayCore?}`, each optional: `setsPerExercise` the working sets of every strength exercise with sets on a lifting day; `liftSession.patterns` what every lifting session holds, each entry a catalogue movement pattern (`squat`, `hinge`, `lunge`, `horizontal-push`, `horizontal-pull`, `vertical-push`, `vertical-pull`, `lateral-raise`, `rear-delt`, ...) or a muscle id (`chest`), alternatives joined by `\|` (`"squat\|lunge\|hinge"`: a leg exercise); `shortDayCore: true` a core exercise on every short day. `engine check` warns `plan-rule` for each break; the coach designs within them or states why not (an override) |
 
 **`selfCheck`** holds the same facts as the Athlete profile's "Movement
 self-check" table, one field per test; a test that was stopped (pain) or not
@@ -189,7 +193,8 @@ done is left out, never guessed:
   "hingeFlatBack": true,
   "overheadReach": { "clean": false, "ribFlare": true, "lowBackArch": true },
   "wallGapCm": 5,
-  "balanceS": { "left": 30, "right": 30 }
+  "balanceS": { "left": 30, "right": 30 },
+  "confirmed": { "overheadReach": false }
 }
 ```
 
@@ -204,6 +209,18 @@ done is left out, never guessed:
 | `overheadReach` | Overhead reach | `clean`; when not clean, `ribFlare` and `lowBackArch` say what was seen |
 | `wallGapCm` | Wall test | the gap behind the head, cm |
 | `balanceS` | Balance | seconds `left` and `right` (the test stops at 30) |
+| `confirmed` | The user's answer to each finding | per test whose result changes exercise choice (`sitToStand`, `hingeFlatBack`, `overheadReach`, `balanceS`), asked so that yes means the finding holds: yes is `true`, it holds and the plan acts on it; no is `false`, it doesn't and only its warm-up lines stay (above: pressing overhead doesn't hurt or arch the back, so overhead presses stay in); a test left out, not asked yet |
+
+**A finding with no answer.** In a profile that records an answer anywhere
+(a `selfCheck.confirmed` map, even empty, or `confirmed` on any row), a
+finding left unanswered ranks its regression first and adds its warm-up,
+nothing more: it rules no movement out, makes no priority muscle (a lagging
+area) and sets no 2-to-1 pull to push (a posture goal's own floor still
+applies). A profile with no answer anywhere was
+written before the question: the engine applies its findings as before, and
+`plan` and `review` warn `finding-unconfirmed` with the question to ask and
+where the answer goes (`selfCheck.confirmed.<test>` or
+`emphasis[<i>].confirmed`): yes is `true`, no is `false`.
 
 `ledger.json` holds one constraint per Ledger entry that constrains the plan
 (status active or managing); a resolved entry has none, or its `until` date
@@ -226,18 +243,267 @@ has passed.
   `abdomen-moderate`, `abdomen-low`, rules.md's IAP table) or `joint:<name>`.
   With `abdomen-high` ruled out, a moderate lift stays allowed with
   conditions (breathe out on the effort, RIR ≥ 2).
-- `noMovements`: exercise ids. The engine catalogue's ids steer `engine plan`
-  (`back-squat`, `deadlift`, `rdl`, `overhead-press`, `bench-press`,
-  `leg-press`, `barbell-row`, `hip-thrust`, `farmer-carry`, `ring-dip`); the
-  current plan's exercise ids (its names in lowercase with dashes, such as
-  `barbell-back-squat`) work for `review`'s screen too.
+- `noMovements`: exercise ids: the engine catalogue's (`back-squat`,
+  `deadlift`, `rdl`, `overhead-press`, `bench-press`, `leg-press`,
+  `barbell-row`, `hip-thrust`, `farmer-carry`, `ring-dip`) or the plan's own
+  (its names in lowercase with dashes, such as `barbell-back-squat`).
+  `engine check` blocks any plan item that is one (`ledger-blocked`, a hard
+  error); `review` and Today name it with its swaps, and the generator's
+  baseline leaves it out.
 - `until`: the last day it applies (inclusive); leave it out for an open one.
 
-**The plan they make** comes out as `plan-data.json` (`engine plan --format
-plan-data`; its fields in `planning.md`, "Mapping onto `plan-data.json`").
+**The plan they make** comes out as `plan-data.json` (the coach designs it
+and writes it through `engine plan-write`; `engine plan --format plan-data`
+is an optional baseline to compare against, and exported with `--vault .`
+it keeps the plan's names and unchanged items' "Why:" lines; its fields in
+`planning.md`, "Mapping onto `plan-data.json`").
 A generated plan carries `pair: true` on a superset's second item, done with
 the item before it: both items rest "90 s after each pair" and their notes
 say "Superset with X: a set of each, then rest." (`planning.md`, step 5).
+
+**A plan item's `rir` and `timed`** carry what notes used to:
+- `rir`: the reps in reserve, a number (`2`) or `[lo, hi]` for a range
+  (`[1, 2]`). The slot's target is the low end; the effort rule reads the
+  high end. Without it, the note's "RIR 2." or "RIR 1–2" is read, as in
+  plans written before the field. The export writes the field, never a
+  "RIR n." sentence in a note.
+- `timed`: a timed item's minutes and structure, `{minutes?, rounds?,
+  workMin?, restMin?, warmupMin?, cooldownMin?}`, every value in minutes;
+  it needs `minutes`, or `rounds` with `workMin`. Steady cardio is `sr:
+  "20 min"` alone (the field adds nothing). Intervals: `"timed": {"minutes":
+  30, "rounds": 4, "workMin": 4, "restMin": 3}` is 4 × 4 min hard with 3 min
+  easy between. Intervals take warm-up + rounds × work + (rounds − 1) ×
+  rest + cool-down; with no warm-up or cool-down given, `minutes` is the
+  whole item when longer (the easy time around them), never less than the
+  intervals. Keep `sr` at the same total (`"30 min"`). Without the field,
+  the minutes in `sr` and intervals the note describes ("4 × 4 min hard, 3
+  min easy between", and warm-up or cool-down minutes when it gives them)
+  are read.
+
+A timed item's sets in the engine (`session`, the Plan screen) are its
+rounds, 1 for steady minutes; the log keeps its own count of a timed line,
+a set per 2 minutes (`exercises[].sets`), as before. In the calibration week
+an interval item is easy steady cardio for the same minutes (rule
+`plan.calibration.cardio`, `planning.md` section 8), with no week-1 text in
+the note. A `rir` or `timed` that isn't well formed is read from the note
+instead, with a `plan-item-field` warning in `review`.
+
+**A guide entry's `muscles`** is `{main, helps}` (plan-data's 14 groups), or
+`{main: [], helps: [], kind: "cardio" | "mobility", areas}` for an item
+not counted in sets. For a movement the engine's catalogue knows (its name,
+id or a common synonym), the catalogue's tags count and the entry's are a
+copy the export keeps in step; `review` warns `muscle-tags-differ` while
+they disagree. To keep an entry's own tags, add `override` with the reason,
+a non-empty string, beside at least one main muscle: `"muscles": {"main":
+["shoulders", "upper-back"], "helps": [], "override": "rear delts counted
+as shoulders on purpose"}`. Its tags then count everywhere (Review,
+Progress, Plan, the movement guide and `plan --vault`), the export leaves
+them, and `review` lists it in `muscle-tags-overridden`. An override that
+isn't a non-empty reason, or has no main muscle beside it, is ignored
+(`muscle-tags-override-ignored`): the catalogue's tags count and the next
+export replaces the copy, override included. An override counts in a new
+plan only on the entry named like the catalogue movement; on a variant
+key ("Goblet squat (heavy)") it counts for the items named by it. A
+movement the catalogue doesn't know always counts with the entry's tags. A
+`kind` entry is never counted, even for a movement the catalogue counts as
+strength work (`muscle-tags-uncounted` names those).
+
+**Muscle regions** are the parts of a muscle that training studies show
+growing differently with the exercise. The ids, each its parent muscle's id
+first: `quads-rf` (rectus femoris), `quads-vasti`, `hamstrings-hip`,
+`hamstrings-knee`, `calves-gastroc`, `calves-soleus`, `triceps-long`,
+`shoulders-front`, `shoulders-side`, `shoulders-rear` (heuristic),
+`chest-upper`, and the rough-guide `upper-back-traps` and `upper-back-mid`.
+A guide entry's `muscles` may carry `regions` (and so may a schema-v1
+exercise's `muscles`), the regions the movement biases; each region's parent
+muscle belongs in `main` or `helps`. They follow the muscles' rule: for a
+movement the catalogue knows, the catalogue's regions count and the entry's
+are a copy the export keeps in step (writing them into an entry that has
+none); the entry's own count for a movement the catalogue doesn't know, or
+beside an honoured `override`. A value that isn't a region id is warned
+about and counts nowhere: `unknown-region`, or `unsupported-region` for the
+popular ones the evidence doesn't support (inner or outer chest, lower
+chest, the VMO or inner and outer quad, upper or lower lats, the biceps
+heads or peak, upper or lower glutes), each with the nearest supported
+option and why. A region whose muscle the entry doesn't tag in `main` or
+`helps` counts nowhere either (`region-parent-missing`: add the muscle, or
+remove the region). A set counts for a region 1 when its parent muscle is a
+main muscle of the movement and half when the parent only helps, beside the
+muscle's own sets, which regions never change (`numbers.md`, `review`'s
+`volume.regions` and `check`'s region codes).
+
+## The plan's standing rules (`plan-data.json`, for the engine)
+
+The coach's decisions, written beside the plan in `plan-data.json`; the
+engine only does each rule's arithmetic and cites the rule in its reasons.
+The coach writes them with every plan and revises them at the check-ins. Every key is optional: a rule left out is Pahlavan's old default
+(the values below), and `review` lists those in one `legacy-default`
+warning. A kind written in a way Pahlavan can't read keeps the old default,
+with a `rules-invalid` warning; unknown keys are listed and left out.
+
+```json
+{
+  "rules": {
+    "calibration": { "weeks": [1], "rir": 3, "cardio": "easy", "afterRestart": true },
+    "lightWeeks": { "every": 4, "sets": 2, "load": 0.9, "rirAdd": 3, "early": "apply" },
+    "tests": { "weeks": "phase-ends" },
+    "readiness": { "low": { "sets": -1, "rir": 1 } },
+    "soreness": { "sore": { "sets": -1, "rir": 1 }, "twoDays": "easier" },
+    "missed": { "easeBackAfterWeeks": 1, "restartAfterWeeks": 3, "easeBackDrop": 0.1, "easeBackRir": 1 },
+    "stall": { "response": "triage" },
+    "hotel": { "swaps": "catalogue", "longTripSets": "third" }
+  }
+}
+```
+
+- `calibration`: the plan weeks that find working loads at `rir` (0 to 6),
+  whether intervals that week are easy steady minutes (`"easy"`) or as
+  planned (`"as-planned"`), and whether the first week back after a restart
+  calibrates too; `"none"` for no calibration week. A calibration week on a
+  light week stays a light week (`calibration-on-light-week` names it).
+- `lightWeeks`: `every` N plan weeks (2 or more), or `weeks: [4, 8, 13]`
+  (one of the two); a mesocycle ends at each light week and a phase is two.
+  `sets` is every sets item's count that week (a number, or `"half"`),
+  `load` the fraction of the last loading weight (0.5 to 1), `rirAdd` the
+  RIR added (0 to 6). `early`: what
+  an early signal does (low readiness with a falling e1RM, stalls on 2+ main
+  lifts, poor recovery): `"apply"` makes the week light, `"offer"` reports
+  it for the coach (the default once `lightWeeks` is written), `"none"`
+  lists it only. Under the plan's own light weeks no busy week moves one and
+  no check-in cancels one: the coach moves a light week by editing `weeks`.
+- `tests`: the plan weeks with the fitness tests (at least one), or
+  `"phase-ends"`.
+- `readiness.low` and `soreness.sore`: a low-readiness day's or a sore main
+  muscle's change, `{sets, rir}` (sets 0 or less, RIR added 0 to 6), or `"none"`
+  (the whole kind as `"none"` too). `soreness.twoDays`: `"easier"` swaps to
+  the easier variation after two sore days running, `"same"` doesn't.
+- `missed`: the weeks off that ease back and that restart (whole weeks,
+  easing back fewer than restarting), and the first week back's drop (a
+  fraction up to 0.5) and added RIR. A restart without a
+  calibration week (`calibration.afterRestart: false`) eases back instead.
+- `stall.response`: `"triage"` (the ladder picks one step per check-in) or
+  `"report"` (the facts only, in `lifts[].stallFacts`; the coach picks). The
+  stall itself (2 % or less e1RM gain over 3 sessions at 80 % adherence) is
+  one definition everywhere.
+- `hotel`: `swaps` from the catalogue (its starter movements, the ones the
+  Hotel version's ranking was built on) or `"skip"` a movement the travel
+  kit can't do; a trip of a week or more at `"third"` of the sets or
+  `"all"`.
+
+A logged lift's rule sits in its `lifts` entry, beside its `lo`, `hi` and
+`inc`: `"progression": {"rule": "double", "onMiss": {"after": 2, "drop":
+0.1}, "onStall": "report"}`. `rule` is `double` (reps up inside lo–hi, then
++inc), `linear` (+inc every session each set reaches hi; reps stay at hi),
+`hold` (reps only, no weight step) or `target` with `"target": {"weight":
+60, "reps": 8, "rir": 2}` (the coach's numbers, held once met; `onMiss`
+and `onStall` are not read with it). `onMiss`: so many sessions in a row
+under lo, then that much lighter (a drop from 0.01 to 0.5), or `"hold"`.
+`onStall`: `"report"`, or `{"drop": 0.1}` (a stall takes the next target
+that much lighter, once: the stall check starts again from that session). The step is the coach's: an increase over the
+load-jump guide (about 10 % a week, a heuristic) is reported, not capped.
+A ladder stays the item's own `ladder`. Express on a short day is the
+`express` block's `"short": "half"` (every item at half) or `"skip"`, not a
+key of `rules`.
+
+## The plan's overrides (`plan-data.json`, for `engine check`)
+
+The coach's stated reasons for going outside an evidence range, beside the
+plan in `plan-data.json`: each answers one warning `engine check` gives
+(`numbers.md`, "The plan check"), by its code and, when it names one, its
+item. The check shows the warning as information with the reason; it never
+clears a hard error.
+
+```json
+{
+  "overrides": [
+    { "code": "volume-over-cap", "item": "upper-back", "reason": "Posture block: pull at twice push for this mesocycle.", "decision": "2026-11-07 · Upper back past the cap" },
+    { "code": "rest", "item": "S1 Pallof Press", "reason": "Anti-rotation holds, not sets for size: 45 s is enough." }
+  ]
+}
+```
+
+- `code`: the finding's code (`volume-over-cap`, `rest`, `priority-over`,
+  `time-over`, ...). Required.
+- `item`: one item of the finding, as the check names it: a muscle (its id
+  or label), a session item ("A Face Pull"), a session type ("S2"). Left
+  out, the override answers the whole finding.
+- `reason`: why, in a sentence the user would recognise. Required: an
+  override without one is a hard error (`override-without-reason`).
+- `decision`: the Decisions entry that records it (`formats.md`,
+  `Decisions.md`), when there is one.
+
+An override that matches nothing on the plan is listed in
+`override-unused` (it can go). Unknown keys, or an entry with no code, are
+`invalid-data`. The export keeps the list as written.
+
+## The plan's start (`plan-data.json`)
+
+The plan's first day, a top-level `"start": "2026-11-09"` (YYYY-MM-DD) in
+`plan-data.json`, beside `phases` and `weeks`. The Monday-to-Sunday week
+holding it is plan week 1 everywhere (Pahlavan's Today, Plan and top bar,
+`review`'s `week`, the light weeks, the calibration week, the log's
+snapshot), from the day the plan is written, whether a session has been
+logged or not, and over the week the log or the baseline note would give.
+Before that week no plan week holds a date (`review`'s `week.planWeek` is
+null, `week.planStart` the start's Monday) and no session shows: `session`
+and Today say "Your plan starts <its Monday>".
+
+- **The coach writes it with a fresh start's or a reset's plan:** the date
+  the user chose in the plan job's first step (`planning.md`, "The order").
+  A phase review's next block, the next month and every change inside the
+  plan keep the `start` the file has: `check --plan` and `plan-write` warn
+  `start-changed` when a draft drops or moves it (a reset answers it with
+  an override naming the reset).
+- **`plan --start D`** writes it into a baseline export: the generator's
+  week 1, the Monday of the week holding D, as `start` itself reads. Without
+  `--start`, an export over the plan as written (`--vault .`) carries that
+  plan's `start`; one with no plan to export over writes none.
+- **Left out** (every plan before 0.26), week 1 is the first logged plan
+  session's week, and until the cycle has one the cycle start's week, as
+  before.
+- **Not a date** (`"next Monday"`, a number), it is read around with a
+  `plan-data` warning in `review` (the log's week 1 stands) and is a hard
+  error in `check` and `plan-write`.
+
+## A ladder's starting level (`plan-data.json`)
+
+Each ladder in `plan-data.json`'s `ladders` may carry `"startLevel": N`,
+the level this plan starts it at (1-based, as `log ladder --level`
+counts), beside its `id`, `name` and `levels`:
+
+```json
+{
+  "ladders": [
+    { "id": "pullup", "name": "Pull-up", "startLevel": 6, "levels": [{ "name": "Dead hang" }, { "name": "Scapular pull-up" }, { "name": "Inverted row" }, { "name": "Negative pull-up" }, { "name": "Band-assisted pull-up" }, { "name": "Pull-up" }, { "name": "Weighted pull-up" }, { "name": "L-sit pull-up" }] }
+  ]
+}
+```
+
+A "your level" item (`"ladder": "pullup"`) counts as one level of its
+ladder: in the weekly sets per muscle (`review`, `check`, Pahlavan's Plan
+and Progress), the effort rule, the session's list and the exercises the
+log freezes. The level is, in this order:
+
+1. **The log's level** on the date (`log ladder`), whenever it holds one:
+   a logged level wins over the start, a lower one too.
+2. **The plan's `startLevel`**, before any level is logged: a draft read
+   with `check --plan` or `review --plan`, and a new plan before its first
+   logged level, count the level the plan means.
+3. **The lowest level**, with neither: `review` and `check` warn
+   `ladder-start` (each item, counted as level 1), since a plan that means
+   pull-ups would read as dead hangs.
+
+- **The coach writes it** on every ladder a new plan carries, at the
+  self-check's level (`intake.md`, "The movement self-check"); a baseline
+  export (`plan --format plan-data`) writes the self-check's level. The log
+  still gets the level with `log ladder` on the plan's first day, in the
+  same yes: the level history, the Skills card and the level moves start
+  from the log.
+- **Left out**, the item counts the log's level, else the lowest with the
+  `ladder-start` warning.
+- **Not one of the ladder's levels** (0, past the last level, `"6"`), it is
+  read around with a `plan-data` warning in `review` and is a hard error in
+  `check` and `plan-write`.
 
 ## `checkins.json` (the check-in answers, for the engine)
 

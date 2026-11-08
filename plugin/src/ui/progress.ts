@@ -13,11 +13,13 @@ import { banner, bannerKicker, type BannerPhase, type RingSeg } from './banner.t
 import { BODY, type Side } from './body-map.ts';
 import { h, icon, s, type Child } from './dom.ts';
 import { addDays, clean, daysBetween, fmt } from './format.ts';
+import { musclesWithRegions, regionName, regionTipLines, regionValue, roughGuide, type RegionRow } from './regions.ts';
 
 export type VolumeView = 'week' | 'four' | 'plan';
 
 export interface ProgressContext {
   view: VolumeView;
+  /** What the user toggled open: a card shown as its table (by the card's id), and the body map's Regions list (REGIONS_OPEN). */
   tables: Set<string>;
   onView: (view: VolumeView) => void;
   onTable: (id: string) => void;
@@ -37,6 +39,14 @@ const tierOf = (m: { sets: number; tier: string }) => (m.sets <= 0 ? 0 : (TIER_I
 const STATUS = { below: ['below', 'Below target'], in: ['inTarget', 'In target'], above: ['over', 'Above the priority band'], over: ['over', 'Over target'] } as const;
 type Status = keyof typeof STATUS;
 const MIN_POINTS = 3;
+/** The id in ProgressContext.tables that opens the body map's Regions list (folded to one line by default). */
+export const REGIONS_OPEN = 'regions';
+
+/** "N direct, M half credit from helping lifts": how a muscle's weekly sets count; null when the row has no split. */
+export function splitLine(m: { direct?: number; indirect?: number }): string | null {
+  if (m.direct === undefined || m.indirect === undefined) return null;
+  return `${fmt.sets(m.direct)} direct, ${fmt.sets(m.indirect)} half credit from helping lifts`;
+}
 
 export function statusChip(st: Status | 'neutral', label: string, ic?: string): HTMLElement {
   const icn = ic ?? (st === 'neutral' ? 'info' : STATUS[st][0]);
@@ -118,11 +128,48 @@ function figure(side: Side, v: Volume, view: VolumeView): HTMLElement {
     }
     const label = v.labels[m.muscle]?.label ?? m.muscle;
     const top = (v.topExercises[m.muscle] ?? []).map((x) => `${clean(x.name)} ${fmt.sets(x.sets)}`).join(', ');
-    const text = tip(label, `${fmt.sets(m.sets)} sets a week (${v.views[view].label.toLowerCase()})`, `Band ${TIER_LABEL[tierOf(m)]}`, `Target ${m.priority ? 'priority muscle, 10–16' : 'at least 4'}`, STATUS[m.status][1], top && `Top, planned sets: ${top}`);
+    const text = tip(label, `${fmt.sets(m.sets)} sets a week (${v.views[view].label.toLowerCase()})`, splitLine(m), `Band ${TIER_LABEL[tierOf(m)]}`, `Target ${m.priority ? 'priority muscle, 10–16' : 'at least 4'}`, STATUS[m.status][1], top && `Top, planned sets: ${top}`, ...regionTipLines(m.regions, label));
     for (const d of ds) muscleParts.push(s('path', { class: `pv-bm-muscle is-${tierOf(m)}`, 'data-muscle': m.muscle, 'data-tip': text, d }));
   }
   const svg = s('svg', { viewBox: BODY.viewBox[side], role: 'img', 'aria-label': `${side} of the body, muscles shaded by weekly sets` }, parts, muscleParts, s('path', { class: 'pv-bm-outline', d: BODY.outline[side] }));
   return h('div', { class: 'pv-figure' }, svg, h('div', { class: 'pv-figure-cap' }, side === 'front' ? 'Front' : 'Back'));
+}
+
+/**
+ * The body map's Regions list, in the side column: each muscle with a region
+ * that has sets or is held to a rule, its regions' weekly sets, a chip for a
+ * region held to a rule (under or ok), declared ones starred and heuristic
+ * ones marked a rough guide. Folded to one line (its count of regions under)
+ * until opened, so the card keeps its height.
+ */
+function regionsList(view: Volume['views'][VolumeView], v: Volume, ctx: ProgressContext): HTMLElement | null {
+  const groups = musclesWithRegions(view.muscles);
+  if (!groups.length) return null;
+  const all = groups.flatMap((g) => g.regions);
+  const under = all.filter((r) => r.status === 'short').length;
+  const noOption = all.filter((r) => r.status === 'uncoverable').length;
+  const ruled = all.filter((r) => r.status !== 'reported').length;
+  const open = ctx.tables.has(REGIONS_OPEN);
+  const summary = under ? `${under} under` : noOption ? `${noOption} with no option` : ruled ? 'on target' : `${groups.length} muscle${groups.length === 1 ? '' : 's'}`;
+  // Its tooltip: the sets and their split, the evidence, and the engine's note on the rule it is held to.
+  const row = (r: RegionRow, muscle: string) => h('li', { class: `pv-bm-reg${r.declared ? ' is-declared' : ''}`, 'data-region': r.id, 'data-tip': tip(`${r.label}${r.declared ? ' (declared weak)' : ''}`, `${fmt.sets(r.sets)} sets a week (${view.label.toLowerCase()})`, splitLine(r), roughGuide(r) ? 'A rough guide: no training study has measured it' : `Evidence: ${r.grade}`, r.note ? clean(r.note) : null) },
+    // The star is drawn only (aria-hidden): the words say it to a screen reader.
+    h('span', { class: 'pv-bm-reg-name' }, r.declared ? icon('star', 'pv-bm-reg-star') : null, regionName(r, muscle), r.declared ? h('span', { class: 'pv-vh' }, ' (declared weak)') : null, roughGuide(r) ? h('small', {}, 'rough guide') : null),
+    r.status === 'reported' ? h('i', {}) : r.status === 'uncoverable' ? statusChip('neutral', 'No option') : statusChip(r.status === 'short' ? 'below' : 'in', r.status === 'short' ? 'Under' : 'OK'),
+    // The sets at the right edge, as the lists above have them.
+    h('span', { class: 'pv-bm-reg-sets' }, fmt.sets(r.sets)),
+  );
+  return h('div', { class: `pv-bm-regions${open ? ' is-open' : ''}` },
+    h('button', { class: 'pv-bm-regions-head', 'aria-expanded': open ? 'true' : 'false', 'data-k': 'bm-regions', onclick: () => ctx.onTable(REGIONS_OPEN) },
+      h('span', { class: 'pv-bm-regions-title' }, 'Regions'), h('span', { class: `pv-bm-regions-sum${under ? ' is-under' : ''}` }, summary), icon('chevron')),
+    open ? [
+      groups.map((g) => {
+        const label = v.labels[g.muscle]?.label ?? g.muscle;
+        return h('div', { class: 'pv-bm-reg-group' }, h('div', { class: 'pv-bm-reg-muscle' }, label), h('ul', {}, g.regions.map((r) => row(r, label))));
+      }),
+      h('p', { class: 'pv-bm-reg-key' }, ruled ? `Under or OK against the aim: 4 direct sets a week for a priority muscle’s region, 6 near failure for one you declared weak (★).${noOption ? ' No option: nothing in the catalogue that biases it fits your equipment, so it is not a shortfall to fix with that.' : ''}` : 'The sets a week each region got. A priority muscle’s regions, and any you declare weak, get an aim.'),
+    ] : null,
+  );
 }
 
 function bodyMap(m: ProgressModel, ctx: ProgressContext): HTMLElement {
@@ -143,8 +190,11 @@ function bodyMap(m: ProgressModel, ctx: ProgressContext): HTMLElement {
   });
   figs.addEventListener('mouseleave', () => figs.classList.remove('is-hovering'));
   const list = (items: typeof below, st: Status) => h('ul', {}, items.map((x) => h('li', {}, statusChip(st, lab(x.muscle)), h('span', {}, fmt.sets(x.sets)))));
-  const table_ = table([{ t: 'Muscle' }, { t: 'Sets a week', r: true }, { t: 'Band' }, { t: 'Status' }, { t: 'Top exercises (planned sets)' }],
-    view.muscles.map((x) => [`${lab(x.muscle)}${x.priority ? ' (priority)' : ''}`, fmt.sets(x.sets), TIER_LABEL[tierOf(x)]!, STATUS[x.status][1], h('span', { class: 'pv-faint' }, (v.topExercises[x.muscle] ?? []).map((t) => `${clean(t.name)} ${fmt.sets(t.sets)}`).join(', '))]));
+  // The table's Regions column says what the list and the tooltip say: each region of a muscle that has one with sets or a rule.
+  const shown = new Set(musclesWithRegions(view.muscles).map((x) => x.muscle));
+  const regionsCell = (x: (typeof view.muscles)[number]) => shown.has(x.muscle) ? x.regions.map((r) => `${r.declared ? '★ ' : ''}${regionName(r, lab(x.muscle))}${roughGuide(r) ? ' (rough guide)' : ''} ${regionValue(r)}`).join('; ') : '';
+  const table_ = table([{ t: 'Muscle' }, { t: 'Sets a week', r: true }, { t: 'Band' }, { t: 'Status' }, { t: 'Regions' }, { t: 'Top exercises (planned sets)' }],
+    view.muscles.map((x) => [`${lab(x.muscle)}${x.priority ? ' (priority)' : ''}`, fmt.sets(x.sets), TIER_LABEL[tierOf(x)]!, STATUS[x.status][1], h('span', { class: 'pv-faint' }, regionsCell(x)), h('span', { class: 'pv-faint' }, (v.topExercises[x.muscle] ?? []).map((t) => `${clean(t.name)} ${fmt.sets(t.sets)}`).join(', '))]));
   return h('section', { class: `pv-card pv-span-7${ctx.tables.has('body') ? ' is-table' : ''}`, 'data-sec': 'sets' },
     cardHead('body', 'Weekly sets per muscle', sub, ctx, seg),
     h('div', { class: 'pv-chart-area' },
@@ -158,6 +208,7 @@ function bodyMap(m: ProgressModel, ctx: ProgressContext): HTMLElement {
           above.length ? [h('h4', {}, 'Above the priority band'), list(above, 'above')] : null,
           h('h4', {}, 'Over target'), over.length ? list(over, 'over') : h('p', {}, 'None.'),
           h('h4', {}, 'In target'), h('p', {}, inT.length ? `${inT.map((x) => lab(x.muscle)).join(', ')}.` : 'None.'),
+          regionsList(view, v, ctx),
         ),
       ),
       view.note ? h('div', { class: 'pv-bm-note' }, `${clean(view.note).split('. ')[0]!.replace(/\.$/, '')}.`) : null,

@@ -6,7 +6,7 @@
 // The log is merged against the file as it is at save time, re-read just
 // before writing (a change since the merge means merging again), and read
 // back after: if the session is not there, one more merge and write. Other
-// writers (the old dashboard, fitness_log.py, the Isfahan plugin) can have
+// writers (the old dashboard, a log script, the coach, the Isfahan plugin) can have
 // written in between; their sessions and keys are kept. No Obsidian import.
 
 import { habitKey, mergeHabit, mergeLadder, mergeLog, mergeSoreMuscles, mergeTodayChecklist, sessionKey, type MergeOptions } from '../../src/adapters/vault/log-write.ts';
@@ -190,8 +190,8 @@ export class LogWriter {
   }
 
   /**
-   * A ladder level into fitness-log-data.json's `ladders`, as `fitness_log.py
-   * ladder ID LEVEL --date D` writes it (mergeLadder): re-read before the
+   * A ladder level into fitness-log-data.json's `ladders`, as `engine log
+   * ladder --id ID --level N --date D` writes it (mergeLadder): re-read before the
    * write, read back after, one retry. The ladder's levels come from the plan.
    */
   async saveLadder(req: { id: string; level: number; date: IsoDate; plan: unknown }): Promise<{ status: 'set' | 'already'; name: string } | { status: 'failed'; error: string }> {

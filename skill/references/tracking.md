@@ -522,19 +522,18 @@ shape. Each is a dry run until `--write`: show the user what it will do (its
 `results` and `after`), then run it again with `--write` on the yes.
 
 ```bash
-E=".claude/skills/fitness-coach/scripts/engine.cjs"
-node $E track apply   --vault . --json --file <changes.json> [--write]   # several changes, one write
-node $E track suggest --vault . --json --file <items.json> [--write]     # chips in Pahlavan
-node $E track add     --vault . --json --file <items.json> [--write]     # accepted in the conversation
-node $E track decline --vault . --json --file <items.json> [--write]     # declined in the conversation
-node $E track accept  --vault . --json --id <id[,id]> [--write]
-node $E track dismiss --vault . --json --id <id[,id]> [--write]
-node $E track morning --vault . --json --at 07:00 [--write]              # or --off
-node $E track body-record --vault . --json --schedule plan [--write]
-node $E track fresh   --vault . --json [--write]                         # nothing brought over
-node $E track protein --vault . --json [--write]                         # the protein item to the engine's target
-node $E track day     --vault . --json --date D                          # read only: the day's items, what is open
-node $E track tick    --vault . --json --id <id[,id]> --date D [--done true|false] [--amount N] [--write]
+node .claude/skills/fitness-coach/scripts/engine.cjs track apply   --vault . --json --file <changes.json> [--write]   # several changes, one write
+node .claude/skills/fitness-coach/scripts/engine.cjs track suggest --vault . --json --file <items.json> [--write]     # chips in Pahlavan
+node .claude/skills/fitness-coach/scripts/engine.cjs track add     --vault . --json --file <items.json> [--write]     # accepted in the conversation
+node .claude/skills/fitness-coach/scripts/engine.cjs track decline --vault . --json --file <items.json> [--write]     # declined in the conversation
+node .claude/skills/fitness-coach/scripts/engine.cjs track accept  --vault . --json --id <id[,id]> [--write]
+node .claude/skills/fitness-coach/scripts/engine.cjs track dismiss --vault . --json --id <id[,id]> [--write]
+node .claude/skills/fitness-coach/scripts/engine.cjs track morning --vault . --json --at 07:00 [--write]              # or --off
+node .claude/skills/fitness-coach/scripts/engine.cjs track body-record --vault . --json --schedule plan [--write]
+node .claude/skills/fitness-coach/scripts/engine.cjs track fresh   --vault . --json [--write]                         # nothing brought over
+node .claude/skills/fitness-coach/scripts/engine.cjs track protein --vault . --json [--write]                         # the protein item to the engine's target
+node .claude/skills/fitness-coach/scripts/engine.cjs track day     --vault . --json --date D                          # read only: the day's items, what is open
+node .claude/skills/fitness-coach/scripts/engine.cjs track tick    --vault . --json --id <id[,id]> --date D [--done true|false] [--amount N] [--write]
 ```
 
 **How an item gets there.**

@@ -88,7 +88,7 @@ describe('words the screens never show', () => {
     assert.equal(lightWords('Deload every 4th week (weeks 4, 8)'), 'Light week every 4th week (weeks 4, 8)');
     assert.equal(lightWords('Deload week: 2 sets of everything'), 'Light week: 2 sets of everything');
     assert.equal(lightWords('deload 70 lb × 8'), 'light week 70 lb × 8');
-    assert.match(MESOCYCLE, /4-week block/);
+    assert.match(MESOCYCLE, /ends in a light week/);
     assert.match(SHORT, /shorter days/);
     // The engine's words the screens show.
     const files = fixtureFiles('v');
@@ -97,6 +97,7 @@ describe('words the screens never show', () => {
     const flag = s.flags.find((x) => x.rule === 'deload.decide');
     assert.ok(flag, 'plan week 4 is a light week');
     assert.equal(flag!.title, 'Light week');
-    assert.match(flag!.note!, /^Two sets of everything, about 10 % lighter/);
+    // The rule it follows leads (the old default here: the plan sets none), then what the week does.
+    assert.match(flag!.note!, /^Pahlavan's default \(the plan sets none\): light weeks every 4th plan week: 2 sets of everything, about 10 % lighter, RIR \+3; .* At the bottom of each range/);
   });
 });

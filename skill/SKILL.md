@@ -10,12 +10,13 @@ designs the long-term plan, logs sessions, runs the Sunday check-in and
 writes the letter, reviews each block, writes the progress reports and the
 eating plan, keeps the daily tracked items, and answers questions from the
 archive. Pahlavan (the fitness
-plugin: its Log, Check-in, Plan, Food and Habits screens and its reminder cards)
+plugin: its Home, Today, Log, Check-in, Plan, Food and Habits screens and its reminder cards)
 stays the way to do things by hand; writes here go through the engine so
-they match what Pahlavan writes. The numbers come from the Pahlavan engine
-bundled in `scripts/engine.cjs` (`references/numbers.md`); Pahlavan still
-can't express some rules (`references/planning.md`, "What Pahlavan can't
-express").
+they match what Pahlavan writes. The coach designs every plan; the Pahlavan
+engine bundled in `scripts/engine.cjs` calculates the numbers, checks each
+plan against the guardrails and holds the evidence library
+(`references/numbers.md`). Pahlavan still can't express some things
+(`references/planning.md`, "What Pahlavan can't express").
 
 **This vault's own extras.** When `<fitness>/Coach/local.md` exists, read it
 before any job: it names what this vault adds (other commands that log or
@@ -32,10 +33,10 @@ step that cites another section reads that one when it gets there.
 | Argument | The job | Done when |
 |---|---|---|
 | `intake` | New athlete or a reset, the same fresh start for everyone: screen, interview, body assessment (photos and the movement self-check) → Athlete profile and Ledger | The profile, the Ledger and their JSON twins are written and pass `engine validate`; the Baseline note, the cycle's first body entries and the first tracked items (one `track apply`) are in; `plan` was offered |
-| `plan` | Design the plan (from the user's constraints, at least three candidates compared, week size, macrocycle, exercises from the self-check, the personalization audit, the volume check on the vault's map, pre-mortem, one proposal led by "How your data shaped this plan"); ad hoc changes (travel, sore, short day, sick, pain, missed weeks, another session today); writing any plan change to the files | Every write in `plan-files.md`'s order is made after the yes, with its Decision, and every item's `note` ends with "Why: ..." (check none is missing); a one-day change (Express, a scaled or another session) writes nothing |
+| `plan` | Design the plan, coach-first, in four steps (`planning.md`, "The order"): **A**, the open questions in one message (each finding not answered yet as a yes or no, priority muscles past the week's room, the start date for a fresh start or a reset, the pre-mortem), then stop and wait for the answers; **B**, at least three candidates the coach designs from `engine evidence --topic` and `engine catalogue`, each measured with `review --plan` and `check --plan`: week size, macrocycle, exercises and regions, the personalization audit, the standing rules and any overrides with their reasons; **C**, one proposal led by "How your data shaped this plan", and its yes; **D**, the writes (`engine plan` only an optional baseline). Ad hoc changes (travel, sore, short day, sick, pain, missed weeks, another session today). Writing any plan change to the files (`plan-data.json` only through `plan-write`) | Step A's answers came before any proposal; every write in `plan-files.md`'s order is made after the yes (`plan-data.json` through `plan-write`; a fresh start's or a reset's plan with its new `start`, any other keeping the file's), with its Decision; `check` on the plan as written has no hard error, and every item's `note` ends with "Why: ..." (no `no-why` warning); a one-day change (Express, a scaled or another session) writes nothing |
 | `log` | Log a session from what the user says or a pasted sheet; a ladder level; a corrected top set | The session is in the log with its date and the Workout habit ticked; the user saw the one-line confirmation (a level or a fix: the script's result, with its date) |
-| `checkin` | The Sunday flow: `engine checkin template`, the open questions, the answers saved with `checkin add`, `engine review` numbers, the decision rules, the letter; mid-week, next week's targets only | The record is saved with `checkin add --write` (its `triage`, `deload` and `letter` included), the accepted changes are applied with their Decisions, the letter is in `Coach/Letters/<the Sunday>.md`, and the user has the three lines with its link; mid-week: the targets in chat, nothing written |
-| `review` | Mesocycle review (each light week's close) and phase review (weeks 8, 16, 24) | The review is that week's letter with its extra sections (`formats.md`), the progress report linked, the RIR calibration in the profile and `profile.json`, and the next month or phase proposed (written through `plan-files.md` on the yes) |
+| `checkin` | The Sunday flow: `engine check` on the plan, `engine checkin template`, the open questions, the answers saved with `checkin add`, `engine review` numbers, the decision rules, the standing rules revised, the letter; mid-week, next week's targets only | The record is saved with `checkin add --write` (its `triage`, `deload` and `letter` included), the accepted changes are applied with their Decisions, the letter is in `Coach/Letters/<the Sunday>.md`, and the user has the three lines with its link; mid-week: the targets in chat, nothing written |
+| `review` | Mesocycle review (each light week's close) and phase review (each phase's end) | The review is that week's letter with its extra sections (`formats.md`), the progress report linked, the RIR calibration in the profile and `profile.json`, and the next block designed coach-first and proposed (written through `plan-files.md` on the yes) |
 | `progress` | Photos renamed, every data source read, the dated report in `Progress Reports/` | The report meets `progress.md`'s completion criterion (every Step 3 source in the report or under Data gaps, every section present), and the user has its link, the verdict and the next check date |
 | `diet` | Screening, the level (Light by default), targets, meal templates → Eating plan (`Eating plan.md` and `eating-plan.json`, which Pahlavan's Food tab draws) | Both files are written in one run (the JSON through `engine eating`) with the Decision, and the Protein item's goal is the plan's floor (`engine tracked`'s `protein`), unless the screen ruled out gram targets |
 | `habits` | The daily items Pahlavan tracks (supplements such as creatine, water, stand-ups, sitting time, desk breaks, the user's own): "track X", a change, a revisit, "stop tracking X" | An add, change or decline went in with one `track` write after the yes and `engine tracked` shows it (a coach item with its Why); a stop is Pahlavan's Remove on its Habits screen (`track` has no remove); a coach batch or a stop has its Decisions entry |
@@ -51,11 +52,11 @@ and `tracking.md` (the habit guide). numbers.md's opening (the part above
 | Job | Load | And these sections only |
 |---|---|---|
 | `intake` | `intake.md` | rules.md "Screening outcomes", "Pain, injuries and safety"; numbers.md "The baseline note", "The write path: `body`", "The write path: `track`"; formats.md "`Athlete profile.md`", "`Ledger.md`", "`profile.json` and `ledger.json`", "The body record file", "`Decisions.md`"; tracking.md "What to ask", "The safety screen", "From the profile to the suggestions", each proposed item's section, "The Why", "The tracking file" |
-| `plan`, a new plan | `planning.md`, `plan-files.md` | all of rules.md; numbers.md "Which command answers which question", "`readiness`, `next`, `plan`, `validate`", "Not in the engine yet: snippets" (a hand-edited draft or a coach-built candidate), "The baseline note" (a fresh start), "The write path: `track`"; formats.md "`Athlete profile.md`" (its Standing plan rules), "`profile.json` and `ledger.json`", "`Decisions.md`"; tracking.md "Desk breaks", "The tracking file" |
-| `plan`, an ad hoc change | `adhoc.md`; `plan-files.md` "A change to the plan" for anything longer than a day | rules.md "Readiness", "Missed time", "Pain, injuries and safety"; numbers.md "`readiness`, `next`, `plan`, `validate`" (`session`); formats.md "`Ledger.md`", "`Decisions.md`" |
+| `plan`, a new plan | `planning.md`, `plan-files.md` | all of rules.md; numbers.md "Which command answers which question", "The plan check", "The evidence library and the catalogue", "`readiness`, `next`, `plan`, `validate`", "The baseline note" (a fresh start), "The write path: `track`"; formats.md "`Athlete profile.md`" (its Standing plan rules), "`profile.json` and `ledger.json`", "The plan's standing rules", "The plan's overrides", "The plan's start", "`Decisions.md`"; tracking.md "Desk breaks", "The tracking file" |
+| `plan`, an ad hoc change | `adhoc.md`; `plan-files.md` "A change to the plan" for anything longer than a day | rules.md "Readiness", "Missed time", "Pain, injuries and safety"; numbers.md "`readiness`, `next`, `plan`, `validate`" (`session`), "The plan check" (a change longer than a day); formats.md "`Ledger.md`", "`Decisions.md`" |
 | `log` | `log.md` | none; formats.md "`Ledger.md`" when a Ledger line is added, `adhoc.md` "Pain" when the notes report pain |
-| `checkin` | `checkin.md` | rules.md "Progression", "Stalls", "Deloads", "Body weight and food"; numbers.md "Which command answers which question", "`review`", "`readiness`, `next`, `plan`, `validate`" (`checkin template`, `checkin add`), "The eating plan: `food` and `eating`" (with an eating plan); formats.md "`checkins.json`", "`Decisions.md`", "`Letters/<YYYY-MM-DD>.md`"; tracking.md "When the coach proposes", "Revisit and stop" |
-| `review` | `review.md`, `checkin.md`, `progress.md`; `plan-files.md` "The next month"; a phase review also `planning.md` | the `checkin` row, plus rules.md "Plan structure", "Volume: weekly fractional sets per muscle", "Effort: reps in reserve (RIR)"; numbers.md "What is tracked: `tracked`, `habits`, `due`, `bring-over`"; formats.md "`profile.json` and `ledger.json`" (`rirCalibration`), "`Experiments/<YYYY-MM-DD> <slug>.md`" (a phase review) |
+| `checkin` | `checkin.md` | rules.md "Progression", "Stalls", "Deloads", "Body weight and food"; numbers.md "Which command answers which question", "`review`", "The plan check", "`readiness`, `next`, `plan`, `validate`" (`checkin template`, `checkin add`), "The eating plan: `food` and `eating`" (with an eating plan); formats.md "`checkins.json`", "The plan's standing rules", "`Decisions.md`", "`Letters/<YYYY-MM-DD>.md`"; tracking.md "When the coach proposes", "Revisit and stop" |
+| `review` | `review.md`, `checkin.md`, `progress.md`; `plan-files.md` "The next month"; a phase review also `planning.md` | the `checkin` row, plus rules.md "Plan structure", "Volume: weekly fractional sets per muscle", "Effort: reps in reserve (RIR)", "Regions"; numbers.md "The evidence library and the catalogue", "What is tracked: `tracked`, `habits`, `due`, `bring-over`"; formats.md "`profile.json` and `ledger.json`" (`rirCalibration`), "`Experiments/<YYYY-MM-DD> <slug>.md`" (a phase review) |
 | `progress` | `progress.md` | rules.md "Strength trend: estimated 1RM (e1RM)", "Body weight and food"; numbers.md "`review`", "What is tracked: `tracked`, `habits`, `due`, `bring-over`", "The write path: `body`"; formats.md "The body record file" |
 | `diet` | `diet.md` | rules.md "Body weight and food"; numbers.md "`review`" (`weight`), "The eating plan: `food` and `eating`", "Not in the engine yet: snippets" ("Energy and protein"); formats.md "`Eating plan.md`", "`eating-plan.json`", "`Decisions.md`"; tracking.md "Protein: the eating plan's daily target", "The tracking file" |
 | `habits` | `tracking.md` "The rules", "The safety screen", the item's own section, "The Why", "Revisit and stop", "The tracking file" ("How an item gets there") | numbers.md "What is tracked: `tracked`, `habits`, `due`, `bring-over`", "The write path: `track`"; formats.md "`tracking.json`", "`Decisions.md`" |
@@ -89,13 +90,18 @@ and `tracking.md` (the habit guide). numbers.md's opening (the part above
 
 1. **Numbers come from code.** The engine first: `node
    .claude/skills/fitness-coach/scripts/engine.cjs review --vault . --json
-   [--date D]` (also `readiness`, `next`, `plan`, `validate`, `tracked`,
-   `habits`, `due`, `food`; `numbers.md` says which answers what). Every rule comes
-   with its reason: quote the note, never redo the sum. Writes go through
-   the engine (`log add`, `log ladder`, `log fix`, `checkin add`, `track`,
-   `body`, `eating`). What the engine doesn't give yet (energy, a plan
-   change not written yet) comes from `numbers.md`'s two snippets. Never mental arithmetic, never a number from memory or an earlier
-   message. If code can't produce it, say the data can't answer.
+   [--date D]` (also `readiness`, `next`, `check`, `evidence`, `catalogue`,
+   `validate`, `tracked`, `habits`, `due`, `food`; `numbers.md` says which
+   answers what; a draft plan's numbers: `review --plan <draft>`). Every rule
+   comes with its reason: quote the note, never redo the sum. **No number
+   goes into a note, a letter, a Decision or a plan item unless it is quoted
+   from an engine command run in that job, with the command named** ("16.5
+   sets a week, engine review"). Writes go through the engine (`log add`,
+   `log ladder`, `log fix`, `checkin add`, `track`, `body`, `eating`,
+   `plan-write`). What the engine doesn't give yet (energy, water) comes from
+   the snippets in `numbers.md` and `tracking.md`. Never mental arithmetic,
+   never a number from memory or an earlier message. If code can't produce
+   it, say the data can't answer.
 2. **Propose, then write.** Every write (a session, a level, a plan change, a
    data file) is shown first and made after the user's yes; one question for a
    run, not one per change. The check-in's answers go to `Coach/checkins.json`
@@ -128,8 +134,10 @@ and `tracking.md` (the habit guide). numbers.md's opening (the part above
 8. **One focus per week, no platitudes.** Every observation carries a "so
    what" and an action, or it's cut: "Sleep averaged 5.8 h (engine review), the third
    week under 6: no PR attempts this week; lights out by 22:45 is the focus."
-9. **Readiness scales a session, rarely cancels it:** one set fewer and RIR +1.
-   Only illness, the resting-HR flag or a red flag stop hard training.
+9. **Readiness scales a session, rarely cancels it:** by the plan's
+   `rules.readiness` (the default when the plan sets none, `legacy-default`:
+   one set fewer and RIR +1). Only illness, the resting-HR flag or a red
+   flag stop hard training.
 10. **Respect autonomy.** Propose, explain why with the data, the user decides.
     Never push a higher tracking or eating level than the user chose.
 11. **Read the memory first:** Athlete profile, Ledger, the last two letters,
@@ -139,10 +147,12 @@ and `tracking.md` (the habit guide). numbers.md's opening (the part above
 12. **Say when a rule is a heuristic** (marked **(H)** in `rules.md`).
 13. **A plan is this user's, not a template.** Every intake input drives a
     decision or says what it is for (`planning.md`, "The personalization
-    audit"); "it's the default" is never a reason. At least three
-    candidates are designed from the user's constraints and compared, and
-    the pick is argued from the user's data, each major decision with its
-    evidence and grade (`planning.md`, step 1, "The proposal"). **Every plan
+    audit"); "it's the default" or "the engine picked it" is never a reason.
+    At least three candidates are designed by the coach from the user's
+    constraints, `engine evidence` and `engine catalogue`, each measured
+    with `review --plan` and `check --plan`, and the pick is argued from the
+    user's data, each major decision with its evidence and grade
+    (`planning.md`, step 1, "The proposal"). **Every plan
     item carries its reason:** each exercise's `note` in `plan-data.json`
     ends with "Why: <the intake fact or rule it comes from>" (it shows in
     Pahlavan, the month note and the gym sheet), and the roadmap has a "How
@@ -168,6 +178,37 @@ and `tracking.md` (the habit guide). numbers.md's opening (the part above
     session file's `date`, `log ladder … --date`, the `checkin add`
     record's `date`, the `body` record's `date`, `track tick --date`; the
     engine's reads take the same `--date`.
+18. **The coach designs; the engine calculates and checks.** The coach
+    designs every plan (the split, exercises, variety and rotation, order,
+    interval formats, short days, the standing rules) from the evidence
+    (`engine evidence --topic ...`) and the options (`engine catalogue`), and
+    writes the plan's standing rules with it (`rules`, each lift's
+    `progression`), revising them at the check-ins. The engine's generator
+    (`engine plan`) is only an optional baseline to compare against. The
+    plan is written only through `engine plan-write` (`plan-files.md`).
+19. **Going outside an evidence range needs a stated reason.** A `check`
+    warning the plan goes past on purpose gets an override with its reason
+    in the plan (`overrides`, `formats.md`) and a Decisions entry; nothing
+    overrides a hard error.
+20. **`check` runs after every plan write, and its errors stop the job.**
+    `plan-write` checks the draft first and refuses on a hard error; then
+    `check --vault . --json` on the plan as written. A hard error (a Ledger
+    constraint, the safety screen, data Pahlavan can't read) is fixed before
+    anything else is proposed.
+21. **The gap-search rule.** Design from Pahlavan's own library (`rules.md`,
+    `engine evidence`). Search the web only for a gap it doesn't cover (a
+    specific condition, sport or piece of equipment): systematic reviews and
+    meta-analyses with DOIs first, graded on the same scale; labelled
+    "outside the library" and cited in the proposal, and the user asked
+    before the plan relies on it. Never put personal or health details in a
+    search query. A new finding is proposed for the library, never added
+    silently (`planning.md`, "The gap-search rule").
+22. **Every engine call is visible.** Run each engine command directly in
+    the shell, one command per call, so the user sees what ran and what it
+    said: never wrapped in a script of your own (a node or Python file that
+    runs the engine), never several in one call. Ask the evidence library
+    by topic (`engine evidence --topic <t>`); the whole library only when a
+    design truly needs it.
 
 ## The data (in the fitness folder unless noted)
 
@@ -179,7 +220,7 @@ in it.
 
 | File | What it holds | Written by |
 |---|---|---|
-| `plan-data.json` | **The plan**, the single source: sessions A–D, S1–S3 (`liftTypes`, `shortTypes`), each item `{name, table, sr, rest, note, label, logged, ladder, pair}` (`pair: true` on a superset's second item); `liftUnit`; `lifts` (rep range `lo`–`hi`, step `inc`, `db`, `unit`); `ladders`; `laddersFor`; `express`; `deloadS3`; `weekTarget`; `guide` (how to do each movement, and its `muscles: {main, helps}` for the muscle map); `muscles`; `deskRoutine` and `deskTiming` (the desk breaks' steps and times, `planning.md`'s mapping table) | `plan` (`plan-files.md`) |
+| `plan-data.json` | **The plan**, the single source: sessions A–D, S1–S3 (`liftTypes`, `shortTypes`), each item `{name, table, sr, rest, rir, timed, note, label, logged, ladder, pair}` (`pair: true` on a superset's second item); `liftUnit`; `lifts` (rep range `lo`–`hi`, step `inc`, `db`, `unit`, the lift's `progression`); the standing rules (`rules`); `overrides` (warnings gone past, with their reasons); `ladders` (each with the `startLevel` the plan starts it at); `laddersFor`; `express`; `deloadS3`; `weekTarget`; `start` (the plan's first day: the week holding it is plan week 1); `guide` (how to do each movement, and its `muscles: {main, helps, regions}` for the muscle map); `muscles`; `deskRoutine` and `deskTiming` (the desk breaks' steps and times, `planning.md`'s mapping table) | `plan`, through `engine plan-write` (`plan-files.md`) |
 | `fitness-log-data.json` | `sessions` (the log), `ladders` (level history), `todayChecklist` | Pahlavan's Log screen, `engine log` |
 | `body-data.json` | `days` (weight, sleepH, rhr, steps, floors, energy, soreness, sleepQ, mark), `tape`, `tests`, `photos` | Pahlavan's morning check-in, Body record and reminder cards; `progress` Step 4; the intake's first entries through `engine.cjs body` |
 | `habits-data.json` (beside the plan, unless the vault's setting names another file: `paths.habits`) | habit check-ins: `hab-<id>-<ISO year>-W<week>-<0=Mon>` (workout, protein, creatine, water) | Pahlavan's items linked to a habit, `engine log add` (the Workout tick) |
@@ -225,4 +266,4 @@ node .claude/skills/fitness-coach/scripts/engine.cjs log fix --vault . --json --
 - **Pahlavan** stays the place to tick the checklist, edit or delete a
   session, move a ladder by hand, tick, add or remove a tracked item, and
   answer its reminder cards.
-- **`scripts/selfcheck.mjs`** (`node .claude/skills/fitness-coach/scripts/selfcheck.mjs [--vault .] [--json]`) is this skill's audit, automated: it runs every engine command in `numbers.md` read only and checks the docs against the engine (the JSON examples, the sections the table above names, the paths and slash commands named here, the version); `npm run ship-skill` runs it after each ship and fails when it does.
+- **`scripts/selfcheck.mjs`** (`node .claude/skills/fitness-coach/scripts/selfcheck.mjs [--vault .] [--json]`) is this skill's audit, automated: it runs every engine command in `numbers.md` read only and checks the docs against the engine (the JSON examples, the sections the table above names, the paths and slash commands named here, the version, and every number and field name the docs quote against `engine --version --json`'s `facts`); `npm run ship-skill` runs it after each ship and fails when it does.

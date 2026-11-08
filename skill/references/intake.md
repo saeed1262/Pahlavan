@@ -17,12 +17,15 @@ their machine-readable twins `Coach/profile.json` and `Coach/ledger.json`
 2. **The order:** Round 1 screening, Round 2 basics and goals, Round 3
    success and the week, Round 4 constraints, equipment and tracking, Round 5
    body history and preferences, then the **body assessment** (photos and the
-   movement self-check), then the history question.
+   movement self-check, then each finding confirmed with the user), then the
+   history question.
 3. **Ask in short rounds** of at most 4 questions. Screening is always
    round 1. Each question takes the form its answer needs (the question
    design below).
 4. **Leave a field "unknown"** rather than adding a round for it. The
-   Ledger follow-ups (Round 5) are the only extra questions.
+   Ledger follow-ups (Round 5), the part of a priority muscle (Round 2,
+   question 5) and the findings to confirm (the body assessment, step 6)
+   are the only extra questions.
 5. **Show the profile as a short summary**, the Body assessment included,
    and write it on the user's yes, with the Ledger entries: the Markdown and
    the JSON together, the same facts in both. Check each JSON file with
@@ -251,12 +254,40 @@ range or exercise; persisting means "see a professional".
    in `profile.json` `priorityMuscles` in that order, and write the rest in
    the Athlete profile as **Later priorities** (a later phase can take
    them); never write past the room. Each priority muscle needs 10 to 16
-   direct sets a week, so every extra one makes each session longer. A request heard anywhere else in
+   direct sets a week, so every extra one makes each session longer. When
+   the user names none, the plan job derives them from the goals and writes
+   them into `priorityMuscles` too (`planning.md`, step 5), so the engine's
+   counts and checks see every priority. A request heard anywhere else in
    the intake ("I want abs", "more arms") is the same answer: a priority
    muscle, never a note. A look ("visible abs", "a six pack") also gets one
    honest line in the summary: it is mostly body fat, so the goal's measure
    is the waist and the photos, and the priority muscle makes the abs
    bigger and stronger underneath.
+
+   **A part of a priority muscle (weak regions).** In the same follow-up,
+   for each priority muscle with modelled regions, ask whether there is a
+   part of it the user cares about most: "Is there a part of your
+   shoulders you most want to bring up?" Offer only the regions the engine
+   models for that muscle (`engine evidence --topic regions --json`: each
+   `regions.list[]` entry whose `muscle` is it, by its `label`; a
+   rough-guide one, `roughGuide` true, says "rough guide"), plus "No, the
+   whole muscle". A pick goes into `profile.json` `priorityRegions` (the
+   region's `id`; `formats.md`): it gets at least 6 direct sets near
+   failure a week inside its muscle's 10 to 16 (rules.md, "Regions"). The
+   muscle's other regions are covered anyway (the coverage rule), so "the
+   whole muscle" is a full answer.
+   - **An idea the evidence doesn't support** ("inner chest", "the VMO",
+     "upper lats", "the biceps peak", "lower glutes"): one line on why and
+     the nearest supported option, from the matching
+     `regions.unsupported[]` entry (`why`, `nearestText`): "No exercise is
+     shown to grow the inner chest more than the rest (a pec deck grew both
+     sides evenly), so the plan trains the chest as a whole; the upper
+     chest is the one part the studies support, if you want it." The user
+     picks that option or nothing; never write the unsupported idea.
+   - **Never from the photos.** No validated way spots a lagging region
+     from photos or the tape (rules.md, "Regions"): a weak region is the
+     user's word. A photo only prompts this question (body assessment,
+     step 6).
 
 ## Round 3: success and the week
 
@@ -375,7 +406,8 @@ The user drops the photos in the folder under any names; rename them as in
 
 View every photo (the Read tool) and write the profile's **Body assessment**:
 what is visible, never a diagnosis, with a confidence for each (high /
-medium / low: angle, light, clothing). Nothing about looks.
+medium / low: angle, light, clothing). Nothing about looks. Each observation
+is a prompt for a question to the user (step 6), not a fact about them.
 
 - **Posture:** head forward of the shoulders; shoulders rounded forward or
   raised; upper-back rounding; pelvis tilted (a deep low-back arch, or a flat
@@ -383,7 +415,9 @@ medium / low: angle, light, clothing). Nothing about looks.
 - **Balance:** one shoulder or hip higher, a shift to one side, one side
   visibly bigger.
 - **Development:** areas that lag behind the rest (upper back against chest,
-  legs against upper body, and so on).
+  legs against upper body, and so on), as whole muscles; a photo never
+  shows a lagging region (a part of a muscle), so a region is only asked
+  about (Round 2, question 5).
 - **Where fat is carried:** described (waist, hips, upper body), never a
   body-fat percentage.
 - **Movement:** squat depth, heels lifting, knees travelling in, torso lean;
@@ -392,9 +426,9 @@ medium / low: angle, light, clothing). Nothing about looks.
 ### 4. From what's seen to the plan's emphasis
 
 Each observation gets an emphasis, written in the Body assessment and used
-by `planning.md`. These are heuristics **(H)**: photo-based posture
-correction has weak evidence (Slater 2019, `rules.md`), so the aim is
-capacity and balance, never "fixing" posture.
+by `planning.md` once the user confirms it (step 6). These are heuristics
+**(H)**: photo-based posture correction has weak evidence (Slater 2019,
+`rules.md`), so the aim is capacity and balance, never "fixing" posture.
 
 | Seen | Plan emphasis |
 |---|---|
@@ -404,7 +438,7 @@ capacity and balance, never "fixing" posture.
 | Knees travel in | Tempo squats and split squats; hip abductor work |
 | Deep low-back arch | Dead bugs, hollow holds, glute work; hip-flexor stretching |
 | One side bigger or higher | Unilateral work, weaker side first, matching reps |
-| An area lags | +2–4 weekly sets for it, within the volume caps |
+| A muscle lags (`lagging-area`, with `muscles`) | Confirmed, the muscle is a priority muscle in every count (`check`, `review`, the screens): 10–16 direct sets a week, near failure (`planning.md`, "Reps, effort, rest and volume"), within the week's room; a part of it the user names is a declared region (`regions` on the row, or `priorityRegions`): 6 direct sets near failure inside the muscle's 10–16 (rules.md, "Regions") |
 | Fat carried at the waist | No change to exercise choice; the tape measures the outcome |
 
 ### 5. The movement self-check
@@ -426,9 +460,10 @@ guessed.
 
 **Where the results go.** The table above goes into the Athlete profile's
 "Movement self-check" section, with the date, and the same results into
-`profile.json` as `selfCheck` (`formats.md`); `engine plan` sets each
+`profile.json` as `selfCheck` (`formats.md`); the coach sets each
 ladder's starting level and the choices above from it, with a reason for
-each.
+each (`planning.md`, "Choose the exercises"). A result that changes exercise choice is a finding: confirm it first
+(step 6).
 
 The first week of the plan is the calibration week (`planning.md`); the
 assessment only picks where it starts. It is repeated at each phase review
@@ -437,6 +472,46 @@ with the same protocol. The results that are also the phase review's tests
 at the end of the intake (step 8 of "How to run it"), so the first test day
 has numbers to compare with.
 
+### 6. Confirm each finding before it goes into the profile
+
+A finding is a question for the user, never a diagnosis. No study validates
+spotting a posture problem, a lagging area or a movement fault from photos,
+and a self-check is one try on one day. So each finding the plan would act
+on is asked before it goes into the profile:
+
+- **Which findings:** every Body assessment row with a `kind` the engine
+  acts on (all but `waist-fat`), and each self-check result that changes
+  exercise choice: a sit-to-stand that was a struggle or lifted the heels, a
+  hinge that rounds, an overhead reach that isn't clean, balance under 30 s
+  on a side. The counts (push-ups, pull-ups, the hang, the core hold) set
+  ladder levels, which the calibration week checks; they aren't asked.
+- **Ask about what they notice in training,** not about the photo, and
+  phrase it so a yes means the finding holds: "Your overhead reach showed
+  rib flare. Does pressing overhead hurt, or make your lower back arch?"
+  (not "Do you press overhead without pain?", where a yes means the
+  opposite). Use the question `plan`'s or `review`'s `finding-unconfirmed`
+  warning gives. One round (at most 4 questions; a second round only when
+  there are more findings).
+- **Record the answer:** yes is `confirmed: true` (the finding holds), no is
+  `confirmed: false`, on the row (`emphasis[].confirmed`) or per test
+  (`selfCheck.confirmed.<test>`, `formats.md`). Write the row and the result
+  either way, so the profile keeps what was seen and what the user said; the
+  Athlete profile's Body assessment and Movement self-check tables have a
+  Confirmed column.
+- **What the plan does with each answer:** confirmed, the finding applies in
+  full. Declined, a self-check result keeps only its warm-up lines and a
+  Body assessment row is left out. Not answered, it ranks the regression
+  first and adds its warm-up, nothing more: it rules no movement out, makes
+  no priority muscle and sets no 2-to-1 pull to push.
+- **A confirmed lagging area** is a priority muscle; ask about a part of
+  it as in Round 2, question 5 (modelled regions only, the unsupported
+  ideas explained with the nearest option), and write a pick as the row's
+  `regions`.
+- **A profile written before this question** has no answers anywhere:
+  Pahlavan applies its findings as before, and `plan` and `review` warn
+  `finding-unconfirmed` with the question for each. Ask them at the next
+  check-in and record the answers.
+
 ## Profile checklist (every field filled or "unknown")
 
 Basics (sex, age, height, weight, waist); screening (answers, outcome, date,
@@ -444,7 +519,8 @@ re-screen due); training age; goals ranked with importance, confidence,
 measure, date; availability (days, minutes, shorter days, fixed
 constraints); equipment; tracking level; preferences (exercises, cardio
 modes, splits liked or disliked); the bad-week answer; Body assessment
-(date, photos, observations with confidence, emphasis) or "declined";
-movement self-check results; Ledger entries written; the history choice;
+(date, photos, observations with confidence, emphasis, and the user's answer
+to each) or "declined"; movement self-check results, and the user's answer
+to each finding; Ledger entries written; the history choice;
 RIR calibration (empty until the first mesocycle review). `profile.json` and
 `ledger.json` written to match and validated by the engine.

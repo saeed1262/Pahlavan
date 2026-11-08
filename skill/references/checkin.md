@@ -10,6 +10,33 @@ training day, SKILL.md house rule 17, so past midnight it is the previous
 day's week) and give its lift targets, ladder moves and any due `until`
 changes in chat; stop there. The full check-in stays on Sunday.
 
+**First, the plan check.** Every check-in starts with `check --vault .
+--json --date <the template's date>` (`numbers.md`, "The plan check"). A
+hard error (a Ledger constraint that started this week, the safety screen,
+data Pahlavan can't read) comes first: say it, and fix the plan through
+`plan-files.md` before anything else is proposed. Its warnings (a region
+short of its sets, a session over the profile's minutes, a plan rule broken)
+feed the decision rules below, and `legacy-default` lists the standing rules
+still to write.
+
+**`priority-room` is raised once.** A plan written before the check (or one
+that kept its priorities knowingly) gives it every Sunday. Say it in one
+letter, with the choice: which priorities come first (the rest under the
+Athlete profile's Later priorities, as `planning.md`, "The order", step A
+item 2, records each kind), or one override with its reason if the user
+keeps them all. Either way it then waits for the phase review; it is not
+repeated week after week without new data (a priority added, the week
+resized, a lagging area confirmed), as a declined proposal is not (SKILL.md
+house rule 3).
+
+**The standing rules.** The Sunday check-in is where the coach revises the
+plan's standing rules (`rules`, a lift's `progression`; formats.md, "The plan's standing rules") when the
+week's facts call for it, and writes any rule `review`'s `legacy-default`
+warning lists; a light week moves by editing `rules.lightWeeks`, and a stall
+under `"report"` gets the response the coach picks from `lifts[].stallFacts`.
+A revised rule is a plan change: a draft, `check --plan`, the user's yes,
+`plan-write` (`plan-files.md`, step 3), with its Decision.
+
 **Before the first check-in of a cycle.** The template reviews the week that
 ends on the Sunday on or before the date, so before a cycle's first Sunday it
 reviews the previous cycle's week. When its `weekStart` is before the cycle start
@@ -20,12 +47,12 @@ no letter in `Coach/Letters/` yet, the first check-in runs as usual and skips
 what reads the last letter (its focus, its question, `focusFollowed`).
 
 ```bash
-E=".claude/skills/fitness-coach/scripts/engine.cjs"
-node $E checkin template --vault . --json [--date D]          # step 1
-node $E checkin add --vault . --json --file <answers.json>    # step 3: a dry run
-node $E checkin add --vault . --json --file <answers.json> --write   # after the user's yes
-node $E review --vault . --json --date <D>                    # step 4
-node $E food --vault . --json --date <D>                      # step 4: the eating plan's side
+node .claude/skills/fitness-coach/scripts/engine.cjs check --vault . --json --date <D>                     # first: the plan check
+node .claude/skills/fitness-coach/scripts/engine.cjs checkin template --vault . --json [--date D]          # step 1
+node .claude/skills/fitness-coach/scripts/engine.cjs checkin add --vault . --json --file <answers.json>    # step 3: a dry run
+node .claude/skills/fitness-coach/scripts/engine.cjs checkin add --vault . --json --file <answers.json> --write   # after the user's yes
+node .claude/skills/fitness-coach/scripts/engine.cjs review --vault . --json --date <D>                    # step 4
+node .claude/skills/fitness-coach/scripts/engine.cjs food --vault . --json --date <D>                      # step 4: the eating plan's side
 ```
 
 ## 1. The template: what's known, what's open
@@ -234,20 +261,29 @@ focus. Every accepted change gets a Decision entry.
    check-in date): compare the expected effect with what happened (code),
    then record the outcome: kept, adjusted or reverted.
 4. **Missed time** (after asking about gaps; `missed`, and `lifts[].returnAdjusted`
-   in the first week back): one session missed → next in the rotation, no
-   stacking; 1–2 weeks off → first week back 5–10% lighter and RIR +1; 3+
-   weeks off → restart the mesocycle with a calibration week.
+   in the first week back after 1–2 weeks off; in plan week 1 the lighter
+   weight is already in `lifts[].next`): one session missed → next in the
+   rotation, no stacking; longer, the plan's `rules.missed` (`review`'s
+   `missed` applies it, and its `rules.missed` says whether it is the plan's
+   or the default, `legacy-default`). The default: 1–2 weeks off → first week
+   back 5–10% lighter and RIR +1; 3+ weeks off → restart the mesocycle with a
+   calibration week (7 days from the first session back; its `lifts[].next`
+   is already the calibrated target).
 5. **Readiness** (`readiness.actions`; a stale check-in is named in the note):
-   low on the latest smoothed score → this week's sessions one
-   set fewer and RIR +1 until it's back to watch or better; RHR flag or
+   low on the latest smoothed score → this week's sessions change by the
+   plan's `rules.readiness.low` (the default, `legacy-default`: one set fewer
+   and RIR +1) until it's back to watch or better; RHR flag or
    illness → no hard training until RHR is back under baseline + 7; sleep
    under 6 h the night before → no tests or PRs.
 6. **Progression** per logged lift, from the coming week's `lifts[].next` and
-   the RIR answer: top of the range at the target RIR → `next` as given (the
-   load cap is already applied; a "big jump" note means start at the bottom
-   of the range); reported RIR of 5+ → the top set was too light, add a rep or
-   the increment next time; under the bottom of the range → hold; two misses
-   → `next` says `lighter` (about 10 %, rounded to `inc`). A note that names
+   the RIR answer: `next` follows the lift's `progression` (its note names
+   the rule, the plan's or the default, `legacy-default`). Under the default:
+   top of the range at the target RIR → `next` as given (the load cap is
+   already applied; a "big jump" note means start at the bottom of the
+   range); under the bottom of the range → hold; two misses → `next` says
+   `lighter` (about 10 %, rounded to `inc`); a lift's own `onMiss` and
+   `onStall` change the last two. Reported RIR of 5+ → the top set was too
+   light, add a rep or the increment next time. A note that names
    deload-week sessions it did not use: ask whether that week was trained at
    full load (the template asks it). Reported RIR from the check-in and the
    profile's RIR calibration bias are already in `next` when its note says
@@ -260,7 +296,9 @@ focus. Every accepted change gets a Decision entry.
    triage ladder in `rules.md` (`lifts[].triage`, the `chosen` step), one
    step per week, starting one step after the last recorded one
    (`lifts[].triageStart`); recovery and joint aches from the check-in feed
-   its fatigue test.
+   its fatigue test. Under the plan's `rules.stall.response: "report"`
+   there is no engine step: the coach picks the response from
+   `lifts[].stallFacts` and says why.
 8. **Skills:** ladders behind their tests (`ladders[].testShowsLevel`; only
    ladders a plan session carries, and only tests from this cycle: the engine
    leaves the others out), and
@@ -271,11 +309,16 @@ focus. Every accepted change gets a Decision entry.
    aches (`recovery`, **(H)**); a known crunch or travel week next to the
    scheduled deload, which moves the deload onto it (`busy-week`, with
    `deload.move`). Offer it as an early light week; the user decides.
-   **Cancelling** a scheduled deload: only if readiness is normal or better, nothing is stalled,
+   **Under the plan's own light weeks** (`rules.lightWeeks`, `review`'s
+   `rules.lightWeeks.source` `plan`) the signals are facts
+   (`deload.signals`): an early, moved or cancelled light week is an edit of
+   `rules.lightWeeks.weeks` through `plan-files.md`, with its Decision.
+   **Under the old default** (`legacy-default`), cancelling a scheduled
+   deload: only if readiness is normal or better, nothing is stalled,
    adherence ≥ 80%, and the last mesocycle had one; the user's cancel is
    saved as `deload.cancelled` in the check-in, and the engine refuses a
-   second scheduled cancel in a row. Neither can be set in `plan-data.json`
-   (`planning.md`, limits): the letter gives that week's numbers.
+   second scheduled cancel in a row. Better still, write the plan's own
+   `rules.lightWeeks` at this check-in.
 10. **Adherence:** under 70% of planned sessions two weeks running (after
     gaps are confirmed) → propose resizing the week. `adherence` counts only
     the cycle's weeks (its note says how many of the 4, "1 of 4 weeks, the

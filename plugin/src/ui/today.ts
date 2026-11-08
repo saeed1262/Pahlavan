@@ -8,7 +8,8 @@
 // DOM only; the view passes in the callbacks, so this module needs no
 // Obsidian API.
 
-import { readinessKey, type ReadinessBandKey, type ReadinessInput } from '../../../src/core/readiness.ts';
+import { lightDoseText, type Adjustment } from '../../../src/core/rules.ts';
+import { readinessKey, trimWords, type ReadinessBandKey, type ReadinessInput } from '../../../src/core/readiness.ts';
 import type { Reason } from '../../../src/core/reason.ts';
 import type { SessionMode } from '../../../src/core/variant.ts';
 import type { ChecklistLine } from '../../../src/adapters/vault/log-write.ts';
@@ -85,8 +86,8 @@ function hero(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
     phase: ctx.phase,
     kicker: bannerKicker(w.planWeek, m.phase, w.phase),
     title: 'Today',
-    sub: `${fmt.dayLong(m.date)} · Mesocycle ${w.mesocycle}, week ${w.weekInMesocycle} of 4${w.deload ? ' · light week' : ''}`,
-    subTip: tip('Mesocycle', MESOCYCLE, w.deload ? LIGHT_WEEK : null),
+    sub: `${fmt.dayLong(m.date)} · Mesocycle ${w.mesocycle}, week ${w.weekInMesocycle}${w.mesocycleWeeks ? ` of ${w.mesocycleWeeks}` : ''}${w.deload ? ' · light week' : ''}`,
+    subTip: tip('Mesocycle', MESOCYCLE, w.deload ? `${LIGHT_WEEK}. ${clean(r.rules.lightWeeks.text)}` : null),
     chips: [
       { sw: 'lift', label: 'Lifting', value: `${tw.lifting.done}/${tw.lifting.target}`, tip: tip('Lifting sessions', `${tw.lifting.done} of ${tw.lifting.target} this week`) },
       { sw: 'short', label: 'Short', value: `${tw.short.done}/${tw.short.target}`, tip: tip('Short sessions', `${tw.short.done} of ${tw.short.target} this week`, SHORT) },
@@ -95,13 +96,13 @@ function hero(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
       ctx.month ? { icon: 'calendar', label: ctx.month.name, value: `${ctx.month.count} session${ctx.month.count === 1 ? '' : 's'}` } : null,
     ],
     action: h('button', { class: 'pv-btn-go', onclick: () => ctx.onLog() }, icon('plus'), 'Log session'),
-    ring: ring(m, r),
+    ring: weekRing(m, r),
     key: [{ kind: 'lift', label: 'Lifting' }, { kind: 'short', label: 'Short' }],
   });
 }
 
-/** One segment per planned session this week, filled when done. */
-function ring(m: TodayModel, r: Review): BannerOptions['ring'] {
+/** One segment per planned session this week, filled when done (Today's banner and Home's). */
+export function weekRing(m: TodayModel, r: Review): BannerOptions['ring'] {
   const tw = r.thisWeek;
   const done = m.week.flatMap((d) => d.sessions.map((x) => ({ ...x, date: d.date })));
   const lifts = done.filter((x) => x.kind === 'lift');
@@ -132,7 +133,6 @@ const BANDS = [
 ] as const;
 const BAND_STATUS: Record<string, [string, string]> = { low: ['over', 'alert'], watch: ['below', 'alert'], normal: ['in', 'inTarget'], good: ['in', 'inTarget'], unscored: ['neutral', 'info'] };
 const ACTION_WORDS: Record<string, string> = {
-  trim: 'Keep top sets, one set fewer, RIR +1',
   'early-deload': 'Offer an early light week',
   'no-hard-training': 'No hard training: easy Zone 2 or mobility at most',
   'no-tests': 'Train as planned, but no tests or PR attempts',
@@ -199,8 +199,8 @@ function inputRow(x: ReadinessInput): HTMLElement {
 }
 
 /** How the score works in one line, then each band with what it does to the session; today's band marked. */
-function readinessHow(band: string | null): HTMLElement {
-  const key = readinessKey().value;
+function readinessHow(band: string | null, low: Adjustment | null): HTMLElement {
+  const key = readinessKey(low).value;
   const edge = (b: ReadinessBandKey) => (b.from === null ? `${fmt.signed(b.to!, 1)} or less` : b.to === null ? `${fmt.signed(b.from, 1)} or more` : `${fmt.signed(b.from, 1)} to ${fmt.signed(b.to, 1)}`);
   return h('div', { class: 'pv-rd-how' },
     h('p', {}, h('b', {}, 'How this works. '), key.how),
@@ -254,7 +254,7 @@ function readinessCard(m: TodayModel, r: Review): HTMLElement {
       h('div', { class: 'pv-inputs-key' }, h('span', {}, h('i', {}), 'Your usual range'), h('span', {}, h('i', { class: 'dot is-worse' }), 'Worse'), h('span', {}, h('i', { class: 'dot is-usual' }), 'Usual'), h('span', {}, h('i', { class: 'dot is-better' }), 'Better')),
     );
   } else card.append(h('p', { class: 'pv-calm' }, icon('info'), 'The five inputs appear after this morning’s check-in.'));
-  card.append(readinessHow(scored.band));
+  card.append(readinessHow(scored.band, r.rules.readiness.value.low));
   readinessActionsInto(card, r);
   return card;
 }
@@ -264,7 +264,10 @@ function readinessActionsInto(card: HTMLElement, r: Review): void {
   const active = r.readiness.actions.filter((a) => a.value.active);
   if (active.length) {
     for (const a of active) {
-      card.append(h('div', { class: 'pv-action', 'data-rule': a.reason.rule }, icon('alert'), h('div', {}, h('b', { 'data-tip': `${a.reason.title}|Rule ${a.reason.rule}` }, ACTION_WORDS[a.value.action] ?? a.reason.title), clean(a.reason.note))));
+      // A low day's change in words from the plan's rule (or the old default); the note leads with the rule itself.
+      const low = r.rules.readiness.value.low;
+      const words = a.value.action === 'trim' && low ? `Keep top sets, ${trimWords(low).replace(' per exercise', '')}` : ACTION_WORDS[a.value.action];
+      card.append(h('div', { class: 'pv-action', 'data-rule': a.reason.rule }, icon('alert'), h('div', {}, h('b', { 'data-tip': `${a.reason.title}|Rule ${a.reason.rule}` }, words ?? a.reason.title), clean(a.reason.note))));
     }
   } else card.append(h('div', { class: 'pv-action is-quiet' }, icon('inTarget'), h('div', {}, h('b', {}, 'No change today'), 'Train as planned.')));
 }
@@ -278,16 +281,20 @@ function reminders(m: TodayModel, r: Review, ctx: TodayContext): HTMLElement {
     if (!l.stall?.value.stalled) continue;
     const step = (l.triage ?? []).find((t) => t.value.chosen);
     const ch = l.stall.value.change;
-    items.push({ icon: 'alert', tone: 'below', lead: `${l.short} has stalled`, text: `(e1RM ${ch === null ? '' : `${fmt.signed(ch * 100, 1)} % `}over 3 sessions).${step ? ` Triage step ${step.value.step}: ${clean(step.value.suggestion)}` : ''}` });
+    // The plan's stall rule: a triage step, or the facts with the response left to the coach.
+    const then = step ? ` Triage step ${step.value.step}: ${clean(step.value.suggestion)}` : l.stallFacts ? ' Your coach picks the response at the check-in.' : '';
+    items.push({ icon: 'alert', tone: 'below', lead: `${l.short ?? l.name} has stalled`, text: `(e1RM ${ch === null ? '' : `${fmt.signed(ch * 100, 1)} % `}over 3 sessions).${then}`, rule: (l.stallFacts ?? step)?.reason.from?.text ?? r.rules.stall.text });
   }
   const sleep = r.weight.last7.sleepH;
   if (sleep && sleep.value < 7) items.push({ icon: 'moon', tone: 'below', lead: `Sleep ${fmt.num(sleep.value)} h a night`, text: `over the last ${sleep.days} days, under 7\u00a0h.` });
   const d = r.deload?.value;
+  // What a light week does, as the plan's rule (or the old default) says it.
+  const dose = lightDoseText(r.rules.lightWeeks.value);
   if (d && !d.deload && d.weeksToScheduled && r.week.planWeek !== null && r.week.planStart) {
     const weekNo = r.week.planWeek + d.weeksToScheduled;
     const from = addDays(r.week.planStart, (weekNo - 1) * 7);
-    items.push({ icon: 'deload', tone: '', lead: `Light week in ${d.weeksToScheduled} week${d.weeksToScheduled === 1 ? '' : 's'}`, text: `from ${fmt.wd(from)}, plan week\u00a0${weekNo}: two sets of everything, about 10 % lighter.` });
-  } else if (d?.deload) items.push({ icon: 'deload', tone: '', lead: 'Light week', text: 'two sets of everything, about 10 % lighter, so your body catches up.' });
+    items.push({ icon: 'deload', tone: '', lead: `Light week in ${d.weeksToScheduled} week${d.weeksToScheduled === 1 ? '' : 's'}`, text: `from ${fmt.wd(from)}, plan week\u00a0${weekNo}: ${dose}.`, rule: r.rules.lightWeeks.text });
+  } else if (d?.deload) items.push({ icon: 'deload', tone: '', lead: 'Light week', text: `${dose}, so your body catches up.`, rule: r.rules.lightWeeks.text });
   for (const t of [...r.temporaryChanges.due, ...r.temporaryChanges.active]) {
     items.push({ icon: 'clock', tone: t.due ? 'below' : '', lead: `${t.item} until ${fmt.day(t.until)}`, text: `in ${t.session}: ${clean(t.reason)}.` });
   }
@@ -305,8 +312,12 @@ function repsOf(item: Item): string {
 }
 
 function targetText(item: Item): Child[] {
+  // Intervals in words: "4 × 4 min hard, 3 min easy between · about 25 min" (a calibration week's easy minutes are its sr).
+  if ((item.timed?.rounds ?? 0) >= 2) return [clean(item.timed!.text)];
   const t = item.target;
   if (t && t.weight !== null) return [`${fmt.w(t.weight, t.unit)} × ${t.reps} `, h('span', { class: 'at' }, `@ RIR ${t.rir}`)];
+  // A calibration week's target with no weight yet: find one for the bottom of the range.
+  if (t && t.action === 'calibrate') return [`${item.sets} × ${t.reps} `, h('span', { class: 'at' }, `@ RIR ${t.rir}`)];
   const sr = clean(item.sr ?? '');
   if (sr && /s\/side|min|rounds|\bs\b/.test(sr)) return [sr];
   if (sr) return [`${sr} `, h('span', { class: 'at' }, `@ RIR ${item.rir}`)];
@@ -615,7 +626,7 @@ function recentList(ctx: TodayContext): HTMLElement | null {
 }
 
 // ---------------------------------------------------------------- notes
-function calmNotes(m: TodayModel): HTMLElement | null {
+export function calmNotes(m: TodayModel): HTMLElement | null {
   if (!m.notes.length) return null;
   return h('div', { class: 'pv-notes' }, m.notes.map((n) => h('div', { class: 'pv-note' }, icon('info'), h('span', {}, n.text))));
 }
@@ -625,7 +636,7 @@ function dataNotes(m: TodayModel): HTMLElement | null {
   if (!all.length) return null;
   return h('details', { class: 'pv-data-notes' },
     h('summary', {}, `Data notes (${all.length})`),
-    h('ul', {}, all.map((w) => h('li', { class: w.error ? 'is-error' : '' }, h('code', {}, w.code), ' ', clean(w.message), (w as { items?: unknown[] }).items?.length ? h('span', { class: 'pv-faint' }, ` ${(w as { items: unknown[] }).items.slice(0, 6).join(', ')}${(w as { items: unknown[] }).items.length > 6 ? ' …' : ''}`) : null))),
+    h('ul', {}, all.map((w) => h('li', { class: w.error ? 'is-error' : '' }, h('code', {}, w.code), ' ', clean(w.message), (w as { items?: unknown[] }).items?.length ? h('span', { class: 'pv-faint' }, ` ${(w as { items: unknown[] }).items.slice(0, 6).join('; ')}${(w as { items: unknown[] }).items.length > 6 ? ' …' : ''}`) : null))),
   );
 }
 

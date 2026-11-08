@@ -85,7 +85,8 @@ export function ring(segs: readonly RingSeg[], n: string, label: string, aria: s
       // A single segment is the whole ring, short of closing (an arc cannot end where it starts).
       const a1 = segs.length > 1 ? 90 - (k + 1) * span + gap / 2 : 90 - 359.9;
       const cls = `pv-ring-seg is-${x.kind}${x.now ? ' is-now' : ''}${x.future ? ' is-future' : ''}`;
-      return s('path', { class: cls, d: arcPath(cx, cy, 60, 90 - k * span - gap / 2, a1), 'data-tip': x.tip });
+      // pathLength 1 lets a stylesheet fill a segment from 0 to 1 (Home's first draw does).
+      return s('path', { class: cls, d: arcPath(cx, cy, 60, 90 - k * span - gap / 2, a1), pathLength: '1', 'data-tip': x.tip });
     }),
     s('text', { class: 'pv-ring-n', x: cx, y: cy + 6 }, n),
     s('text', { class: 'pv-ring-l', x: cx, y: cy + 24 }, label),

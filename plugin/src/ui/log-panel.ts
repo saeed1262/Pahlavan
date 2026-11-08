@@ -102,7 +102,9 @@ function row(r: FormRow, n: number, ctx: LogPanelCtx): HTMLElement {
       // A paired checklist line is a superset: its two exercises back to back, a set of each.
       r.parts.length > 1 ? h('span', { class: 'pv-lg-tag', 'data-tip': 'Superset|A set of each, back to back, then rest' }, 'Superset') : null),
       r.planned ? h('div', { class: 'pv-lg-repl' }, icon('swap'), `in place of ${r.planned}`, h('span', { class: 'pv-lg-why-tag' }, r.swapWhy ?? 'Swap'), r.swapWhy === 'Your swap' ? h('button', { class: 'pv-lg-link', onclick: () => { r.name = r.planned!; r.planned = null; r.swapWhy = null; change(); } }, 'Undo') : null) : null,
-      h('div', { class: 'pv-lg-dose' }, r.sr, r.target && r.target.weight !== null ? [' · target ', h('b', {}, `${fmt.w(r.target.weight, r.unit)} × ${r.target.reps}`), ` @ RIR ${r.target.rir}`] : r.rir !== null && (r.kind === 'load' || r.kind === 'reps') && !/RIR/.test(r.sr) ? ` @ RIR ${r.rir}` : null),
+      // A timed item's dose in words (intervals, a calibration week's easy minutes), with the week's line under it.
+      h('div', { class: 'pv-lg-dose' }, r.timed ? r.timed.text : r.sr, r.target && r.target.weight !== null ? [' · target ', h('b', {}, `${fmt.w(r.target.weight, r.unit)} × ${r.target.reps}`), ` @ RIR ${r.target.rir}`] : r.target?.calibrate ? [' · target ', h('b', {}, `${r.target.reps} reps`), ` @ RIR ${r.target.rir}`] : r.rir !== null && (r.kind === 'load' || r.kind === 'reps') && !/RIR/.test(r.sr) ? ` @ RIR ${r.rir}` : null),
+      r.timed?.note ? h('div', { class: 'pv-lg-hint' }, icon('info'), r.timed.note) : null,
     ),
     r.kind === 'warmup' && !r.line ? null : seg([['1', [icon('check'), 'Done']], ['0', 'Skipped']], r.done ? '1' : '0', (v) => { r.done = v === '1'; if (r.done) r.why = null; change(); }, { 'aria-label': `${r.name}: done or skipped` }),
   );
@@ -246,7 +248,7 @@ function sessionField(ctx: LogPanelCtx): HTMLElement {
     ));
 }
 
-/** The custom session's label (required, as fitness_log.py add asks); typing does not redraw, so the focus stays. */
+/** The custom session's label (required, as the log writer asks); typing does not redraw, so the focus stays. */
 function labelField(ctx: LogPanelCtx): HTMLElement {
   const f = ctx.form;
   const input = h('input', { class: 'pv-lg-label', type: 'text', value: f.label ?? '', placeholder: 'Easy hike, yoga, a match…', 'aria-label': 'What it was', disabled: f.edit });

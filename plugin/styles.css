@@ -225,6 +225,194 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-today-grid { display: grid; grid-template-columns: minmax(330px, 380px) minmax(0, 1fr); gap: 18px; align-items: start; }
 .pahlavan-view .pv-today-side, .pahlavan-view .pv-today-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 
+/* ── Home (0.27.0): ported from mockups/home.css ────────────── */
+.pahlavan-view .pv-home-hero { align-items: center; }
+.pahlavan-view .pv-home-hero .pv-hero-title { font-size: 46px; }
+/* The brand row at the banner's top: the logo, "Pahlavan" in the serif, the day as the kicker. */
+.pahlavan-view .pv-home-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.pahlavan-view .pv-home-logo { flex: 0 0 auto; width: 46px; height: 46px; padding: 3px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 55%, transparent 72%); filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4)); }
+.pahlavan-view .pv-home-brand-name { font-family: var(--pv-serif); font-size: 22px; font-weight: 600; line-height: 1; color: #f0c45e; letter-spacing: 0.01em; }
+.pahlavan-view .pv-home-brand .pv-kicker::before { content: "·"; margin-right: 10px; color: rgba(255, 255, 255, 0.35); }
+.pahlavan-view .pv-home-notes { display: grid; gap: 8px; margin-top: 16px; max-width: 640px; }
+.pahlavan-view .pv-home-note { display: flex; align-items: flex-start; gap: 9px; color: rgba(255, 255, 255, 0.82); font-size: 13.5px; line-height: 1.45; }
+.pahlavan-view .pv-home-note svg { flex: 0 0 auto; width: 15px; height: 15px; margin-top: 2px; color: var(--pv-hero-kicker); }
+.pahlavan-view .pv-home-note b { color: #fff; font-weight: 650; }
+.pahlavan-view .pv-home-ringline { margin-top: 8px; color: rgba(255, 255, 255, 0.72); font-size: 12.5px; }
+.pahlavan-view .pv-home-ringline b { color: #fff; }
+
+.pahlavan-view .pv-home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+.pahlavan-view .pv-home-wide { grid-column: 1 / -1; }
+/* With nothing needing the user, Needs you narrows and Food and habits widens. */
+.pahlavan-view .pv-home-grid.is-calm { grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr); }
+/* Each tab's accent (Your tabs' tiles and the tab bar's icons), from the Isfahan palette; always beside the tab's name. */
+.pahlavan-view { --pv-acc-today: #0e8a87; --pv-acc-progress: #2c5aa0; --pv-acc-plan: #9c7a0e; --pv-acc-checkin: #8a4b8f; --pv-acc-food: #c2552f; }
+.theme-dark .pahlavan-view { --pv-acc-today: #3cbcb6; --pv-acc-progress: #7f9de0; --pv-acc-plan: #d8b03c; --pv-acc-checkin: #c38ad0; --pv-acc-food: #ec8a5e; }
+.pahlavan-view .pv-sections button[data-section="today"] svg { color: var(--pv-acc-today); }
+.pahlavan-view .pv-sections button[data-section="progress"] svg { color: var(--pv-acc-progress); }
+.pahlavan-view .pv-sections button[data-section="plan"] svg { color: var(--pv-acc-plan); }
+.pahlavan-view .pv-sections button[data-section="checkin"] svg { color: var(--pv-acc-checkin); }
+.pahlavan-view .pv-sections button[data-section="food"] svg { color: var(--pv-acc-food); }
+.pahlavan-view [data-home] [hidden] { display: none !important; }
+
+.pahlavan-view .pv-home-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.pahlavan-view .pv-home-count { color: var(--text-muted); font-size: 12.5px; font-weight: 600; }
+.pahlavan-view .pv-home-lead { margin: 0 0 14px; font-size: 15px; line-height: 1.45; color: var(--text-normal); }
+.pahlavan-view .pv-home-lead b { font-weight: 650; }
+
+/* Needs you: rows that each open the tab that settles them. */
+.pahlavan-view .pv-home-todo { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pahlavan-view .pv-home-row { display: flex; align-items: center; justify-content: flex-start; white-space: normal; gap: 12px; width: 100%; padding: 12px 12px 12px 12px; border: 1px solid var(--pv-card-line); border-radius: 12px; background: transparent; box-shadow: none; text-align: left; cursor: pointer; color: inherit; font: inherit; height: auto; }
+.pahlavan-view .pv-home-row:hover { background: var(--background-modifier-hover); }
+.pahlavan-view .pv-home-row .ic { flex: 0 0 auto; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--background-modifier-hover); }
+.pahlavan-view .pv-home-row .ic svg { width: 16px; height: 16px; }
+.pahlavan-view .pv-home-row.is-warn .ic svg { color: var(--pv-below); }
+.pahlavan-view .pv-home-row.is-due .ic svg { color: var(--pv-in); }
+.pahlavan-view .pv-home-row .tx { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.pahlavan-view .pv-home-row .tx b { font-size: 13.5px; font-weight: 650; }
+.pahlavan-view .pv-home-row .tx span { color: var(--text-muted); font-size: 12.5px; line-height: 1.4; }
+.pahlavan-view .pv-home-row .go { flex: 0 0 auto; color: var(--text-faint); }
+.pahlavan-view .pv-home-row .go svg { width: 16px; height: 16px; }
+.pahlavan-view .pv-home-needs.is-calm { overflow: hidden; }
+/* The calm state: a check in a soft medallion over a faint girih (with Isfahan), fading out to the left like the banner's. */
+.isfahan .pahlavan-view .pv-home-needs.is-calm::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--isfahan-gold, var(--pv-line)); opacity: 0.09;
+  -webkit-mask: var(--isfahan-girih) 0 0 / 44px 44px, linear-gradient(to left, #000 0%, transparent 80%);
+  mask: var(--isfahan-girih) 0 0 / 44px 44px, linear-gradient(to left, #000 0%, transparent 80%);
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+}
+.pahlavan-view .pv-home-quiet { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; padding: 10px 2px 4px; }
+.pahlavan-view .pv-home-calm-mark { flex: 0 0 auto; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--pv-trained) 14%, transparent); color: var(--pv-trained); box-shadow: 0 0 0 6px color-mix(in srgb, var(--pv-trained) 6%, transparent); }
+.pahlavan-view .pv-home-calm-mark svg { width: 20px; height: 20px; }
+.pahlavan-view .pv-home-quiet .tx { display: grid; gap: 2px; }
+.pahlavan-view .pv-home-quiet .tx b { color: var(--text-normal); font-size: 15px; font-weight: 650; }
+.pahlavan-view .pv-home-quiet .tx span { color: var(--text-muted); font-size: 12.5px; }
+.pahlavan-view .pv-home-more-n { margin-top: 10px; }
+.pahlavan-view .pv-home-rest { margin-top: 8px; }
+
+/* Progress: three small tiles, one number and one sentence each. */
+.pahlavan-view .pv-home-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); column-gap: 12px; }
+/* Each tile spans the four shared rows (label, number, picture, line), so the pictures and lines align across tiles. */
+.pahlavan-view .pv-home-tiles > .pv-home-tile { grid-row: span 4; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; row-gap: 6px; position: relative; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.pahlavan-view .pv-home-tile { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; white-space: normal; gap: 6px; padding: 14px 14px 12px; border: 1px solid var(--pv-card-line); border-radius: 12px; background: transparent; box-shadow: none; text-align: left; cursor: pointer; color: inherit; font: inherit; height: auto; }
+.pahlavan-view .pv-home-tile:hover { border-color: color-mix(in srgb, var(--pv-line) 40%, var(--pv-card-line)); box-shadow: var(--pv-shadow); transform: translateY(-1px); }
+.pahlavan-view .pv-home-tile .lb { color: var(--text-muted); font-size: 12px; font-weight: 650; letter-spacing: 0.04em; }
+.pahlavan-view .pv-home-tile .big { font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text-normal); }
+.pahlavan-view .pv-home-tile .big small { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-left: 3px; }
+.pahlavan-view .pv-home-tile .big.is-none { font-size: 18px; color: var(--text-faint); }
+.pahlavan-view .pv-home-tile .line { color: var(--text-muted); font-size: 12.5px; line-height: 1.4; }
+.pahlavan-view .pv-home-viz { position: relative; display: block; height: 40px; }
+.pahlavan-view .pv-home-area svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pahlavan-view .pv-home-area polyline { fill: none; stroke: var(--pv-line); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.pahlavan-view .pv-home-area stop.from { stop-color: var(--pv-line); stop-opacity: 0.22; }
+.pahlavan-view .pv-home-area stop.to { stop-color: var(--pv-line); stop-opacity: 0; }
+.pahlavan-view .pv-home-area .end circle { fill: var(--pv-line); stroke: var(--pv-card); stroke-width: 2; }
+.pahlavan-view .pv-home-marks { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; height: auto; min-height: 40px; }
+.pahlavan-view .pv-home-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: color-mix(in srgb, currentColor 13%, transparent); }
+.pahlavan-view .pv-home-mark svg { width: 15px; height: 15px; }
+.pahlavan-view .pv-home-mark.is-up { color: var(--pv-trained); }
+.pahlavan-view .pv-home-mark.is-flat { color: var(--text-faint); }
+.pahlavan-view .pv-home-mark.is-stalled { color: var(--pv-below); }
+.pahlavan-view .pv-home-mark.is-down { color: var(--pv-over); }
+.pahlavan-view .pv-home-mark-more { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+.pahlavan-view .pv-home-bars { display: flex; align-items: flex-end; }
+.pahlavan-view .pv-home-bars svg { display: block; max-width: 100%; height: 40px; }
+.pahlavan-view .pv-home-bars rect.is-full { fill: var(--pv-trained); }
+.pahlavan-view .pv-home-bars rect.is-part { fill: var(--pv-trained); opacity: 0.45; }
+.pahlavan-view .pv-home-bars rect.is-none { fill: var(--background-modifier-border); }
+.pahlavan-view .pv-home-ring { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; }
+.pahlavan-view .pv-home-ring circle { fill: none; stroke-width: 5; }
+.pahlavan-view .pv-home-ring .track { stroke: var(--background-modifier-border); }
+.pahlavan-view .pv-home-ring .arc { stroke: var(--pv-trained); stroke-linecap: round; }
+.pahlavan-view .pv-home-tile .pv-status { align-self: flex-start; }
+
+.pahlavan-view .pv-home-more { display: flex; justify-content: flex-end; margin-top: 12px; }
+.pahlavan-view .pv-home-link { display: inline-flex; align-items: center; gap: 4px; height: auto; padding: 0; border: none; background: none; box-shadow: none; color: var(--text-accent); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.pahlavan-view .pv-home-link svg { width: 14px; height: 14px; }
+.pahlavan-view .pv-home-link:hover { text-decoration: underline; }
+
+/* Food and habits: two plain rows. */
+.pahlavan-view [data-home="food"] { container-type: inline-size; }
+.pahlavan-view .pv-home-pair { display: grid; gap: 14px; }
+@container (min-width: 560px) { .pahlavan-view .pv-home-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; } }
+.pahlavan-view .pv-home-kv { display: flex; align-items: center; gap: 12px; }
+.pahlavan-view .pv-home-kv .ic { flex: 0 0 auto; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--background-modifier-hover); }
+.pahlavan-view .pv-home-kv .ic svg { width: 16px; height: 16px; color: var(--pv-line); }
+.pahlavan-view .pv-home-kv .tx { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.pahlavan-view .pv-home-kv .tx b { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.pahlavan-view .pv-home-kv .tx span { color: var(--text-muted); font-size: 12.5px; }
+.pahlavan-view .pv-home-dots { display: flex; gap: 4px; margin-top: 4px; }
+.pahlavan-view .pv-home-dots i { width: 10px; height: 10px; border-radius: 3px; background: var(--background-modifier-border); }
+.pahlavan-view .pv-home-dots i.on { background: var(--pv-trained); }
+
+/* Your tabs: one tile per tab (its name, what it is for, where it stands now), a list in a narrow pane. */
+.pahlavan-view .pv-home-tabs-card { container-type: inline-size; }
+.pahlavan-view .pv-home-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); column-gap: 12px; }
+/* Each tile spans the four shared rows (icon, name, what it is for, now), so the lines under them align across tiles. */
+.pahlavan-view .pv-home-tabs > .pv-home-tab { grid-row: span 4; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; align-items: start; row-gap: 5px; }
+.pahlavan-view .pv-home-tab {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; justify-items: stretch; white-space: normal; gap: 5px;
+  height: auto; min-width: 0; padding: 14px 14px 12px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  border: 1px solid var(--pv-card-line); border-radius: 14px; box-shadow: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acc, var(--pv-line)) 7%, var(--pv-card)) 0%, var(--pv-card) 72%);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.pahlavan-view .pv-home-tab.is-tab-today { --acc: var(--pv-acc-today); }
+.pahlavan-view .pv-home-tab.is-tab-progress { --acc: var(--pv-acc-progress); }
+.pahlavan-view .pv-home-tab.is-tab-plan { --acc: var(--pv-acc-plan); }
+.pahlavan-view .pv-home-tab.is-tab-checkin { --acc: var(--pv-acc-checkin); }
+.pahlavan-view .pv-home-tab.is-tab-food { --acc: var(--pv-acc-food); }
+/* The accent's thin edge along the tile's top. */
+.pahlavan-view .pv-home-tab::before { content: ""; position: absolute; top: 0; left: 16px; right: 16px; height: 3px; border-radius: 0 0 3px 3px; background: var(--acc, var(--pv-line)); opacity: 0.85; }
+.pahlavan-view .pv-home-tab:hover { border-color: color-mix(in srgb, var(--acc, var(--pv-line)) 45%, var(--pv-card-line)); box-shadow: var(--pv-shadow); transform: translateY(-1px); }
+.pahlavan-view .pv-home-tab:focus-visible { outline: 2px solid var(--acc, var(--pv-line)); outline-offset: 2px; }
+.pahlavan-view .pv-home-tab .top { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.pahlavan-view .pv-home-tab .ic { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: color-mix(in srgb, var(--acc, var(--pv-line)) 14%, transparent); color: var(--acc, var(--pv-line)); }
+.pahlavan-view .pv-home-tab .ic svg { width: 18px; height: 18px; }
+.pahlavan-view .pv-home-tab .go { display: inline-flex; color: var(--text-faint); transition: transform 0.15s, color 0.15s; }
+.pahlavan-view .pv-home-tab .go svg { width: 16px; height: 16px; }
+.pahlavan-view .pv-home-tab:hover .go { color: var(--acc, var(--pv-line)); transform: translateX(2px); }
+.pahlavan-view .pv-home-tab .nm { font-family: var(--pv-serif); font-size: 22px; font-weight: 600; line-height: 1.05; color: var(--text-normal); }
+.pahlavan-view .pv-home-tab .does { align-self: start; color: var(--text-muted); font-size: 12.5px; line-height: 1.4; }
+.pahlavan-view .pv-home-tab .now { display: flex; align-items: flex-start; align-self: start; gap: 7px; width: 100%; margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--pv-card-line); color: var(--text-normal); font-size: 12.5px; font-weight: 600; line-height: 1.35; }
+.pahlavan-view .pv-home-tab .now .dot { flex: 0 0 auto; width: 7px; height: 7px; margin-top: 5px; border-radius: 50%; background: var(--pv-trained); opacity: 0.5; }
+.pahlavan-view .pv-home-tab.is-due .now .dot { background: var(--pv-in); opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pv-in) 20%, transparent); }
+.pahlavan-view .pv-home-tab.is-warn .now .dot { background: var(--pv-below); opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pv-below) 22%, transparent); }
+@container (max-width: 860px) {
+  .pahlavan-view .pv-home-tabs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 8px; }
+  .pahlavan-view .pv-home-tabs > .pv-home-tab { grid-row: auto; grid-template-rows: none; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; }
+  .pahlavan-view .pv-home-tab { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "ic nm go" "ic does go" "ic now go"; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px; }
+  .pahlavan-view .pv-home-tab .top { display: contents; }
+  .pahlavan-view .pv-home-tab .ic { grid-area: ic; align-self: start; }
+  .pahlavan-view .pv-home-tab .go { grid-area: go; }
+  .pahlavan-view .pv-home-tab .nm { grid-area: nm; font-size: 19px; }
+  .pahlavan-view .pv-home-tab .does { grid-area: does; min-height: 0; }
+  .pahlavan-view .pv-home-tab .now { grid-area: now; margin-top: 4px; padding-top: 0; border-top: none; }
+}
+
+/* Home's first draw after it opens: the banner and the cards rise in, one after another, and the rings fill. */
+@keyframes pv-home-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes pv-home-fill { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes pv-home-arc { from { stroke-dasharray: 0 100; } }
+.pahlavan-view .pv-home-intro > .pv-hero, .pahlavan-view .pv-home-intro .pv-home-grid > * { animation: pv-home-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(1) { animation-delay: 0.08s; }
+.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(2) { animation-delay: 0.14s; }
+.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(3) { animation-delay: 0.2s; }
+.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(4) { animation-delay: 0.26s; }
+.pahlavan-view .pv-home-intro .pv-hero-ring .pv-ring-seg:not(.is-empty) { stroke-dasharray: 1; animation: pv-home-fill 0.9s 0.25s ease-out both; }
+.pahlavan-view .pv-home-intro .pv-home-ring .arc { animation: pv-home-arc 1s 0.45s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .pahlavan-view .pv-home-intro *, .pahlavan-view .pv-home-intro > * { animation: none !important; }
+}
+
+@media (max-width: 900px) {
+  .pahlavan-view .pv-home-grid.is-calm { grid-template-columns: minmax(0, 1fr); }
+  .pahlavan-view .pv-home-grid { grid-template-columns: minmax(0, 1fr); }
+  .pahlavan-view .pv-home-tiles { grid-template-columns: minmax(0, 1fr); }
+  .pahlavan-view .pv-home-hero { flex-direction: column; align-items: flex-start; }
+}
+
 /* ── Readiness ────────────────────────────────────────────── */
 .pahlavan-view .pv-gauge { display: block; width: 100%; max-width: 300px; margin: 2px auto 0; overflow: visible; }
 .pahlavan-view .pv-gauge-band { fill: none; stroke-width: 7; }
@@ -466,6 +654,29 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-bm-side li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .pahlavan-view .pv-bm-side li > span:last-child { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .pahlavan-view .pv-bm-side p { margin: 0 0 14px; color: var(--text-muted); line-height: 1.45; }
+/* The Regions list under the statuses: one line (its count under) until opened. */
+.pahlavan-view .pv-bm-regions { padding-top: 10px; border-top: 1px solid var(--pv-card-line); }
+.pahlavan-view .pv-bm-regions-head { display: flex; align-items: center; gap: 8px; width: 100%; height: auto; margin: 0; padding: 0; border: none; box-shadow: none; background: none; color: var(--text-muted); font: inherit; text-align: left; cursor: pointer; }
+.pahlavan-view .pv-bm-regions-title { font-size: 11px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; }
+.pahlavan-view .pv-bm-regions-head:hover .pv-bm-regions-title { color: var(--text-normal); }
+.pahlavan-view .pv-bm-regions-sum { margin-left: auto; color: var(--text-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pahlavan-view .pv-bm-regions-sum.is-under { color: var(--pv-below); font-weight: 600; }
+.pahlavan-view .pv-bm-regions-head svg { flex: none; width: 13px; height: 13px; color: var(--text-faint); transition: transform 0.12s ease; }
+.pahlavan-view .pv-bm-regions.is-open .pv-bm-regions-head svg { transform: rotate(180deg); }
+.pahlavan-view .pv-bm-reg-group { margin-top: 10px; }
+.pahlavan-view .pv-bm-reg-muscle { margin-bottom: 3px; color: var(--text-normal); font-size: 12px; font-weight: 600; }
+.pahlavan-view .pv-bm-side .pv-bm-reg-group ul { margin: 0; gap: 3px; }
+.pahlavan-view .pv-bm-side li.pv-bm-reg { display: grid; grid-template-columns: minmax(0, 1fr) auto 30px; gap: 6px; }
+.pahlavan-view .pv-bm-reg-name { min-width: 0; color: var(--text-muted); }
+.pahlavan-view .pv-bm-reg-name small { display: block; color: var(--text-faint); font-size: 10.5px; line-height: 1.25; }
+.pahlavan-view .pv-bm-reg.is-declared .pv-bm-reg-name { color: var(--text-normal); font-weight: 600; }
+.pahlavan-view .pv-bm-reg-star { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; color: var(--pv-kicker); fill: currentColor; }
+/* Read by screen readers, not drawn: words for what a mark (the declared star) shows. */
+.pahlavan-view .pv-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.pahlavan-view .pv-bm-side li.pv-bm-reg > .pv-bm-reg-sets { text-align: right; }
+.pahlavan-view .pv-bm-side li.pv-bm-reg > .pv-status { padding: 1px 7px 1px 5px; font-size: 11px; }
+.pahlavan-view .pv-bm-side li.pv-bm-reg > .pv-status svg { width: 12px; height: 12px; }
+.pahlavan-view .pv-bm-side .pv-bm-reg-key { margin: 10px 0 0; color: var(--text-faint); font-size: 11px; }
 .pahlavan-view .pv-ramp-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 14px; color: var(--text-muted); font-size: 11.5px; }
 .pahlavan-view .pv-ramp-legend .title { color: var(--text-faint); margin-right: 2px; }
 .pahlavan-view .pv-ramp-legend span { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
@@ -659,6 +870,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-hint { display: flex; gap: 7px; align-items: flex-start; margin: 8px 0 0 38px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
 .pahlavan-view .pv-lg-hint svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--text-faint); }
 .pahlavan-view .pv-lg-pain .pv-lg-hint { margin-left: 0; }
+.pahlavan-view .pv-lg-name .pv-lg-hint { margin: 4px 0 0; }
 .pahlavan-view .pv-lg-item-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 8px 0 0 38px; }
 .pahlavan-view .pv-lg-link { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 2px; border: none; box-shadow: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; }
 .pahlavan-view .pv-lg-link:hover { color: var(--text-normal); }
@@ -1035,6 +1247,12 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-vst.is-below { color: var(--pv-below); stroke: var(--pv-below); }
 .pahlavan-view .pv-vst.is-over { color: var(--pv-over); stroke: var(--pv-over); }
 .pahlavan-view .pv-tg { display: grid; }
+/* The Plan's standing rules: each rule on its line, a "default" tag where the coach has not set one. */
+.pahlavan-view .pv-rules { list-style: none; margin: 0; padding: 0; }
+.pahlavan-view .pv-rule { display: grid; grid-template-columns: minmax(150px, 1fr) 3fr; gap: 4px 16px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--pv-card-line); font-size: 12.5px; }
+.pahlavan-view .pv-rule .pv-tag { grid-column: 2; justify-self: start; margin-left: 0; }
+.pahlavan-view .pv-rule-text { grid-column: 2; color: var(--text-muted); }
+.pahlavan-view .pv-rule.is-plan .pv-rule-text { color: var(--text-normal); }
 .pahlavan-view .pv-tg-row { display: grid; grid-template-columns: minmax(170px, 1.5fr) repeat(3, minmax(96px, 1fr)) 196px minmax(120px, auto); gap: 6px 16px; align-items: center; padding: 11px 0; border-top: 1px solid var(--pv-card-line); font-size: 12.5px; }
 .pahlavan-view .pv-tg-row:first-child { border-top: none; padding-top: 2px; }
 .pahlavan-view .pv-tg-name b { font-weight: 650; font-size: 13px; }
@@ -1260,6 +1478,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 /* ── The Settings tab (Obsidian's settings window) ────────── */
 .pahlavan-settings .pv-st-title { margin: 0 0 14px; }
 .pahlavan-settings .pv-st-help { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-size: var(--font-ui-small, 13px); color: var(--text-normal); }
+.pahlavan-settings .pv-st-beta { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--interactive-accent) 8%, transparent); font-size: var(--font-ui-small, 13px); line-height: 1.45; color: var(--text-muted); }
+.pahlavan-settings .pv-st-beta b { color: var(--text-normal); }
 .pahlavan-settings .pv-st-help a { color: var(--text-accent); font-weight: 600; text-decoration: none; }
 .pahlavan-settings .pv-st-tips { flex: none; padding: 4px 12px; border: 1px solid var(--background-modifier-border); border-radius: 7px; background: transparent; box-shadow: none; color: var(--text-muted); font-size: 12.5px; cursor: pointer; }
 .pahlavan-settings .pv-st-tips:hover { color: var(--text-normal); background: var(--background-modifier-hover); }

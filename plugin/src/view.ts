@@ -32,7 +32,9 @@ import { renderPlan, type PlanModel } from './ui/plan.ts';
 import { renderProgress, type VolumeView } from './ui/progress.ts';
 import { photoSetDates, POSES, renderMore, sectionNav, type MoreContext, type PhotoFiles } from './ui/progress-more.ts';
 import { keepPlace } from './ui/scroll.ts';
-import { renderToday } from './ui/today.ts';
+import { renderToday, weekRing } from './ui/today.ts';
+import { renderHome } from './ui/home.ts';
+import { buildHome, type HomeGo } from '../../src/report/home.ts';
 import type { TrackingWriter } from './tracking-writer.ts';
 import type { BodyRecordUi, MorningBellUi } from './ui/body-record.ts';
 import { dueTodayCard, sittingBar } from './ui/due-today.ts';
@@ -112,6 +114,7 @@ export interface ViewDeps {
 }
 
 const SECTIONS: readonly { id: Section; label: string; icon: string }[] = [
+  { id: 'home', label: 'Home', icon: 'home' },
   { id: 'today', label: 'Today', icon: 'sun' },
   { id: 'progress', label: 'Progress', icon: 'trend' },
   { id: 'plan', label: 'Plan', icon: 'layers' },
@@ -332,6 +335,7 @@ export class PahlavanView extends ItemView {
   private show(section: Section): void {
     const moved = section !== this.deps.settings.lastTab;
     if (moved) this.countVisit(section);
+    if (moved && section === 'home') this.homeIntro = true;
     this.deps.settings.lastTab = section;
     this.deps.saveSettings();
     this.contentEl.querySelectorAll('.pv-sections button').forEach((b) => b.classList.toggle('is-on', b.getAttribute('data-section') === section));
@@ -351,6 +355,18 @@ export class PahlavanView extends ItemView {
     const section = this.deps.settings.lastTab;
     const w = this.model?.review?.week;
     this.meta?.replaceChildren(...(w?.planWeek ? [h('span', {}, weekOfText(w.planWeek, w.planWeeks)), h('span', { class: 'dot' }), h('span', {}, fmt.wd(this.date))] : [h('span', {}, fmt.wd(this.date))]));
+    if (section === 'home') {
+      if (!this.model) {
+        this.page.replaceChildren(h('div', { class: 'pv-placeholder' }, h('div', { class: 'pv-kicker' }, 'Pahlavan'), h('h1', { class: 'pv-serif-title' }, 'Home'), h('p', {}, this.failure ? `The fitness files could not be read: ${this.failure}` : 'Reading the fitness files…')));
+        return;
+      }
+      try {
+        keepPlace(this.contentEl, this.page, () => this.drawHome());
+      } catch (e) {
+        this.showError('The Home tab could not be drawn', e, this.page);
+      }
+      return;
+    }
     if (section === 'progress') {
       if (!this.progressModel) {
         this.page.replaceChildren(h('div', { class: 'pv-placeholder' }, h('div', { class: 'pv-kicker' }, 'Pahlavan'), h('h1', { class: 'pv-serif-title' }, 'Progress'), h('p', {}, this.failure ? `The fitness files could not be read: ${this.failure}` : 'Reading the fitness files\u2026')));
@@ -446,6 +462,50 @@ export class PahlavanView extends ItemView {
     } catch (e) {
       this.showError('The Today screen could not be drawn', e, this.page);
     }
+  }
+
+  /** Home: the overview from the reports already loaded; each part opens its tab. */
+  /** Home's next draw is its first since it opened (the view, or a switch to Home): its cards rise in once. */
+  private homeIntro = true;
+
+  private drawHome(): void {
+    if (!this.page || !this.model) return;
+    const read = this.deps.data.current;
+    if (!read) return;
+    const due = this.dueModel && this.dueModel.date === this.date ? this.dueModel : null;
+    const items = this.deps.data.tracking?.tracking?.items ?? [];
+    const home = buildHome({ read, today: this.model, session: this.session, progress: this.progressModel, due, food: this.foodModel, day: this.yourDayModel()?.value ?? null, items });
+    const r = this.model.review;
+    renderHome(this.page, home, this.model, {
+      phase: this.phase,
+      ring: r ? weekRing(this.model, r) : null,
+      onLog: () => void this.openLog(),
+      onGo: (go) => this.homeGo(go),
+      welcome: this.welcomeEl(),
+      intro: this.homeIntro,
+    });
+    this.homeIntro = false;
+  }
+
+  /** Where a part of Home leads: its tab, a Progress view, Today's Due today, or the morning card. */
+  private homeGo(go: HomeGo): void {
+    if (go === 'morning') {
+      // The morning card through the machinery; without it, the Check-in screen holds the same questions.
+      if (this.deps.reminders) void this.openDueKey('morning');
+      else this.show('checkin');
+      return;
+    }
+    if (go === 'due') {
+      this.show('today');
+      this.goToSection('today', 'due');
+      return;
+    }
+    if (go === 'progress' || go === 'progress-training' || go === 'progress-body') {
+      this.deps.settings.progressSection = go === 'progress-training' ? 'training' : go === 'progress-body' ? 'body' : 'overview';
+      this.show('progress');
+      return;
+    }
+    this.show(go);
   }
 
   /** The Food tab; the scroll position survives the redraw (a tick, a table switch). */
@@ -618,7 +678,7 @@ export class PahlavanView extends ItemView {
     this.render();
   }
 
-  /** A ladder's level, as the Skills card's hint suggests (fitness_log.py ladder's write). */
+  /** A ladder's level, as the Skills card's hint suggests (mergeLadder's write, as `engine log ladder` makes it). */
   private async moveLadder(id: string, level: number): Promise<void> {
     const read = this.deps.data.current;
     if (!this.deps.writer || !read) return;
@@ -858,7 +918,7 @@ export class PahlavanView extends ItemView {
       ...(this.deps.copy && ck ? { onCopy: () => {
         const shortDay = (d: string) => new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
         const dayLabel = new Date(Number(this.date.slice(0, 4)), Number(this.date.slice(5, 7)) - 1, Number(this.date.slice(8, 10))).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-        const text = lightWords(planText({ plan, log, date: this.date, type: ck.type, express: ck.express, deload: ck.deload, dayLabel, shortDay }));
+        const text = lightWords(planText({ plan, log, date: this.date, type: ck.type, express: ck.express, deload: ck.deload, dayLabel, shortDay, ...(this.session ? { session: this.session } : {}) }));
         this.deps.copy!(text).then(() => this.deps.notify('Today’s plan copied'), () => this.deps.notify('Couldn’t copy the plan'));
       } } : {}),
       // The month's count and the recent list start at the cycle start, like Progress.
@@ -1099,6 +1159,11 @@ export class PahlavanView extends ItemView {
   private patchLive(): void {
     if (!this.page) return;
     const tab = this.deps.settings.lastTab;
+    if (tab === 'home') {
+      // Home counts the same ticks and the morning check-in: it is small, so it is drawn again whole.
+      if (this.model) keepPlace(this.contentEl, this.page, () => this.drawHome());
+      return;
+    }
     if (tab === 'today') {
       const old = this.page.querySelector('[data-live="due"]');
       const next = this.dueCardEl();
@@ -1451,7 +1516,10 @@ export class PahlavanView extends ItemView {
   // ---------------------------------------------------------------- At a glance and the folds
 
   /** A visit to a tab: one of its first while fewer than three are counted (Coach/help.json, shared by both Macs). */
-  private countVisit(tab: GlanceTab): void {
+  private countVisit(section: Section): void {
+    // Home has no At a glance: its visits are not counted.
+    if (section === 'home') return;
+    const tab: GlanceTab = section;
     this.early[tab] = earlyVisit(this.helpState, tab);
     if (this.early[tab]) void this.helpNow({ op: 'visit', tab }, false);
   }
@@ -1482,6 +1550,8 @@ export class PahlavanView extends ItemView {
   /** The open tab's At a glance: its lines, the heading of its list, Progress's other views and the prefix of its sections' ids. */
   private glanceOf(tab: Section): { glance: Glance; heading: string; prefix: string | null; views: { label: string; items: { id: string; label: string; line: string }[] } | null } | null {
     const read = this.deps.data.current;
+    // Home is the overview itself: no At a glance there.
+    if (tab === 'home') return null;
     if (tab === 'today') {
       if (!this.model?.review || !read) return null;
       const log = read.raw?.log;
@@ -1532,6 +1602,7 @@ export class PahlavanView extends ItemView {
     if (!page) return;
     page.querySelector('[data-glance]')?.remove();
     const tab = this.deps.settings.lastTab;
+    if (tab === 'home') return;
     const hero = page.querySelector('.pv-hero');
     let g: ReturnType<PahlavanView['glanceOf']> = null;
     try {
@@ -1555,7 +1626,8 @@ export class PahlavanView extends ItemView {
     const panel = glancePanel({
       sums: g.glance.sums,
       rows,
-      open: panelOpen(this.helpState, tab, this.early[tab] ?? true),
+      // Home now gives the overview, so Today's panel starts folded; the user's own open or fold still wins.
+      open: panelOpen(this.helpState, tab, tab === 'today' ? false : (this.early[tab] ?? true)),
       heading: g.heading,
       views: g.views ? { ...g.views, onView: (id) => {
         this.deps.settings.progressSection = id as never;
