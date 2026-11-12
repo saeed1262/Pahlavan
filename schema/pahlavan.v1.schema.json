@@ -551,6 +551,10 @@
         },
         "planRules": {
           "$ref": "#/$defs/planRules"
+        },
+        "loads": {
+          "$ref": "#/$defs/gymLoads",
+          "description": "The weights the gym actually has, by kind of kit (catalogue equipment ids): every weight target lands on one of them. Every kind is optional; a lift whose kind has none keeps its plan step."
         }
       },
       "patternProperties": {
@@ -558,6 +562,185 @@
       },
       "additionalProperties": false,
       "description": "profile.json"
+    },
+    "gymLoads": {
+      "type": "object",
+      "required": [
+        "unit"
+      ],
+      "properties": {
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "dumbbell": {
+          "$ref": "#/$defs/weightSet"
+        },
+        "kettlebell": {
+          "$ref": "#/$defs/weightSet"
+        },
+        "barbell": {
+          "$ref": "#/$defs/barbellLoads"
+        },
+        "trap-bar": {
+          "$ref": "#/$defs/trapBarLoads"
+        },
+        "machine": {
+          "$ref": "#/$defs/weightStack"
+        },
+        "cable": {
+          "$ref": "#/$defs/weightStack"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "profile.loads, in unit. A trap bar with no plates of its own uses the barbell's. Steps and plates are at least 0.25 kg (0.5 lb) and loads at most 500 kg (1100 lb); the validator holds them to it."
+    },
+    "weightSet": {
+      "type": "object",
+      "properties": {
+        "weights": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "from": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "to": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "weights"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "from"
+                ]
+              },
+              {
+                "required": [
+                  "to"
+                ]
+              },
+              {
+                "required": [
+                  "step"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "from",
+            "to",
+            "step"
+          ],
+          "not": {
+            "required": [
+              "weights"
+            ]
+          }
+        }
+      ],
+      "description": "Dumbbells or kettlebells: every weight there is, in any order, or a range from the lightest to the heaviest in even steps (from at most to). At most 200 weights either way."
+    },
+    "barbellLoads": {
+      "type": "object",
+      "required": [
+        "bar",
+        "plates"
+      ],
+      "properties": {
+        "bar": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "plates": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The bar and each plate there is (a pair of each goes on): the loads are the bar plus any pairs."
+    },
+    "trapBarLoads": {
+      "type": "object",
+      "required": [
+        "bar"
+      ],
+      "properties": {
+        "bar": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "plates": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "The trap bar, with the barbell's plates unless it lists its own."
+    },
+    "weightStack": {
+      "type": "object",
+      "required": [
+        "step"
+      ],
+      "properties": {
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "from": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "to": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A machine's or a cable's loads: up by step, from from (default one step) to to (default no top)."
     },
     "selfCheck": {
       "type": "object",
@@ -1056,6 +1239,14 @@
         },
         "pattern": {
           "$ref": "#/$defs/pattern"
+        },
+        "weights": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "description": "The real weights this exercise can be loaded with, in unit, lightest first (from the profile's loads)."
         }
       },
       "patternProperties": {
@@ -1402,8 +1593,7 @@
     "sessionPain": {
       "type": "object",
       "required": [
-        "area",
-        "severity"
+        "area"
       ],
       "properties": {
         "area": {
@@ -1422,7 +1612,7 @@
         "^_": true
       },
       "additionalProperties": false,
-      "description": "A pain logged with a session (the Log panel's \"Any pain or niggle?\")."
+      "description": "A pain logged with a session (the Log panel's \"Any pain or niggle?\"); severity is left out when it was not given."
     },
     "log": {
       "type": "object",
@@ -1479,6 +1669,12 @@
           "type": "number",
           "minimum": 20,
           "maximum": 250
+        },
+        "hrv": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 500,
+          "description": "Heart rate variability that morning, ms."
         },
         "illness": {
           "type": "boolean"
@@ -2276,6 +2472,14 @@
         "pain",
         "equipment",
         "energy"
+      ]
+    },
+    "swapReason": {
+      "enum": [
+        "mine",
+        "ledger",
+        "soreness",
+        "hotel"
       ]
     },
     "targets": {
@@ -4259,13 +4463,33 @@
         },
         "unit": {
           "$ref": "#/$defs/unit"
+        },
+        "name": {
+          "$ref": "#/$defs/text",
+          "description": "At Every set: the lift done, on a swap (with planned)."
+        },
+        "planned": {
+          "$ref": "#/$defs/text",
+          "description": "At Every set: the plan's logged item a swap replaces; it goes with name."
+        },
+        "swapWhy": {
+          "$ref": "#/$defs/swapReason",
+          "description": "At Every set: the swap's reason; it goes with planned."
         }
       },
       "patternProperties": {
         "^_": true
       },
       "additionalProperties": false,
-      "description": "A logged lift's top set, as the log takes it; the unit, when left out, is the lift's own in the plan."
+      "dependentRequired": {
+        "planned": [
+          "name"
+        ],
+        "swapWhy": [
+          "planned"
+        ]
+      },
+      "description": "A logged lift's top set, as the log takes it; the unit, when left out, is the lift's own in the plan. At Every set (trackingLevel full) a swap names the lift done and the plan's it replaces, with its reason when known; a lift without planned is the plan's."
     },
     "inboxSessionFields": {
       "type": "object",
@@ -4297,13 +4521,200 @@
         },
         "notes": {
           "type": "string"
+        },
+        "trackingLevel": {
+          "enum": [
+            "full"
+          ],
+          "description": "Every set: the gym page's entry. The Every set fields (exerciseSets, swaps, skipped, skipWhy, cardioMin, and a lift's name, planned and swapWhy) go with it, and it is checked as engine log add checks a session."
+        },
+        "exerciseSets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inboxExerciseSets"
+          },
+          "description": "Every set done, one item per exercise (each part of a superset its own)."
+        },
+        "swaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inboxSwap"
+          },
+          "description": "Every swap but the logged lifts' (they carry their own): a row's, and each superset part's."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "description": "The checklist lines not done, by name as the Log panel names them."
+        },
+        "skipWhy": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/skipReason"
+          },
+          "description": "Why a skipped line was skipped, by its name in skipped (the inbox checks it is skipped)."
+        },
+        "cardioMin": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 600
+        },
+        "cardioMode": {
+          "type": "string",
+          "description": "How the cardio was done, as the Log panel's pills write it (\"bike\"), or the plan's."
         }
       },
       "patternProperties": {
         "^_": true
       },
       "additionalProperties": false,
-      "description": "A session from the phone: one of the plan's session types, its two logged lifts' top sets in the plan's order (lifting days only), and the Log panel's quick fields."
+      "dependentRequired": {
+        "exerciseSets": [
+          "trackingLevel"
+        ],
+        "swaps": [
+          "trackingLevel"
+        ],
+        "skipped": [
+          "trackingLevel"
+        ],
+        "skipWhy": [
+          "trackingLevel"
+        ],
+        "cardioMin": [
+          "trackingLevel"
+        ],
+        "cardioMode": [
+          "trackingLevel"
+        ]
+      },
+      "if": {
+        "not": {
+          "required": [
+            "trackingLevel"
+          ]
+        }
+      },
+      "then": {
+        "properties": {
+          "lift1": {
+            "properties": {
+              "name": false,
+              "planned": false,
+              "swapWhy": false
+            }
+          },
+          "lift2": {
+            "properties": {
+              "name": false,
+              "planned": false,
+              "swapWhy": false
+            }
+          }
+        }
+      },
+      "description": "A session from the phone: one of the plan's session types, its two logged lifts' top sets in the plan's order (lifting days only), and the Log panel's quick fields; at Every set (trackingLevel full) also every set by exercise, a swapped lift's names, the other swaps, the lines skipped and why, and the cardio minutes."
+    },
+    "inboxSet": {
+      "type": "object",
+      "required": [
+        "reps"
+      ],
+      "properties": {
+        "weight": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/unit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rir": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One set at Every set, as engine log add takes it: weight and unit only on a loaded exercise (null or left out for bodyweight), reps seconds on a timed one."
+    },
+    "inboxExerciseSets": {
+      "type": "object",
+      "required": [
+        "name",
+        "sets"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "planned": {
+          "$ref": "#/$defs/text"
+        },
+        "sets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inboxSet"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "One exercise's sets at Every set; a swap names the plan's item as planned."
+    },
+    "inboxSwap": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/text"
+        },
+        "to": {
+          "$ref": "#/$defs/text"
+        },
+        "why": {
+          "$ref": "#/$defs/swapReason"
+        }
+      },
+      "patternProperties": {
+        "^_": true
+      },
+      "additionalProperties": false,
+      "description": "A swap at Every set: the plan's item (from), the one done in its place (to), and why when known."
     },
     "inboxMorningFields": {
       "type": "object",
@@ -4333,6 +4744,12 @@
           "type": "integer",
           "minimum": 30,
           "maximum": 120
+        },
+        "hrv": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 300,
+          "description": "Heart rate variability, ms."
         },
         "weight": {
           "type": "number",

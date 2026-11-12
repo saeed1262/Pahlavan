@@ -188,7 +188,7 @@ first.
   Food first; a shake is a convenience, not a requirement.
 - **No eating plan yet:** offer the `diet` job instead of a number. Its
   screen (eating history, medical diets) runs first, and the target comes from
-  `numbers.md`'s Energy and protein snippet.
+  `engine energy` (`numbers.md`, "The eating plan's numbers: `energy`").
 - **The ranges behind it** (the engine's protein tiers, `engine review`
   `weight.protein`, each with its reason): lifting goals (any goal but health
   or conditioning) 1.6–2.2 g per kg of trend weight a day, **Strong** (Morton
@@ -443,7 +443,7 @@ and one break serves both **(H)**.
 
 - **From the plan** (the build brief, decision 9), **offered, never
   assumed:** for desk work, the plan job asks about them as their own
-  question after the plan's yes (`planning.md`, the proposal's step 13): the
+  question after the plan's yes (`planning.md`, the proposal's item 14): the
   routine, how often, the hours and days, or none ("No desk breaks in this
   plan"); the item (`followPlan`) follows the plan's `deskRoutine` (the
   steps) and `deskTiming` (how often, the hours, the days: `planning.md`,

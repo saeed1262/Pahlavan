@@ -1,9 +1,10 @@
 // The Plan screen, as signed off in mockups/plan.html: the banner (this
 // mesocycle on the ring), the macrocycle timeline (phases, mesocycles, weeks,
-// decisions, busy weeks, the Ledger and the plan's temporary changes), this
-// mesocycle's templates, planned sets per muscle, the phase targets, the
-// training load, what comes up (each Sunday's check-in naming the coach step
-// after it, with its command) and the desk breaks. Every number comes from
+// decisions, busy weeks, the Ledger and the plan's temporary changes), the
+// coach's Why this plan card, this mesocycle's templates, planned sets per
+// muscle, the phase targets, the training load, what comes up (each Sunday's
+// check-in naming the coach step after it, with its command) and the desk
+// breaks. Every number comes from
 // the engine's buildPlan (the desk breaks: buildDeskCard); this module lays
 // it out, packed in two columns when the folds are known (At a glance, as
 // mockups/glance-plan.html).
@@ -35,6 +36,8 @@ export interface PlanContext extends ProgressContext {
   onToggleGuide?: (key: string) => void;
   links?: { label: string; path: string; icon: string }[];
   onOpenNote?: (path: string) => void;
+  /** Opens the Movements tab (the notes card's Browse movements); absent: not offered. */
+  onBrowse?: () => void;
   hero: PlanHero;
   /** The Desk breaks card (absent: not drawn). */
   desk?: DeskCardContext | null;
@@ -485,6 +488,74 @@ function upcoming(m: Ok): HTMLElement {
     items.length ? [h('div', { class: 'pv-up' }, list), items.length > shown.length ? h('div', { class: 'pv-foot-note' }, `And ${items.length - shown.length} more by ${fmt.day(phase?.to ?? items.at(-1)!.date)}.`) : null] : calm('Nothing scheduled before the phase ends.'));
 }
 
+// ================================================================ why this plan
+/** Each evidence grade's tag and what it means (rules.md, "Grades"). */
+const GRADE: Readonly<Record<string, readonly [string, string]>> = {
+  strong: ['Strong', 'Strong evidence: consistent meta-analyses'],
+  moderate: ['Moderate', 'Moderate evidence: a meta-analysis, or several trials with some inconsistency'],
+  weak: ['Weak', 'Weak evidence: few or small studies, or mixed results'],
+  heuristic: ['Heuristic', 'A sensible default with weak or no direct evidence'],
+};
+/** The decision link's words: "The decision, 9 Nov" from a heading that starts with its date (the whole heading is its tooltip). */
+export function decisionLabel(heading: string | null): string {
+  const d = heading ? /^(\d{4}-\d{2}-\d{2})\b/.exec(heading.trim()) : null;
+  return d ? `The decision, ${fmt.day(d[1]!)}` : 'The decision';
+}
+/** The open state of the card's "Why not the other splits" (kept with the sessions' Why panels). */
+export const WHY_LEFT_OUT = 'plan-card:left-out';
+
+/**
+ * The Why this plan card: the coach's reasons for the plan, in its own words
+ * (plan-data's `why`): the lead, each reason with its evidence grade, the
+ * split picked, the others built and compared, and every family left out
+ * (folded), with links to the roadmap and the decision. Without one, what the
+ * coach does and the command that writes it.
+ */
+function whyCard(m: Ok, ctx: PlanContext): HTMLElement {
+  const w = m.why;
+  const attrs = { class: `pv-card pv-span-12 pv-why-card${w ? '' : ' is-empty'}`, 'data-sec': 'why', 'data-card': 'why' };
+  if (!w) {
+    // Written but too broken to show (a hand edit: plan-write refuses it), or not written yet.
+    const said = m.whyUnreadable
+      ? ['Your coach’s reasons for this plan are in the plan file but can’t be read as written (', h('code', {}, 'engine check'), ' names what’s wrong). Run ', h('code', {}, COACH_COMMANDS.planWhy), ' in Claude Code, started in this vault, and the coach writes them again and shows them to you first.']
+      : ['Your coach hasn’t written this plan’s reasons here yet. Run ', h('code', {}, COACH_COMMANDS.planWhy), ' in Claude Code, started in this vault: the coach writes them from your roadmap and the plan’s decision, and shows them to you first.'];
+    return h('section', attrs, headNoTable('Why this plan', 'Your coach’s reasons for this plan, in its own words'),
+      h('div', { class: 'pv-why-empty' },
+        h('p', {}, ...said),
+        ctx.onCopy ? h('button', { class: 'pv-btn-primary', onclick: () => ctx.onCopy!(COACH_COMMANDS.planWhy), 'data-k': 'why-copy' }, icon('clipboard'), 'Copy the command') : null));
+  }
+  const { picked, compared, leftOut } = w.split;
+  const open = ctx.openWhy?.has(WHY_LEFT_OUT) ?? false;
+  const roadmap = ctx.links?.find((l) => l.label === '6-Month Roadmap') ?? null;
+  const links = [
+    roadmap ? { label: 'The full reasoning: 6-Month Roadmap', tip: roadmap.path, path: roadmap.path, ic: 'flag' } : null,
+    w.decisionsPath ? { label: decisionLabel(w.decision), tip: w.decision ? clean(w.decision) : 'Decisions', path: w.decisionsPath, ic: 'review' } : null,
+  ].filter((x): x is { label: string; tip: string; path: string; ic: string } => x !== null);
+  const family = (label: string, why: string) => [h('dt', {}, label), h('dd', {}, clean(why))];
+  return h('section', attrs,
+    headNoTable('Why this plan', `From your coach${w.date ? ` · written ${fmt.day(w.date)}` : ''}`),
+    h('p', { class: 'pv-why-lead' }, clean(w.lead)),
+    h('ul', { class: 'pv-why-reasons' }, w.reasons.map((r) => {
+      const g = r.grade ? GRADE[r.grade] : undefined;
+      return h('li', {},
+        h('div', { class: 'pv-why-r-head' }, h('b', {}, clean(r.title)), g ? h('span', { class: 'pv-tag', 'data-tip': tip(g[0], g[1]) }, g[0]) : null),
+        h('p', {}, clean(r.text)));
+    })),
+    h('div', { class: 'pv-why-split' },
+      h('div', { class: 'pv-why-r-head' }, h('span', { class: 'pv-why-pick' }, icon('check')), h('b', {}, `The split: ${picked.label}`)),
+      h('p', {}, clean(picked.why)),
+      compared.length ? h('dl', { class: 'pv-why-fams' }, compared.flatMap((f) => family(`Also built: ${f.label}`, f.why))) : null,
+      leftOut.length
+        ? h('button', { class: `pv-why-more${open ? ' is-open' : ''}`, 'aria-expanded': open ? 'true' : 'false', onclick: () => ctx.onToggleWhy?.(WHY_LEFT_OUT), 'data-k': 'why-left-out' },
+          leftOut.length === 1 ? 'Why not the other split' : `Why not the other ${leftOut.length} splits`, icon('chevron'))
+        : null,
+      open && leftOut.length ? h('dl', { class: 'pv-why-fams is-left-out' }, leftOut.flatMap((f) => family(f.label, f.why))) : null),
+    links.length
+      ? h('div', { class: 'pv-links pv-why-links' }, links.map((l) => h('button', { class: 'pv-link-row', disabled: !ctx.onOpenNote, onclick: () => ctx.onOpenNote?.(l.path), 'data-tip': `${l.label}|${l.tip}` }, icon(l.ic), h('span', {}, l.label), icon('right'))))
+      : null,
+  );
+}
+
 // ================================================================ banner
 const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
 
@@ -549,18 +620,21 @@ export function renderPlan(root: HTMLElement, m: PlanModel, ctx: PlanContext): v
   const span = (n: number) => (narrow ? total : col * n + gap * (n - 1));
   const folded = ctx.folded;
   const mw = minimumCard(ok);
-  const wide = [targets(ok, ctx), rulesCard(ok, ctx), mw, ctx.desk ? deskCard(ctx.desk) : null, ctx.links?.length ? planNotes(ctx) : null].filter((c): c is HTMLElement => c !== null);
+  const wide = [targets(ok, ctx), rulesCard(ok, ctx), mw, ctx.desk ? deskCard(ctx.desk) : null, ctx.links?.length || ctx.onBrowse ? planNotes(ctx) : null].filter((c): c is HTMLElement => c !== null);
+  const why = whyCard(ok, ctx);
   if (!folded || narrow) {
-    grid.append(timeline(ok, span(12), ctx), sessions(ok, ctx), volume(ok, span(4), ctx), wide[0]!, load(ok, span(7), ctx), upcoming(ok), ...wide.slice(1));
+    grid.append(timeline(ok, span(12), ctx), why, sessions(ok, ctx), volume(ok, span(4), ctx), wide[0]!, load(ok, span(7), ctx), upcoming(ok), ...wide.slice(1));
     return;
   }
   // Packed, as mockups/glance-plan.html: This mesocycle and the load on the left, the sets and what comes up on the
   // right, so the open cards sit side by side; a full-width card folded to its bar joins the left column, opened it
   // goes under the columns.
   const isFolded = (c: HTMLElement) => folded(c.getAttribute('data-sec') ?? '');
+  // The Why card under the timeline when open; folded to its bar, it heads the left column.
   grid.append(
     timeline(ok, span(12), ctx),
-    h('div', { class: 'pv-span-8 pv-stack pv-col' }, sessions(ok, ctx), load(ok, span(8), ctx), wide.filter(isFolded)),
+    ...(isFolded(why) ? [] : [why]),
+    h('div', { class: 'pv-span-8 pv-stack pv-col' }, isFolded(why) ? why : null, sessions(ok, ctx), load(ok, span(8), ctx), wide.filter(isFolded)),
     h('div', { class: 'pv-span-4 pv-stack pv-col' }, volume(ok, span(4), ctx), upcoming(ok)),
     ...wide.filter((c) => !isFolded(c)),
   );
@@ -598,10 +672,12 @@ function minimumCard(m: Ok): HTMLElement | null {
   );
 }
 
-/** "The plan" card: the plan's notes in the vault, as the dashboard lists them. */
+/** "The plan" card: the plan's notes in the vault, as the dashboard lists them, and the way to every movement it could use. */
 function planNotes(ctx: PlanContext): HTMLElement {
   return h('section', { class: 'pv-card pv-span-12 pv-plan-notes', 'data-sec': 'notes' },
     headNoTable('The plan', 'The notes behind it, in the vault'),
-    h('div', { class: 'pv-links' }, ctx.links!.map((l) => h('button', { class: 'pv-link-row', disabled: !ctx.onOpenNote, onclick: () => ctx.onOpenNote?.(l.path), 'data-tip': `${l.label}|${l.path}` }, icon(l.icon), h('span', {}, l.label), icon('right')))),
+    h('div', { class: 'pv-links' },
+      (ctx.links ?? []).map((l) => h('button', { class: 'pv-link-row', disabled: !ctx.onOpenNote, onclick: () => ctx.onOpenNote?.(l.path), 'data-tip': `${l.label}|${l.path}` }, icon(l.icon), h('span', {}, l.label), icon('right'))),
+      ctx.onBrowse ? h('button', { class: 'pv-link-row pv-link-browse', onclick: () => ctx.onBrowse!(), 'data-tip': 'Browse movements|Every movement Pahlavan knows, with its guide', 'data-k': 'plan-browse' }, icon('search'), h('span', {}, 'Browse movements'), icon('right')) : null),
   );
 }

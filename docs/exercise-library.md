@@ -1,7 +1,7 @@
 # The exercise library
 
-The engine's catalogue holds 244 movements: the 100 of the starter catalogue
-and 144 from the exercise library, with every easier and harder option linked
+The engine's catalogue holds 245 movements: the 100 of the starter catalogue
+and 145 from the exercise library, with every easier and harder option linked
 both ways and guide text for each. All of it is in one place,
 `src/core/data/exercises.ts`, and `engine catalogue` lists it for the coach.
 The tests hold the rules on this page (`test/exercises.test.ts`,
@@ -138,8 +138,8 @@ balances bias none, as the pec deck and the wall handstand do.
 
 ## Coverage
 
-244 entries: 164 beginner, 61 intermediate, 19 advanced; 138 hotel-friendly;
-33 one side at a time; 412 aliases.
+245 entries: 164 beginner, 61 intermediate, 20 advanced; 138 hotel-friendly;
+33 one side at a time; 413 aliases.
 
 | Pattern | Beginner | Intermediate | Advanced | Total | Hotel |
 |---|---:|---:|---:|---:|---:|
@@ -149,7 +149,7 @@ balances bias none, as the pec deck and the wall handstand do.
 | horizontal-push | 12 | 4 | 3 | 19 | 7 |
 | horizontal-pull | 9 | 3 | 0 | 12 | 4 |
 | vertical-push | 6 | 3 | 1 | 10 | 5 |
-| vertical-pull | 9 | 2 | 2 | 13 | 2 |
+| vertical-pull | 9 | 2 | 3 | 14 | 2 |
 | carry | 4 | 1 | 0 | 5 | 4 |
 | core-anti-extension | 5 | 4 | 2 | 11 | 7 |
 | core-anti-rotation | 5 | 3 | 0 | 8 | 8 |
@@ -178,7 +178,7 @@ balances bias none, as the pec deck and the wall handstand do.
 | cable | 11 | 12 |
 | band | 10 | 18 |
 | bench | 3 | 18 |
-| pull-up bar | 14 | 14 |
+| pull-up bar | 15 | 15 |
 | rings or suspension trainer | 7 | 7 |
 | parallel bars | 3 | 3 |
 | stability ball, ab wheel, sled, jump rope, pool | 7 | 7 |
@@ -265,11 +265,11 @@ name, an id or an alias.
 | Tag | The movement asks for | Entries |
 |---|---|---:|
 | `joint:neck-loaded` | Load through the head or neck | 2 |
-| `joint:shoulder-overhead` | Arms working above the head under load | 30 |
-| `joint:shoulder-hang` | Body weight hanging from the hands | 17 |
+| `joint:shoulder-overhead` | Arms working above the head under load | 31 |
+| `joint:shoulder-hang` | Body weight hanging from the hands | 18 |
 | `joint:shoulder-extension` | The upper arm far behind the body under load | 8 |
 | `joint:wrist-extension` | Body weight on bent-back wrists | 37 |
-| `joint:grip-heavy` | Heavy or long gripping (also loads elbows and forearms) | 23 |
+| `joint:grip-heavy` | Heavy or long gripping (also loads elbows and forearms) | 24 |
 | `joint:spine-axial` | A heavy load on the shoulders or overhead | 4 |
 | `joint:spine-flexion` | Repeated or loaded curling of the spine | 3 |
 | `joint:spine-extension` | The lower back arching against load | 2 |
@@ -324,7 +324,7 @@ physiotherapist has reviewed them (open question 4), would take:
 
 ## What reads the library
 
-- **`engine catalogue`** lists all 244 with every field and filters them by
+- **`engine catalogue`** lists all 245 with every field and filters them by
   pattern, region, muscle, equipment (a stand-in tool counts), level and
   text; `engine evidence --topic regions` and the plan check's region options
   draw on all of them, leaving out what a confirmed finding rules out (the
@@ -332,13 +332,12 @@ physiotherapist has reviewed them (open question 4), would take:
   single-leg moves too).
 - **Plan names** match all of them (names, ids, aliases), so their tags count
   in every screen and number.
-- **The plan generator and the Hotel version's swaps** choose from the 100
-  starter movements (`STARTER_IDS`): their rankings were tuned on that set,
-  and their output stays as it was. The generator is an optional baseline;
-  the coach designs from the whole catalogue.
+- **The Hotel version's swaps** choose from the 100 starter movements
+  (`STARTER_IDS`): their ranking was tuned on that set, and their output
+  stays as it was. The coach designs from the whole catalogue.
 - **Not read yet:** the demand tags (above), `alsoWith` outside the
-  catalogue search (the plan builder, the Log panel and the Hotel version
-  check the listed equipment), `hotel` (the Hotel version checks the travel
+  catalogue search (the Log panel and the Hotel version check the listed
+  equipment), `hotel` (the Hotel version checks the travel
   kit) and `uses`.
 
 ## Licences

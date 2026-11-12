@@ -5,8 +5,9 @@
 
 import { buildLogEntry, habitKey } from '../../../src/adapters/vault/log-write.ts';
 import { MUSCLES } from '../../../src/core/data/muscles.ts';
+import { nextWeight } from '../../../src/core/loads.ts';
 import type { SessionMode } from '../../../src/core/variant.ts';
-import { inputFromForm, topOf, type FormRow, type LogForm } from '../../../src/report/log-form.ts';
+import { blankSet, inputFromForm, tickedSets, topOf, type FormPart, type FormRow, type LogForm } from '../../../src/report/log-form.ts';
 import type { GuideEntry } from '../../../src/report/dashboard.ts';
 import { BODY, type Side } from './body-map.ts';
 import { guideName, guidePanel } from './guide.ts';
@@ -48,6 +49,8 @@ export interface LogPanelCtx {
   onUseDisk: (entry: Obj) => void;
   /** The movement guide for a name (plan-data's guide). */
   guide?(name: string): GuideEntry[];
+  /** The tracking was switched (Standard or Every set): the next new log starts with it on this Mac. */
+  onTracking?(tracking: 'standard' | 'full'): void;
 }
 
 export const freshPanelState = (): LogPanelState => ({ summary: false, menu: null, busy: false, error: null, already: null, conflict: null, habitTicked: null, confirmDelete: false });
@@ -71,10 +74,15 @@ function seg(opts: [string, Child][], on: string, click: (v: string) => void, at
   return h('div', { class: 'pv-seg pv-lg-seg', role: 'group', ...attrs }, opts.map(([v, l]) => h('button', { class: v === on ? 'is-on' : '', 'aria-pressed': v === on ? 'true' : 'false', onclick: () => click(v) }, l)));
 }
 
-function stepper(value: number | null, unit: string, label: string, ph: string, set: (v: number | null) => void, step: number, changedFrom?: number | null): Child[] {
+/** A number with − and + buttons: by `step`, or along `weights` (the gym's real weights) when the row has them. */
+function stepper(value: number | null, unit: string, label: string, ph: string, set: (v: number | null) => void, step: number, changedFrom?: number | null, weights?: readonly number[]): Child[] {
   const input = h('input', { class: 'pv-lg-stp-in', inputmode: 'decimal', value: value ?? '', placeholder: ph, 'aria-label': label });
   input.addEventListener('change', () => set(input.value.trim() === '' ? null : Number(input.value)));
-  const bump = (d: number) => set(Math.max(0, Math.round(((value ?? 0) + d * step) * 10) / 10));
+  // On real weights: the next one up or down from the value (a typed weight between two walks to its neighbour); the ends hold.
+  const bump = (d: number) =>
+    weights?.length
+      ? set(nextWeight(value ?? 0, d > 0 ? 'up' : 'down', weights) ?? value)
+      : set(Math.max(0, Math.round(((value ?? 0) + d * step) * 10) / 10));
   return [
     h('span', { class: `pv-lg-stp${changedFrom != null ? ' is-changed' : ''}` },
       h('button', { class: 'pv-lg-stp-b', 'aria-label': `Less ${label.toLowerCase()}`, onclick: () => bump(-1) }, icon('minus')),
@@ -83,6 +91,48 @@ function stepper(value: number | null, unit: string, label: string, ph: string, 
       unit ? h('em', {}, unit) : null),
     changedFrom != null ? h('span', { class: 'pv-lg-was' }, `was ${changedFrom}`) : null,
   ];
+}
+
+const STRENGTH = new Set<FormRow['kind']>(['load', 'reps', 'timed']);
+/** The RIR chips: 0 to 4, and 5+ (a set too light to judge). */
+const RIR_CHIPS: [number, string, string][] = [[0, '0', 'RIR 0'], [1, '1', 'RIR 1'], [2, '2', 'RIR 2'], [3, '3', 'RIR 3'], [4, '4', 'RIR 4'], [5, '5+', 'RIR 5 or more']];
+
+/** How a row's last time reads: "Last 20 kg × 10 · Mon 6 Apr", or its reps (seconds) when it had no weight. */
+function lastText(last: NonNullable<FormRow['last']>, kind: FormRow['kind']): string {
+  return `Last ${last.weight ? `${fmt.w(last.weight, last.unit)} × ${last.reps}` : `${last.reps} ${kind === 'timed' ? 's' : 'reps'}`} · ${fmt.wd(last.date)}`;
+}
+
+/**
+ * Every set's table for one exercise (a row, or a superset's part): per set
+ * a tick (its number), the weight, the reps (seconds) and the RIR chips.
+ * The tick confirms the set as shown; changing its weight or reps, or
+ * tapping an RIR, ticks it too. Save writes the ticked sets only.
+ */
+function setTable(x: Pick<FormPart, 'kind' | 'unit' | 'step' | 'weights' | 'target' | 'rows'> & { last?: FormPart['last'] }, change: () => void, opts: { name?: string; top?: string | null }): HTMLElement {
+  const timed = x.kind === 'timed';
+  const noLoad = x.kind !== 'load';
+  const pre = opts.name ? `${opts.name}, set` : 'Set';
+  const ticked = x.rows.filter((s) => s.done && s.reps !== null).length;
+  const target = x.target && x.target.weight !== null ? x.target : null;
+  return h('div', { class: 'pv-lg-sets' },
+    opts.name ? h('div', { class: 'pv-lg-part' }, h('b', {}, opts.name), x.target && x.target.weight !== null ? h('span', { class: 'pv-faint' }, ` · target ${fmt.w(x.target.weight, x.unit)} × ${x.target.reps}`) : x.last ? h('span', { class: 'pv-faint' }, ` · ${lastText(x.last, x.kind)}`) : null) : null,
+    h('div', { class: 'pv-lg-sets-head' }, h('span', {}, 'Set'), h('span', {}, noLoad ? '' : `Weight (${x.unit})`), h('span', {}, timed ? 'Seconds' : 'Reps'), h('span', {}, 'RIR ', h('i', {}, '(optional)'))),
+    x.rows.map((s, j) => h('div', { class: `pv-lg-set${s.done ? ' is-done' : ''}` },
+      h('span', {}, h('button', { class: `pv-lg-tick${s.done ? ' is-on' : ''}`, 'aria-pressed': s.done ? 'true' : 'false', 'aria-label': `${pre} ${j + 1} done`, 'data-tip': s.reps === null ? 'Enter the reps first' : s.done ? 'Ticked|Saved with the session; tap again to untick' : 'Not ticked yet|Tap once done: only ticked sets are saved', disabled: s.reps === null, onclick: () => { s.done = !s.done; change(); } }, s.done ? icon('check') : String(j + 1))),
+      h('span', {}, noLoad ? h('span', { class: 'pv-lg-bw' }, 'Bodyweight') : stepper(s.weight, '', `${pre} ${j + 1} weight`, '–', (v) => { s.weight = v; s.done = s.reps !== null; change(); }, x.step, null, x.weights)),
+      h('span', {}, stepper(s.reps, '', `${pre} ${j + 1} ${timed ? 'seconds' : 'reps'}`, '–', (v) => { s.reps = v === null ? null : Math.round(v); s.done = s.reps !== null; change(); }, timed ? 5 : 1)),
+      h('span', { class: 'pv-lg-rir' }, RIR_CHIPS.map(([v, text, label]) => h('button', { class: `pv-lg-rir-b${s.rir === v ? ' is-on' : ''}`, 'aria-label': `${opts.name ? `${opts.name}, ` : ''}${label}`, onclick: () => { s.rir = s.rir === v ? null : v; if (s.reps !== null) s.done = true; change(); } }, text))),
+    )),
+    h('div', { class: 'pv-lg-sets-foot' },
+      h('span', { class: 'pv-lg-ticks' }, `${ticked} of ${x.rows.length} ticked`),
+      target
+        ? h('button', { class: 'pv-lg-link', onclick: () => { x.rows = x.rows.map((s) => ({ ...s, weight: target.weight, reps: target.reps, done: true })); change(); } }, icon('check'), 'Every set as the target')
+        : x.rows.some((s) => !s.done && s.reps !== null) ? h('button', { class: 'pv-lg-link', onclick: () => { for (const s of x.rows) if (s.reps !== null) s.done = true; change(); } }, icon('check'), 'Tick every set') : null,
+      h('button', { class: 'pv-lg-link', onclick: () => { const l = x.rows.at(-1); x.rows.push({ weight: l?.weight ?? null, reps: l?.reps ?? null, rir: null, done: false }); change(); } }, icon('plus'), 'Add a set'),
+      x.rows.length > 1 ? h('button', { class: 'pv-lg-link', onclick: () => { x.rows.pop(); change(); } }, icon('minus'), 'Remove the last') : null,
+      opts.top ? h('span', { class: 'pv-faint' }, opts.top) : null,
+    ),
+  );
 }
 
 function row(r: FormRow, n: number, ctx: LogPanelCtx): HTMLElement {
@@ -98,7 +148,7 @@ function row(r: FormRow, n: number, ctx: LogPanelCtx): HTMLElement {
       h('div', { class: 'pv-lg-name-line' }, (() => {
         const entries = ctx.guide ? (ctx.guide(r.name).length ? ctx.guide(r.name) : ctx.guide(r.planned ?? r.line ?? r.name)) : [];
         return guideName(r.name, entries.length > 0, st.guide === r.key, () => { st.guide = st.guide === r.key ? null : r.key; change(); }, 'pv-lg-gd');
-      })(), r.lift !== null ? h('span', { class: 'pv-lg-tag' }, 'Logged lift') : null, r.kind === 'cardio' ? h('span', { class: 'pv-lg-tag' }, 'Finisher') : null,
+      })(), r.lift !== null ? h('span', { class: 'pv-lg-tag' }, 'Logged lift') : null, r.finisher ? h('span', { class: 'pv-lg-tag' }, 'Finisher') : null,
       // A paired checklist line is a superset: its two exercises back to back, a set of each.
       r.parts.length > 1 ? h('span', { class: 'pv-lg-tag', 'data-tip': 'Superset|A set of each, back to back, then rest' }, 'Superset') : null),
       r.planned ? h('div', { class: 'pv-lg-repl' }, icon('swap'), `in place of ${r.planned}`, h('span', { class: 'pv-lg-why-tag' }, r.swapWhy ?? 'Swap'), r.swapWhy === 'Your swap' ? h('button', { class: 'pv-lg-link', onclick: () => { r.name = r.planned!; r.planned = null; r.swapWhy = null; change(); } }, 'Undo') : null) : null,
@@ -119,33 +169,20 @@ function row(r: FormRow, n: number, ctx: LogPanelCtx): HTMLElement {
     body = [
       h('div', { class: 'pv-lg-top' },
         h('span', { class: 'pv-lg-lbl' }, 'Top set'),
-        stepper(r.top.weight, r.unit, 'Top-set weight', 'weight', (v) => { r.top.weight = v; change(); }, r.step, was('weight')),
+        stepper(r.top.weight, r.unit, 'Top-set weight', 'weight', (v) => { r.top.weight = v; change(); }, r.step, was('weight'), r.weights),
         h('span', { class: 'pv-lg-x' }, '×'),
         stepper(r.top.reps, 'reps', 'Reps', range(r.repRange), (v) => { r.top.reps = v === null ? null : Math.round(v); change(); }, 1, was('reps')),
         r.target && r.target.weight !== null ? h('button', { class: `pv-lg-same${same ? ' is-on' : ''}`, onclick: () => { r.top = { weight: r.target!.weight, reps: r.target!.reps }; change(); } }, same ? [icon('check'), 'Same as target'] : 'Same as target') : null,
       ),
       r.top.weight === null && r.targetNote ? h('div', { class: 'pv-lg-hint' }, icon('info'), r.targetNote.charAt(0).toUpperCase() + r.targetNote.slice(1)) : null,
     ];
-  } else if (f.tracking === 'full' && r.parts.length <= 1 && (r.kind === 'load' || r.kind === 'reps' || r.kind === 'timed')) {
-    if (!r.rows.length) r.rows = Array.from({ length: Math.max(1, r.sets) }, () => ({ weight: r.top.weight, reps: r.top.reps, rir: null }));
-    const timed = r.kind === 'timed';
-    const noLoad = r.kind !== 'load';
+  } else if (f.tracking === 'full' && r.split?.length) {
+    // A superset: each part's own sets, saved as its own exercise.
+    body = h('div', { class: 'pv-lg-parts' }, r.split.filter((p) => STRENGTH.has(p.kind)).map((p) => setTable(p, change, { name: p.name })));
+  } else if (f.tracking === 'full' && r.parts.length <= 1 && STRENGTH.has(r.kind)) {
+    if (!r.rows.length) r.rows = Array.from({ length: Math.max(1, r.sets) }, () => ({ weight: r.top.weight, reps: r.top.reps, rir: null, done: false }));
     const top = r.lift !== null ? topOf(r, 'full') : null;
-    body = h('div', { class: 'pv-lg-sets' },
-      h('div', { class: 'pv-lg-sets-head' }, h('span', {}, 'Set'), h('span', {}, noLoad ? '' : `Weight (${r.unit})`), h('span', {}, timed ? 'Seconds' : 'Reps'), h('span', {}, 'RIR ', h('i', {}, '(optional)'))),
-      r.rows.map((x, j) => h('div', { class: 'pv-lg-set' },
-        h('span', { class: 'pv-lg-set-n' }, String(j + 1)),
-        h('span', {}, noLoad ? h('span', { class: 'pv-lg-bw' }, 'Bodyweight') : stepper(x.weight, '', `Set ${j + 1} weight`, '–', (v) => { x.weight = v; change(); }, r.step)),
-        h('span', {}, stepper(x.reps, '', `Set ${j + 1} ${timed ? 'seconds' : 'reps'}`, '–', (v) => { x.reps = v === null ? null : Math.round(v); change(); }, timed ? 5 : 1)),
-        h('span', { class: 'pv-lg-rir' }, [0, 1, 2, 3, 4].map((v) => h('button', { class: `pv-lg-rir-b${x.rir === v ? ' is-on' : ''}`, 'aria-label': `RIR ${v === 4 ? '4 or more' : v}`, onclick: () => { x.rir = x.rir === v ? null : v; change(); } }, v === 4 ? '4+' : String(v)))),
-      )),
-      h('div', { class: 'pv-lg-sets-foot' },
-        h('button', { class: 'pv-lg-link', onclick: () => { const l = r.rows.at(-1); r.rows.push({ weight: l?.weight ?? null, reps: l?.reps ?? null, rir: null }); change(); } }, icon('plus'), 'Add a set'),
-        r.rows.length > 1 ? h('button', { class: 'pv-lg-link', onclick: () => { r.rows.pop(); change(); } }, icon('minus'), 'Remove the last') : null,
-        r.target && r.target.weight !== null ? h('button', { class: 'pv-lg-link', onclick: () => { r.rows = r.rows.map((x) => ({ ...x, weight: r.target!.weight, reps: r.target!.reps })); change(); } }, 'Every set as the target') : null,
-        top && top.reps ? h('span', { class: 'pv-faint' }, `Top set ${top.weight != null ? fmt.w(top.weight, r.unit) : 'bodyweight'} × ${top.reps}: the logged lift`) : null,
-      ),
-    );
+    body = setTable(r, change, { top: top && top.reps ? `Top set ${top.weight != null ? fmt.w(top.weight, r.unit) : 'bodyweight'} × ${top.reps}: the logged lift` : null });
   }
   const menuOpen = st.menu === r.key;
   const foot = r.kind === 'warmup' || r.kind === 'cardio' || r.parts.length > 1 ? null : h('div', { class: 'pv-lg-item-foot' },
@@ -153,11 +190,11 @@ function row(r: FormRow, n: number, ctx: LogPanelCtx): HTMLElement {
       h('button', { class: 'pv-lg-link', 'aria-haspopup': 'menu', 'aria-expanded': menuOpen ? 'true' : 'false', onclick: (ev: Event) => { ev.stopPropagation(); st.menu = menuOpen ? null : r.key; change(); } }, icon('swap'), r.swapWhy === 'Your swap' ? 'Change the swap' : 'Swap'),
       menuOpen ? h('div', { class: 'pv-lg-menu', role: 'menu', 'aria-label': `Swap ${r.planned ?? r.name}` },
         h('div', { class: 'pv-lg-menu-head' }, `Swap ${r.planned ?? r.name} for`),
-        (r.swaps.length ? r.swaps : []).map((o) => h('button', { class: 'pv-lg-menu-item', role: 'menuitem', onclick: () => { if (!r.planned) r.planned = r.parts[0] ?? r.name; r.name = o; r.swapWhy = 'Your swap'; if (r.lift !== null) { r.target = null; r.top = { weight: null, reps: null }; r.targetNote = 'New to the log: enter what you used.'; } st.menu = null; change(); } }, h('span', {}, o))),
+        (r.swaps.length ? r.swaps : []).map((o) => h('button', { class: 'pv-lg-menu-item', role: 'menuitem', onclick: () => { if (!r.planned) r.planned = r.parts[0] ?? r.name; r.name = o; r.swapWhy = 'Your swap'; if (r.lift !== null) { r.target = null; r.top = { weight: null, reps: null }; r.targetNote = 'New to the log: enter what you used.'; } r.rows = r.rows.map(blankSet); st.menu = null; change(); } }, h('span', {}, o))),
         r.swaps.length ? null : h('div', { class: 'pv-lg-menu-empty' }, 'No catalogue alternatives that the Ledger allows.'),
       ) : null,
     ),
-    r.last ? h('span', { class: 'pv-faint' }, `Last ${fmt.w(r.last.weight, r.last.unit)} × ${r.last.reps} · ${fmt.wd(r.last.date)}`) : null,
+    r.last ? h('span', { class: 'pv-faint' }, lastText(r.last, r.kind)) : null,
   );
   const gEntries = st.guide === r.key && ctx.guide ? (ctx.guide(r.name).length ? ctx.guide(r.name) : ctx.guide(r.planned ?? r.line ?? r.name)) : [];
   return h('li', { class: `pv-lg-item${r.planned ? ' is-swapped' : ''}` }, head, gEntries.length ? guidePanel(gEntries) : null, body, foot);
@@ -178,6 +215,11 @@ function figure(side: Side, f: LogForm, change: () => void): HTMLElement {
   return h('div', { class: 'pv-figure' }, s('svg', { viewBox: BODY.viewBox[side], role: 'img', 'aria-label': `${side} of the body: tap a sore muscle` }, parts), h('div', { class: 'pv-figure-cap' }, side === 'front' ? 'Front' : 'Back'));
 }
 
+/** At Every set, each done exercise that takes sets (a superset's parts each) with its ticked and shown sets. */
+function everySetRows(f: LogForm): { name: string; ticked: number; total: number }[] {
+  return f.rows.filter((r) => r.done).flatMap((r) => (r.split?.length ? r.split : r.parts.length <= 1 ? [r] : []).filter((x) => STRENGTH.has(x.kind)).map((x) => ({ name: x.name, ticked: tickedSets(x.rows).length, total: x.rows.length })));
+}
+
 function summary(ctx: LogPanelCtx): HTMLElement {
   const f = ctx.form;
   const st = ctx.state;
@@ -193,16 +235,18 @@ function summary(ctx: LogPanelCtx): HTMLElement {
     if (ck) items.push(['Done', `${ck.done} of ${ck.total}${ck.skipped.length ? `; skipped ${ck.skipped.map((n) => `${n}${ck.why?.[n] ? ` (${ck.why[n]})` : ''}`).join(', ')}` : ''}`]);
     const sw = f.rows.filter((x) => x.planned);
     if (sw.length) items.push(['Swaps', sw.map((x, i) => [i ? h('br') : null, `${x.planned} → ${x.name}`])]);
-    if (e['trackingLevel'] === 'full') {
-      const xs = (e['exerciseSets'] as { sets: { rir?: number }[] }[]) ?? [];
-      items.push(['Every set', `${xs.reduce((a, x) => a + x.sets.length, 0)} sets across ${xs.length} exercises, RIR on ${xs.reduce((a, x) => a + x.sets.filter((y) => y.rir !== undefined).length, 0)}`]);
+    if (f.tracking === 'full') {
+      const xs = (e['exerciseSets'] as { sets: { rir?: number }[] }[] | undefined) ?? [];
+      // Each done exercise with a set left unticked: only the ticked sets are saved.
+      const short = everySetRows(f).filter((x) => x.ticked < x.total).map((x) => `${x.name}: ${x.ticked ? `${x.ticked} of ${x.total} sets ticked` : 'no sets ticked'}`);
+      items.push(['Every set', [`${xs.reduce((a, x) => a + x.sets.length, 0)} sets across ${xs.length} exercises, RIR on ${xs.reduce((a, x) => a + x.sets.filter((y) => y.rir !== undefined).length, 0)}`, short.map((t) => [h('br'), h('span', { class: 'pv-lg-warn' }, t)])]]);
     }
     const rpe = e['sessionRpe'] as number | undefined;
     const mins = e['durationMin'] as number | null;
     items.push(['Effort', rpe ? [`session RPE `, h('b', {}, String(rpe)), ` · ${mins ?? '–'} min${mins ? ` · load ${rpe * mins}` : ''}`] : [h('span', { class: 'pv-lg-warn' }, 'no session RPE'), ` · ${mins ?? '–'} min`]]);
     items.push(['Cardio', e['cardioMin'] ? `${String(e['cardioMin'])} min${e['cardioMode'] ? `, ${String(e['cardioMode'])}` : ''}` : 'none']);
-    const pain = e['pain'] as { area: string; severity: number; exercise?: string }[] | undefined;
-    if (pain) items.push(['Pain', `${pain[0]!.area} ${pain[0]!.severity}/10${pain[0]!.exercise ? `, during ${pain[0]!.exercise}` : ''}`]);
+    const pain = e['pain'] as { area: string; severity?: number; exercise?: string }[] | undefined;
+    if (pain) items.push(['Pain', `${pain[0]!.area} ${pain[0]!.severity === undefined ? '(how bad: not given)' : `${pain[0]!.severity}/10`}${pain[0]!.exercise ? `, during ${pain[0]!.exercise}` : ''}`]);
     if (!f.edit) {
       const sore = Object.entries(f.sore);
       items.push(['Sore', sore.length ? [sore.map(([k, v]) => `${SLUG_LABEL[k] ?? k} (${v})`).join(', '), h('span', { class: 'pv-faint' }, ` to the body record for ${fmt.wd(f.date)}`)] : 'none']);
@@ -239,7 +283,7 @@ function sessionField(ctx: LogPanelCtx): HTMLElement {
   const open = st.menu === 'session';
   return h('label', { class: 'pv-lg-field pv-lg-field-grow' }, h('span', {}, 'Session'),
     h('span', { class: 'pv-lg-swap-wrap' },
-      h('button', { class: 'pv-lg-pick', 'aria-haspopup': 'menu', disabled: f.edit, onclick: (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); st.menu = open ? null : 'session'; ctx.onChange(); } }, f.type === 'custom' ? 'Something else' : f.typeName, !f.edit && f.type === f.suggested ? h('span', { class: 'pv-lg-tag' }, 'Suggested') : null, f.edit ? null : icon('chevron')),
+      h('button', { class: 'pv-lg-pick', 'aria-haspopup': 'menu', disabled: f.edit, onclick: (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); st.menu = open ? null : 'session'; ctx.onChange(); } }, h('span', { class: 'pv-lg-pick-name' }, f.type === 'custom' ? 'Something else' : f.typeName), !f.edit && f.type === f.suggested ? h('span', { class: 'pv-lg-tag' }, 'Suggested') : null, f.edit ? null : icon('chevron')),
       open ? h('div', { class: 'pv-lg-menu', role: 'menu' },
         f.choices.map((c) => h('button', { class: `pv-lg-menu-item${c.type === f.type ? ' is-hot' : ''}`, role: 'menuitem', onclick: () => { st.menu = null; ctx.onRebuild(c.type, f.mode); } }, h('span', {}, c.name.replace(/\s*—\s*/g, ' · ')), h('span', { class: 'pv-faint' }, `${c.kind === 'lift' ? 'Lifting' : 'Short'}${c.suggested ? ' · suggested' : ''}`))),
         // A session outside the plan, as the dashboard's dialog logs it: type "custom" with a label.
@@ -270,7 +314,9 @@ export function renderLogPanel(layer: HTMLElement, ctx: LogPanelCtx): void {
   const keepScroll = layer.querySelector('.pv-lg-body')?.scrollTop ?? 0;
   const picked = !f.edit && f.suggested !== null && f.type !== f.suggested;
   const swaps = f.rows.filter((r) => r.planned).length;
-  const footLine = [f.rows.some((r) => r.line) ? `${f.rows.filter((r) => r.done && r.line).length} of ${f.rows.filter((r) => r.line).length} done` : null, swaps ? `${swaps} swap${swaps === 1 ? '' : 's'}` : null, f.rpe ? `RPE ${f.rpe}` : 'RPE not set', f.minutes ? `${f.minutes} min` : null].filter(Boolean).join(' · ');
+  const sets = f.tracking === 'full' ? everySetRows(f) : [];
+  const setsTotal = sets.reduce((a, x) => a + x.total, 0);
+  const footLine = [f.rows.some((r) => r.line) ? `${f.rows.filter((r) => r.done && r.line).length} of ${f.rows.filter((r) => r.line).length} done` : null, setsTotal ? `${sets.reduce((a, x) => a + x.ticked, 0)} of ${setsTotal} sets ticked` : null, swaps ? `${swaps} swap${swaps === 1 ? '' : 's'}` : null, f.rpe ? `RPE ${f.rpe}` : 'RPE not set', f.minutes ? `${f.minutes} min` : null].filter(Boolean).join(' · ');
   const strengthRows = f.rows.filter((r) => r.kind === 'load' || r.kind === 'reps' || r.kind === 'timed');
 
   const head = h('header', { class: 'pv-lg-head' },
@@ -289,8 +335,8 @@ export function renderLogPanel(layer: HTMLElement, ctx: LogPanelCtx): void {
     f.type === 'custom' ? labelField(ctx) : h('div', { class: 'pv-lg-field' }, h('span', {}, 'Version'), seg([['full', 'Full'], ['express', 'Express'], ['hotel', 'Hotel']], f.mode, (v) => { if (f.edit) { f.mode = v as SessionMode; change(); } else ctx.onRebuild(f.type, v as SessionMode); })),
   );
   const exercises = f.type === 'custom' ? null : h('section', { class: 'pv-lg-sec' },
-    h('div', { class: 'pv-lg-sec-head' }, h('h3', {}, 'Exercises'), h('div', { class: 'pv-lg-track' }, h('span', {}, 'Tracking'), seg([['standard', 'Standard'], ['full', 'Every set']], f.tracking, (v) => { f.tracking = v as 'standard' | 'full'; change(); }))),
-    h('p', { class: 'pv-lg-note' }, f.tracking === 'standard' ? (f.lifting ? 'Standard: the top set of the two logged lifts; tick the rest done or skipped.' : 'A short day logs no weights: tick each item done or skipped.') : 'Every set: weight, reps and, if you like, reps in reserve. The heaviest set of each logged lift is its top set.'),
+    h('div', { class: 'pv-lg-sec-head' }, h('h3', {}, 'Exercises'), h('div', { class: 'pv-lg-track' }, h('span', {}, 'Tracking'), seg([['standard', 'Standard'], ['full', 'Every set']], f.tracking, (v) => { f.tracking = v as 'standard' | 'full'; ctx.onTracking?.(f.tracking); change(); }))),
+    h('p', { class: 'pv-lg-note' }, f.tracking === 'standard' ? (f.lifting ? 'Standard: the top set of the two logged lifts; tick the rest done or skipped.' : 'A short day logs no weights: tick each item done or skipped.') : 'Every set: tick each set you did (tap its number), or tap its RIR. Only ticked sets are saved. The heaviest set of each logged lift is its top set.'),
     f.fromTicks && !f.edit ? h('div', { class: 'pv-lg-hint is-ticks' }, icon('check'), `From your ticks on Today: ${f.fromTicks.done} done, ${f.fromTicks.skipped} skipped. Change any row that differs.`) : null,
     f.rows.length ? h('ol', { class: 'pv-lg-list' }, f.rows.map((r, n) => row(r, n, ctx))) : h('p', { class: 'pv-calm' }, icon('info'), 'A session outside the plan: no exercises to tick.'),
     f.tracking === 'full' && !strengthRows.length ? h('p', { class: 'pv-lg-note' }, 'Nothing here takes sets.') : null,
@@ -314,9 +360,16 @@ export function renderLogPanel(layer: HTMLElement, ctx: LogPanelCtx): void {
       f.cardioMode && !CARDIO_MODES.includes(f.cardioMode.toLowerCase()) ? h('button', { class: 'pv-lg-pill is-on', onclick: () => { f.cardioMode = null; change(); } }, f.cardioMode) : null,
       CARDIO_MODES.map((m) => h('button', { class: `pv-lg-pill${f.cardioMode?.toLowerCase() === m ? ' is-on' : ''}`, onclick: () => { f.cardioMode = f.cardioMode?.toLowerCase() === m ? null : m; change(); } }, cap(m))))),
   );
-  const sev = h('input', { type: 'range', min: 0, max: 10, value: f.pain.severity, 'aria-label': 'Pain, 0 to 10' });
-  const sevOut = h('b', {}, `${f.pain.severity}/10`);
-  sev.addEventListener('input', () => { f.pain.severity = Number(sev.value); sevOut.textContent = `${f.pain.severity}/10`; });
+  // How bad is not given until the slider moves: it is saved with no severity, never as the slider's start.
+  const sev = h('input', { type: 'range', min: 0, max: 10, value: f.pain.severity ?? 3, 'aria-label': 'Pain, 0 to 10', ...(f.pain.severity === null ? { 'aria-valuetext': 'not given' } : {}) });
+  const sevOut = h('b', {}, f.pain.severity === null ? '–/10' : `${f.pain.severity}/10`);
+  const rate = () => { f.pain.severity = Number(sev.value); sevOut.textContent = `${f.pain.severity}/10`; sev.removeAttribute('aria-valuetext'); sev.closest('.pv-lg-sev')?.classList.remove('is-unset'); };
+  sev.addEventListener('input', rate);
+  sev.addEventListener('change', rate);
+  // A deliberate tap or click on the thumb where it starts (3) fires no input: it records the value too, and so do Enter and Space.
+  sev.addEventListener('pointerup', rate);
+  sev.addEventListener('click', rate);
+  sev.addEventListener('keydown', (ev: KeyboardEvent) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); rate(); } });
   const soreList = Object.entries(f.sore);
   const notes = h('textarea', { class: 'pv-lg-ta', placeholder: 'Anything worth remembering: how a lift felt, the gym, sleep.' });
   notes.value = f.notes;
@@ -329,9 +382,9 @@ export function renderLogPanel(layer: HTMLElement, ctx: LogPanelCtx): void {
     h('div', { class: 'pv-lg-field' }, h('span', {}, 'Any pain or niggle?'), seg([['0', 'No'], ['1', 'Yes']], f.painOn ? '1' : '0', (v) => { f.painOn = v === '1'; change(); })),
     f.painOn ? h('div', { class: 'pv-lg-pain' },
       h('div', { class: 'pv-lg-field' }, h('span', {}, 'Where'), h('div', { class: 'pv-lg-pills' }, PAIN_AREAS.map((a) => h('button', { class: `pv-lg-pill${f.pain.area === a ? ' is-on' : ''}`, onclick: () => { f.pain.area = a; change(); } }, a)))),
-      h('div', { class: 'pv-lg-sev' }, h('span', {}, 'How bad'), sev, sevOut),
+      h('div', { class: `pv-lg-sev${f.pain.severity === null ? ' is-unset' : ''}` }, h('span', {}, 'How bad'), sev, sevOut),
       h('div', { class: 'pv-lg-field' }, h('span', {}, 'During'), h('div', { class: 'pv-lg-pills' }, strengthRows.map((r) => h('button', { class: `pv-lg-pill${f.pain.during === r.name ? ' is-on' : ''}`, onclick: () => { f.pain.during = f.pain.during === r.name ? null : r.name; change(); } }, r.name)))),
-      h('div', { class: 'pv-lg-hint' }, icon('shield'), 'Saved with the session. The coach asks about it and adds it to the Ledger if it comes back.'),
+      h('div', { class: 'pv-lg-hint' }, icon('shield'), `Saved with the session${f.pain.severity === null ? ': move or tap the slider to say how bad, or it is saved as not given' : ''}. The coach asks about it and adds it to the Ledger if it comes back.`),
     ) : null,
     f.edit ? null : h('div', { class: 'pv-lg-sore' },
       h('div', { class: 'pv-figures is-small' }, figure('front', f, change), figure('back', f, change)),

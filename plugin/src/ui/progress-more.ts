@@ -38,7 +38,8 @@ export interface MoreContext extends ProgressContext {
   photoFiles: PhotoFiles;
   /** The image's URL for a vault path (null in the preview: placeholder figures). */
   resourcePath: ((p: string) => string) | null;
-  onMoveLadder?: (id: string, level: number) => void;
+  /** A ladder's level written to the log (▲, ▼, Move to level N); `start`: Log this level, the plan's start as the first logged level. */
+  onMoveLadder?: (id: string, level: number, how?: 'start') => void;
   /** The movement guide for a ladder level, and which are open. */
   guide?(name: string): import('../../../src/report/dashboard.ts').GuideEntry[];
   openGuides?: Set<string>;
@@ -302,7 +303,7 @@ function targets(b: BodyM, width: number, ctx: MoreContext): HTMLElement {
         s('rect', { class: 'pv-tb-track', x: 0, y: 5, width: W, height: 8, rx: 4 }),
         r.cur !== null ? s('rect', { class: `pv-tb-fill${r.cur < g ? ' is-short' : ''}`, x: 0, y: 5, width: x(Math.min(r.cur, g * 1.3)), height: 8, rx: 4 }) : null,
         s('line', { class: 'pv-tb-goal', x1: x(g), x2: x(g), y1: 0, y2: 18 }),
-        s('rect', { class: 'pv-c-hit', x: 0, y: 0, width: W, height: 18, 'data-tip': tip(r.label, `7-day average ${now}${r.days !== undefined && r.days < 7 ? ` (${r.days} of 7 days)` : ''}`, `Goal ${goal}`, r.source === 'plan' ? 'The plan generator’s steps for this phase' : r.source === 'engine' ? 'The engine’s 7 h' : 'From the profile') }));
+        s('rect', { class: 'pv-c-hit', x: 0, y: 0, width: W, height: 18, 'data-tip': tip(r.label, `7-day average ${now}${r.days !== undefined && r.days < 7 ? ` (${r.days} of 7 days)` : ''}`, `Goal ${goal}`, r.source === 'plan' ? 'The plan’s steps for this phase' : r.source === 'engine' ? 'The engine’s 7 h' : 'From the profile') }));
     }
     const st = label[r.status];
     return h('div', { class: 'pv-tg2-row' }, h('div', { class: 'pv-tg2-top' }, h('b', {}, r.label), h('span', { class: 'pv-tg2-val' }, now, h('span', { class: 'pv-faint' }, ` · goal ${goal}`)), statusChip(st[0], st[1])), bar,
@@ -381,7 +382,7 @@ function photos(b: BodyM, ctx: MoreContext): HTMLElement {
     })]),
   ) : null;
   return card('photos', 'pv-span-12', ctx, cardHead('photos', 'Progress photos', `${sets.length} set${sets.length === 1 ? '' : 's'}${folderOnly ? `, ${folderOnly} found in the photo folder but not in body-data.json’s index` : ''}. Compare two dates pose by pose, or scan the grid`, ctx),
-    sets.length ? [h('div', { class: `pv-ph${compare ? '' : ' is-grid-only'}` }, compare, grid), sets.length === 1 ? calm('One photo set so far: comparing starts with the second.') : null, ctx.resourcePath ? null : calm('The preview has no photos: the body-map outline stands in for them.')] : calm('No photo sets yet: photos come on each light week’s Sunday, every four weeks.'),
+    sets.length ? [h('div', { class: `pv-ph${compare ? '' : ' is-grid-only'}` }, compare, grid), sets.length === 1 ? calm('One photo set so far: comparing starts with the second.') : null, ctx.resourcePath ? null : calm('The preview has no photos: the body-map outline stands in for them.')] : calm(`No photo sets yet: photos come on ${b.photoDays}.`),
     table([{ t: 'Set' }, ...POSES.map(([, l]) => ({ t: l }))], sets.map((x) => [fmt.wd(x.date), ...POSES.map(([k]) => (x.poses.includes(k) ? (ctx.photoFiles[x.date]?.[k] ? 'Yes' : 'Listed') : '–'))])));
 }
 
@@ -488,12 +489,16 @@ function skills(sk: Skills, ctx: MoreContext): HTMLElement {
     const gKey = `skills:${l.id}`;
     const entries = l.levelName && ctx.guide ? ctx.guide(l.levelName) : [];
     const gOpen = Boolean(ctx.openGuides?.has(gKey)) && entries.length > 0;
+    // Before any level is logged the card shows the plan's start (startLevel); ▲ and ▼ move from it.
+    const planStart = l.from === 'plan';
     // The dashboard's ▲ and ▼: one level up, or down as a correction, written as `engine log ladder` writes it.
     const moves = ctx.onMoveLadder ? h('div', { class: 'pv-sk-moves' },
-      h('button', { class: 'pv-sk-move', 'aria-label': `${l.name}: down a level`, 'data-tip': 'Down a level|A correction', disabled: l.level <= 1, onclick: () => ctx.onMoveLadder!(l.id, l.level - 1) }, icon('down')),
-      h('button', { class: 'pv-sk-move', 'aria-label': `${l.name}: up a level`, 'data-tip': l.level ? 'Up a level' : 'Set level 1', disabled: l.level >= l.path.length, onclick: () => ctx.onMoveLadder!(l.id, l.level + 1) }, icon('up'))) : null;
+      h('button', { class: 'pv-sk-move', 'aria-label': `${l.name}: down a level`, 'data-tip': planStart ? 'Down a level|A correction to the plan’s start' : 'Down a level|A correction', disabled: l.level <= 1, onclick: () => ctx.onMoveLadder!(l.id, l.level - 1) }, icon('down')),
+      h('button', { class: 'pv-sk-move', 'aria-label': `${l.name}: up a level`, 'data-tip': planStart ? 'Up a level|From the plan’s start' : l.level ? 'Up a level' : 'Set level 1', disabled: l.level >= l.path.length, onclick: () => ctx.onMoveLadder!(l.id, l.level + 1) }, icon('up'))) : null;
+    // One tap writes the plan's start as the first logged level, through the same write as ▲.
+    const logStart = planStart && ctx.onMoveLadder ? h('div', { class: 'pv-sk-log' }, h('button', { class: 'pv-btn-quiet', 'data-tip': `Log level ${l.level}|Starts the level history at the plan’s start`, onclick: () => ctx.onMoveLadder!(l.id, l.level, 'start') }, icon('check'), 'Log this level')) : null;
     return h('div', { class: `pv-sk-row${l.testShowsLevel ? ' has-hint' : ''}${gOpen ? ' has-guide' : ''}` },
-    h('div', { class: 'pv-sk-name' }, h('div', { class: 'pv-sk-name-top' }, h('b', {}, l.name), moves), h('div', { class: 'pv-sk-sub' }, l.level ? [`Level ${l.level} of ${l.path.length} · `, guideName(clean(l.levelName ?? ''), entries.length > 0, gOpen, () => ctx.onToggleGuide?.(gKey), 'pv-sk-level'), l.since ? ` · since ${fmt.day(l.since)}` : ''] : 'Level not set · tap ▲')),
+    h('div', { class: 'pv-sk-name' }, h('div', { class: 'pv-sk-name-top' }, h('b', {}, l.name), moves), h('div', { class: 'pv-sk-sub' }, l.level ? [`Level ${l.level} of ${l.path.length} · `, guideName(clean(l.levelName ?? ''), entries.length > 0, gOpen, () => ctx.onToggleGuide?.(gKey), 'pv-sk-level'), l.since ? ` · since ${fmt.day(l.since)}` : planStart ? ' · the plan’s start, not logged yet' : ''] : 'Level not set · tap ▲'), logStart),
     h('ol', { class: 'pv-sk-path', 'aria-label': `${l.name} levels` }, l.path.map((p) => h('li', { class: `pv-sk-node is-${p.state}`, 'data-tip': tip(`L${p.n} · ${clean(p.name)}`, stateLabel[p.state], p.reached ? `Reached ${fmt.wd(p.reached)}` : null, p.state === 'unlocked' ? 'Move up after the top of the reps on every set, two sessions in a row' : null) }, h('span', { class: 'pv-sk-dot' }, p.state === 'mastered' ? icon('check') : p.state === 'locked' ? icon('lock') : String(p.n)), h('span', { class: 'pv-sk-lbl' }, clean(p.name))))),
     testCell(l.test, l.tests, l.goal),
     l.testShowsLevel ? h('div', { class: 'pv-sk-hint' }, icon('alert'), h('span', {}, `The latest test is ahead of the ladder: it shows level ${l.testShowsLevel.level}, ${clean(l.testShowsLevel.name)}.`),
@@ -507,7 +512,7 @@ function skills(sk: Skills, ctx: MoreContext): HTMLElement {
   return card('skills', 'pv-span-12', ctx, cardHead('skills', 'Skills', 'Each calisthenics ladder as a path of levels, beside its latest test and goal. Move up after the top of the reps on every set, two sessions in a row', ctx),
     sk.ladders.length || sk.testedOnly.length ? [h('div', { class: 'pv-sk' }, rows, tested), legend] : calm('No ladders or tests yet.'),
     table([{ t: 'Skill' }, { t: 'Level', r: true }, { t: 'Level name' }, { t: 'Since' }, { t: 'Latest test' }, { t: 'Goal' }], [
-      ...sk.ladders.map((l) => [l.name, l.level ? String(l.level) : '–', l.levelName ? clean(l.levelName) : '–', l.since ? fmt.day(l.since) : '–', l.tests.at(-1) ? `${testText(l.test ?? '', l.tests.at(-1)!.value)}, ${fmt.day(l.tests.at(-1)!.date)}` : '–', l.goal !== null ? testText(l.test ?? '', l.goal) : '–'] as Child[]),
+      ...sk.ladders.map((l) => [l.name, l.level ? String(l.level) : '–', l.levelName ? clean(l.levelName) : '–', l.since ? fmt.day(l.since) : l.from === 'plan' ? 'The plan’s start, not logged yet' : '–', l.tests.at(-1) ? `${testText(l.test ?? '', l.tests.at(-1)!.value)}, ${fmt.day(l.tests.at(-1)!.date)}` : '–', l.goal !== null ? testText(l.test ?? '', l.goal) : '–'] as Child[]),
       ...sk.testedOnly.map((t) => [TEST_NAME[t.test] ?? t.test, '–', '–', '–', t.tests.at(-1) ? `${testText(t.test, t.tests.at(-1)!.value)}, ${fmt.day(t.tests.at(-1)!.date)}` : '–', t.goal !== null ? testText(t.test, t.goal) : '–'] as Child[]),
     ]));
 }

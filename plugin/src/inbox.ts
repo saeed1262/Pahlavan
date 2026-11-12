@@ -134,7 +134,7 @@ export class InboxImporter {
     const refused = refusedOf(plan.results);
     for (const r of plan.results) {
       if (r.status === 'refused') continue;
-      const w = r.status === 'apply' ? await this.write(r, today) : ({ ok: true, wrote: false, warnings: [] } as const);
+      const w = r.status === 'apply' ? await this.write(r, today, read.raw?.plan) : ({ ok: true, wrote: false, warnings: [] } as const);
       if (!w.ok) {
         refused.push({ file: r.file, date: r.date, kind: r.kind, code: w.code, reason: w.reason });
         continue;
@@ -182,16 +182,18 @@ export class InboxImporter {
    * day's mark (an answer the other Mac gave stops it), the Pahlavan record
    * before the linked habit (a habit that can't be ticked is a note, as
    * Due today treats it). A conflict or a failed write keeps the entry in the
-   * inbox with its reason; it is tried again on the next refresh.
+   * inbox with its reason; it is tried again on the next refresh. A session
+   * sent at Every set also sets Today's ticks (`plan`, as read), as the
+   * engine's merge set them.
    */
-  private async write(r: InboxApplied, today: IsoDate): Promise<WriteResult> {
+  private async write(r: InboxApplied, today: IsoDate, plan: unknown): Promise<WriteResult> {
     const w = r.writes;
     const warnings: string[] = [];
     let wrote = false;
     const fail = (code: InboxCode, reason: string): WriteResult => ({ ok: false, code, reason });
     const day = dayText(r.date);
     if (w.session) {
-      const s = await this.deps.log.save({ mode: 'add', entry: w.session, date: r.date });
+      const s = await this.deps.log.save({ mode: 'add', entry: w.session, date: r.date, ...(w.sessionTicks ? { ticks: { plan, today } } : {}) });
       if (s.status === 'already') return fail('already', `a session of that type was logged on ${day} meanwhile: the log keeps that one, so delete this entry`);
       if (s.status === 'conflict') return fail('conflict', `the log changed while importing: tried again on the next refresh`);
       if (s.status === 'failed') return fail('failed', s.error);

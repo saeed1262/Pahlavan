@@ -58,7 +58,13 @@ higher level.** A user who picks a higher level can drop back at any
 review. Pahlavan's Food tab names the Light level "Hand portions" (the
 training plan's light weeks are something else); say it the same way.
 
-## 3. The numbers (code: `numbers.md`, "Energy and protein")
+## 3. The numbers (code: `engine energy`)
+
+`engine energy --pal <factor>` computes them, carbs apart (`numbers.md`,
+"The eating plan's numbers: `energy`"): the activity factor is the coach's
+pick from the table below, the rest comes from the profile, the trend
+weight, the goal (or `--rate`) and the meals a day. Quote each figure with
+its note.
 
 | Number | Rule | Source |
 |---|---|---|
@@ -76,10 +82,12 @@ training plan's light weeks are something else); say it the same way.
 - Never below about **1,500 kcal a day for men, 1,200 for women** without a
   clinician (the low end of the
   [AHA/ACC/TOS 2013](https://acc.org/Latest-in-Cardiology/Journal-Scans/2014/07/10/16/17/2013-AHA-ACC-TOS-Guideline-for-the-Management-of-Overweight)
-  ranges); if the band needs less, slow the rate instead.
+  ranges); if the band needs less, slow the rate instead (`energy`'s
+  `floor`: the floor applied, and the rate it gives).
 - Never a very-low-calorie plan (about 800 kcal a day or less is a medically
   supervised diet, [NIDDK](https://www.niddk.nih.gov/Dictionary/V/very-low-calorie-diet)).
-- Never a loss rate beyond **1% of body weight a week**.
+- Never a loss rate beyond **1% of body weight a week** (`energy` refuses a
+  faster `--rate`).
 - No meal skipping or fasting protocols as a prescription.
 
 ## 4. Adjusting from the trend
@@ -197,9 +205,15 @@ other day.** Ask what the user usually cooks first and adapt these to it.
    bed times too when the profile and `tracking.md`'s answers don't have them;
    what they drink in a day, the last coffee included, if not said). They
    set the Food tab's day (section 9).
-4. Compute with the "Energy and protein" snippet (`numbers.md`), the
-   protein range from `engine review`'s `weight.protein` (its note is the
-   reason to quote).
+4. Compute with `engine energy --pal <factor>` (section 3's table; `--meals`
+   the meals a day they said; `--rate` only when the plan aims at a rate
+   the goal doesn't give): maintenance, the goal energy (the goal's range
+   from the Goal energy row, or one figure for `--rate`), the floor, protein
+   a day and a meal with the top-up, fat and fiber. Its `proteinRange` is
+   `engine review`'s `weight.protein` (its note is the reason to quote). At
+   the Light level only protein and fiber are used (`light`). Never propose
+   a `refused` rate (−0.01 or slower instead) or a target under the floor
+   (the plan takes `floor`'s `targetKcal`, a slower rate).
 5. Propose the plan in one message: the level, the daily targets (or
    portions), why this plan (each reason with its source), the day with
    each meal's time, the meal templates and their ideas, the protein
@@ -244,9 +258,10 @@ Markdown's twin (fields in `formats.md`). Build it from the agreed plan:
   ideas meets the pattern (fish twice, legumes, red meat at most twice).
   Everyday dishes, no cuisine theme unless the user asks for one; about
   seven a meal, one a day for a week **(H)**.
-- **The numbers come from code:** `protein` from `engine review`'s
-  `weight.protein` (`floorG` the range's floor, `rangeG`, `gPerKg`, and its
-  reason in `reason`), `basis` the trend weight it was set at; each meal's
+- **The numbers come from code:** `basis`, `protein` (`floorG` the range's
+  floor, `rangeG`, `gPerKg`, `perMealG`), `fiber` and `energy` from
+  `engine energy`'s `eatingPlanFields`, as they are; `protein.reason` is its
+  `proteinRange` reason (`engine review`'s `weight.protein`); each meal's
   rough protein (`proteinG`, `[lo, hi]`) from the template's palms.
 - **`protein.item`** is the tracked Protein item's id, its floor equal to
   the item's goal (`track protein` or `track add` keeps them together).

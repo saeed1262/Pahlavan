@@ -2,10 +2,13 @@
 // its files (the skill's text, its engine and self-check, built in). Setting
 // it up writes them into the vault's .claude/skills/fitness-coach/, where
 // Claude Code finds /fitness-coach; updating writes this Pahlavan's copy over
-// an older one. Only the skill's own files are written: anything else in that
-// folder, and the vault's Coach/local.md, stay. The engine needs Node 18 or
-// later, looked for where a Mac usually has it.
+// an older one, never over a newer one (the other Mac's newer Pahlavan set it
+// up: this Pahlavan is the one to update). Only the skill's own files are
+// written: anything else in that folder, and the vault's Coach/local.md,
+// stay. The engine needs Node 18 or later, looked for where a Mac usually
+// has it.
 
+import { coachVersion, type CoachVersion } from '../../src/core/version.ts';
 import type { MkdirAdapter } from './checkin-writer.ts';
 
 /** Where Claude Code finds a vault's skill. */
@@ -22,6 +25,8 @@ export interface CoachState {
   missing: string[];
   /** The skill's files there with other text than this Pahlavan's (an older version, or edited by hand). */
   differ: string[];
+  /** The version there against the one carried: only `coach-older` (and `not-set-up`) is this Pahlavan's to write over. */
+  direction: CoachVersion;
 }
 
 /** The engine version in a VERSION file's text ("engine 0.19.0"), else null. */
@@ -40,14 +45,56 @@ export async function coachState(adapter: MkdirAdapter, files: Readonly<Record<s
     if (now === null) missing.push(rel);
     else if (now !== text) differ.push(rel);
   }
-  const installed = versionOf(await read(VERSION_FILE));
-  return { installed: installed ?? ((await adapter.exists(at('SKILL.md'))) ? 'unknown' : null), bundled: versionOf(files[VERSION_FILE] ?? null) ?? 'unknown', missing, differ };
+  const found = versionOf(await read(VERSION_FILE));
+  const installed = found ?? ((await adapter.exists(at('SKILL.md'))) ? 'unknown' : null);
+  const bundled = bundledVersion(files);
+  return { installed, bundled, missing, differ, direction: coachVersion(installed, bundled) };
+}
+
+/** The engine version this Pahlavan carries (its copy's VERSION file). */
+const bundledVersion = (files: Readonly<Record<string, string>>): string => versionOf(files[VERSION_FILE] ?? null) ?? 'unknown';
+
+/** What the settings and the command say when the vault's coach is newer than this Pahlavan's copy. */
+export function newerCoachLine(installed: string, bundled: string): string {
+  return `The coach in this vault (${installed}) is newer than this Pahlavan's (${bundled}): update Pahlavan from Community plugins.`;
+}
+
+/**
+ * The settings' Coach row: what it says about the coach in this vault, and
+ * its button (null: nothing for this Pahlavan to write). An older coach is
+ * updated; a newer one is never written over; at the same version, files
+ * that differ are the user's own edits, so the button only restores them.
+ */
+export function coachRow(st: CoachState): { line: string; button: string | null } {
+  if (st.direction === 'not-set-up') return { line: `Not set up in this vault. The coach is a Claude Code skill (/fitness-coach); this writes it into ${COACH_DIR}.`, button: 'Set up the coach' };
+  if (st.direction === 'coach-newer') return { line: newerCoachLine(st.installed ?? 'unknown', st.bundled), button: null };
+  if (st.direction === 'coach-older') {
+    return { line: `Version ${st.installed} is set up; this Pahlavan carries ${st.bundled}.${st.differ.length ? ` ${st.differ.length} of its files differ and will be replaced.` : ''}`, button: 'Update the coach' };
+  }
+  if (!st.missing.length && !st.differ.length) return { line: `Set up, version ${st.bundled}. In Claude Code, open this vault and run /fitness-coach.`, button: null };
+  const m = st.missing.length;
+  const d = st.differ.length;
+  const parts = [
+    m ? `${m} of its files ${m === 1 ? 'is' : 'are'} missing` : null,
+    d ? `${d}${m ? '' : ' of its files'} ${d === 1 ? 'differs' : 'differ'} from this Pahlavan's copy (your own edits, perhaps)` : null,
+  ].filter(Boolean);
+  return { line: `Set up, version ${st.bundled}. ${parts.join(' and ')}.`, button: 'Restore its files' };
 }
 
 export type SetupResult = { ok: true; written: string[] } | { ok: false; error: string; written: string[] };
 
-/** Writes the skill's files that are missing or different (the folders made first), each read back. */
+/**
+ * Writes the skill's files that are missing or different (the folders made
+ * first), each read back. A coach newer than this Pahlavan's copy is left
+ * as it is: nothing is written.
+ */
 export async function setUpCoach(adapter: MkdirAdapter, files: Readonly<Record<string, string>>): Promise<SetupResult> {
+  const versionPath = `${COACH_DIR}/${VERSION_FILE}`;
+  const installed = versionOf((await adapter.exists(versionPath)) ? await adapter.read(versionPath) : null);
+  const bundled = bundledVersion(files);
+  if (installed !== null && coachVersion(installed, bundled) === 'coach-newer') {
+    return { ok: false, error: `the coach in this vault (${installed}) is newer than this Pahlavan's (${bundled}): update Pahlavan from Community plugins`, written: [] };
+  }
   const written: string[] = [];
   const made = new Set<string>();
   for (const [rel, text] of Object.entries(files)) {

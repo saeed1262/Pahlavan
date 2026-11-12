@@ -50,4 +50,40 @@ describe('Check-in’s morning form', () => {
     type(w, '184.1');
     assert.equal(st.morning.values.weight, 83.5);
   });
+
+  it('HRV is typed in ms beside resting HR', () => {
+    const { root, st } = draw();
+    const hrv = root.querySelector('[data-k="m-hrv"]')!;
+    assert.equal(hrv.getAttribute('aria-label'), 'HRV');
+    type(hrv, '52');
+    assert.equal(st.morning.values.hrv, 52);
+    assert.equal(st.morning.dirty, true);
+  });
+
+  it('"I’m ill today" is one tap, shown in what Save will write, and a second tap takes it back', () => {
+    let changes = 0;
+    const c = buildCheckin(read, DATE, null);
+    const st = refreshCheckinState(null, c);
+    const ctx: CheckinContext = { canWrite: true, hero: { phase: { id: 'workday', isfahan: false }, phaseOf: null, planWeek: 6, phaseNo: 1, week: checkinWeek(read, DATE), tape: null }, onChange: () => void changes++, onSaveMorning: () => {}, onSaveSunday: () => {} };
+    const render = () => {
+      const root = new FakeElement('div');
+      renderCheckin(root as unknown as HTMLElement, c, st, ctx);
+      return root;
+    };
+    let root = render();
+    const pill = () => root.querySelector('[data-k="m-ill"]')!;
+    assert.equal(st.morning.ill, false);
+    assert.equal(pill().getAttribute('aria-pressed'), 'false');
+    for (const fn of pill().listeners.get('click') ?? []) fn({ target: pill() });
+    assert.equal(st.morning.ill, true);
+    root = render();
+    assert.equal(pill().getAttribute('aria-pressed'), 'true');
+    assert.ok(root.textContent.includes('To save: ill today.'), root.textContent);
+    assert.ok(root.textContent.includes('No hard training today'));
+    for (const fn of pill().listeners.get('click') ?? []) fn({ target: pill() });
+    root = render();
+    assert.equal(st.morning.ill, false);
+    assert.ok(root.textContent.includes('Nothing changed yet.'));
+    assert.equal(changes, 2);
+  });
 });

@@ -4,5 +4,5 @@
     "lib": ["es2022", "dom", "dom.iterable"],
     "types": []
   },
-  "include": ["src", "test", "preview", "../types"]
+  "include": ["src", "test", "preview", "../web", "../types"]
 }

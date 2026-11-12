@@ -131,7 +131,7 @@ describe('a section’s fold', () => {
 });
 
 describe('the Plan packed, and the Sunday pattern from the light checks', () => {
-  it('the Plan: This mesocycle and the load on the left, the sets and Coming up on the right, folded full-width cards in the left column', () => {
+  it('the Plan: Why this plan under the timeline, This mesocycle and the load on the left, the sets and Coming up on the right, folded full-width cards in the left column', () => {
     const DATE = '2026-04-10';
     const read = readVault(memoryIo(fixtureFiles('v'), DATE), 'v', { asOf: DATE });
     const p = buildPlan(read, DATE);
@@ -142,14 +142,15 @@ describe('the Plan packed, and the Sunday pattern from the light checks', () => 
       return root.querySelector('.pv-prog-grid')!;
     };
     const ids = (el: FakeElement) => el.children.map((c) => c.getAttribute('data-sec') ?? (c.classList.contains('pv-col') ? `[${c.children.map((x) => x.getAttribute('data-sec')).join(' ')}]` : '?'));
-    assert.deepEqual(ids(draw()), ['timeline', 'meso', 'vol', 'targets', 'load', 'upcoming', 'rules', 'minweek'], 'no folds known: the page order');
+    assert.deepEqual(ids(draw()), ['timeline', 'why', 'meso', 'vol', 'targets', 'load', 'upcoming', 'rules', 'minweek'], 'no folds known: the page order');
     // The standing rules: each kind and lift, marked default where the coach has not set it.
     const rules = draw().children.find((c) => c.getAttribute('data-sec') === 'rules')!;
     assert.match(text(rules), /Standing rules/);
     assert.match(text(rules), /Light weeksdefault: your coach hasn’t set thislight weeks every 4th plan week/);
     const starting = (id: string) => sectionFolded(null, 'plan', g.sections.find((s) => s.id === id)!, DATE);
-    assert.deepEqual(ids(draw(starting)), ['timeline', '[meso load targets rules minweek]', '[vol upcoming]']);
-    assert.deepEqual(ids(draw((id) => id !== 'targets' && starting(id))), ['timeline', '[meso load rules minweek]', '[vol upcoming]', 'targets'], 'opened, a full-width card goes under the columns');
+    assert.deepEqual(ids(draw(starting)), ['timeline', 'why', '[meso load targets rules minweek]', '[vol upcoming]']);
+    assert.deepEqual(ids(draw((id) => id !== 'targets' && starting(id))), ['timeline', 'why', '[meso load rules minweek]', '[vol upcoming]', 'targets'], 'opened, a full-width card goes under the columns');
+    assert.deepEqual(ids(draw((id) => id === 'why' || starting(id))), ['timeline', '[why meso load targets rules minweek]', '[vol upcoming]'], 'folded, the Why card heads the left column');
   });
 
   it('the Sunday check-in: a line the checks met on most days starts as met, with its count; the user’s answer stays', () => {

@@ -12,7 +12,7 @@ import { welcomeSteps } from '../../src/report/welcome.ts';
 import { fixtureFiles, memoryIo } from '../../test/helpers.ts';
 import { applyHelp, CHECK_DAYS, COACH_TIMES, earlyVisit, FRESH_HELP, HelpStore, nextTip, OPEN_VISITS, panelOpen, parseHelp, sectionFolded, TIPS, type HelpState } from '../src/help.ts';
 import { DEFAULT_GUIDE_URL, loadPluginData } from '../src/settings.ts';
-import { helpMenu, SAFETY_LINE, tipBubble, welcomeCard } from '../src/ui/help.ts';
+import { helpMenu, SAFETY_LINE, tipBubble, USING_PAHLAVAN_URL, welcomeCard } from '../src/ui/help.ts';
 import { FakeElement, installFakeDom, text } from './fake-dom.ts';
 import { paths } from '../../src/adapters/vault/layout.ts';
 
@@ -200,12 +200,18 @@ describe('the help’s pieces', () => {
     assert.doesNotMatch(text(card), /—/);
     assert.equal(text(card.querySelector('[data-k="welcome-safety"]')!), SAFETY_LINE, 'the safety line, as the settings and the README say it');
     assert.match(SAFETY_LINE, /adults 18 and over, not medical advice/);
+    // The pinned "Using Pahlavan?" issue, the one way the author hears who uses it: a plain link Obsidian opens in the browser.
+    const hi = card.querySelector('[data-k="welcome-hi"]')!;
+    assert.equal(hi.tagName.toLowerCase(), 'a');
+    assert.equal(hi.getAttribute('href'), USING_PAHLAVAN_URL);
+    assert.equal(USING_PAHLAVAN_URL, 'https://github.com/saeed1262/pahlavan/issues/1');
+    assert.equal(text(hi), 'Using Pahlavan? Say hi');
   });
 
   it('the welcome card on a fresh vault: Set up the coach first, with its button and a missing Node; the commands with Copy', () => {
     const read = readVault(memoryIo({ 'v/Welcome.md': '' }, '2026-04-10'), 'v', { asOf: '2026-04-10' });
     const calls: string[] = [];
-    const draw = (state: 'checking' | 'missing' | 'old' | 'ok', node: boolean | null) => welcomeCard({ welcome: welcomeSteps(read, '2026-04-10').value, onGuide: () => {}, onTour: () => {}, onHide: () => {}, onCopy: (t) => void calls.push(`copy ${t}`), coach: { state, node, onSetUp: () => void calls.push('setup') } }) as unknown as FakeElement;
+    const draw = (state: 'checking' | 'missing' | 'old' | 'newer' | 'ok', node: boolean | null) => welcomeCard({ welcome: welcomeSteps(read, '2026-04-10').value, onGuide: () => {}, onTour: () => {}, onHide: () => {}, onCopy: (t) => void calls.push(`copy ${t}`), coach: { state, node, onSetUp: () => void calls.push('setup') } }) as unknown as FakeElement;
     const fresh = draw('missing', false);
     assert.match(text(fresh), /0 of 6 first steps done/);
     assert.equal(fresh.querySelector('li.is-next')!.getAttribute('data-step'), 'coach');
@@ -220,6 +226,12 @@ describe('the help’s pieces', () => {
     assert.equal(set.querySelector('li.is-next')!.getAttribute('data-step'), 'intake');
     assert.equal(set.querySelector('[data-k="welcome-coach"]'), null);
     assert.doesNotMatch(text(set), /Node 18/);
+    assert.equal(set.querySelector('[data-k="welcome-coach-newer"]'), null);
+    // A coach newer than this Pahlavan's (the other Mac's newer Pahlavan set it up): set up, no button to write the older copy over it, and a line to update Pahlavan.
+    const newer = draw('newer', true);
+    assert.match(text(newer), /1 of 6 first steps done/);
+    assert.equal(newer.querySelector('[data-k="welcome-coach"]'), null);
+    assert.equal(text(newer.querySelector('[data-k="welcome-coach-newer"]')!), 'The coach in this vault is newer than this Pahlavan: update Pahlavan from Community plugins.');
   });
 
   it('a tip: its place, its words, Got it and Skip the tips', () => {

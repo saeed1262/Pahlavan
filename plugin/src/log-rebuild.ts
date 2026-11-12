@@ -15,7 +15,7 @@ import { sessionKey } from '../../src/adapters/vault/log-write.ts';
 import type { VaultRead } from '../../src/adapters/vault/read.ts';
 import type { IsoDate } from '../../src/core/schema.ts';
 import type { SessionMode } from '../../src/core/variant.ts';
-import { customLogForm, logFormFor, logFormFromEntry, type FormRow, type LogForm } from '../../src/report/log-form.ts';
+import { blankSet, customLogForm, logFormFor, logFormFromEntry, type FormRow, type LogForm } from '../../src/report/log-form.ts';
 import { buildSession } from '../../src/report/session.ts';
 
 type Obj = Record<string, unknown>;
@@ -73,11 +73,22 @@ function carryRow(r: FormRow, was: NonNullable<LogForm['start']>['rows'][string]
     into.planned = r.planned;
     into.swapWhy = r.swapWhy;
     if (into.lift !== null && r.swapWhy === 'Your swap') Object.assign(into, { target: null, top: { weight: null, reps: null }, targetNote: 'New to the log: enter what you used.' });
+    // The new form's sets are the planned exercise's: a swap starts them blank, as the Swap menu does.
+    if (r.swapWhy === 'Your swap') into.rows = into.rows.map(blankSet);
   }
   if (into.name !== r.name) return;
   if (!same(r.top, was.top)) into.top = { ...r.top };
-  // Every set, once one holds a value the user gave (the panel fills empty ones from the top set).
-  if (!same(r.rows, was.rows) && r.rows.some((x) => x.weight !== null || x.reps !== null || x.rir !== null)) into.rows = r.rows.map((x) => ({ ...x }));
+  // Every set, once one holds a value or a tick the user gave (the panel fills empty ones from the top set).
+  const given = (rows: FormRow['rows']) => rows.some((x) => x.weight !== null || x.reps !== null || x.rir !== null || x.done);
+  if (!same(r.rows, was.rows) && given(r.rows)) into.rows = r.rows.map((x) => ({ ...x }));
+  // A superset's parts, the same way, part by part.
+  if (r.split && into.split) {
+    for (const p of r.split) {
+      const wasP = was.split?.find((x) => x.name === p.name);
+      const intoP = into.split.find((x) => x.name === p.name);
+      if (intoP && !same(p.rows, wasP?.rows) && given(p.rows)) intoP.rows = p.rows.map((x) => ({ ...x }));
+    }
+  }
 }
 
 /**

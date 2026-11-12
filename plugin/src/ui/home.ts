@@ -27,6 +27,28 @@ export interface HomeContext {
   intro?: boolean;
 }
 
+/** The view's moves a part of Home can make. */
+export interface HomeMoves {
+  tab(section: 'today' | 'plan' | 'checkin' | 'food'): void;
+  /** Today, scrolled to Due today. */
+  due(): void;
+  /** The morning card (the Check-in screen without the reminders). */
+  morning(): void;
+  progress(view: 'overview' | 'training' | 'body'): void;
+  /** Pahlavan's settings tab (the coach's version); absent: a line says where it is. */
+  settings?: () => void;
+  notify(message: string): void;
+}
+
+/** Where a part of Home leads, as one of the view's moves. */
+export function homeMove(go: HomeGo, m: HomeMoves): void {
+  if (go === 'morning') return m.morning();
+  if (go === 'due') return m.due();
+  if (go === 'progress' || go === 'progress-training' || go === 'progress-body') return m.progress(go === 'progress-training' ? 'training' : go === 'progress-body' ? 'body' : 'overview');
+  if (go === 'settings') return m.settings ? m.settings() : m.notify('The coach’s version is in Obsidian’s settings: Pahlavan, Coach.');
+  m.tab(go);
+}
+
 const link = (label: string, go: HomeGo, ctx: HomeContext): HTMLElement =>
   h('button', { class: 'pv-home-link', 'data-go': go, onclick: () => ctx.onGo(go) }, label, icon('next'));
 

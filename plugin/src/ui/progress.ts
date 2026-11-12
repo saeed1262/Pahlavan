@@ -258,7 +258,7 @@ function readiness(m: ProgressModel, width: number, ctx: ProgressContext): HTMLE
   );
   const hit = s('rect', { class: 'pv-c-hit', x: mg.l, y: mg.t, width: W - mg.r - mg.l, height: H - mg.b - mg.t });
   svg.append(hit);
-  hover(hit, svg, pts, x, (p) => yc(p.s), (p) => tip(fmt.wd(p.date), `Smoothed over 3 days: ${fmt.signed(p.s)}`, `That morning on its own: ${fmt.signed(p.r)}`, `Band: ${p.band}`, p.flags.length ? p.flags.map((f) => ({ 'short-sleep': 'slept under 6 h', 'rhr-flag': 'resting HR flag', illness: 'illness' })[f] ?? f).join(', ') : ''));
+  hover(hit, svg, pts, x, (p) => yc(p.s), (p) => tip(fmt.wd(p.date), `Smoothed over 3 days: ${fmt.signed(p.s)}`, `That morning on its own: ${fmt.signed(p.r)}`, `Band: ${p.band}`, p.flags.length ? p.flags.map((f) => ({ 'short-sleep': 'slept under 6 h', 'rhr-flag': 'resting HR flag', 'hrv-flag': 'HRV low two mornings', illness: 'illness' })[f] ?? f).join(', ') : ''));
   return h('section', { class: `pv-card${ctx.tables.has('ready') ? ' is-table' : ''}`, 'data-sec': 'ready' }, head, h('div', { class: 'pv-chart-area' }, svg), h('div', { class: 'pv-table-area' }, tbl));
 }
 

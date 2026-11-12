@@ -33,6 +33,9 @@ export interface CheckinState {
     baseline: Record<MorningKey, number | null>;
     sore: Record<string, SorenessLevel>;
     soreFrom: Record<string, SorenessLevel>;
+    /** "I'm ill today", and as the file held it. */
+    ill: boolean;
+    illFrom: boolean;
     conflicts: MorningConflict[] | null;
     busy: boolean;
     error: string | null;
@@ -44,7 +47,7 @@ export interface CheckinState {
 export function freshCheckinState(m: CheckinScreen): CheckinState {
   return {
     date: m.date,
-    morning: { values: { ...m.morning.values }, baseline: { ...m.morning.baseline }, sore: { ...m.morning.sore }, soreFrom: { ...m.morning.soreFrom }, conflicts: null, busy: false, error: null, dirty: false },
+    morning: { values: { ...m.morning.values }, baseline: { ...m.morning.baseline }, sore: { ...m.morning.sore }, soreFrom: { ...m.morning.soreFrom }, ill: m.morning.illness, illFrom: m.morning.illness, conflicts: null, busy: false, error: null, dirty: false },
     sunday: m.sunday ? { date: m.sunday.date, answers: structuredClone(m.sunday.answers), pick: null, busy: false, error: null, dirty: false, editSaved: false, warnings: [] } : null,
   };
 }
@@ -153,18 +156,19 @@ const SCALES: { key: MorningKey; label: string; lo: string; hi: string }[] = [
 const FIELDS: { key: MorningKey; label: string; unit: string; step: number }[] = [
   { key: 'sleepH', label: 'Sleep', unit: 'h', step: 0.1 },
   { key: 'rhr', label: 'Resting HR', unit: 'bpm', step: 1 },
+  { key: 'hrv', label: 'HRV', unit: 'ms', step: 1 },
   { key: 'weight', label: 'Weight', unit: 'kg', step: 0.1 },
   { key: 'steps', label: 'Steps yesterday', unit: '', step: 100 },
   { key: 'floors', label: 'Floors yesterday', unit: '', step: 1 },
 ];
-const LABEL: Record<MorningKey, string> = { energy: 'Energy', soreness: 'Soreness', sleepQ: 'Sleep quality', sleepH: 'Sleep', rhr: 'Resting HR', weight: 'Weight', steps: 'Steps yesterday', floors: 'Floors yesterday' };
+const LABEL: Record<MorningKey, string> = { energy: 'Energy', soreness: 'Soreness', sleepQ: 'Sleep quality', sleepH: 'Sleep', rhr: 'Resting HR', hrv: 'HRV', weight: 'Weight', steps: 'Steps yesterday', floors: 'Floors yesterday' };
 const show = (v: number | null) => (v === null ? 'empty' : String(v));
 
-function morningChanges(st: CheckinState): { fields: MorningKey[]; sore: string[] } {
+function morningChanges(st: CheckinState): { fields: MorningKey[]; sore: string[]; ill: boolean } {
   const m = st.morning;
   const fields = (Object.keys(m.values) as MorningKey[]).filter((k) => m.values[k] !== m.baseline[k]);
   const sore = [...new Set([...Object.keys(m.sore), ...Object.keys(m.soreFrom)])].filter((k) => (m.sore[k] ?? null) !== (m.soreFrom[k] ?? null));
-  return { fields, sore };
+  return { fields, sore, ill: (m.ill ?? false) !== (m.illFrom ?? false) };
 }
 
 function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): HTMLElement {
@@ -177,7 +181,7 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
     ctx.onChange();
   };
   const changes = morningChanges(st);
-  const n = changes.fields.length + changes.sore.length;
+  const n = changes.fields.length + changes.sore.length + (changes.ill ? 1 : 0);
   const at = mm.checkedAt ? time(mm.checkedAt) : null;
   // checkedAt is written by Habit Nudges and, since 0.5.0, by Pahlavan's own first save of the day.
   const sub = mm.checkedAt ? `Checked in${at ? ` at ${at}` : ''} · edit any answer here` : mm.filled ? 'Filled in for today · edit any answer here' : 'About 30 seconds · feeds today’s readiness';
@@ -188,6 +192,12 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
     h('div', { class: 'pv-tap5', role: 'radiogroup', 'aria-label': sc.label }, [1, 2, 3, 4, 5].map((v) => h('button', { class: `pv-tap${m.values[sc.key] === v ? ' is-on' : ''}`, role: 'radio', 'aria-checked': m.values[sc.key] === v ? 'true' : 'false', 'aria-label': `${sc.label} ${v}`, onclick: () => { m.values[sc.key] = m.values[sc.key] === v ? null : v; change(); }, ...kb(`m-${sc.key}-${v}`) }, String(v)))),
     h('span', { class: 'pv-tap-anchor' }, `${sc.lo} to ${sc.hi}`),
   ));
+  // A sick day: one tap, saved as the day's illness, and readiness stops hard training that day.
+  const ill = h('div', { class: 'pv-tap-row' },
+    h('span', { class: 'pv-tap-label' }, 'Illness'),
+    h('div', { class: 'pv-pills' }, pill('I’m ill today', m.ill, () => { m.ill = !m.ill; change(); }, 'm-ill')),
+    h('span', { class: 'pv-tap-anchor' }, m.ill ? 'No hard training today' : 'Tap on a sick day'),
+  );
   // The weight in the body unit: shown converted, typed in it, kept in kg (to 0.1).
   const F = bodyFmt(ctx.units);
   const shownOf = (k: MorningKey, v: number | null) => (v === null || v === undefined ? v : k === 'weight' ? F.wt(v) : v);
@@ -233,7 +243,7 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
     ),
   );
 
-  const pending = n ? `To save: ${[...changes.fields.map((k) => `${LABEL[k].toLowerCase()} ${show(shownOf(k, m.baseline[k] ?? null))} to ${show(shownOf(k, m.values[k] ?? null))}`), ...(changes.sore.length ? [`${changes.sore.length} sore muscle${changes.sore.length === 1 ? '' : 's'}`] : [])].join(', ')}.` : 'Nothing changed yet.';
+  const pending = n ? `To save: ${[...changes.fields.map((k) => `${k === 'hrv' ? LABEL[k] : LABEL[k].toLowerCase()} ${show(shownOf(k, m.baseline[k] ?? null))} to ${show(shownOf(k, m.values[k] ?? null))}`), ...(changes.sore.length ? [`${changes.sore.length} sore muscle${changes.sore.length === 1 ? '' : 's'}`] : []), ...(changes.ill ? [m.ill ? 'ill today' : 'not ill today'] : [])].join(', ')}.` : 'Nothing changed yet.';
   const conflict = m.conflicts?.length
     ? h('div', { class: 'pv-lg-banner is-conflict' }, icon('alert'),
         h('span', {}, `Saved elsewhere since this form opened (Habit Nudges, most likely): ${m.conflicts.map((x) => `${LABEL[x.key]} is ${show(x.disk)} there, ${show(x.mine)} here`).join('; ')}.`),
@@ -242,7 +252,7 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
     : null;
   return h('section', { class: 'pv-card', 'data-sec': 'morning' },
     h('div', { class: 'pv-card-head' }, h('div', {}, h('div', { class: 'pv-kicker' }, 'Morning check-in'), h('h3', { class: 'pv-card-title' }, fmt.dayLong(mm.date)), h('div', { class: 'pv-card-sub' }, sub)), h('div', { class: 'pv-card-tools' }, ctx.bell ? morningBell({ ...ctx.bell, onChange: ctx.onChange }) : null, save)),
-    h('div', { class: 'pv-mc-taps' }, taps),
+    h('div', { class: 'pv-mc-taps' }, taps, ill),
     h('div', { class: 'pv-mc-fields' }, fields),
     sore,
     h('div', { class: 'pv-mc-foot' }, h('span', { class: n ? '' : 'pv-faint' }, pending), m.error ? h('span', { class: 'pv-ci-error' }, m.error) : null),

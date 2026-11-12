@@ -18,18 +18,21 @@
 //    exists) the repo's src/core/version.ts agree.
 // 6. The docs agree with the engine's facts (`engine --version --json`'s
 //    `facts`, read from the constants it computes with): every calibration
-//    RIR, volume tier, light-week default and region number the docs quote;
-//    no "no field" claim names a field the engine has; every `unexpressible`
-//    kind named exists; no Python block but the allowlisted snippets (the
-//    engine replaces the rest); and no engine output names a vault-only
-//    script (fitness_log.py, gen-fitness-plan).
+//    RIR, volume tier, light-week default, region number and eating-plan
+//    energy constant the docs quote; no "no field" claim names a field the
+//    engine has; every `unexpressible` kind named exists; no Python block but
+//    the allowlisted snippet (tracking.md's water: the engine replaces the
+//    rest); and no engine output names a vault-only script (fitness_log.py,
+//    gen-fitness-plan).
 //
 // A vault with no plan yet (a fresh vault after the intake) is expected: the
 // commands answer with a no-plan warning, the draft runs (check --plan,
-// review --plan, plan-write --file) read a fresh `plan --format plan-data`
-// export, and what needs the plan's own sessions, lifts or ladders (log fix,
+// review --plan, plan-write --file, session --plan --type) read the made-up
+// sample plan beside this script (scripts/sample-plan.json), and what needs
+// the plan's own sessions, lifts or ladders (log fix,
 // log ladder, next, session --type or --freeze) must give its documented
-// exit 1 with a no-plan error.
+// exit 1 with a no-plan error. So must `energy` without the profile's basics
+// (no-basics) or without weigh-ins (no-weight).
 //
 // Read only: the engine never gets --write, scratch files go to os.tmpdir(),
 // and the files the engine can write are hashed before and after the runs.
@@ -85,11 +88,13 @@ const FITNESS = join(VAULT, LAYOUT.fitness);
 const COACH = join(VAULT, LAYOUT.coach);
 if (!existsSync(FITNESS)) usage(`${VAULT} has no fitness folder (${LAYOUT.fitness}): run from the vault root or pass --vault`);
 // No plan yet (a fresh vault after the intake): expected, not a failure. The
-// commands answer with a no-plan warning; the draft commands run on a fresh
-// export of the profile; what needs the plan's own sessions, lifts or ladders
-// is held to its documented no-plan error.
+// commands answer with a no-plan warning; the draft commands run on the
+// made-up sample plan (SAMPLE_PLAN); what needs the plan's own sessions,
+// lifts or ladders is held to its documented no-plan error.
 const FRESH = !existsSync(join(VAULT, LAYOUT.plan));
 const FRESH_NOTE = 'no plan yet (a fresh vault)';
+// A small made-up plan (nobody's own) the draft commands read on a fresh vault.
+const SAMPLE_PLAN = join(SKILL, 'scripts', 'sample-plan.json');
 
 const read = (p) => readFileSync(p, 'utf8');
 const readJson = (p) => {
@@ -415,6 +420,10 @@ async function vaultContext() {
   const sessions = readJson(join(FITNESS, 'fitness-log-data.json'))?.sessions ?? [];
   const fix = [...sessions].reverse().find((x) => x?.lift1 && typeof x.lift1 === 'object') ?? null;
   const dayItems = (day.json?.items ?? []).map((i) => i.value ?? i);
+  // energy needs the profile's birth year and height, and a trend weight (tracked's protein has no grams without one).
+  const basics = readJson(join(VAULT, LAYOUT.profile))?.basics ?? {};
+  const noBasics = typeof basics.birthYear !== 'number' || typeof basics.heightCm !== 'number';
+  const noWeight = tracked.json?.protein?.value ? tracked.json.protein.value.grams === null : false;
   const ctx = {
     types,
     draftTypes: [],
@@ -429,6 +438,11 @@ async function vaultContext() {
     files: {},
     ladder: (plan.ladders ?? [])[0]?.id ?? null,
     fix,
+    energyMissing: noBasics
+      ? { code: 1, error: 'no-basics', why: 'the profile has no birth year or height' }
+      : noWeight
+        ? { code: 1, error: 'no-weight', why: 'no weigh-ins from the cycle start' }
+        : null,
   };
 
   // The example files, all in os.tmpdir().
@@ -459,15 +473,17 @@ async function vaultContext() {
   });
   ctx.files.changes = write('changes.json', { morning: { at: ctx.morningAt }, bodyRecord: { schedule: 'plan' } });
   // The vault's own plan as a draft (check --plan, review --plan, plan-write): unchanged, so plan-write finds nothing to write.
-  // A fresh vault's draft is the generator's export over it, as a first plan's drafts start (planning.md).
+  // A fresh vault's draft is the made-up sample plan shipped beside this script.
   if (!FRESH) ctx.files.draft = readJson(join(VAULT, LAYOUT.plan)) ? write('draft.json', plan) : null; // an unreadable plan-data.json has no draft to stand for it
-  else if (existsSync(join(VAULT, LAYOUT.profile))) {
-    const exported = await engine(['plan', '--json', '--profile', LAYOUT.profile, '--format', 'plan-data', '--vault', '.']);
-    const draft = exported.code === 0 ? exported.json?.planData : null;
-    ctx.files.draft = draft ? write('draft.json', draft) : null;
-    ctx.draftTypes = draft ? [...(draft.liftTypes ?? []), ...(draft.shortTypes ?? [])] : [];
-    record(1, draft ? 'pass' : 'fail', 'engine.cjs plan --format plan-data --vault . (no plan yet)', draft ? 'exit 0, a fresh export: the draft the plan-check runs read' : `exit ${exported.code}: ${firstError(exported)}`);
-  } else ctx.files.draft = null;
+  else {
+    const sample = readJson(SAMPLE_PLAN);
+    const ok = sample && typeof sample === 'object' && sample.sessions && typeof sample.sessions === 'object';
+    ctx.files.draft = ok ? write('draft.json', sample) : null;
+    ctx.draftTypes = ok ? [...(sample.liftTypes ?? []), ...(sample.shortTypes ?? [])] : [];
+    record(1, ok ? 'pass' : 'fail', 'scripts/sample-plan.json (no plan yet)', ok ? 'a plan with sessions: the draft the plan-check runs read' : `${existsSync(SAMPLE_PLAN) ? 'not a plan (JSON with a sessions object)' : 'missing'}: the draft runs have nothing to read`);
+  }
+  // A blank plan, as `draft` gives one, for overlap's second file.
+  ctx.files.blank = write('blank.json', { weekTarget: { lift: 0, short: 0 }, liftTypes: [], shortTypes: [], sessions: {}, liftUnit: 'kg', lifts: {}, guide: {}, rules: {} });
   return ctx;
 }
 
@@ -507,7 +523,7 @@ function fill(pair, where, ctx) {
   const placeholder = /^<.*>$/.test(value) || /^(?:[A-Z]|N|D|T|HH:MM|YYYY-MM-DD)$/.test(value);
   // No plan yet: what needs the plan's sessions, lifts or ladders gives the documented no-plan error (argvs sets the expectation).
   if (where.noPlan) {
-    if (flag === '--date' || flag === '--start') return [[flag, TODAY]];
+    if (flag === '--date') return [[flag, TODAY]];
     if (flag === '--type') return [[flag, 'A']];
     if (flag === '--label' || flag === '--lift1' || flag === '--lift2' || flag === '--skip') return [[]];
     if (flag === '--lift') return [[flag, where.key === 'log fix' ? value.split('|')[0] : 'Selfcheck probe lift']];
@@ -550,7 +566,6 @@ function fill(pair, where, ctx) {
   if (!placeholder) return [[flag, value]];
   switch (flag) {
     case '--date':
-    case '--start':
     case '--tape-from':
     case '--tests-from':
       return [[flag, /sunday/i.test(value) ? LAST_SUNDAY : /monday/i.test(value) ? NEXT_MONDAY : TODAY]];
@@ -591,8 +606,13 @@ function fill(pair, where, ctx) {
       break;
     }
     case '--plan': {
-      if (!ctx.files.draft) throw new Skip(FRESH ? `${FRESH_NOTE}, and no profile to export a draft from` : 'plan-data.json is not valid JSON: no draft to read');
+      if (!ctx.files.draft) throw new Skip(FRESH ? `${FRESH_NOTE}, and no sample plan to read` : 'plan-data.json is not valid JSON: no draft to read');
       return [[flag, ctx.files.draft]];
+    }
+    // overlap compares plan files: the draft and a blank one (no movements, so its shares are null).
+    case '--plans': {
+      if (!ctx.files.draft) throw new Skip(FRESH ? `${FRESH_NOTE}, and no sample plan to compare` : 'plan-data.json is not valid JSON: no draft to compare');
+      return [[flag, `${ctx.files.draft},${ctx.files.blank}`]];
     }
     case '--file': {
       const file = { 'checkin add': 'answers', body: 'record', eating: 'plan', 'log add': 'session', 'track suggest': 'items', 'track add': 'items', 'track decline': 'items', 'track apply': 'changes', 'plan-write': 'draft' }[
@@ -613,10 +633,13 @@ function fill(pair, where, ctx) {
       return [[flag, 'machine,band']];
     case '--query':
       return [[flag, 'leg curl']];
-    case '--profile':
-      return [[flag, LAYOUT.profile]];
-    case '--ledger':
-      return [[flag, LAYOUT.ledger]];
+    // energy's judgment calls: an activity factor from diet.md's table, a rate inside the 1 % limit, three meals.
+    case '--pal':
+      return [[flag, '1.5']];
+    case '--rate':
+      return [[flag, '-0.0025']];
+    case '--meals':
+      return [[flag, '3']];
   }
   throw new Unfillable(`no safe value for ${flag} ${value}: teach selfcheck.mjs`);
 }
@@ -652,6 +675,8 @@ function argvs(cmd, pairs, ctx) {
     where.noPlan = true;
     where.expect = { code: 1, error: 'no-plan', why: `${FRESH_NOTE}: ${where.key} needs the plan` };
   }
+  // energy without the profile's age and height, or without a weigh-in: its documented exit 1.
+  if (where.key === 'energy' && ctx.energyMissing) where.expect = ctx.energyMissing;
   let out = [[...cmd.words, ...cmd.positional]];
   for (const p of pairs) {
     const alts = fill(p, where, ctx);
@@ -1345,6 +1370,93 @@ function numberRules(facts) {
       when: (s) => /region|declared/i.test(s.text),
       find: (t) => hits(t, [/\b(\d+) direct sets near failure/g], (m) => Number(m[1])),
     },
+    ...energyRules(facts.energy),
+  ];
+}
+
+// The eating plan's energy constants (`energy`), each in the words diet.md
+// and numbers.md say it; an engine without them in its facts has none to hold.
+function energyRules(e) {
+  if (!e) return [];
+  const num = (s) => Number(s.replace(/,/g, ''));
+  const always = () => true;
+  return [
+    {
+      what: 'the Mifflin-St Jeor constants',
+      want: [e.mifflin.perKg, e.mifflin.perCm, -e.mifflin.perYear, e.mifflin.male, -e.mifflin.female],
+      when: always,
+      find: (t) => hits(t, [/(\d+) × kg \+ (\d+(?:\.\d+)?) × cm − (\d+) × age \+ (\d+) \(men\) or − (\d+) \(women\)/g], (m) => m.slice(1).map(Number)),
+    },
+    {
+      what: 'the estimate\'s accuracy',
+      want: Math.round(e.accuracy * 100),
+      when: always,
+      find: (t) => hits(t, [/±(\d+) ?% for most people/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the activity factors',
+      want: e.pal.levels.flatMap((l) => l.range),
+      when: always,
+      find: (t) => hits(t, [/(\d\.\d{2})[–-](\d\.\d{2}) sedentary or light, (\d\.\d{2})[–-](\d\.\d{2}) active, (\d\.\d{2})[–-](\d\.\d{2}) vigorous/g], (m) => m.slice(1).map(Number)),
+    },
+    {
+      what: 'the kcal per kg of change',
+      want: e.kcalPerKg,
+      when: always,
+      find: (t) => hits(t, [/about (\d{1,2},\d{3}) kcal per kg/g], (m) => num(m[1])),
+    },
+    ...(e.goalKcal
+      ? [
+          {
+            what: 'recomposition\'s goal energy',
+            want: -e.goalKcal.recomposition[0],
+            when: always,
+            find: (t) => hits(t, [/recomposition:? maintenance (?:down )?to [−-](\d+) kcal/gi], (m) => Number(m[1])),
+          },
+          {
+            what: 'gain\'s goal energy',
+            want: [...e.goalKcal.gain],
+            when: always,
+            find: (t) => hits(t, [/gain:? \+(\d+)\s*(?:–|-|to \+?)\s*(\d+) kcal/gi], (m) => [Number(m[1]), Number(m[2])]),
+          },
+        ]
+      : []),
+    {
+      what: 'the energy floors',
+      want: [e.floorKcal.male, e.floorKcal.female],
+      when: always,
+      find: (t) => hits(t, [/\b(\d,\d{3})(?: kcal(?: a day)?)? for men, (\d,\d{3}) for women/g], (m) => [num(m[1]), num(m[2])]),
+    },
+    {
+      what: 'the loss limit',
+      want: Math.round(-e.maxLossPctPerWeek * 100),
+      when: always,
+      find: (t) => hits(t, [/(?:beyond|faster than) \**(\d+) ?% of body weight a week/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'protein a meal',
+      want: [...e.perMealGPerKg],
+      when: always,
+      find: (t) => hits(t, [/about (0\.\d+) g\/kg \(up to (0\.\d+)\)/gi, /about (0\.\d+) g\/kg a meal, up to (0\.\d+)/gi], (m) => [Number(m[1]), Number(m[2])]),
+    },
+    {
+      what: 'the fat minimum',
+      want: Math.round(e.fat.minShare * 100),
+      when: always,
+      find: (t) => hits(t, [/at least (\d+) ?% of energy/gi], (m) => Number(m[1])),
+    },
+    {
+      what: 'the fiber rule',
+      want: e.fiber.per1000kcal,
+      when: always,
+      find: (t) => hits(t, [/about (\d+) g per 1,000 kcal/g], (m) => Number(m[1])),
+    },
+    {
+      what: 'the fiber minimum',
+      want: e.fiber.minG,
+      when: (s) => /fiber/i.test(s.text),
+      find: (t) => hits(t, [/\b(\d+)(?:[–-]\d+)? g a day or more/g, /\bat least (\d+) g\b/g], (m) => Number(m[1])),
+    },
   ];
 }
 
@@ -1388,13 +1500,10 @@ const FIELD_WORDS = [
 const NO_FIELD = /\b(?:is|are) not a field\b|\bha(?:s|ve) no field\b|\bno field for\b|\bcan'?t be set in `?plan-data|\bcannot be set in `?plan-data/i;
 
 // A backticked phrase starting with one of these is a command line, not an unexpressible kind.
-const COMMAND_WORDS = new Set(['npm', 'node', 'engine', 'plan', 'plan-write', 'review', 'check', 'catalogue', 'evidence', 'log', 'track', 'checkin', 'validate', 'session', 'body', 'eating', 'inbox', 'folders', 'baseline', 'food', 'tracked', 'habits', 'due', 'next', 'readiness', 'bring-over']);
+const COMMAND_WORDS = new Set(['npm', 'node', 'engine', 'plan-write', 'draft', 'overlap', 'review', 'check', 'catalogue', 'evidence', 'log', 'track', 'checkin', 'validate', 'session', 'body', 'eating', 'inbox', 'folders', 'baseline', 'food', 'tracked', 'habits', 'due', 'next', 'readiness', 'bring-over', 'energy']);
 
 // The Python blocks the engine doesn't replace yet, by file and the heading above them.
-const PYTHON_ALLOWED = [
-  ['references/numbers.md', 'Energy and protein'],
-  ['references/tracking.md', 'Amounts: water'],
-];
+const PYTHON_ALLOWED = [['references/tracking.md', 'Amounts: water']];
 
 async function checkFacts() {
   const v = await engine(['--version', '--json']);
@@ -1522,7 +1631,7 @@ async function main() {
     console.log(JSON.stringify(out, null, 2));
   } else {
     const lines = [`fitness-coach selfcheck: ${passed} passed, ${failed} failed, ${skipped} skipped (engine ${version}, ${runs.size} engine runs, ${TODAY})`];
-    if (FRESH) lines.push(`  ${FRESH_NOTE}: the commands answer with a no-plan warning, the draft runs read a fresh export, and what needs the plan's sessions, lifts or ladders is held to its documented no-plan error`);
+    if (FRESH) lines.push(`  ${FRESH_NOTE}: the commands answer with a no-plan warning, the draft runs read the made-up sample plan, and what needs the plan's sessions, lifts or ladders is held to its documented no-plan error`);
     for (const [n, name] of Object.entries(CHECKS)) {
       const mine = results.filter((r) => r.check === Number(n));
       const extra = n === '2' ? ` (${notes[2]} not whole records)` : n === '4' && notes[4] ? ` (${notes[4]} placeholder paths not checked)` : '';

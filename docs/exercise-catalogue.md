@@ -1,6 +1,6 @@
 # Exercise catalogue
 
-The movements Pahlavan knows: 244 of them in 23 groups, each with the muscles it trains, how to do it and what to avoid. The coach chooses from these, and any of them can go in your plan. This page is generated from Pahlavan's engine, so it matches the version it came with: don't edit it by hand.
+The movements Pahlavan knows: 245 of them in 23 groups, each with the muscles it trains, how to do it and what to avoid. The coach chooses from these, and any of them can go in your plan. This page is generated from Pahlavan's engine, so it matches the version it came with: don't edit it by hand.
 
 How to read an entry:
 
@@ -10,7 +10,7 @@ How to read an entry:
 - **Asks of the body:** what it demands, such as load overhead, impact or a deep knee bend. The coach weighs these against your screening; [the list at the end](#what-each-demand-means) says what each means.
 - **Abdominal strain:** low, moderate or high, as Pahlavan screens movements after an injury.
 
-Groups: Squat (15), Hinge (24), Lunge and single leg (14), Horizontal push (19), Rows (12), Overhead press (10), Vertical pull (13), Carries (5), Core: bracing (11), Core: resisting rotation (8), Core: crunching (7), Calves (6), Biceps (5), Triceps (7), Rear delts (7), Side delts (3), Neck and upper back (5), Hip abduction (2), Chest fly (3), Jumps (5), Conditioning (17), Mobility (25), Skills (21).
+Groups: Squat (15), Hinge (24), Lunge and single leg (14), Horizontal push (19), Rows (12), Overhead press (10), Vertical pull (14), Carries (5), Core: bracing (11), Core: resisting rotation (8), Core: crunching (7), Calves (6), Biceps (5), Triceps (7), Rear delts (7), Side delts (3), Neck and upper back (5), Hip abduction (2), Chest fly (3), Jumps (5), Conditioning (17), Mobility (25), Skills (21).
 
 ## Squat
 
@@ -1300,7 +1300,7 @@ Beginner · pull up bar and band · bodyweight · abdominal strain low
 Intermediate · pull up bar · bodyweight · abdominal strain low
 
 - **Muscles:** lats; helping: biceps, upper back, forearms
-- **Easier:** Negative pull-up (slow lowering), Band-assisted pull-up, Chin-up (palms toward you), Ring row, Lat pulldown, Machine-assisted pull-up. **Harder:** Weighted pull-up (belt, vest or backpack), Chest-to-bar pull-up, Tuck front lever.
+- **Easier:** Negative pull-up (slow lowering), Band-assisted pull-up, Chin-up (palms toward you), Ring row, Lat pulldown, Machine-assisted pull-up. **Harder:** Weighted pull-up (belt, vest or backpack), Chest-to-bar pull-up, Tuck front lever, L-sit pull-up.
 - **Setup:** Grip a little wider than the shoulders, hanging from straight arms, shoulders down.
 - **Do:** Pull until the chin clears the bar, then lower to straight arms.
 - **Avoid:** Kicking or swinging to get the chin over.
@@ -1353,6 +1353,18 @@ Advanced · pull up bar · bodyweight · abdominal strain low
 - **Do:** Lean back slightly and drive the elbows down and back until the upper chest touches the bar.
 - **Avoid:** Swinging to reach the bar.
 - **Also called:** high pull up, chest to bar
+- **Asks of the body:** shoulder overhead, shoulder hang, grip heavy
+
+### L-sit pull-up
+
+Advanced · pull up bar · bodyweight · abdominal strain moderate
+
+- **Muscles:** lats; helping: biceps, upper back, forearms, abs
+- **Easier:** Pull-up, L-sit.
+- **Setup:** Hang from straight arms, then lift the legs straight out in front, level with the hips.
+- **Do:** Keep the legs level and pull until the chin clears the bar, then lower to straight arms.
+- **Avoid:** Letting the legs drop or swing to help the pull.
+- **Also called:** l pull up
 - **Asks of the body:** shoulder overhead, shoulder hang, grip heavy
 
 ### Straight-arm pulldown
@@ -2931,7 +2943,7 @@ Intermediate · no equipment · a hold for time · abdominal strain low
 Advanced · no equipment · a hold for time · abdominal strain low
 
 - **Muscles:** abs; helping: triceps
-- **Easier:** One-leg L-sit.
+- **Easier:** One-leg L-sit. **Harder:** L-sit pull-up.
 - **Setup:** Hands on bars, blocks or the floor.
 - **Do:** Push down hard, and hold the legs straight and level with the hips.
 - **Avoid:** Shrugging the shoulders up.

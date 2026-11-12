@@ -3,9 +3,10 @@
 // and each Progress view's range: this cycle or all)
 // and the global options the Settings tab edits, for every reminder, for
 // git sync and for the phone's inbox. Each item's own reminder lives with
-// the item, not here. One option is per Mac and lives in local storage
-// instead: "Remind on this Mac". Pure: no Obsidian import; the plugin
-// passes in what it detects.
+// the item, not here. Two choices are per Mac and live in local storage
+// instead: "Remind on this Mac", and the Log panel's last tracking (Standard
+// or Every set). Pure: no Obsidian import; the plugin passes in what it
+// detects.
 
 import { SCOPES, type Scope } from '../../src/core/cycle.ts';
 import { SESSION_MODES, type SessionMode } from '../../src/core/variant.ts';
@@ -13,8 +14,8 @@ import type { SessionPickSetting, SwapsSetting } from './pick.ts';
 import type { ProgressSection } from './ui/progress-more.ts';
 import { foldersOf, type Folders } from '../../src/adapters/vault/layout.ts';
 
-export type Section = 'home' | 'today' | 'progress' | 'plan' | 'checkin' | 'food';
-const SECTIONS: readonly Section[] = ['home', 'today', 'progress', 'plan', 'checkin', 'food'];
+export type Section = 'home' | 'today' | 'progress' | 'plan' | 'checkin' | 'food' | 'movements';
+const SECTIONS: readonly Section[] = ['home', 'today', 'progress', 'plan', 'checkin', 'food', 'movements'];
 const PROGRESS_SECTIONS: readonly ProgressSection[] = ['overview', 'training', 'body', 'health', 'skills', 'habits'];
 
 /** The Progress views with a range switch (Habits counts from each item's own start). */
@@ -224,3 +225,10 @@ export const REMIND_HERE_KEY = 'pahlavan-remind-here';
 /** On unless this Mac was turned off (as Habit Nudges' "Remind on this Mac" reads). */
 export const remindHere = (store: DeviceStore): boolean => store.get(REMIND_HERE_KEY) !== 'off';
 export const setRemindHere = (store: DeviceStore, on: boolean): void => store.set(REMIND_HERE_KEY, on ? 'on' : 'off');
+
+/** The Log panel's last tracking choice (Standard or Every set): per computer, so it never travels with data.json. */
+export const LOG_TRACKING_KEY = 'pahlavan-log-tracking';
+
+/** The tracking a new log starts with on this Mac (when the profile does not ask for every set): the last one chosen, else Standard. */
+export const logTracking = (store: DeviceStore): 'standard' | 'full' => (store.get(LOG_TRACKING_KEY) === 'full' ? 'full' : 'standard');
+export const setLogTracking = (store: DeviceStore, tracking: 'standard' | 'full'): void => store.set(LOG_TRACKING_KEY, tracking);

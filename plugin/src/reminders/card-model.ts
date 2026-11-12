@@ -11,7 +11,7 @@ import { morningFrom, TAPE_FIELDS, TEST_FIELDS, type MorningKey, type RecordFiel
 import { muscleId } from '../../../src/adapters/vault/log-write.ts';
 import { hhmm, type Moment } from '../../../src/core/clock.ts';
 import { deskRoutine } from '../../../src/core/desk-breaks.ts';
-import type { BodyPart, PartStatus } from '../../../src/core/body-schedule.ts';
+import { listedTestWeeks, type BodyPart, type PartStatus } from '../../../src/core/body-schedule.ts';
 import type { CardKind, DueCard, SnoozeChoices } from '../../../src/core/nudges.ts';
 import type { IsoDate, Program, SorenessLevel, TrackedItem, Tracking } from '../../../src/core/schema.ts';
 import { hm, type SittingDay } from '../../../src/core/sitting.ts';
@@ -59,7 +59,7 @@ export interface CardHabit {
 }
 
 export type CardBody =
-  | { kind: 'morning'; scales: CardScale[]; fields: CardField[]; tape: { text: string; fields: CardField[] } | null; sore: SoreArea[] }
+  | { kind: 'morning'; scales: CardScale[]; fields: CardField[]; tape: { text: string; fields: CardField[] } | null; sore: SoreArea[]; /** "I'm ill today", as the day holds it. */ ill: boolean }
   | { kind: 'tape'; tape: { text: string; fields: CardField[] } }
   | { kind: 'habits'; items: CardHabit[] }
   | { kind: 'amount'; item: string; value: number; target: number; unit: string; quick: number[]; next: string | null; placeholder: number }
@@ -158,6 +158,7 @@ const SCALES: Omit<CardScale, 'value'>[] = [
 const MORNING_FIELDS: { key: MorningKey; label: string; unit: string; hint: string }[] = [
   { key: 'sleepH', label: 'Sleep', unit: 'h', hint: '7:20 or 7.3' },
   { key: 'rhr', label: 'Resting HR', unit: 'bpm', hint: 'Health, Heart' },
+  { key: 'hrv', label: 'HRV', unit: 'ms', hint: 'Health, Heart, Heart Rate Variability' },
   { key: 'weight', label: 'Weight', unit: 'kg', hint: 'after the bathroom' },
   { key: 'steps', label: 'Steps yesterday', unit: '', hint: 'Health, Steps' },
   { key: 'floors', label: 'Floors yesterday', unit: '', hint: 'Health, Flights Climbed' },
@@ -292,7 +293,8 @@ export function cardView(card: DueCard, ctx: CardContext): CardView {
   };
   switch (card.kind) {
     case 'morning': {
-      const m = morningFrom(ctx.body, date).values;
+      const on = morningFrom(ctx.body, date);
+      const m = on.values;
       const tape = card.tape ? { text: tapeText(ctx), fields: tapeFields(ctx.body, date, since, F) } : null;
       return {
         ...base,
@@ -308,6 +310,7 @@ export function cardView(card: DueCard, ctx: CardContext): CardView {
           fields: MORNING_FIELDS.map((f) => ({ id: f.key, label: f.label, unit: f.key === 'weight' ? F.w : f.unit, hint: f.hint, value: m[f.key] === null ? '' : String(f.key === 'weight' ? F.wt(m[f.key]!) : m[f.key]), placeholder: '' })),
           tape,
           sore: soreAreas(ctx.body, date),
+          ill: on.illness,
         },
       };
     }
@@ -479,11 +482,23 @@ function tapeText(ctx: CardContext): string {
   return sch.source === 'plan' ? `${t}, from your plan` : t;
 }
 
-/** "End of Foundation · in the deload week, so you test fresh" from the plan, else how often. */
+/**
+ * "End of Foundation · in the light week, so you test fresh" from the plan;
+ * "Plan week 6 · the plan’s own test week" for a test week the plan lists
+ * (rules.tests) that is not a phase end in its light week; else how often.
+ */
 function testsSub(card: DueCard, program: CardContext['program']): string {
   const occ = typeof card.occurrence === 'string' && card.occurrence !== 'baseline' ? card.occurrence : card.date;
   const phase = program?.macrocycle.phases.find((p) => p.mesocycles.some((m) => m.weeks.some((w) => w.start <= occ && occ < addDaysIso(w.start, 7))));
-  return phase ? `End of ${clean(phase.name)} · in the light week, so you test fresh` : 'After the warm-up on a short day; leave any you can’t do blank';
+  if (!phase || !program) return 'After the warm-up on a short day; leave any you can’t do blank';
+  if (listedTestWeeks(program)) {
+    // The plan's weeks in order, each with whether it ends its phase (the last week of the phase's last mesocycle).
+    const weeks = program.macrocycle.phases.flatMap((p) => p.mesocycles.flatMap((m, mi) => m.weeks.map((w, wi) => ({ w, phaseEnd: mi === p.mesocycles.length - 1 && wi === m.weeks.length - 1 }))));
+    const i = weeks.findIndex(({ w }) => w.start <= occ && occ < addDaysIso(w.start, 7));
+    const at = weeks[i];
+    if (at && !(at.phaseEnd && at.w.kind === 'deload')) return `Plan week ${i + 1} · the plan’s own test week`;
+  }
+  return `End of ${clean(phase.name)} · in the light week, so you test fresh`;
 }
 
 function addDaysIso(d: IsoDate, k: number): IsoDate {

@@ -45,6 +45,9 @@ for st in standard swap skip full summary; do
   shot log-$st-1440-light-workday 1440 1500 "isfahan=1&phase=workday&log=new&logstate=$st"
   shot log-$st-1100-dark-night    1100 1400 "isfahan=1&phase=night&log=new&logstate=$st"
 done
+# Every set with some sets ticked: the ticks, the counts and the 5+ chip; at 720 with the supersets, each part its own sets.
+shot log-sets-1440-light-workday     1440 1500 "isfahan=1&phase=workday&log=new&logstate=sets"
+shot log-sets-720-dark-night          720 1800 "isfahan=1&phase=night&log=new&logstate=sets&supersets=1"
 shot log-edit-1440-light-workday     1440 1500 "isfahan=1&phase=workday&log=edit&tab=today"
 shot log-edit-1100-dark-night        1100 1400 "isfahan=1&phase=night&log=edit&tab=today"
 shot log-standard-1440-isfahan-off   1440 1500 "isfahan=0&mode=light&hour=11&log=new&tab=today"
@@ -156,6 +159,13 @@ shot food-why-later-1440-dark-night 1440 2200 "isfahan=1&phase=night&$F&food=lat
 shot food-1440-isfahan-off          1440 2800 "isfahan=0&mode=light&hour=11&$F&food=early"
 # The Sunday check-in four weeks on, with the eating plan's pattern question (a tap per line).
 shot food-checkin-pattern-1440-light-workday 1440 3200 "isfahan=1&phase=workday&tab=checkin&food=later&open=sunday&checks=1"
+# Movements: the whole catalogue, then "row" searched with My equipment on and a guide open, light and dark, and a narrow pane.
+shot movements-1440-light-workday 1440 1600 "isfahan=1&phase=workday&tab=movements"
+shot movements-1440-dark-night    1440 1600 "isfahan=1&phase=night&tab=movements"
+shot movements-row-1440-light-workday 1440 1400 "isfahan=1&phase=workday&tab=movements&q=row&mine=1&mvopen=inverted-row"
+shot movements-row-1440-dark-night    1440 1400 "isfahan=1&phase=night&tab=movements&q=row&mine=1&mvopen=inverted-row"
+shot movements-row-720-light-workday   720 2200 "isfahan=1&phase=workday&tab=movements&q=row&mvopen=inverted-row"
+shot movements-empty-1100-light-workday 1100 900 "isfahan=1&phase=workday&tab=movements&q=zzzz"
 # At a glance and the foldable sections (glance-*, as mockups/renders/glance-*): each tab on a first visit (the panel
 # open, every section in its starting state), light and dark at 1440, Today and Food at 1100; and folded to its one
 # line past the first three visits. Today, Progress, the Plan and Check-in on the made-up fuller data (&rich=1).

@@ -21,14 +21,16 @@ const io = { readText: (p: string) => (existsSync(p) ? readFileSync(p, 'utf8') :
 const vault = readVault(io, FIX, { asOf: '2026-04-10' });
 const tr = readTracking(io, FIX);
 
-function at(date: string, time: string, extra: Partial<Parameters<typeof dueNow>[0]> = {}): { cards: DueCard[]; ctx: CardContext } {
+function at(date: string, time: string, extra: Partial<Parameters<typeof dueNow>[0]> = {}, data = vault.data): { cards: DueCard[]; ctx: CardContext } {
   const now = momentAt(date, time, 0);
-  const input = { now, tracking: tr.tracking, nudges: tr.nudges, body: tr.body, photoFolders: tr.photoFolders, habits: tr.habits, program: vault.data.program, training: trainingToday(vault.data, date), settings: { quiet: null }, ...extra };
+  const input = { now, tracking: tr.tracking, nudges: tr.nudges, body: tr.body, photoFolders: tr.photoFolders, habits: tr.habits, program: data.program, training: trainingToday(data, date), settings: { quiet: null }, ...extra };
   const parts = bodyParts(input, date);
-  return { cards: dueNow(input).value.cards, ctx: { now, tracking: tr.tracking, habits: tr.habits, body: tr.body, program: vault.data.program, morningAt: '07:30', parts: { tape: parts.tape.value, photos: parts.photos.value, tests: parts.tests.value }, session: 'Full Body B — Hinge' } };
+  return { cards: dueNow(input).value.cards, ctx: { now, tracking: tr.tracking, habits: tr.habits, body: tr.body, program: data.program, morningAt: '07:30', parts: { tape: parts.tape.value, photos: parts.photos.value, tests: parts.tests.value }, session: 'Full Body B — Hinge' } };
 }
-const view = (date: string, time: string, key: string, extra = {}) => {
-  const { cards, ctx } = at(date, time, extra);
+/** The synthetic vault with the plan's own test weeks (plan-data's rules.tests). */
+const withTestWeeks = (weeks: number[]) => readVault({ ...io, readText: (p: string) => { const t = io.readText(p); return t && p.endsWith('plan-data.json') ? JSON.stringify({ ...JSON.parse(t), rules: { tests: { weeks } } }) : t; } }, FIX, { asOf: '2026-04-10' }).data;
+const view = (date: string, time: string, key: string, extra = {}, data = vault.data) => {
+  const { cards, ctx } = at(date, time, extra, data);
   const c = cards.find((x) => x.key === key);
   assert.ok(c, `${key} is due at ${date} ${time} (due: ${cards.map((x) => x.key).join(', ')})`);
   return cardView(c, { ...ctx, ...('sitting' in extra ? { sitting: (extra as { sitting: CardContext['sitting'] }).sitting } : {}), ...('stand' in extra ? { stand: new Map(Object.entries((extra as { stand: Record<string, typeof STAND_FRESH> }).stand)) } : {}) });
@@ -70,7 +72,7 @@ describe('cardView', () => {
     assert.equal(v.skip?.label, 'Skip today');
     assert.ok(v.body.kind === 'morning');
     if (v.body.kind !== 'morning') return;
-    assert.deepEqual(v.body.fields.map((f) => f.label), ['Sleep', 'Resting HR', 'Weight', 'Steps yesterday', 'Floors yesterday']);
+    assert.deepEqual(v.body.fields.map((f) => f.label), ['Sleep', 'Resting HR', 'HRV', 'Weight', 'Steps yesterday', 'Floors yesterday']);
     // Floors yesterday is an ordinary field now: no "New" badge on any field.
     assert.ok(v.body.fields.some((f) => f.id === 'floors'));
     assert.ok(v.body.fields.every((f) => !('isNew' in f)));
@@ -86,7 +88,7 @@ describe('cardView', () => {
     assert.ok(v.body.kind === 'morning');
     if (v.body.kind !== 'morning') return;
     assert.deepEqual(v.body.scales.map((s) => s.value), [2, 3, 2]);
-    assert.deepEqual(Object.fromEntries(v.body.fields.map((f) => [f.id, f.value])), { sleepH: '5.5', rhr: '68', weight: '83.8', steps: '9184', floors: '4' });
+    assert.deepEqual(Object.fromEntries(v.body.fields.map((f) => [f.id, f.value])), { sleepH: '5.5', rhr: '68', hrv: '', weight: '83.8', steps: '9184', floors: '4' });
     assert.equal(v.sub, '07:30 · about 30 seconds · feeds today’s readiness');
     assert.deepEqual(v.notify, { title: 'Good morning', body: 'Morning check-in: about 30 seconds' });
   });
@@ -145,6 +147,18 @@ describe('cardView', () => {
     assert.equal(t.body.fields.find((f) => f.id === 'hollowS')!.hint, 'good form · last 25 s, 7 Mar');
     assert.equal(t.body.fields.find((f) => f.id === 'pistol')!.hint, 'e.g. to a box, 3 each · last box 4');
     assert.equal(t.skipPeriod?.label, 'Skip this test day');
+  });
+
+  it('the tests in one of the plan’s own test weeks: named by its plan week, the light week only at a phase end', () => {
+    const body = JSON.parse(JSON.stringify(tr.body));
+    for (const d of ['2026-04-11', '2026-04-25']) body.days[d] = { checkedAt: `${d}T07:10:00.000Z` };
+    // Plan week 6 is a loading week in the middle of phase 1.
+    const week6 = view('2026-04-11', '08:00', 'tests', { body }, withTestWeeks([6, 12]));
+    assert.equal(week6.sub, 'Plan week 6 · the plan’s own test week');
+    assert.doesNotMatch(week6.sub, /light week|—/);
+    // Plan week 8 ends phase 1 in its light week: the default's words.
+    const week8 = view('2026-04-25', '08:00', 'tests', { body }, withTestWeeks([6, 8]));
+    assert.match(week8.sub, /^End of .+ · in the light week, so you test fresh$/);
   });
 
   it('"Did you train today?": no Save, its three choices, the planned session named without the dash', () => {

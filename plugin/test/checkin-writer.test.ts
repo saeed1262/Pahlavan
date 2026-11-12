@@ -61,6 +61,16 @@ const day = (files: Map<string, string>, d = DATE) => JSON.parse(files.get(BODY)
 const baseline = morningFrom(JSON.parse(readFileSync(join(FIX, BODY), 'utf8')), DATE).values;
 
 describe('CheckinWriter.saveMorning', () => {
+  it('writes "I’m ill today" as the day’s illness, and checks it landed', async () => {
+    const v = memVault();
+    const r = await new CheckinWriter(v.adapter).saveMorning(DATE, { values: {}, baseline, illness: true });
+    assert.equal(r.status, 'saved');
+    assert.equal(day(v.files).illness, true);
+    const back = await new CheckinWriter(v.adapter).saveMorning(DATE, { values: {}, baseline, illness: false });
+    assert.equal(back.status, 'saved');
+    assert.equal('illness' in day(v.files), false);
+  });
+
   it('writes only the changed fields, and the sore muscles, keeping Habit Nudges’ checkedAt and floors', async () => {
     const v = memVault();
     const before = day(v.files);

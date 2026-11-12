@@ -48,7 +48,7 @@ import { renderStatus } from './ui/status.ts';
 import { PahlavanView, VIEW_TYPE } from './view.ts';
 import { findFoldersAsync, paths, useFolders } from '../../src/adapters/vault/layout.ts';
 import { COACH_FILES } from 'virtual:coach-files';
-import { coachState, findNode, nodeOk, setUpCoach, type CoachState } from './coach-setup.ts';
+import { coachState, findNode, newerCoachLine, nodeOk, setUpCoach, type CoachState, type SetupResult } from './coach-setup.ts';
 import { CATALOGUE } from '../../src/core/data/exercises.ts';
 import { catalogueMarkdown } from '../../src/report/catalogue-doc.ts';
 
@@ -119,7 +119,7 @@ export default class PahlavanPlugin extends Plugin {
       resetTips: () => void this.resetTips(help),
       importPhone: () => void this.refresh(),
       // A new folder: every read and write follows it from now on, and the open tabs read the vault again.
-      coach: { state: () => this.coachState(), setUp: () => setUpCoach(this.app.vault.adapter, COACH_FILES) },
+      coach: { state: () => this.coachState(), setUp: () => this.setUpCoach() },
       habitNudges: () => this.source.tracking?.files.nudgesSettings === 'found',
       setFolders: (f) => {
         useFolders(f);
@@ -135,7 +135,7 @@ export default class PahlavanPlugin extends Plugin {
     this.registerView(VIEW_TYPE, (leaf: WorkspaceLeaf) => new PahlavanView(leaf, {
       data: this.source,
       settings: this.settings,
-      coach: { state: () => this.coachState(), setUp: () => setUpCoach(this.app.vault.adapter, COACH_FILES) },
+      coach: { state: () => this.coachState(), setUp: () => this.setUpCoach() },
       saveSettings: () => void this.saveData(this.settings),
       today: () => localToday(),
       hour: () => new Date().getHours(),
@@ -162,6 +162,7 @@ export default class PahlavanPlugin extends Plugin {
       openGuide: () => void this.openGuide(),
       nowIso: () => new Date().toISOString(),
       copy: (text) => navigator.clipboard.writeText(text),
+      device,
     }));
 
     addIcon(PAHLAVAN_ICON_ID, PAHLAVAN_ICON);
@@ -169,6 +170,7 @@ export default class PahlavanPlugin extends Plugin {
     this.addCommand({ id: 'open', name: 'Open', callback: () => void this.activate() });
     this.addCommand({ id: 'open-guide', name: 'Open the user guide', callback: () => void this.openGuide() });
     this.addCommand({ id: 'write-exercise-catalogue', name: 'Write the exercise catalogue', callback: () => void this.writeCatalogue() });
+    this.addCommand({ id: 'browse-movements', name: 'Browse movements', callback: () => void this.openSection('movements') });
     // "Open check-in" is what Isfahan's new-tab Check-in row runs: the morning card until today's is in, then the Check-in screen.
     this.addCommand({ id: 'open-checkin', name: 'Open check-in', callback: () => void reminders.openCheckin() });
     this.addCommand({ id: 'morning-checkin', name: 'Open the morning check-in', callback: () => void reminders.openCard('morning') });
@@ -181,10 +183,16 @@ export default class PahlavanPlugin extends Plugin {
       name: 'Set up the coach (the Claude Code skill)',
       callback: async () => {
         const st = await this.coachState();
-        if (st.installed === st.bundled && !st.missing.length && !st.differ.length) return void new Notice(`The coach is set up and up to date (version ${st.bundled}).`);
+        // A newer coach came from the other Mac's newer Pahlavan: this one's older copy never goes over it.
+        if (st.direction === 'coach-newer') return void new Notice(newerCoachLine(st.installed ?? 'unknown', st.bundled));
+        if (st.direction === 'same' && !st.missing.length && !st.differ.length) return void new Notice(`The coach is set up and up to date (version ${st.bundled}).`);
         // Files that differ may be the user's own edits: the settings tab asks before replacing them.
-        if (st.differ.length) return void new Notice(`${st.differ.length} of the coach's files differ from this Pahlavan's: update it from Pahlavan's settings, Coach.`);
-        const r = await setUpCoach(this.app.vault.adapter, COACH_FILES);
+        if (st.differ.length) {
+          return void new Notice(st.direction === 'same'
+            ? `The coach is set up (version ${st.bundled}); ${st.differ.length} of its files differ from this Pahlavan's copy, perhaps your own edits. To put them back, use Pahlavan's settings, Coach.`
+            : `${st.differ.length} of the coach's files differ from this Pahlavan's: update it from Pahlavan's settings, Coach.`);
+        }
+        const r = await this.setUpCoach();
         new Notice(r.ok ? `The coach is set up (${r.written.length} files). In Claude Code, open this vault and run /fitness-coach.` : `The coach was not set up: ${r.error}`);
         if (!nodeOk(st.node?.version ?? null)) new Notice('The coach’s engine needs Node 18 or later: install it from nodejs.org.');
       },
@@ -400,6 +408,13 @@ export default class PahlavanPlugin extends Plugin {
   private async coachState(): Promise<CoachState & { node: { path: string; version: string } | null }> {
     const st = await coachState(this.app.vault.adapter, COACH_FILES);
     return { ...st, node: await findNode(runProgram, homeDir()) };
+  }
+
+  /** Sets up or updates the coach (never over a newer one); the open tabs look at it again, so Home drops its "Update the coach". */
+  private async setUpCoach(): Promise<SetupResult> {
+    const r = await setUpCoach(this.app.vault.adapter, COACH_FILES);
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) if (leaf.view instanceof PahlavanView) leaf.view.coachChanged();
+    return r;
   }
 
   /** A vault folder's file and subfolder names (`''`: the vault root), for the folder search; null when it isn't there. */

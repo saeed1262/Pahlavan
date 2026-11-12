@@ -3,7 +3,7 @@
    them on <body>), and the Cormorant face Isfahan loads. The plugin's own
    styles.css is loaded unchanged after this file. */
 
-@font-face { font-family: "Isfahan Cormorant"; src: url("../../mockups/fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Isfahan Cormorant"; src: url("fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
 
 /* ── 1. Obsidian's default theme ───────────────────────────── */
 body {

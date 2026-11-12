@@ -473,6 +473,16 @@ describe('what Save writes', () => {
     assert.equal(nudge(h.v, '2026-04-12', 'morning').how, 'done');
   });
 
+  it('the morning card’s "I’m ill today" and HRV go into the body log, and the day reads as ill', async () => {
+    const h = harness({ date: '2026-04-12', at: '07:35' });
+    await h.r.tick();
+    const c = h.cards[0]!;
+    await c.answer({ do: 'save', payload: { kind: 'morning', values: { hrv: 51 }, baseline: { hrv: null }, illness: true } });
+    const day = h.v.json(BODY).days['2026-04-12'];
+    assert.deepEqual([day.illness, day.hrv, typeof day.checkedAt], [true, 51, 'string']);
+    assert.equal(nudge(h.v, '2026-04-12', 'morning').how, 'done');
+  });
+
   it('a save that fails keeps the card open with the reason', async () => {
     const h = harness();
     await h.r.openKey('amount:water');

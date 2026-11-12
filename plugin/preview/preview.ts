@@ -1,8 +1,9 @@
 // The preview harness: the real PahlavanView, opened in a plain page against
 // the synthetic vault (its files are bundled in by tools/build-preview.mjs),
 // with the date fixed to 2026-04-10. The look comes from the URL:
-//   ?isfahan=1&phase=workday | ?isfahan=0&mode=dark [&hour=11] [&tab=home|today|progress|plan|checkin|food] [&session=full] [&pick=S3]
-//   [&log=new|edit] [&logstate=summary|full|skip|swap]: opens the Log panel (writes go to memory only)
+//   ?isfahan=1&phase=workday | ?isfahan=0&mode=dark [&hour=11] [&tab=home|today|progress|plan|checkin|food|movements] [&session=full] [&pick=S3]
+//   [&log=new|edit] [&logstate=summary|full|sets|skip|swap]: opens the Log panel (writes go to memory only);
+//   `sets` is Every set with some sets ticked (two of the first exercise's with reps, an RIR tap on the next one's first)
 //   [&logdate=YYYY-MM-DD]: then changes the panel's date, as the date field does
 //   [&units=lb]: the profile's body units in lb and inches
 //   [&help=fresh|welcome]: the help as a new vault has it (the welcome card and the tips), or the welcome card alone
@@ -38,7 +39,9 @@
 //   [&range=all]: every Progress view switched to All
 //   [&nolog=1]: the log's sessions archived (with &baseline=..., a fresh start before its first session)
 //   [&named=1]: the plan's phases named Foundation, Build and Peak (with &rich=1 or a card)
-//   [&skill=missing|old|ok] [&node=0]: the coach skill as the welcome card finds it
+//   [&ladderstart=1]: a pull-up ladder in session A the plan starts at level 6, none logged (Skills' "the plan's
+//   start" and Log this level, with &sec=skills; writes stay in memory)
+//   [&skill=missing|old|newer|ok] [&node=0]: the coach skill as the welcome card and Home find it
 //   [&vault=empty|profile]: a fresh vault (nothing yet), or one after the intake (no plan yet), in Fitness/
 //   [&hand=tape|photos|tests]: that card opened by hand (as the Body record's buttons do), not due with &rich=1
 //   [&food=early|later|empty]: the Food tab's states as the mockup draws them (test/fixtures/food: a fresh cycle
@@ -56,6 +59,8 @@
 //   the vasti weak, so the list has a declared region and the rectus femoris, now a coverage region, falls short
 //   [&tip=<muscle id>]: that muscle's tooltip shown, on Progress's body map or the Plan's Sets per muscle (shoot it
 //   with headless Chrome's --force-prefers-reduced-motion, or the tooltip is caught in its fade)
+//   [&tab=movements] [&q=row] [&mine=1] [&mvopen=<catalogue id>]: the Movements tab with those words typed in the
+//   search box, My equipment on, and that movement's guide opened, as the user would
 
 import { fixedOffsetClock, momentAt } from '../../src/core/clock.ts';
 import { habitCheckinKey } from '../../src/core/tracking.ts';
@@ -68,18 +73,25 @@ import { LogWriter } from '../src/log-writer.ts';
 import type { ProgressSection } from '../src/ui/progress-more.ts';
 import { Reminders } from '../src/reminders/machine.ts';
 import { GitSync } from '../src/reminders/sync.ts';
-import { loadPluginData } from '../src/settings.ts';
+import { DEFAULT_GUIDE_URL, loadPluginData } from '../src/settings.ts';
 import { PahlavanSettingTab } from '../src/settings-tab.ts';
 import { PahlavanView, type Section } from '../src/view.ts';
 import { HelpStore } from '../src/help.ts';
 import { h, s as svg } from '../src/ui/dom.ts';
 import { findFolders, useFolders } from '../../src/adapters/vault/layout.ts';
+import { coachVersion } from '../../src/core/version.ts';
 import { WorkspaceLeaf } from './obsidian-stub.ts';
-import { applyFoodState } from '../../test/fixtures/food/food-state.ts';
+import { FOOD_PLAN_DAY, applyFoodState } from '../../test/fixtures/food/food-state.ts';
 import { applySupersets } from '../../test/fixtures/supersets.ts';
 import { applyAbWork } from '../../test/fixtures/ab-work.ts';
+import { PREVIEW_TODAY, demoEatingPlan, demoParams, openNoteNotice } from './demo-options.ts';
 
-const params = new URLSearchParams(location.search);
+// The Try it demo (tools/build-demo.mjs defines __DEMO__ as true): the demo's defaults and only the tab
+// and the look from the link, copies to the real clipboard, and a notice where Obsidian would open something.
+declare const __DEMO__: boolean;
+const DEMO = typeof __DEMO__ !== 'undefined' && __DEMO__;
+
+const params = new URLSearchParams(DEMO ? demoParams(location.search, matchMedia('(prefers-color-scheme: dark)').matches) : location.search);
 const isfahan = params.get('isfahan') !== '0';
 const phase = params.get('phase') ?? 'workday';
 const dark = isfahan ? phase === 'evening' || phase === 'night' : params.get('mode') === 'dark';
@@ -207,11 +219,38 @@ if (params.get('rich') === '1' || CARD) {
     log.sessions = [];
     files[`${fit}/fitness-log-data.json`] = JSON.stringify(log, null, 2);
   }
+  if (params.get('ladderstart') === '1') {
+    // MADE UP, preview only: a pull-up ladder in session A that the plan starts at level 6 (its startLevel), nothing logged
+    // on it, so Skills shows the plan's start with Log this level, and the guide and Today's copy say it is the start.
+    const pd = JSON.parse(files[`${fit}/plan-data.json`]!);
+    const levels = ['Dead hang', 'Scapular pull-up', 'Inverted row', 'Negative pull-up', 'Band-assisted pull-up', 'Pull-up', 'Weighted pull-up', 'L-sit pull-up'];
+    pd.ladders.push({ id: 'pullup', name: 'Pull-up', startLevel: 6, levels: levels.map((name) => ({ name })) });
+    pd.laddersFor = { ...pd.laddersFor, A: ['pullup'] };
+    pd.sessions.A.splice(2, 0, { name: 'Pull-up (your level)', table: 'Pull-up (your level)', sr: '4 × 3–8', rest: '2 min', rir: 2, note: 'Why: the main vertical pull.', label: 'Pull-up', ladder: 'pullup' });
+    files[`${fit}/plan-data.json`] = JSON.stringify(pd, null, 2);
+  }
   if (params.get('named') === '1') {
     // MADE UP, preview only: the plan's phases by name (plan-data's optional `phases`).
     const pd = JSON.parse(files[`${fit}/plan-data.json`]!);
     pd.phases = [{ name: 'Foundation' }, { name: 'Build' }, { name: 'Peak' }];
     files[`${fit}/plan-data.json`] = JSON.stringify(pd, null, 2);
+  }
+  const HRV = params.get('hrv');
+  if (HRV === '1' || HRV === 'low') {
+    // MADE UP, preview only: HRV (ms) on every morning with a resting HR, about 60; &hrv=low puts 7 and 8 Apr
+    // at 44 ms, so Today on 8 Apr (&today=2026-04-08) shows the HRV note.
+    const b = JSON.parse(files[`${fit}/body-data.json`]!);
+    for (const [d, e] of Object.entries(b.days as Record<string, Record<string, unknown>>)) {
+      if (typeof e['rhr'] === 'number') e['hrv'] = HRV === 'low' && d >= '2026-04-07' && d <= '2026-04-08' ? 44 : 58 + (Number(d.slice(8)) % 5);
+    }
+    files[`${fit}/body-data.json`] = JSON.stringify(b, null, 2);
+  }
+  if (params.get('ill') === '1') {
+    // MADE UP, preview only: "I'm ill today" on the preview's day (the morning card's 10 Apr by default).
+    const b = JSON.parse(files[`${fit}/body-data.json`]!);
+    const day = params.get('today') ?? '2026-04-10';
+    b.days[day] = { ...(b.days[day] ?? {}), illness: true };
+    files[`${fit}/body-data.json`] = JSON.stringify(b, null, 2);
   }
   if (params.get('units') === 'lb') {
     // MADE UP, preview only: a profile in lb and inches (the files keep kg and cm).
@@ -317,6 +356,8 @@ if (YD.size) {
 }
 const FOOD = params.get('food');
 const foodToday = FOOD === 'early' || FOOD === 'later' || FOOD === 'empty' ? applyFoodState(files, FOOD, '', params.get('plan') === 'plain' ? 'plain' : 'day').today : null;
+// MADE UP, the demo only: the Food tab's eating plan (test/fixtures/food), moved onto this athlete's cycle, so the tab isn't empty.
+if (DEMO && !foodToday) files['3-Personal/Fitness/Coach/eating-plan.json'] = demoEatingPlan(FOOD_PLAN_DAY);
 if (foodToday && params.get('checks') === '1') {
   // The light checks of the last week, as the Food tab keeps them in Coach/help.json: vegetables at both meals on
   // most days (so Sunday’s pattern starts as met), at lunch on one, fruit once a day; today vegetables at lunch.
@@ -415,7 +456,52 @@ const adapter: MkdirAdapter & { writeBinary(p: string, d: ArrayBuffer): Promise<
     delete binaries[p];
   },
 };
-const TODAY = params.get('today') ?? foodToday ?? '2026-04-10';
+const TODAY = params.get('today') ?? foodToday ?? PREVIEW_TODAY;
+
+/** The plugin's notices, drawn as a toast at the top right (Obsidian's Notice, as the harness shows it). */
+function toast(message: string): void {
+  console.debug(`[notice] ${message}`);
+  const n = activeDocument.createElement('div');
+  n.className = 'preview-notice';
+  n.textContent = message;
+  activeDocument.body.append(n);
+  window.setTimeout(() => n.remove(), 6000);
+}
+
+/**
+ * A copy button: the harness keeps the text for its renders; the demo also puts it on the real
+ * clipboard. The plugin's own notice then says where it goes, or that it couldn't copy.
+ */
+async function copy(text: string): Promise<void> {
+  (window as unknown as { PAHLAVAN_COPIED?: string }).PAHLAVAN_COPIED = text;
+  if (!DEMO) return;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Some browsers and embedded views refuse the Clipboard API; the older copy command still works in most.
+    const box = activeDocument.createElement('textarea');
+    box.value = text;
+    box.setAttribute('readonly', '');
+    box.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    activeDocument.body.append(box);
+    box.select();
+    const done = activeDocument.execCommand('copy');
+    box.remove();
+    if (!done) throw new Error('the browser refused the copy');
+  }
+}
+
+/** Where Obsidian would open something: a console line in the harness, a notice in the demo. */
+function opened(what: string, notice: string): void {
+  if (DEMO) toast(notice);
+  else console.debug(`[open] ${what}`);
+}
+
+/** The user guide: a new tab in the demo (the plugin opens the same page). */
+function openGuide(): void {
+  if (DEMO) window.open(DEFAULT_GUIDE_URL, '_blank', 'noopener');
+  else console.debug('[open] the user guide');
+}
 
 // The reminder machinery the view and the cards share: a fixed UTC clock at the card's moment, or 12:15.
 const clock = fixedOffsetClock(0);
@@ -435,7 +521,7 @@ const reminders = new Reminders({
   clock,
   settings: () => pluginData,
   remindHere: () => true,
-  mac: () => 'Work Mac',
+  mac: () => (DEMO ? 'My Mac' : 'Work Mac'),
   device: { get: (k) => device.get(k) ?? null, set: (k, v) => void device.set(k, v) },
   idleSeconds: async () => (params.get('activity') === '0' ? null : 3),
   focused: () => true,
@@ -443,46 +529,50 @@ const reminders = new Reminders({
   otherCardOpen: () => false,
   ui: {
     open(cv, actions) {
-      banner(cv.notify.title, cv.notify.body);
+      // The demo leaves out the drawn macOS notification: a visitor sees the card itself.
+      if (!DEMO) banner(cv.notify.title, cv.notify.body);
       const m = new CardModal({} as never, cv, actions, cardStart);
       m.open();
       return m.handle();
     },
   },
   notifyMac: () => {},
-  notice: (message) => console.debug(`[notice] ${message}`),
+  notice: (message) => (DEMO ? toast(message) : console.debug(`[notice] ${message}`)),
   focusApp: () => {},
   holdFront: () => {},
   chime: () => {},
   convertPhoto: async (p) => ({ data: p.data, ext: 'jpeg' }),
   git: new GitSync({ git: () => null, settings: () => pluginData.sync, now: () => now, ...timers }),
   checkin: new CheckinWriter(adapter),
-  openLog: () => console.debug('[open] the log'),
+  openLog: () => opened('the log', 'In Obsidian, this opens the log.'),
   openSection: (sec) => view.showSection(sec),
-  copy: async (text) => {
-    (window as unknown as { PAHLAVAN_COPIED?: string }).PAHLAVAN_COPIED = text;
-  },
+  copy,
   ...timers,
 });
 (window as unknown as { PAHLAVAN_REMINDERS?: Reminders }).PAHLAVAN_REMINDERS = reminders;
 
-// [&skill=missing|old|ok] [&node=0]: the coach skill as the welcome card's first step finds it (made up; Set up only says so).
+// [&skill=missing|old|newer|ok] [&node=0]: the coach skill as the welcome card's first step and Home's Needs you find it (made up; Set up only says so).
 const SKILL = params.get('skill');
 // The fixture vault's config folder, as its files have it (the dot-folder holding plugins/).
 const CONFIG_DIR = Object.keys(fixture).find((k) => /^\.[^/]+\/plugins\//.test(k))?.split('/')[0] ?? '';
 let skillNow = SKILL;
+// The view's own settings (its tab, Progress's section), kept here so the settings window's links can set them, as the plugin does.
+const viewSettings = { lastTab: (params.get('tab') as Section) ?? (params.get('sec') ? 'progress' : 'home'), mode: (params.get('session') as SessionMode) ?? 'full', pick: params.get('pick') ? { date: TODAY, type: params.get('pick')! } : null, progressSection: (params.get('sec') as ProgressSection | null) ?? 'overview', ...(params.get('range') === 'all' ? { progressScopes: { overview: 'all' as const, training: 'all' as const, body: 'all' as const, health: 'all' as const, skills: 'all' as const } } : {}) };
 const view = new PahlavanView(new WorkspaceLeaf() as never, {
   data: new PahlavanData(adapter, '', { configDir: CONFIG_DIR }),
   ...(SKILL ? {
     coach: {
-      state: async () => ({ installed: skillNow === 'missing' ? null : skillNow === 'old' ? '0.19.0' : '0.20.1', bundled: '0.20.1', missing: [], differ: skillNow === 'old' ? ['scripts/engine.cjs'] : [], node: params.get('node') === '0' ? null : { path: '/opt/homebrew/bin/node', version: 'v22.11.0' } }),
+      state: async () => {
+        const installed = skillNow === 'missing' ? null : skillNow === 'old' ? '0.19.0' : skillNow === 'newer' ? '0.21.0' : '0.20.1';
+        return { installed, bundled: '0.20.1', missing: [], differ: skillNow === 'old' || skillNow === 'newer' ? ['scripts/engine.cjs'] : [], direction: coachVersion(installed, '0.20.1'), node: params.get('node') === '0' ? null : { path: '/opt/homebrew/bin/node', version: 'v22.11.0' } };
+      },
       setUp: async () => {
         skillNow = 'ok';
         return { ok: true as const, written: ['SKILL.md', 'scripts/engine.cjs'] };
       },
     },
   } : {}),
-  settings: { lastTab: (params.get('tab') as Section) ?? (params.get('sec') ? 'progress' : 'home'), mode: (params.get('session') as SessionMode) ?? 'full', pick: params.get('pick') ? { date: TODAY, type: params.get('pick')! } : null, progressSection: (params.get('sec') as ProgressSection | null) ?? 'overview', ...(params.get('range') === 'all' ? { progressScopes: { overview: 'all', training: 'all', body: 'all', health: 'all', skills: 'all' } } : {}) },
+  settings: viewSettings,
   saveSettings: () => {},
   today: () => TODAY,
   hour: () => Number(params.get('hour') ?? 11),
@@ -490,28 +580,20 @@ const view = new PahlavanView(new WorkspaceLeaf() as never, {
   writer: new LogWriter(adapter),
   checkinWriter: new CheckinWriter(adapter),
   nowIso: () => `${TODAY}T07:30:00.000Z`,
-  copy: async (text) => {
-    (window as unknown as { PAHLAVAN_COPIED?: string }).PAHLAVAN_COPIED = text;
-  },
-  openNote: (path) => console.debug(`[open] ${path}`),
+  copy,
+  openNote: (path) => opened(path, openNoteNotice(path)),
   reminders,
   trackingWriter: new TrackingWriter(adapter),
   offsetMinutes: () => 0,
   openSettings: () => openSettings(),
   clockText: (ms) => new Date(ms).toISOString().slice(11, 16),
-  notify: (message) => {
-    console.debug(`[notice] ${message}`);
-    const n = activeDocument.createElement('div');
-    n.className = 'preview-notice';
-    n.textContent = message;
-    activeDocument.body.append(n);
-    window.setTimeout(() => n.remove(), 6000);
-  },
+  notify: toast,
   requestReload: () => void view.reload(),
   help: new HelpStore(adapter),
-  openGuide: () => console.debug('[open] the user guide'),
+  openGuide,
 });
 activeDocument.querySelector('.preview-leaf')!.append(view.containerEl);
+if (DEMO) wireDemoBar();
 // open() is View's internal start method (not in obsidian.d.ts); the stub mirrors it.
 const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 const click = (sel: string) => activeDocument.querySelector<HTMLElement>(sel)?.click();
@@ -536,7 +618,13 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
     await wait(80);
     const st = params.get('logstate');
     const row = (n: number) => activeDocument.querySelectorAll('.pv-lg-item')[n] as HTMLElement | undefined;
-    if (st === 'full') click('.pv-lg-track .pv-lg-seg button:last-child');
+    if (st === 'full' || st === 'sets') click('.pv-lg-track .pv-lg-seg button:last-child');
+    if (st === 'sets') {
+      // The exercises whose sets have reps to tick (a blank one waits for its reps). Each tap draws the panel again: look them up after each one.
+      const table = (n: number) => [...activeDocument.querySelectorAll('.pv-lg-sets')].filter((t) => t.querySelector('.pv-lg-tick:not([disabled])'))[n];
+      for (const j of [0, 1]) (table(0)?.querySelectorAll('.pv-lg-tick')[j] as HTMLElement | undefined)?.click();
+      (table(1)?.querySelectorAll('.pv-lg-rir-b')[2] as HTMLElement | undefined)?.click();
+    }
     if (st === 'skip') (row(4)?.querySelector('.pv-lg-seg button:last-child') as HTMLElement | null)?.click();
     if (st === 'swap') (row(3)?.querySelector('.pv-lg-item-foot .pv-lg-link') as HTMLElement | null)?.click();
     const logDate = params.get('logdate');
@@ -598,34 +686,118 @@ void warmUp().then(() => (view as unknown as { open(): Promise<void> }).open()).
       el.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
     }
   }
+  // The Movements tab as the user would set it: words typed, My equipment on, a guide opened.
+  const Q = params.get('q');
+  if (Q) {
+    await wait(30);
+    const box = activeDocument.querySelector<HTMLInputElement>('[data-k="mv-search"]');
+    if (box) {
+      box.value = Q;
+      box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    }
+  }
+  if (params.get('mine') === '1') {
+    await wait(30);
+    click('[data-k="mv-mine"]');
+  }
+  const MVOPEN = params.get('mvopen');
+  if (MVOPEN) {
+    await wait(30);
+    click(`[data-k="mv-g-${CSS.escape(MVOPEN)}"]`);
+    await wait(30);
+    view.contentEl.querySelector(`[data-mv-id="${CSS.escape(MVOPEN)}"]`)?.scrollIntoView({ block: 'start' });
+  }
   const HAND = params.get('hand');
   if (!CARD && (HAND === 'tape' || HAND === 'photos' || HAND === 'tests')) await reminders.openCard(HAND);
   activeDocument.body.setAttribute('data-ready', '1');
 });
 
+/**
+ * The demo's bar (plugin/preview/demo.html): light or dark, and the Isfahan
+ * look, switched in place and redrawn, so what the visitor logged stays.
+ */
+function wireDemoBar(): void {
+  const body = activeDocument.body;
+  const theme = activeDocument.querySelector<HTMLButtonElement>('[data-demo="theme"]');
+  const look = activeDocument.querySelector<HTMLButtonElement>('[data-demo="isfahan"]');
+  let isDark = dark;
+  let isIsfahan = isfahan;
+  const label = () => {
+    if (theme) {
+      // The visible word is the look it switches to; the tooltip says so.
+      theme.textContent = isDark ? 'Light' : 'Dark';
+      theme.title = `Switch to ${isDark ? 'light' : 'dark'}`;
+    }
+    look?.setAttribute('aria-pressed', String(isIsfahan));
+  };
+  const draw = () => {
+    body.classList.toggle('theme-dark', isDark);
+    body.classList.toggle('theme-light', !isDark);
+    for (const c of [...body.classList]) if (c === 'isfahan' || c.startsWith('isfahan-')) body.classList.remove(c);
+    if (isIsfahan) body.classList.add('isfahan', `isfahan-${isDark ? 'night' : 'workday'}`);
+    label();
+    void view.reload();
+  };
+  theme?.addEventListener('click', () => {
+    isDark = !isDark;
+    draw();
+  });
+  look?.addEventListener('click', () => {
+    isIsfahan = !isIsfahan;
+    draw();
+  });
+  label();
+}
+
+/**
+ * The settings the window edits, made once so a change outlasts closing it: in the demo the very settings
+ * the reminders read (so turning reminders off reaches Due today), in the harness its own made-up copy.
+ */
+let settingsData: typeof pluginData | null = null;
+const settingsDevice = new Map<string, string>();
+
 /** Obsidian's settings window, with Pahlavan's tab drawn by the real PahlavanSettingTab (saves stay in memory). */
 function openSettings(): void {
-  const data = loadPluginData(null, { gitSynced: params.get('git') !== '0' }).data;
-  if (params.get('remind') === '0') data.reminders.on = false;
-  const device = new Map<string, string>();
+  if (!settingsData) {
+    settingsData = DEMO ? pluginData : loadPluginData(null, { gitSynced: params.get('git') !== '0' }).data;
+    if (params.get('remind') === '0') settingsData.reminders.on = false;
+  }
+  const data = settingsData;
+  const device = settingsDevice;
+  // Closed by its ×, a click beside it, or Esc, as Obsidian's is.
+  const shut = () => {
+    overlay.remove();
+    activeDocument.removeEventListener('keydown', onKey);
+  };
+  const onKey = (ev: KeyboardEvent) => void (ev.key === 'Escape' && shut());
+  activeDocument.addEventListener('keydown', onKey);
   const tab = new PahlavanSettingTab({} as never, {} as never, {
     data,
     save: () => console.debug(`[settings] ${JSON.stringify(data)}`),
     remindHere: () => device.get('pahlavan-remind-here') !== 'off',
     setRemindHere: (on) => void device.set('pahlavan-remind-here', on ? 'on' : 'off'),
     gitSynced: params.get('git') !== '0',
-    openSection: (s) => console.debug(`[open] ${s}`),
-    openGuide: () => console.debug('[open] the user guide'),
-    resetTips: () => console.debug('[help] the tips again'),
+    // The demo goes to the screen the link names (Progress's Habits for "Progress, Habits"), as the plugin does, and closes the window.
+    openSection: (s, sub) => {
+      if (!DEMO) return void console.debug(`[open] ${s}${sub ? ` ${sub}` : ''}`);
+      if (sub) viewSettings.progressSection = sub;
+      shut();
+      view.showSection(s);
+    },
+    openGuide,
+    resetTips: () => (DEMO ? toast('In Obsidian, the first-run tips show again.') : console.debug('[help] the tips again')),
   });
   const side = (group: string, tabs: string[]) => [h('div', { class: 'preview-st-group' }, group), ...tabs.map((x) => h('div', { class: `preview-st-tab${x === 'Pahlavan' ? ' is-on' : ''}` }, x))];
-  const overlay = h('div', { class: 'preview-st-overlay' },
+  // The demo lists Pahlavan alone; the harness keeps the renders' made-up neighbours.
+  const plugins = DEMO ? ['Pahlavan'] : ['Calendar', 'Dataview', 'Habit Nudges', 'Isfahan', 'Pahlavan', 'Spaced Repetition'];
+  const close = h('div', { class: 'preview-st-x', role: 'button', 'aria-label': 'Close', onclick: shut }, '×');
+  const overlay = h('div', { class: 'preview-st-overlay', onclick: (ev: Event) => void (ev.target === overlay && shut()) },
     h('div', { class: 'preview-st-modal' },
       h('aside', { class: 'preview-st-side' },
         side('Options', ['General', 'Editor', 'Files and links', 'Appearance', 'Hotkeys', 'Core plugins', 'Community plugins']),
-        side('Community plugins', ['Calendar', 'Dataview', 'Habit Nudges', 'Isfahan', 'Pahlavan', 'Spaced Repetition'])),
+        side('Community plugins', plugins)),
       h('div', { class: 'preview-st-main' }, tab.containerEl),
-      h('div', { class: 'preview-st-x' }, '×')));
+      close));
   activeDocument.body.append(overlay);
   tab.display();
 }

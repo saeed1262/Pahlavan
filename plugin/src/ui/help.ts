@@ -114,14 +114,25 @@ export interface WelcomeContext {
   onGuide: () => void;
   onTour: () => void;
   onHide: () => void;
-  /** The coach skill in this vault, as the first step: 'checking' until Pahlavan has looked; `node` false when Node 18 or later wasn't found. */
-  coach?: { state: 'checking' | 'missing' | 'old' | 'ok'; node: boolean | null; onSetUp(): void };
+  /**
+   * The coach skill in this vault, as the first step: 'checking' until
+   * Pahlavan has looked, 'old' when this Pahlavan carries a newer one,
+   * 'newer' when the vault's is newer than this Pahlavan's (set up, but
+   * Pahlavan is the one to update); `node` false when Node 18 or later
+   * wasn't found.
+   */
+  coach?: { state: 'checking' | 'missing' | 'old' | 'newer' | 'ok'; node: boolean | null; onSetUp(): void };
   /** Copies a step's command (the chips' Copy); absent: the command shows without it. */
   onCopy?: (text: string) => void;
 }
 
 /** The safety line: the welcome card, the settings and the README say it the same way. */
 export const SAFETY_LINE = 'Pahlavan is a general fitness tool for adults 18 and over, not medical advice. If you have a health condition, check with a doctor before you start, and stop any exercise that hurts.';
+/**
+ * The pinned "Using Pahlavan?" issue: Pahlavan counts nothing about its users, so a reply there is
+ * the one way the author hears who uses it. The welcome card and the README link it.
+ */
+export const USING_PAHLAVAN_URL = 'https://github.com/saeed1262/pahlavan/issues/1';
 /** The beta line, in the settings and the README. */
 export const BETA_LINE = 'Pahlavan is a free beta: I use it every day, and it may still change. Bug reports and ideas are welcome on GitHub.';
 
@@ -129,7 +140,7 @@ export const BETA_LINE = 'Pahlavan is a free beta: I use it every day, and it ma
 export function welcomeCard(ctx: WelcomeContext): HTMLElement {
   const w = ctx.welcome;
   const coach = ctx.coach ?? null;
-  const coachDone = coach?.state === 'ok';
+  const coachDone = coach?.state === 'ok' || coach?.state === 'newer';
   // The coach comes first: the intake and the plan run in it.
   const total = w.steps.length + (coach ? 1 : 0);
   const done = w.done + (coachDone ? 1 : 0);
@@ -142,6 +153,7 @@ export function welcomeCard(ctx: WelcomeContext): HTMLElement {
         h('span', { class: 'pv-faint' }, coachDone
           ? 'It’s in this vault: /fitness-coach in Claude Code'
           : 'The coach is a Claude Code skill: this writes it into the vault, then you talk to it in Claude Code'),
+        coach.state === 'newer' ? h('span', { class: 'pv-welcome-warn', 'data-k': 'welcome-coach-newer' }, icon('info'), 'The coach in this vault is newer than this Pahlavan: update Pahlavan from Community plugins.') : null,
         coach.node === false ? h('span', { class: 'pv-welcome-warn' }, icon('info'), 'It needs Node 18 or later: install it from nodejs.org.') : null,
         !coachDone && coach.state !== 'checking'
           ? h('button', { class: 'pv-btn-primary pv-welcome-act', onclick: () => coach.onSetUp(), 'data-k': 'welcome-coach' }, coach.state === 'old' ? 'Update the coach' : 'Set up the coach')
@@ -161,7 +173,9 @@ export function welcomeCard(ctx: WelcomeContext): HTMLElement {
     h('p', { class: 'pv-welcome-safety', 'data-k': 'welcome-safety' }, icon('shield'), h('span', {}, SAFETY_LINE)),
     h('div', { class: 'pv-welcome-foot' },
       h('button', { class: 'pv-btn-primary', onclick: () => ctx.onGuide(), 'data-k': 'welcome-guide' }, icon('info'), 'Open the guide'),
-      h('button', { class: 'pv-btn-quiet', onclick: () => ctx.onTour(), 'data-k': 'welcome-tour' }, icon('right'), 'Show me around')),
+      h('button', { class: 'pv-btn-quiet', onclick: () => ctx.onTour(), 'data-k': 'welcome-tour' }, icon('right'), 'Show me around'),
+      // A plain link: Obsidian opens it in the browser.
+      h('a', { class: 'pv-welcome-hi', href: USING_PAHLAVAN_URL, 'data-k': 'welcome-hi' }, 'Using Pahlavan? Say hi')),
   );
 }
 

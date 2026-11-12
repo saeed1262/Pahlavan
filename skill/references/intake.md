@@ -5,7 +5,7 @@ someone for the first time: talk, screen, then look at the body and how it
 moves. The output is `<fitness>/Coach/Athlete profile.md` (format in
 `formats.md`), with its Body assessment, plus Ledger entries, and next to them
 their machine-readable twins `Coach/profile.json` and `Coach/ledger.json`
-(schema v1, `formats.md`), which the engine's `plan` and `review` read.
+(schema v1, `formats.md`), which the engine's `review` and `check` read.
 
 ## How to run it
 
@@ -17,18 +17,21 @@ their machine-readable twins `Coach/profile.json` and `Coach/ledger.json`
 2. **The order:** Round 1 screening, Round 2 basics and goals, Round 3
    success and the week, Round 4 constraints, equipment and tracking, Round 5
    body history and preferences, then the **body assessment** (photos and the
-   movement self-check, then each finding confirmed with the user), then the
-   history question.
+   movement self-check, then each finding confirmed with the user), then
+   **the coach's priorities** (decided from everything so far and confirmed
+   by the user), then the history question.
 3. **Ask in short rounds** of at most 4 questions. Screening is always
    round 1. Each question takes the form its answer needs (the question
    design below).
 4. **Leave a field "unknown"** rather than adding a round for it. The
-   Ledger follow-ups (Round 5), the part of a priority muscle (Round 2,
-   question 5) and the findings to confirm (the body assessment, step 6)
-   are the only extra questions.
-5. **Show the profile as a short summary**, the Body assessment included,
-   and write it on the user's yes, with the Ledger entries: the Markdown and
-   the JSON together, the same facts in both. Check each JSON file with
+   Ledger follow-ups (Round 5), the part of a muscle in the user's wish
+   (Round 2, question 5), the findings to confirm (the body assessment,
+   step 6) and the priorities to confirm ("The coach's priorities") are the
+   only extra questions.
+5. **Show the profile as a short summary**, the Body assessment and the
+   confirmed priorities included, and write it on the user's yes, with the
+   Ledger entries: the Markdown and the JSON together, the same facts in
+   both. Check each JSON file with
    `node .claude/skills/fitness-coach/scripts/engine.cjs validate <file>
    --json` before saying it's written (fix and re-check on exit 1; read its
    `warnings` for free-text equipment or ids the engine doesn't know).
@@ -238,56 +241,60 @@ range or exercise; persisting means "see a professional".
    sport or event. Then ask the order if more than one.
 4. "For each goal, how important is it (0–10), and how confident are you
    that you'll do what it takes (0–10)?" (plain text: "goal: importance /
-   confidence"). The order matters: goal 1 sets the plan's goal modifier, and
-   a muscle or recomposition goal sets the priority muscles when the profile
-   names none (`planning.md`, step 5).
-5. With a muscle, recomposition or calisthenics goal: "Is there a muscle or
-   a look you care most about? Up to 3, the most important first."
-   Options (multi-select): abs; arms; chest; shoulders; back; glutes; legs;
-   none in particular. **Each pick is one priority muscle, one engine id**:
-   abs, chest, shoulders and glutes map straight; for back, legs and arms
-   ask which part in one more question (back: upper back, for rows and
+   confidence"). The order matters: goal 1 sets the plan's goal modifier,
+   and the goals in their order are one of the things the coach weighs for
+   the priority muscles ("The coach's priorities").
+5. **The user's wish.** With a muscle, recomposition or calisthenics goal,
+   or a sport or event (question 3): "Is there a muscle, a look or
+   something for your sport you care about most? Up to 3, the most
+   important first." Options (multi-select): abs; arms; chest; shoulders;
+   back; glutes; legs; none in particular (a look or a sport's need, in the
+   user's words, is their own answer in Other). For back, legs and arms ask
+   which part in one more question (back: upper back, for rows and
    posture, or lats, for width and pull-ups; legs: quads or hamstrings;
-   arms: biceps or triceps), so "back" never becomes two priorities. **More
-   than 3 picked, or more than the week has room for** (`planning.md`
-   step 5): ask the user to rank them, keep the top ones (up to the room)
-   in `profile.json` `priorityMuscles` in that order, and write the rest in
-   the Athlete profile as **Later priorities** (a later phase can take
-   them); never write past the room. Each priority muscle needs 10 to 16
-   direct sets a week, so every extra one makes each session longer. When
-   the user names none, the plan job derives them from the goals and writes
-   them into `priorityMuscles` too (`planning.md`, step 5), so the engine's
-   counts and checks see every priority. A request heard anywhere else in
-   the intake ("I want abs", "more arms") is the same answer: a priority
-   muscle, never a note. A look ("visible abs", "a six pack") also gets one
-   honest line in the summary: it is mostly body fat, so the goal's measure
-   is the waist and the photos, and the priority muscle makes the abs
-   bigger and stronger underneath.
+   arms: biceps or triceps), so each pick names one engine muscle id.
+   **This is an input, not the priority list.** The coach decides the
+   priority muscles after the body assessment, from the photos, the
+   posture, the self-check, the Ledger, the goals and this wish, and the
+   user confirms them ("The coach's priorities"). Record the wish in the
+   Athlete profile's Priorities as **Your wish**, in the user's words with
+   the engine ids and the date asked (`formats.md`); in `profile.json` it
+   goes only into the `_priorities` note, never straight into
+   `priorityMuscles`. A wish heard anywhere else in the intake ("I want
+   abs", "more arms") is the same answer: part of the wish, never lost in a
+   note. A look ("visible abs", "a six pack") also gets one honest line in
+   the summary: it is mostly body fat, so the goal's measure is the waist
+   and the photos, and an abs priority would make the abs bigger and
+   stronger underneath.
 
-   **A part of a priority muscle (weak regions).** In the same follow-up,
-   for each priority muscle with modelled regions, ask whether there is a
+   **A part of a muscle in the wish (regions).** In the same follow-up,
+   for each wished muscle with modelled regions, ask whether there is a
    part of it the user cares about most: "Is there a part of your
    shoulders you most want to bring up?" Offer only the regions the engine
    models for that muscle (`engine evidence --topic regions --json`: each
    `regions.list[]` entry whose `muscle` is it, by its `label`; a
    rough-guide one, `roughGuide` true, says "rough guide"), plus "No, the
-   whole muscle". A pick goes into `profile.json` `priorityRegions` (the
-   region's `id`; `formats.md`): it gets at least 6 direct sets near
-   failure a week inside its muscle's 10 to 16 (rules.md, "Regions"). The
-   muscle's other regions are covered anyway (the coverage rule), so "the
-   whole muscle" is a full answer.
+   whole muscle". A pick is part of the wish (the region's `id`, recorded
+   with it). It becomes a declared region (`profile.json`
+   `priorityRegions`; `formats.md`) only when the coach's priorities
+   propose it and the user confirms: then it gets at least 6 direct sets
+   near failure a week inside its muscle's 10 to 16 (rules.md, "Regions").
+   The muscle's other regions are covered anyway (the coverage rule), so
+   "the whole muscle" is a full answer.
    - **An idea the evidence doesn't support** ("inner chest", "the VMO",
      "upper lats", "the biceps peak", "lower glutes"): one line on why and
      the nearest supported option, from the matching
      `regions.unsupported[]` entry (`why`, `nearestText`): "No exercise is
      shown to grow the inner chest more than the rest (a pec deck grew both
      sides evenly), so the plan trains the chest as a whole; the upper
-     chest is the one part the studies support, if you want it." The user
-     picks that option or nothing; never write the unsupported idea.
+     chest is the one part the studies support, if you want it." The wish
+     records that option or nothing; the unsupported idea is never written
+     as a region.
    - **Never from the photos.** No validated way spots a lagging region
-     from photos or the tape (rules.md, "Regions"): a weak region is the
-     user's word. A photo only prompts this question (body assessment,
-     step 6).
+     from photos or the tape (rules.md, "Regions"), so the coach never says
+     a part lags. A part it proposes comes from the user's wish, or from a
+     goal or a confirmed finding it serves, and says which ("The coach's
+     priorities").
 
 ## Round 3: success and the week
 
@@ -306,8 +313,15 @@ range or exercise; persisting means "see a professional".
 
 1. "Anything fixed: days that never work, travel or crunch periods you
    already know about? Say which, or none." (plain text).
-2. "Where do you train, and with what? List the equipment, and the heaviest
-   dumbbell." (plain text). The heaviest dumbbell decides when dumbbell lifts
+2. "Where do you train, and with what? List the equipment." (plain text).
+   Then the weights, in plain words: "What weights does the gym have? The
+   dumbbells from the lightest to the heaviest and the step between them (or
+   the list, if the steps vary); the bar's weight and the smallest plate; the
+   steps on the machines and the cables; any kettlebells." (plain text). Kg
+   or lb as the gym has them; "I don't know" for a kind leaves it out. They go
+   into `profile.json` `loads` (`formats.md`, "`loads`"), in the gym's unit:
+   every weight target then lands on a weight the gym has, and at the
+   heaviest dumbbell reps carry the progression, so dumbbell lifts near it
    need wider rep ranges. Then: "When you travel, what's usually there?"
    (multi-select): nothing, just bodyweight; a hotel gym with dumbbells (and a
    bench?); bands I pack; a pull-up or door-frame bar; kettlebells; machines or
@@ -334,7 +348,12 @@ range or exercise; persisting means "see a professional".
    (plain text). The splits go into `preferences.splits` with the kinds in
    `formats.md` (eleven, from `full-body` to `calisthenics`), which the
    candidate comparison scores; one that matches no kind stays in the
-   profile's Preferences, in the user's words.
+   profile's Preferences, in the user's words. Every answer goes into the
+   profile with the date asked, and only what the user said: an old plan's
+   split or exercises are never written in as a preference, which would
+   carry the old plan's shape into the new one (a reset's or a redesign's
+   own keep-and-change questions are `planning.md`, "The order", step A
+   item 5).
 3. "Cardio you'll actually do?" (multi-select) Bike / Walking or incline
    walk / Running / Intervals or circuits (a sport, or anything else, is the
    user's own answer in Other). Every mode chosen goes into
@@ -416,8 +435,9 @@ is a prompt for a question to the user (step 6), not a fact about them.
   visibly bigger.
 - **Development:** areas that lag behind the rest (upper back against chest,
   legs against upper body, and so on), as whole muscles; a photo never
-  shows a lagging region (a part of a muscle), so a region is only asked
-  about (Round 2, question 5).
+  shows a lagging region (a part of a muscle), so a region comes only from
+  the user's wish (Round 2, question 5) or from a goal or a confirmed
+  finding it serves ("The coach's priorities").
 - **Where fat is carried:** described (waist, hips, upper body), never a
   body-fat percentage.
 - **Movement:** squat depth, heels lifting, knees travelling in, torso lean;
@@ -438,7 +458,7 @@ by `planning.md` once the user confirms it (step 6). These are heuristics
 | Knees travel in | Tempo squats and split squats; hip abductor work |
 | Deep low-back arch | Dead bugs, hollow holds, glute work; hip-flexor stretching |
 | One side bigger or higher | Unilateral work, weaker side first, matching reps |
-| A muscle lags (`lagging-area`, with `muscles`) | Confirmed, the muscle is a priority muscle in every count (`check`, `review`, the screens): 10–16 direct sets a week, near failure (`planning.md`, "Reps, effort, rest and volume"), within the week's room; a part of it the user names is a declared region (`regions` on the row, or `priorityRegions`): 6 direct sets near failure inside the muscle's 10–16 (rules.md, "Regions") |
+| A muscle lags (`lagging-area`, with `muscles`) | Confirmed, the muscle is a priority muscle in every count (`check`, `review`, the screens): 10–16 direct sets a week, near failure (`planning.md`, "Reps, effort, rest and volume"), within the week's room, so it takes a place on the coach's list ("The coach's priorities"); a part of it the coach proposes and the user confirms is a declared region (`regions` on the row, or `priorityRegions`): 6 direct sets near failure inside the muscle's 10–16 (rules.md, "Regions") |
 | Fat carried at the waist | No change to exercise choice; the tape measures the outcome |
 
 ### 5. The movement self-check
@@ -489,8 +509,8 @@ on is asked before it goes into the profile:
   phrase it so a yes means the finding holds: "Your overhead reach showed
   rib flare. Does pressing overhead hurt, or make your lower back arch?"
   (not "Do you press overhead without pain?", where a yes means the
-  opposite). Use the question `plan`'s or `review`'s `finding-unconfirmed`
-  warning gives. One round (at most 4 questions; a second round only when
+  opposite). Use the question `review`'s `finding-unconfirmed` warning
+  gives. One round (at most 4 questions; a second round only when
   there are more findings).
 - **Record the answer:** yes is `confirmed: true` (the finding holds), no is
   `confirmed: false`, on the row (`emphasis[].confirmed`) or per test
@@ -503,20 +523,116 @@ on is asked before it goes into the profile:
   Body assessment row is left out. Not answered, it ranks the regression
   first and adds its warm-up, nothing more: it rules no movement out, makes
   no priority muscle and sets no 2-to-1 pull to push.
-- **A confirmed lagging area** is a priority muscle; ask about a part of
-  it as in Round 2, question 5 (modelled regions only, the unsupported
-  ideas explained with the nearest option), and write a pick as the row's
+- **A confirmed lagging area** is a priority muscle (the engine counts it
+  while its row stands), so it goes on the coach's list ("The coach's
+  priorities"). A part of it may be proposed there, as in Round 2,
+  question 5 (modelled regions only, the unsupported ideas explained with
+  the nearest option); once the user confirms it, write it as the row's
   `regions`.
 - **A profile written before this question** has no answers anywhere:
-  Pahlavan applies its findings as before, and `plan` and `review` warn
+  Pahlavan applies its findings as before, and `review` warns
   `finding-unconfirmed` with the question for each. Ask them at the next
   check-in and record the answers.
+
+## The coach's priorities
+
+After the body assessment and the answers to its findings, the coach
+decides the priority muscles, as a real coach would: from what it saw and
+measured, with the user's wish as one input, not from a list the user
+picks. Each priority muscle takes 10 to 16 direct sets a week near failure,
+so every extra one makes each session longer: the list is short and every
+place on it is argued. The user confirms it (SKILL.md house rule 10:
+propose, explain with the data, the user decides).
+
+1. **Weigh every candidate.** A candidate is a muscle, or a part of one,
+   that something below points to. For each, the coach names what it rests
+   on:
+   - **The photo findings, confirmed only:** a lagging area
+     (`lagging-area`), one side bigger or higher (`asymmetry`), a posture
+     row. A declined or unanswered finding makes no priority (the body
+     assessment, step 6). A confirmed lagging area is a priority in every
+     count already (the engine adds it while its row stands), so it is on
+     the list and takes one of its places.
+   - **Posture and the self-check:** the wall gap, a hinge that rounds, an
+     overhead reach that isn't clean, the push-ups and pull-ups, the hang,
+     the core hold, the balance on each side. A result points to the muscle
+     whose capacity it lacks (head forward with a wide wall gap: the upper
+     back; no strict pull-up: the lats; a hinge that rounds: the glutes and
+     hamstrings) **(H)**.
+   - **Pain and injuries (the Ledger):** an active or managing entry can
+     move a candidate later, or shape how it is trained (the movements the
+     Ledger allows). A priority is never trained through pain, and a wait
+     for pain is said as one.
+   - **The goals, in their order, and a sport or event:** goal 1 counts
+     most. A muscle or recomposition goal points to the large muscles, a
+     posture goal to the upper back and lats, a calisthenics goal to what
+     its skills need, a sport to what it asks of the body (`planning.md`,
+     step 5, "The goals' candidates", **(H)**).
+   - **The history, when there is one:** none at the intake (a fresh start
+     reads no old data, and the history question is for starting weights
+     only). At a plan run or a review: `engine review`'s sets per muscle
+     (`volume.done`, `doneTiers`: a muscle under its tier for weeks), each
+     lift's e1RM trend (`lifts[].e1rm`, `lastRise`), and the newest
+     progress report and photos.
+   - **The user's wish** (Round 2, question 5): what they care about most.
+     It counts for itself too **(H)**: people keep training for what they
+     want, so a wish that fits the goals and the findings leads.
+2. **Rank them within the week's room.** The room is `engine evidence
+   --topic volume --json`'s `volume.priority-room` for the lifting days the
+   user can give (`planning.md`, step 5). A candidate with more behind it
+   ranks higher: a confirmed finding that serves a goal comes before a
+   goal's default alone, with the wish weighed beside them as above. Those
+   past the room are the **Later priorities**, in order, each with the
+   phase it waits for. No study ranks priorities: the ranking is the
+   coach's judgment **(H)**, argued from the data.
+3. **Propose the list in one message**, each priority with a one-line
+   reason that cites its evidence: "1. Upper back: head forward and
+   shoulders rounded in the side photo, which you confirmed, and a 5 cm
+   wall gap; it serves your posture goal." A part of a muscle is proposed
+   the same way, from the modelled regions only (`evidence --topic
+   regions`): from the user's wish, or from a goal or a confirmed finding
+   it serves (the mid-back and rear delts for rounded shoulders, the side
+   delts for the shoulder width a look asks for), never as "this part lags"
+   (rules.md, "Regions"). Then **where your wish landed**, each wished
+   item in one line with its reason: kept ("Shoulders, your wish: second;
+   it fits your muscle goal"), ranked lower, or later ("Arms, your wish:
+   phase 2; this phase's room goes to your posture goal and the findings
+   you confirmed"). A wish the evidence doesn't support is explained
+   honestly, never silently dropped: an unsupported part with the nearest
+   supported option (Round 2, question 5), a look with its honest line (it
+   is mostly body fat, so the waist and the photos measure it).
+4. **One question to confirm.** When a wish landed lower or later, an
+   AskUserQuestion: **Go with these** or **Put my wish first** (the coach
+   then says what moves to the Later priorities to make room, or that
+   keeping them all makes every session longer). Otherwise in plain text:
+   "Go with these, or tell me what to change." Any other change is the
+   user's own answer. A change is shown again with its cost, and the
+   user's choice stands, recorded with its reason.
+5. **Record the confirmed list** with the profile (step 5 of "How to run
+   it"): `profile.json` `priorityMuscles` in its order (a confirmed
+   lagging area included), `priorityRegions` for a confirmed part (or the
+   lagging-area row's `regions`), and the Athlete profile's **Priorities**
+   (`formats.md`): each priority with its reason and the date decided, the
+   Later priorities, and the user's wish with the date asked. In
+   `profile.json` the date decided and the wish go only into the
+   `_priorities` note (a key starting with `_`: a note the engine never
+   reads).
+
+**Re-decided, not frozen.** At a plan run with new data and at each phase
+review, the coach decides them again the same way, from the current data
+(`planning.md`, "The order", step A item 2; `review.md`, Phase review). A
+profile whose priorities carry no reasons and no date decided holds the
+user's own picks, written before this step: the next plan run re-decides
+them, reading the old picks as the user's wish with the date they were
+named.
 
 ## Profile checklist (every field filled or "unknown")
 
 Basics (sex, age, height, weight, waist); screening (answers, outcome, date,
 re-screen due); training age; goals ranked with importance, confidence,
-measure, date; availability (days, minutes, shorter days, fixed
+measure, date; the user's wish with the date asked; the coach's priorities
+(each with its reason and the date decided, the Later priorities) as the
+user confirmed them; availability (days, minutes, shorter days, fixed
 constraints); equipment; tracking level; preferences (exercises, cardio
 modes, splits liked or disliked); the bad-week answer; Body assessment
 (date, photos, observations with confidence, emphasis, and the user's answer

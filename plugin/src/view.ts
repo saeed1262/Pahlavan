@@ -1,5 +1,5 @@
-// The Pahlavan view: a tab with the section tabs (Today, Progress, Plan,
-// Check-in, Food) and the Today screen. The clock, the hour and the body's classes
+// The Pahlavan view: a tab with the section tabs (Home, Today, Progress,
+// Plan, Check-in, Food, Movements) and their screens. The clock, the hour and the body's classes
 // come in through `ViewDeps`, so the static preview can drive the same view.
 
 import { ItemView, type WorkspaceLeaf } from 'obsidian';
@@ -25,7 +25,7 @@ import { rebuildForm } from './log-rebuild.ts';
 import { choosePick, chooseSwap, pickFor, swapsFor } from './pick.ts';
 import type { Scope } from '../../src/core/cycle.ts';
 import { logFrom } from '../../src/report/cycle.ts';
-import { progressScope, setProgressScope, type PahlavanSettings, type Section } from './settings.ts';
+import { logTracking, progressScope, setLogTracking, setProgressScope, type DeviceStore, type PahlavanSettings, type Section } from './settings.ts';
 import { h, icon, placeFixed } from './ui/dom.ts';
 import { clean, fmt, weekOfText } from './ui/format.ts';
 import { renderPlan, type PlanModel } from './ui/plan.ts';
@@ -33,13 +33,14 @@ import { renderProgress, type VolumeView } from './ui/progress.ts';
 import { photoSetDates, POSES, renderMore, sectionNav, type MoreContext, type PhotoFiles } from './ui/progress-more.ts';
 import { keepPlace } from './ui/scroll.ts';
 import { renderToday, weekRing } from './ui/today.ts';
-import { renderHome } from './ui/home.ts';
+import { homeMove, renderHome } from './ui/home.ts';
 import { buildHome, type HomeGo } from '../../src/report/home.ts';
 import type { TrackingWriter } from './tracking-writer.ts';
 import type { BodyRecordUi, MorningBellUi } from './ui/body-record.ts';
 import { dueTodayCard, sittingBar } from './ui/due-today.ts';
 import { renderHabits, todayCard, type HabitsContext, type HabitsUi } from './ui/habits.ts';
 import { renderFood } from './ui/food.ts';
+import { freshMovementsUi, renderMovements, type MovementsUi } from './ui/movements.ts';
 import { checksPrefill, type PatternCheck } from '../../src/report/food.ts';
 import { attachTooltip } from './ui/tooltip.ts';
 import { lightWords } from './ui/terms.ts';
@@ -57,6 +58,7 @@ import type { Result } from '../../src/core/reason.ts';
 import { yourDay, type YourDay } from '../../src/report/your-day.ts';
 import { yourDayStrip } from './ui/your-day.ts';
 import { nodeOk, type CoachState, type SetupResult } from './coach-setup.ts';
+import type { CoachVersion } from '../../src/core/version.ts';
 import { paths } from '../../src/adapters/vault/layout.ts';
 
 export const VIEW_TYPE = 'pahlavan-view';
@@ -68,7 +70,7 @@ export interface ViewDeps {
   data: PahlavanData;
   settings: PahlavanSettings;
   saveSettings(): void;
-  /** The coach skill (the welcome card's first step): where it stands, and setting it up. */
+  /** The coach skill (the welcome card's first step, and Home's "Update the coach"): where it stands, and setting it up. */
   coach?: { state(): Promise<CoachState & { node: { path: string; version: string } | null }>; setUp(): Promise<SetupResult> };
   /** Today's local date, YYYY-MM-DD: the only clock the view reads. */
   today(): string;
@@ -111,6 +113,8 @@ export interface ViewDeps {
   help?: HelpStore | null;
   /** Opens the user guide (the vault note when it exists, else the published page); absent: not offered. */
   openGuide?: () => void;
+  /** This vault's local storage on this Mac (the Log panel's last tracking); absent: a new log starts Standard unless the profile asks for every set. */
+  device?: DeviceStore;
 }
 
 const SECTIONS: readonly { id: Section; label: string; icon: string }[] = [
@@ -120,6 +124,7 @@ const SECTIONS: readonly { id: Section; label: string; icon: string }[] = [
   { id: 'plan', label: 'Plan', icon: 'layers' },
   { id: 'checkin', label: 'Check-in', icon: 'clipboard' },
   { id: 'food', label: 'Food', icon: 'bowl' },
+  { id: 'movements', label: 'Movements', icon: 'dumbbell' },
 ];
 
 export class PahlavanView extends ItemView {
@@ -171,8 +176,8 @@ export class PahlavanView extends ItemView {
   private ideas: { date: string; steps: Record<string, number> } = { date: '', steps: {} };
   /** The help: its state as last read, the tip bubble on screen, and whether the next tip scrolls into view. */
   private helpState: HelpState | null = null;
-  /** The coach skill's state for the welcome card, once looked up (null: not yet). */
-  private coachStatus: { state: 'missing' | 'old' | 'ok'; node: boolean } | null = null;
+  /** The coach skill's state for the welcome card and Home, once looked up (null: not yet). */
+  private coachStatus: { state: 'missing' | 'old' | 'newer' | 'ok'; node: boolean; direction: CoachVersion; installed: string | null; bundled: string } | null = null;
   private coachAsked = false;
   private tipEl: HTMLElement | null = null;
   private tipScroll = false;
@@ -182,6 +187,8 @@ export class PahlavanView extends ItemView {
   private helpPending: HelpChange[] = [];
   /** The Plan as last drawn (its At a glance reads it). */
   private planModel: PlanModel | null = null;
+  /** The Movements tab: the search, the filters and the open guides, kept across redraws (never saved). */
+  private movesUi: MovementsUi = freshMovementsUi();
 
   private readonly deps: ViewDeps;
 
@@ -408,6 +415,7 @@ export class PahlavanView extends ItemView {
           onToggleGuide: (key) => { if (this.openGuides.has(key)) this.openGuides.delete(key); else this.openGuides.add(key); this.render(); },
           links: planLinks(this.deps.data.fitnessFiles),
           ...(this.deps.openNote ? { onOpenNote: this.deps.openNote } : {}),
+          onBrowse: () => this.show('movements'),
           hero: { phase: this.phase, phaseOf: this.model?.phase ?? null, weekTarget: this.model?.review?.adherence.value.target ?? null },
           desk: (() => {
             const dm = this.deps.data.deskCard(this.date);
@@ -437,6 +445,16 @@ export class PahlavanView extends ItemView {
         this.drawFood();
       } catch (e) {
         this.showError('The Food tab could not be drawn', e, this.page);
+      }
+      return;
+    }
+    if (section === 'movements') {
+      // The catalogue is the engine's own, so the tab draws before the files are read; the plan's marks follow the read.
+      try {
+        keepPlace(this.contentEl, this.page, () => this.drawMovements());
+        this.revealMovement();
+      } catch (e) {
+        this.showError('The Movements tab could not be drawn', e, this.page);
       }
       return;
     }
@@ -474,7 +492,10 @@ export class PahlavanView extends ItemView {
     if (!read) return;
     const due = this.dueModel && this.dueModel.date === this.date ? this.dueModel : null;
     const items = this.deps.data.tracking?.tracking?.items ?? [];
-    const home = buildHome({ read, today: this.model, session: this.session, progress: this.progressModel, due, food: this.foodModel, day: this.yourDayModel()?.value ?? null, items });
+    this.lookAtCoach();
+    const c = this.coachStatus;
+    const coach = c ? { direction: c.direction, installed: c.installed, bundled: c.bundled } : null;
+    const home = buildHome({ read, today: this.model, session: this.session, progress: this.progressModel, due, food: this.foodModel, day: this.yourDayModel()?.value ?? null, items, coach });
     const r = this.model.review;
     renderHome(this.page, home, this.model, {
       phase: this.phase,
@@ -487,25 +508,23 @@ export class PahlavanView extends ItemView {
     this.homeIntro = false;
   }
 
-  /** Where a part of Home leads: its tab, a Progress view, Today's Due today, or the morning card. */
+  /** Where a part of Home leads: its tab, a Progress view, Today's Due today, the morning card, or Pahlavan's settings. */
   private homeGo(go: HomeGo): void {
-    if (go === 'morning') {
+    homeMove(go, {
+      tab: (section) => this.show(section),
+      due: () => {
+        this.show('today');
+        this.goToSection('today', 'due');
+      },
       // The morning card through the machinery; without it, the Check-in screen holds the same questions.
-      if (this.deps.reminders) void this.openDueKey('morning');
-      else this.show('checkin');
-      return;
-    }
-    if (go === 'due') {
-      this.show('today');
-      this.goToSection('today', 'due');
-      return;
-    }
-    if (go === 'progress' || go === 'progress-training' || go === 'progress-body') {
-      this.deps.settings.progressSection = go === 'progress-training' ? 'training' : go === 'progress-body' ? 'body' : 'overview';
-      this.show('progress');
-      return;
-    }
-    this.show(go);
+      morning: () => (this.deps.reminders ? void this.openDueKey('morning') : this.show('checkin')),
+      progress: (view) => {
+        this.deps.settings.progressSection = view;
+        this.show('progress');
+      },
+      ...(this.deps.openSettings ? { settings: this.deps.openSettings } : {}),
+      notify: (message) => this.deps.notify(message),
+    });
   }
 
   /** The Food tab; the scroll position survives the redraw (a tick, a table switch). */
@@ -540,6 +559,27 @@ export class PahlavanView extends ItemView {
       },
     });
     this.contentEl.scrollTop = top;
+  }
+
+  /** The Movements tab, for the search and filters as they stand. */
+  private drawMovements(): void {
+    if (!this.page) return;
+    const ui = this.movesUi;
+    renderMovements(this.page, this.deps.data.movements(ui.query), { ui, build: (q) => this.deps.data.movements(q), onChange: () => this.render() });
+    // A redraw while typing (a file changed) puts the focus back in the box: the caret goes to the end, where it was.
+    const box = this.page.querySelector<HTMLInputElement>('[data-k="mv-search"]');
+    if (box && box.ownerDocument.activeElement === box) box.setSelectionRange?.(box.value.length, box.value.length);
+  }
+
+  /** A step followed on the Movements tab: its row comes to the top and lights up once. */
+  private revealMovement(): void {
+    const id = this.movesUi.reveal;
+    if (!id || !this.page) return;
+    this.movesUi.reveal = null;
+    const row = this.page.querySelector<HTMLElement>(`[data-mv-id="${CSS.escape(id)}"]`);
+    if (!row) return;
+    row.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    flash(row);
   }
 
   /** Each meal's ideas stepped on today, in this session only: a new day starts from the day's own. */
@@ -637,7 +677,8 @@ export class PahlavanView extends ItemView {
     m.busy = true;
     m.error = null;
     this.render();
-    const out = await writer.saveMorning(st.date, { values, baseline: m.baseline, sore, force, ...(this.deps.nowIso ? { checkedAt: this.deps.nowIso() } : {}) });
+    const illness = (m.ill ?? false) !== (m.illFrom ?? false) ? { illness: m.ill } : {};
+    const out = await writer.saveMorning(st.date, { values, baseline: m.baseline, sore, ...illness, force, ...(this.deps.nowIso ? { checkedAt: this.deps.nowIso() } : {}) });
     m.busy = false;
     if (out.status === 'conflict') m.conflicts = out.conflicts;
     else if (out.status === 'failed') m.error = `Not saved: ${out.error}.`;
@@ -678,14 +719,14 @@ export class PahlavanView extends ItemView {
     this.render();
   }
 
-  /** A ladder's level, as the Skills card's hint suggests (mergeLadder's write, as `engine log ladder` makes it). */
-  private async moveLadder(id: string, level: number): Promise<void> {
+  /** A ladder's level, as the Skills card's hint suggests (mergeLadder's write, as `engine log ladder` makes it); `start`: the plan's start logged as the first level. */
+  private async moveLadder(id: string, level: number, how?: 'start'): Promise<void> {
     const read = this.deps.data.current;
     if (!this.deps.writer || !read) return;
     const out = await this.deps.writer.saveLadder({ id, level, date: this.date, plan: read.raw?.plan });
     if (out.status === 'failed') this.deps.notify(`The level was not saved: ${out.error}.`);
     else {
-      this.deps.notify(out.status === 'already' ? `Already at level ${level} (${clean(out.name)}).` : `Moved to level ${level}, ${clean(out.name)}, from ${fmt.wd(this.date)}.`);
+      this.deps.notify(out.status === 'already' ? `Already at level ${level} (${clean(out.name)}).` : how === 'start' ? `Logged level ${level}, ${clean(out.name)}, the plan’s start, from ${fmt.wd(this.date)}.` : `Moved to level ${level}, ${clean(out.name)}, from ${fmt.wd(this.date)}.`);
       this.deps.requestReload();
     }
   }
@@ -829,7 +870,7 @@ export class PahlavanView extends ItemView {
       // Photo folders before the range's first day are left out, like the index's sets.
       photoFiles: inRange(this.photoFiles ?? {}, more.body?.cycleStart ?? null),
       resourcePath: this.deps.resourcePath ?? null,
-      ...(this.deps.writer ? { onMoveLadder: (id: string, level: number) => void this.moveLadder(id, level) } : {}),
+      ...(this.deps.writer ? { onMoveLadder: (id: string, level: number, how?: 'start') => void this.moveLadder(id, level, how) } : {}),
       guide: (name: string) => guideFor(this.deps.data.current?.raw?.plan, this.deps.data.current?.raw?.log, name),
       openGuides: this.openGuides,
       onToggleGuide: (key: string) => { if (this.openGuides.has(key)) this.openGuides.delete(key); else this.openGuides.add(key); this.render(); },
@@ -968,7 +1009,7 @@ export class PahlavanView extends ItemView {
     if (!read || !this.session) return;
     // No planned session today: the panel opens on "Something else" (a custom session).
     // Today's swaps chosen on the chips come along.
-    const planned = logFormFor(read, this.session, this.date);
+    const planned = logFormFor(read, this.session, this.date, this.deps.device ? { tracking: logTracking(this.deps.device) } : {});
     const form = planned ? withSwaps(planned, swapsFor(this.deps.settings.swaps, this.date)) : customLogForm(read, this.date);
     await this.showLog(form);
   }
@@ -1049,6 +1090,9 @@ export class PahlavanView extends ItemView {
         if (r) void this.showLog(logFormFromEntry(r, entry));
       },
       guide: (name) => guideFor(read?.raw?.plan, read?.raw?.log, name),
+      onTracking: (tracking) => {
+        if (this.deps.device) setLogTracking(this.deps.device, tracking);
+      },
       onUseDisk: (entry) => {
         const r = this.deps.data.current;
         if (r) void this.showLog(logFormFromEntry(r, entry));
@@ -1517,8 +1561,8 @@ export class PahlavanView extends ItemView {
 
   /** A visit to a tab: one of its first while fewer than three are counted (Coach/help.json, shared by both Macs). */
   private countVisit(section: Section): void {
-    // Home has no At a glance: its visits are not counted.
-    if (section === 'home') return;
+    // Home and Movements have no At a glance: their visits are not counted.
+    if (section === 'home' || section === 'movements') return;
     const tab: GlanceTab = section;
     this.early[tab] = earlyVisit(this.helpState, tab);
     if (this.early[tab]) void this.helpNow({ op: 'visit', tab }, false);
@@ -1550,8 +1594,8 @@ export class PahlavanView extends ItemView {
   /** The open tab's At a glance: its lines, the heading of its list, Progress's other views and the prefix of its sections' ids. */
   private glanceOf(tab: Section): { glance: Glance; heading: string; prefix: string | null; views: { label: string; items: { id: string; label: string; line: string }[] } | null } | null {
     const read = this.deps.data.current;
-    // Home is the overview itself: no At a glance there.
-    if (tab === 'home') return null;
+    // Home is the overview itself, and Movements a list to search: no At a glance there.
+    if (tab === 'home' || tab === 'movements') return null;
     if (tab === 'today') {
       if (!this.model?.review || !read) return null;
       const log = read.raw?.log;
@@ -1602,7 +1646,7 @@ export class PahlavanView extends ItemView {
     if (!page) return;
     page.querySelector('[data-glance]')?.remove();
     const tab = this.deps.settings.lastTab;
-    if (tab === 'home') return;
+    if (tab === 'home' || tab === 'movements') return;
     const hero = page.querySelector('.pv-hero');
     let g: ReturnType<PahlavanView['glanceOf']> = null;
     try {
@@ -1671,15 +1715,8 @@ export class PahlavanView extends ItemView {
     if (!read || this.helpState?.welcomeHidden) return null;
     const w = welcomeSteps(read, this.date).value;
     if (w.complete) return null;
-    // The coach's state, looked up once (and again after setting it up): the card draws "checking" until then.
     const coach = this.deps.coach;
-    if (coach && !this.coachAsked) {
-      this.coachAsked = true;
-      void coach.state().then((st) => {
-        this.coachStatus = { state: st.installed === null ? 'missing' : st.installed === st.bundled && !st.missing.length && !st.differ.length ? 'ok' : 'old', node: nodeOk(st.node?.version ?? null) };
-        this.render();
-      }, () => undefined);
-    }
+    this.lookAtCoach();
     return welcomeCard({
       welcome: w,
       ...(coach ? { coach: { state: this.coachStatus?.state ?? 'checking', node: this.coachStatus ? this.coachStatus.node : null, onSetUp: () => void this.setUpCoach() } } : {}),
@@ -1690,15 +1727,38 @@ export class PahlavanView extends ItemView {
     });
   }
 
+  /**
+   * The coach's state, looked up once (and again after setting it up): the
+   * welcome card draws "checking" until then, and Home adds its need once it
+   * is known. At the same version, files that differ are the user's own
+   * edits, not a step to do; a newer coach is set up, and Pahlavan is the
+   * one to update.
+   */
+  private lookAtCoach(): void {
+    const coach = this.deps.coach;
+    if (!coach || this.coachAsked) return;
+    this.coachAsked = true;
+    void coach.state().then((st) => {
+      const state = st.direction === 'not-set-up' ? 'missing' : st.direction === 'coach-older' ? 'old' : st.direction === 'coach-newer' ? 'newer' : st.missing.length ? 'missing' : 'ok';
+      this.coachStatus = { state, node: nodeOk(st.node?.version ?? null), direction: st.direction, installed: st.installed, bundled: st.bundled };
+      this.render();
+    }, () => undefined);
+  }
+
+  /** The coach was set up or updated from elsewhere (the settings, the command): look at it again. */
+  coachChanged(): void {
+    this.coachAsked = false;
+    this.coachStatus = null;
+    this.render();
+  }
+
   /** The welcome card's Set up the coach: writes the skill, says so, and looks again. */
   private async setUpCoach(): Promise<void> {
     const coach = this.deps.coach;
     if (!coach) return;
     const r = await coach.setUp();
     this.deps.notify(r.ok ? `The coach is set up (${r.written.length} files). Start Claude Code in this vault and run /fitness-coach intake.` : `The coach was not set up: ${r.error}`);
-    this.coachAsked = false;
-    this.coachStatus = null;
-    this.render();
+    this.coachChanged();
   }
 
   private openGuide(): void {

@@ -71,7 +71,7 @@ export interface CardHandle {
 }
 
 export type CardPayload =
-  | { kind: 'morning'; values: MorningValues; baseline: MorningValues; tape?: RecordValues; tapeBaseline?: RecordValues; force?: boolean; sore?: Record<string, SorenessLevel | null> }
+  | { kind: 'morning'; values: MorningValues; baseline: MorningValues; tape?: RecordValues; tapeBaseline?: RecordValues; force?: boolean; sore?: Record<string, SorenessLevel | null>; /** "I'm ill today", only when the card changed it. */ illness?: boolean }
   | { kind: 'tape'; values: RecordValues; baseline: RecordValues; force?: boolean }
   | { kind: 'tests'; values: RecordValues; baseline: RecordValues; force?: boolean }
   | { kind: 'habits'; ticks: Record<string, boolean> }
@@ -595,14 +595,15 @@ export class Reminders {
       case 'morning': {
         const changed = Object.keys(p.values).filter((k) => (p.values as Record<string, unknown>)[k] !== (p.baseline as Record<string, unknown>)[k]);
         const sore = p.sore && Object.keys(p.sore).length ? p.sore : null;
-        if (changed.length || sore) {
+        const illness = p.illness === undefined ? {} : { illness: p.illness };
+        if (changed.length || sore || p.illness !== undefined) {
           const values: MorningValues = {};
           const baseline: MorningValues = {};
           for (const k of changed) {
             (values as Record<string, unknown>)[k] = (p.values as Record<string, unknown>)[k];
             (baseline as Record<string, unknown>)[k] = (p.baseline as Record<string, unknown>)[k] ?? null;
           }
-          const r: MorningOutcome = await this.host.checkin.saveMorning(date, { values, baseline, checkedAt: at, ...(sore ? { sore } : {}), ...(p.force ? { force: true } : {}) });
+          const r: MorningOutcome = await this.host.checkin.saveMorning(date, { values, baseline, checkedAt: at, ...(sore ? { sore } : {}), ...illness, ...(p.force ? { force: true } : {}) });
           if (r.status === 'conflict') {
             o.handle?.message(`Changed on the other Mac since this card opened: ${r.conflicts.map((c) => `${c.key} is ${c.disk ?? 'empty'} there`).join(', ')}. Save again to keep yours.`, { conflict: true });
             return;

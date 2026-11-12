@@ -1,0 +1,75 @@
+{
+  "_about": "A made-up sample plan, nobody's own: the coach's self-check reads it in place of plan-data.json on a vault with no plan yet, so the plan check, the draft review, plan-write and a draft's sessions still run there.",
+  "weekTarget": { "lift": 2, "short": 1 },
+  "liftTypes": ["A", "B"],
+  "shortTypes": ["S1"],
+  "titles": { "A": "Full Body A", "B": "Full Body B", "S1": "Short 1: core and easy cardio" },
+  "shortNames": { "S1": "Short 1 · Core" },
+  "focus": { "A": "Squat and press", "B": "Hinge and pull" },
+  "warmups": { "lift": "5 min easy bike · 2 light sets of the first lift", "short": "2 min brisk walk" },
+  "sessions": {
+    "A": [
+      { "name": "Goblet squat", "sr": "3 × 8–10", "rest": "2–3 min", "rir": 2, "note": "Why: the main squat, with dumbbells only.", "logged": true },
+      { "name": "Flat dumbbell bench press", "sr": "3 × 8–10", "rest": "2–3 min", "rir": 2, "note": "Why: the main press.", "logged": true },
+      { "name": "Dumbbell lateral raise", "sr": "3 × 12–15", "rest": "90 s", "rir": 1, "note": "Why: side delts, which the presses train little." },
+      { "name": "Front plank", "sr": "3 × 30–45 s", "rest": "60 s", "note": "Why: core, braced as for the squat." }
+    ],
+    "B": [
+      { "name": "Dumbbell Romanian deadlift", "sr": "3 × 8–10", "rest": "2–3 min", "rir": 2, "note": "Why: the main hinge.", "logged": true },
+      { "name": "One-arm dumbbell row", "sr": "3 × 8–10/arm", "rest": "2–3 min", "rir": 2, "note": "Why: the main pull.", "logged": true },
+      { "name": "Dumbbell reverse lunge", "sr": "3 × 10/leg", "rest": "90 s", "rir": 2, "note": "Why: single-leg work for the quads and glutes." },
+      { "name": "Side plank", "sr": "3 × 20–30 s/side", "rest": "60 s", "note": "Why: the obliques." }
+    ],
+    "S1": [
+      { "name": "Dead bug", "sr": "3 × 8/side", "rest": "45 s", "note": "Why: core on the short day." },
+      { "name": "Easy bike (zone 2)", "sr": "20 min", "timed": { "minutes": 20 }, "note": "Why: easy aerobic work; talk in full sentences." }
+    ]
+  },
+  "liftUnit": "kg",
+  "lifts": {
+    "Goblet squat": { "short": "Squat", "lo": 8, "hi": 10, "inc": 2, "db": true },
+    "Flat dumbbell bench press": { "short": "Bench", "lo": 8, "hi": 10, "inc": 2, "db": true },
+    "Dumbbell Romanian deadlift": { "short": "RDL", "lo": 8, "hi": 10, "inc": 2, "db": true },
+    "One-arm dumbbell row": { "short": "Row", "lo": 8, "hi": 10, "inc": 2, "db": true }
+  },
+  "express": { "warmup": "Warm-up: 3 min easy bike", "mainSets": "2 working sets", "secondSets": "2 sets", "finish": { "name": "Front plank", "sr": "2 × 30 s" } },
+  "deloadS3": [],
+  "ladders": [],
+  "laddersFor": {},
+  "guide": {
+    "Goblet squat": { "setup": "Hold one dumbbell at the chest, feet a little wider than the hips.", "do": "Sit down between the heels, then stand.", "avoid": "Heels lifting.", "muscles": { "main": ["quads", "glutes"], "helps": ["abs", "upper-back"], "regions": ["quads-vasti"] } },
+    "Flat dumbbell bench press": { "setup": "Lie on a flat bench, a dumbbell in each hand over the chest.", "do": "Lower to the chest's sides, then press up.", "avoid": "Bouncing at the bottom.", "muscles": { "main": ["chest"], "helps": ["triceps", "shoulders"], "regions": ["shoulders-front"] } },
+    "Dumbbell lateral raise": { "setup": "Stand tall, a light dumbbell in each hand.", "do": "Raise the arms out to shoulder height, then lower slowly.", "avoid": "Swinging.", "muscles": { "main": ["shoulders"], "helps": [], "regions": ["shoulders-side"] } },
+    "Front plank": { "setup": "Forearms on the floor, elbows under the shoulders.", "do": "Hold a straight line from head to heels.", "avoid": "Hips sagging.", "muscles": { "main": ["abs"], "helps": ["shoulders"] } },
+    "Dumbbell Romanian deadlift": { "setup": "Stand with a dumbbell in each hand.", "do": "Push the hips back with a flat back, then stand.", "avoid": "Rounding the back.", "muscles": { "main": ["hamstrings", "glutes"], "helps": ["lower-back", "forearms"], "regions": ["hamstrings-hip"] } },
+    "One-arm dumbbell row": { "setup": "One hand and knee on a bench, the dumbbell in the other hand.", "do": "Pull the elbow back to the hip, then lower.", "avoid": "Twisting the torso.", "muscles": { "main": ["lats", "upper-back"], "helps": ["biceps", "forearms"], "regions": ["upper-back-mid"] } },
+    "Dumbbell reverse lunge": { "setup": "Stand with a dumbbell in each hand.", "do": "Step back and lower the back knee, then return.", "avoid": "The front knee caving in.", "muscles": { "main": ["quads", "glutes"], "helps": ["hamstrings"], "regions": ["quads-vasti"] } },
+    "Side plank": { "setup": "On one forearm, feet stacked.", "do": "Lift the hips and hold a straight line.", "avoid": "Hips dropping.", "muscles": { "main": ["obliques"], "helps": ["abs", "glutes"] } },
+    "Dead bug": { "setup": "On the back, arms up, knees over the hips.", "do": "Lower the opposite arm and leg, then return.", "avoid": "The low back lifting.", "muscles": { "main": ["abs"], "helps": [] } },
+    "Easy bike (zone 2)": { "do": "Pedal at a pace you can talk at.", "muscles": { "main": [], "helps": [], "kind": "cardio" } }
+  },
+  "muscles": {
+    "chest": "Chest",
+    "shoulders": "Shoulders",
+    "biceps": "Biceps",
+    "triceps": "Triceps",
+    "forearms": "Forearms",
+    "abs": "Abs",
+    "obliques": "Obliques",
+    "upper-back": "Upper back",
+    "lats": "Lats",
+    "lower-back": "Lower back",
+    "glutes": "Glutes",
+    "quads": "Quads",
+    "hamstrings": "Hamstrings",
+    "calves": "Calves"
+  },
+  "deskRoutine": [],
+  "rules": {
+    "calibration": { "weeks": [1], "rir": 3, "cardio": "easy", "afterRestart": true },
+    "lightWeeks": { "every": 4, "sets": "half", "load": 0.9, "rirAdd": 3, "early": "offer" },
+    "tests": { "weeks": "phase-ends" },
+    "stall": { "response": "triage" },
+    "hotel": { "swaps": "catalogue", "longTripSets": "third" }
+  }
+}

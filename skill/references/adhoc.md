@@ -55,6 +55,10 @@ The neck check **(H)**:
   before normal loads.
 - Resting HR 7+ bpm over baseline for 2 days (`numbers.md`, readiness) gets
   the same answer: no hard training.
+- The day itself is recorded by the user: **I'm ill today** on the morning
+  check-in (the Check-in screen or the morning card) saves `illness` for
+  that day, and readiness's `no-hard-training` follows. The coach never
+  writes it.
 
 ## Pain
 
@@ -68,6 +72,9 @@ The neck check **(H)**:
    plan works around it meanwhile.
 5. A Ledger entry either way (`formats.md`); a constraint lasting beyond the
    day becomes an `until` change. Describe; never diagnose or name a cause.
+6. A logged pain with no severity (a pain skip whose slider wasn't moved):
+   the engine's verdict is `ask`. Ask how bad it was, then apply the rule
+   above; never assume a number.
 
 ## Sore or tired today
 

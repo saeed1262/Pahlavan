@@ -252,6 +252,9 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-sections button[data-section="plan"] svg { color: var(--pv-acc-plan); }
 .pahlavan-view .pv-sections button[data-section="checkin"] svg { color: var(--pv-acc-checkin); }
 .pahlavan-view .pv-sections button[data-section="food"] svg { color: var(--pv-acc-food); }
+.pahlavan-view { --pv-acc-movements: #4f7a28; }
+.theme-dark .pahlavan-view { --pv-acc-movements: #9cc96b; }
+.pahlavan-view .pv-sections button[data-section="movements"] svg { color: var(--pv-acc-movements); }
 .pahlavan-view [data-home] [hidden] { display: none !important; }
 
 .pahlavan-view .pv-home-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
@@ -779,7 +782,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
   .pahlavan-view .pv-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pahlavan-view .pv-why-btn svg, .pahlavan-view .pv-tip { transition: none; }
+  .pahlavan-view .pv-why-btn svg, .pahlavan-view .pv-tip, .pahlavan-view .pv-why-more svg, .pahlavan-view .pv-tag-why svg { transition: none; }
 }
 
 /* ── The Log panel (a side panel over the view) ────────────── */
@@ -801,6 +804,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-close:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .pahlavan-view .pv-lg-close svg { width: 17px; height: 17px; }
 .pahlavan-view .pv-lg-body { flex: 1; overflow: auto; padding: 4px 28px 28px; }
+/* The panel's own width decides the Date, Session and Version row, not the window's: three columns only when they fit. */
+.pahlavan-view .pv-lg-body { container-type: inline-size; container-name: pvlog; }
 .pahlavan-view .pv-lg-sec { padding: 18px 0 20px; border-top: 1px solid var(--pv-card-line); }
 .pahlavan-view .pv-lg-sec:first-child, .pahlavan-view .pv-lg-banner + .pv-lg-sec { border-top: none; }
 .pahlavan-view .pv-lg-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
@@ -818,6 +823,17 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-pick > svg:last-child { width: 12px; height: 12px; margin-left: auto; }
 .pahlavan-view .pv-lg-pick em { font-style: normal; font-weight: 500; color: var(--text-faint); font-size: 12px; }
 .pahlavan-view .pv-lg-pick.is-date { cursor: pointer; }
+/* A long session name shortens with an ellipsis inside its box instead of spilling over the fields beside it. */
+.pahlavan-view .pv-lg-pick { justify-content: flex-start; min-width: 0; max-width: 100%; overflow: hidden; }
+.pahlavan-view .pv-lg-pick-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pahlavan-view .pv-lg-pick > .pv-lg-tag, .pahlavan-view .pv-lg-pick > svg, .pahlavan-view .pv-lg-pick > em { flex-shrink: 0; }
+@container pvlog (max-width: 760px) {
+  .pahlavan-view .pv-lg-what { grid-template-columns: auto minmax(0, 1fr); }
+  .pahlavan-view .pv-lg-what > .pv-lg-field:last-child { grid-column: 1 / -1; }
+}
+@container pvlog (max-width: 400px) {
+  .pahlavan-view .pv-lg-what { grid-template-columns: minmax(0, 1fr); }
+}
 .pahlavan-view .pv-lg-date { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .pahlavan-view .pv-lg-date::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
 .pahlavan-view .pv-lg-field-grow .pv-lg-pick { width: 100%; }
@@ -890,7 +906,17 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-set .pv-lg-stp { height: 36px; }
 .pahlavan-view .pv-lg-set .pv-lg-stp-b { height: 34px; width: 32px; }
 .pahlavan-view .pv-lg-set .pv-lg-stp-in { width: 46px; font-size: 14px; }
-.pahlavan-view .pv-lg-set-n { color: var(--text-muted); font-size: 12px; font-weight: 650; text-align: center; }
+/* Every set: the set's number is its tick; a set not ticked yet shows its prefilled numbers muted. */
+.pahlavan-view .pv-lg-tick { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--background-modifier-border); box-shadow: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 650; cursor: pointer; font-variant-numeric: tabular-nums; }
+.pahlavan-view .pv-lg-tick:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.pahlavan-view .pv-lg-tick.is-on { background: var(--interactive-accent); border-color: var(--interactive-accent); color: var(--text-on-accent); }
+.pahlavan-view .pv-lg-tick svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.pahlavan-view .pv-lg-tick:disabled { opacity: 0.45; cursor: default; border-style: dashed; }
+.pahlavan-view .pv-lg-set:not(.is-done) .pv-lg-stp-in { color: var(--text-muted); font-weight: 500; }
+.pahlavan-view .pv-lg-ticks { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pahlavan-view .pv-lg-parts { display: grid; gap: 4px; }
+.pahlavan-view .pv-lg-part { margin-bottom: 6px; font-size: 12.5px; }
+.pahlavan-view .pv-lg-part b { font-weight: 650; }
 .pahlavan-view .pv-lg-bw { color: var(--text-faint); font-size: 12px; }
 .pahlavan-view .pv-lg-rir { display: inline-flex; gap: 3px; }
 .pahlavan-view .pv-lg-rir-b { width: 32px; height: 32px; padding: 0; border-radius: 8px; border: 1px solid var(--background-modifier-border); box-shadow: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 650; cursor: pointer; font-variant-numeric: tabular-nums; }
@@ -916,6 +942,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-sev { display: grid; grid-template-columns: 70px minmax(0, 1fr) 44px; gap: 10px; align-items: center; color: var(--text-muted); font-weight: 600; font-size: 12px; }
 .pahlavan-view .pv-lg-sev input { width: 100%; accent-color: var(--pv-over); }
 .pahlavan-view .pv-lg-sev b { text-align: right; color: var(--text-normal); font-variant-numeric: tabular-nums; }
+.pahlavan-view .pv-lg-sev.is-unset input { opacity: 0.45; }
+.pahlavan-view .pv-lg-sev.is-unset b { color: var(--text-faint); }
 .pahlavan-view .pv-lg-sore { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start; margin: 16px 0 14px; }
 .pahlavan-view .pv-lg-sore .pv-figures.is-small .pv-figure svg { height: 210px; }
 .pahlavan-view .pv-figures.is-small .pv-bm-base { fill: color-mix(in srgb, var(--pv-silhouette, var(--background-modifier-border)) 65%, var(--pv-card)); }
@@ -983,9 +1011,9 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
   .pahlavan-view .pv-lg-head, .pahlavan-view .pv-lg-foot, .pahlavan-view .pv-lg-sum, .pahlavan-view .pv-lg-body { padding-left: 22px; padding-right: 22px; }
   .pahlavan-view .pv-lg-what { grid-template-columns: auto minmax(0, 1fr); }
   .pahlavan-view .pv-lg-what > .pv-lg-field:last-child { grid-column: 1 / -1; }
-  .pahlavan-view .pv-lg-sets-head, .pahlavan-view .pv-lg-set { grid-template-columns: 24px 132px 120px minmax(0, 1fr); }
+  .pahlavan-view .pv-lg-sets-head, .pahlavan-view .pv-lg-set { grid-template-columns: 28px 132px 120px minmax(0, 1fr); }
   .pahlavan-view .pv-lg-set .pv-lg-stp-in { width: 38px; }
-  .pahlavan-view .pv-lg-rir-b { width: 28px; }
+  .pahlavan-view .pv-lg-rir-b { width: 26px; }
   .pahlavan-view .pv-lg-rpe-taps { grid-template-columns: repeat(10, 36px); gap: 5px; }
   .pahlavan-view .pv-lg-tap-n { width: 36px; height: 36px; }
   .pahlavan-view .pv-lg-rpe-scale { width: 405px; }
@@ -1210,6 +1238,32 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-meso-wk.is-now { box-shadow: inset 0 0 0 1.5px var(--text-normal); }
 .pahlavan-view .pv-minweek-row { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; line-height: 1.5; }
 .pahlavan-view .pv-minweek-row .pv-faint { margin-top: 2px; font-size: 12px; }
+/* The Why this plan card: the coach's reasons in its own voice (the lead in the serif), each reason with its grade, the split. */
+.pahlavan-view .pv-why-lead { margin: 4px 0 12px; font-family: var(--pv-serif); font-size: 17px; line-height: 1.55; color: var(--text-normal); max-width: 76ch; }
+.pahlavan-view .pv-why-reasons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0 22px; }
+.pahlavan-view .pv-why-reasons li { padding: 10px 0; border-top: 1px solid var(--pv-card-line); }
+.pahlavan-view .pv-why-r-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.pahlavan-view .pv-why-reasons p, .pahlavan-view .pv-why-split > p { margin: 4px 0 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.pahlavan-view .pv-why-split { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--pv-card-line); }
+.pahlavan-view .pv-why-pick { display: inline-flex; color: var(--pv-in); }
+.pahlavan-view .pv-why-pick svg { width: 15px; height: 15px; }
+.pahlavan-view .pv-why-split > p, .pahlavan-view .pv-why-fams, .pahlavan-view .pv-why-more { margin-left: 23px; }
+.pahlavan-view .pv-why-fams { display: grid; grid-template-columns: 11.5rem minmax(0, 1fr); gap: 6px 14px; margin-top: 10px; margin-bottom: 0; font-size: 13px; line-height: 1.45; }
+.pahlavan-view .pv-why-fams dt { color: var(--text-muted); }
+.pahlavan-view .pv-why-fams dd { margin: 0; }
+.pahlavan-view .pv-why-more { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 0; height: auto; border: none; box-shadow: none; background: transparent; color: var(--text-muted); font: inherit; font-size: 12.5px; cursor: pointer; }
+.pahlavan-view .pv-why-more:hover { color: var(--text-normal); }
+.pahlavan-view .pv-why-more svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
+.pahlavan-view .pv-why-more.is-open svg { transform: rotate(180deg); }
+.pahlavan-view .pv-links.pv-why-links { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 14px; }
+.pahlavan-view .pv-why-links .pv-link-row { width: auto; max-width: 100%; }
+.pahlavan-view .pv-why-empty { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; font-size: 13px; line-height: 1.5; }
+.pahlavan-view .pv-why-empty p { flex: 1 1 320px; margin: 0; color: var(--text-muted); }
+@media (max-width: 560px) {
+  .pahlavan-view .pv-why-fams { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
+  .pahlavan-view .pv-why-fams dd { margin-bottom: 6px; }
+  .pahlavan-view .pv-why-split > p, .pahlavan-view .pv-why-fams, .pahlavan-view .pv-why-more { margin-left: 0; }
+}
 /* This mesocycle: each session a panel of its own, in a lifting and a short group. */
 .pahlavan-view .pv-tpl-group { margin-top: 18px; }
 .pahlavan-view .pv-tpl-group-h { margin-bottom: 8px; color: var(--text-muted); font-size: 11px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; }
@@ -1308,7 +1362,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-tap:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .pahlavan-view .pv-tap.is-on { background: var(--interactive-accent); border-color: var(--interactive-accent); color: var(--text-on-accent); }
 .pahlavan-view .pv-tap-anchor { color: var(--text-faint); font-size: 11.5px; }
-.pahlavan-view .pv-mc-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding: 14px 0 16px; border-top: 1px solid var(--pv-card-line); }
+.pahlavan-view .pv-mc-fields { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; padding: 14px 0 16px; border-top: 1px solid var(--pv-card-line); }
 .pahlavan-view .pv-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-muted); font-weight: 600; min-width: 0; }
 .pahlavan-view .pv-field-in { display: flex; align-items: center; height: 36px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); }
 .pahlavan-view .pv-field-in input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--text-normal); font: inherit; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -1466,12 +1520,15 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-sk-move:hover:not(:disabled) { color: var(--text-normal); border-color: var(--interactive-accent); }
 .pahlavan-view .pv-sk-move:disabled { opacity: 0.35; cursor: default; }
 .pahlavan-view .pv-sk-move svg { width: 12px; height: 12px; }
+.pahlavan-view .pv-sk-log { margin-top: 7px; }
 .pahlavan-view .pv-sk-guide { grid-column: 1 / -1; }
 .pahlavan-view .pv-sk-level { font-weight: 600; color: var(--text-normal); }
 .pahlavan-view .pv-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; }
 .pahlavan-view .pv-link-row { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--pv-card-line); border-radius: 10px; box-shadow: none; background: transparent; color: var(--text-normal); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
 .pahlavan-view .pv-link-row:hover:not(:disabled) { background: var(--background-modifier-hover); }
-.pahlavan-view .pv-link-row span { flex: 1; }
+.pahlavan-view .pv-link-row { justify-content: flex-start; }
+.pahlavan-view .pv-link-row span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pahlavan-view .pv-link-row svg { flex: none; }
 .pahlavan-view .pv-link-row svg { width: 15px; height: 15px; color: var(--text-muted); }
 .pahlavan-view .pv-lg-gd { font-weight: 650; }
 
@@ -1537,7 +1594,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-nv-menu .pv-faint { font-size: 11.5px; }
 .pahlavan-view .pv-nv-menu-sep { height: 1px; margin: 4px 6px; background: var(--pv-card-line); }
 .pahlavan-view .pv-nv-fields { display: grid; gap: 10px; }
-.pahlavan-view .pv-nv-fields.is-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pahlavan-view .pv-nv-fields.is-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .pahlavan-view .pv-nv-fields.is-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .pahlavan-view .pv-nv-fields.is-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 .pahlavan-view .pv-nv-field small { color: var(--text-faint); font-weight: 500; font-size: 11px; line-height: 1.3; }
@@ -1631,7 +1688,6 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-nv-ideas svg { width: 14px; height: 14px; color: var(--text-faint); }
 .pahlavan-view.pv-nv .pv-btn-primary:disabled, .pahlavan-view.pv-nv .pv-btn-quiet:disabled { opacity: 0.45; cursor: default; }
 @media (max-width: 1240px) {
-  .pahlavan-view .pv-nv-fields.is-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pahlavan-view .pv-nv-fields.is-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
@@ -2308,8 +2364,11 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-welcome-steps li > div { min-width: 0; }
 .pahlavan-view .pv-welcome-steps .pv-cmd { margin-top: 4px; max-width: 100%; flex-wrap: wrap; }
 .pahlavan-view .pv-welcome-steps .pv-cmd code { white-space: normal; overflow-wrap: anywhere; }
-.pahlavan-view .pv-welcome-foot { display: flex; gap: 10px; align-items: center; }
+.pahlavan-view .pv-welcome-foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .pahlavan-view .pv-welcome-foot .pv-btn-quiet { height: 32px; }
+/* The "Using Pahlavan?" link: quiet, at the row's far end. */
+.pahlavan-view .pv-welcome-hi { margin-left: auto; color: var(--text-muted); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
+.pahlavan-view .pv-welcome-hi:hover { color: var(--text-accent); }
 .pahlavan-view .pv-page { position: relative; }
 .pahlavan-view .pv-tipbox { position: absolute; z-index: 25; padding: 14px 16px 12px; border-radius: 12px; background: var(--background-primary); border: 1px solid color-mix(in srgb, var(--pv-kicker) 55%, var(--pv-card-line)); box-shadow: 0 12px 34px rgba(15, 23, 42, 0.2); font-size: 13px; line-height: 1.5; color: var(--text-normal); }
 .pahlavan-view .pv-tipbox::before { content: ''; position: absolute; width: 12px; height: 12px; background: inherit; border: inherit; border-right: 0; border-bottom: 0; }
@@ -2412,3 +2471,101 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-ms-hit { fill: transparent; }
 .pahlavan-view .pv-sit-key.is-break i, .pahlavan-view .pv-sit-key.is-away i { background: var(--pv-seq-3); }
 .pahlavan-view .pv-sit-key.is-desk i { background: var(--pv-seq-5); }
+
+/* ── Movements (0.28.1): the catalogue, searched ──────────── */
+/* Seven tabs: when the bar and the date don't fit on one line, the date and the ? drop under it at the right
+   (the ? menu opens leftward from there); a narrower pane stacks them at the left, as before, and only there
+   does the tab bar itself wrap, rather than run off the side. */
+.pahlavan-view .pv-top { flex-wrap: wrap; row-gap: 10px; }
+.pahlavan-view .pv-top-r { margin-left: auto; }
+.pahlavan-view .pv-sections { flex-wrap: wrap; max-width: 100%; }
+@container pahlavan (max-width: 760px) {
+  .pahlavan-view .pv-top-r { margin-left: 0; }
+  .pahlavan-view .pv-sections { border-radius: 18px; }
+}
+.pahlavan-view .pv-mv-head { margin: 4px 2px 16px; }
+.pahlavan-view .pv-mv-intro { margin: 0; max-width: 640px; color: var(--text-muted); font-size: 13.5px; line-height: 1.45; }
+.pahlavan-view .pv-mv-search { display: grid; gap: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.pahlavan-view .pv-mv-box { height: 42px; gap: 9px; padding: 0 6px 0 12px; }
+.pahlavan-view .pv-mv-box:focus-within { border-color: var(--interactive-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 22%, transparent); }
+.pahlavan-view .pv-mv-box > svg { width: 16px; height: 16px; color: var(--text-faint); }
+.pahlavan-view .pv-mv-box input { font-size: 14.5px; font-weight: 500; font-variant-numeric: normal; }
+.pahlavan-view .pv-mv-clear[hidden] { display: none; }
+.pahlavan-view .pv-mv-clear svg { width: 15px; height: 15px; }
+.pahlavan-view .pv-mv-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.pahlavan-view .pv-mv-sel { flex: 1 1 150px; min-width: 0; max-width: 230px; }
+.pahlavan-view .pv-mv-mine { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--background-modifier-border); border-radius: 999px; box-shadow: none; background: var(--pv-card); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.pahlavan-view .pv-mv-mine svg { width: 14px; height: 14px; }
+.pahlavan-view .pv-mv-mine:hover:not(:disabled) { color: var(--text-normal); border-color: var(--pv-acc-movements); }
+.pahlavan-view .pv-mv-mine.is-on { background: var(--pv-acc-movements); border-color: var(--pv-acc-movements); color: var(--pv-card); }
+.pahlavan-view .pv-mv-mine:disabled { opacity: 0.5; cursor: default; }
+.pahlavan-view .pv-mv-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 2px 10px; color: var(--text-muted); font-size: 12.5px; font-weight: 600; }
+.pahlavan-view .pv-mv-notes { margin: 0 2px 12px; }
+.pahlavan-view .pv-mv-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 320px); gap: 18px; align-items: start; }
+.pahlavan-view .pv-mv-layout.is-single { grid-template-columns: minmax(0, 1fr); }
+.pahlavan-view .pv-mv-main { display: grid; gap: 14px; min-width: 0; }
+.pahlavan-view .pv-mv-group { padding: 16px 18px 18px; }
+.pahlavan-view .pv-mv-group .pv-card-head { align-items: center; margin-bottom: 10px; }
+.pahlavan-view .pv-mv-n { min-width: 24px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--background-modifier-hover); color: var(--text-muted); font-size: 11.5px; font-weight: 650; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+/* The movements as small tiles, as many across as fit; an open guide takes the whole row. */
+.pahlavan-view .pv-mv-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; }
+.pahlavan-view .pv-mv-row { min-width: 0; padding: 10px 12px 11px; border: 1px solid var(--pv-card-line); border-radius: 12px; }
+.pahlavan-view .pv-mv-row.is-open { grid-column: 1 / -1; background: color-mix(in srgb, var(--background-modifier-hover) 45%, transparent); }
+.pahlavan-view .pv-mv-row.is-plan { border-left: 3px solid var(--pv-acc-plan); padding-left: 10px; }
+.pahlavan-view .pv-mv-row.is-flash { animation: pv-gl-flash 1.1s ease-out; }
+.pahlavan-view .pv-mv-row > * { min-width: 0; }
+/* The name wraps (Obsidian's buttons don't by default) and the tags sit beside it; with no room they wrap under it, at the left. */
+.pahlavan-view .pv-mv-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 5px 8px; }
+.pahlavan-view .pv-mv-name { flex: 1 1 11em; min-width: 0; max-width: 100%; align-items: flex-start; justify-content: flex-start; font-size: 13.5px; font-weight: 650; line-height: 1.35; color: var(--text-normal); white-space: normal; overflow-wrap: anywhere; }
+.pahlavan-view .pv-mv-name svg { margin-top: 2px; }
+.pahlavan-view .pv-mv-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.pahlavan-view .pv-mv-plan { background: color-mix(in srgb, var(--pv-acc-plan) 16%, transparent); color: var(--pv-acc-plan); }
+.pahlavan-view .pv-mv-lvl { gap: 2px; }
+.pahlavan-view .pv-mv-lvl i { display: inline-block; width: 3px; height: 9px; margin-right: 1px; border-radius: 1px; background: color-mix(in srgb, var(--text-faint) 45%, transparent); }
+.pahlavan-view .pv-mv-lvl i:last-of-type { margin-right: 5px; }
+.pahlavan-view .pv-mv-lvl.is-beginner i:nth-of-type(1), .pahlavan-view .pv-mv-lvl.is-intermediate i:nth-of-type(-n+2), .pahlavan-view .pv-mv-lvl.is-advanced i { background: var(--pv-acc-movements); }
+.pahlavan-view .pv-mv-works { margin-top: 3px; color: var(--text-normal); font-size: 12.5px; line-height: 1.4; }
+.pahlavan-view .pv-mv-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 2px; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+.pahlavan-view .pv-mv-needs { color: var(--pv-below); font-weight: 600; }
+.pahlavan-view .pv-mv-links { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; font-size: 12px; line-height: 1.45; }
+.pahlavan-view .pv-mv-step-line { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 1px 5px; min-width: 0; }
+.pahlavan-view .pv-mv-step:not(:last-child)::after { content: ","; display: inline-block; color: var(--text-faint); font-weight: 400; }
+.pahlavan-view .pv-mv-step-k { margin-right: 1px; color: var(--text-faint); font-size: 10.5px; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; }
+.pahlavan-view .pv-mv-step { font-size: 12px; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.pahlavan-view .pv-mv-aka { margin-top: 8px; color: var(--text-muted); font-size: 12px; }
+.pahlavan-view .pv-mv-row .pv-guide { background: var(--pv-card); border: 1px solid var(--pv-card-line); }
+.pahlavan-view .pv-mv-empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 20px; }
+.pahlavan-view .pv-mv-empty-t { display: flex; align-items: flex-start; gap: 12px; }
+.pahlavan-view .pv-mv-empty-t > svg { width: 20px; height: 20px; margin-top: 1px; color: var(--text-faint); }
+.pahlavan-view .pv-mv-empty-t b { font-size: 14px; }
+.pahlavan-view .pv-mv-empty-t p { margin: 3px 0 0; color: var(--text-muted); font-size: 12.5px; }
+/* The ladders: each a chain of steps, easiest first. */
+.pahlavan-view .pv-mv-ladders { padding: 16px 16px 14px; }
+.pahlavan-view .pv-mv-ladders .pv-card-head { margin-bottom: 4px; }
+.pahlavan-view .pv-mv-ladder { padding: 10px 0; border-top: 1px solid var(--pv-card-line); }
+.pahlavan-view .pv-mv-ladder:first-child { border-top: none; }
+.pahlavan-view .pv-mv-ladder-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.pahlavan-view .pv-mv-src.is-plan { background: color-mix(in srgb, var(--pv-acc-plan) 16%, transparent); color: var(--pv-acc-plan); }
+.pahlavan-view .pv-mv-chain { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 3px; margin: 7px 0 0; padding: 0; }
+.pahlavan-view .pv-mv-chain li { display: inline-flex; align-items: center; gap: 3px; min-width: 0; }
+.pahlavan-view .pv-mv-chain li:not(:last-child)::after { content: "›"; color: var(--text-faint); font-size: 12px; }
+.pahlavan-view .pv-mv-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; height: auto; min-height: 24px; padding: 2px 9px 2px 3px; border: 1px solid var(--pv-card-line); border-radius: 999px; box-shadow: none; background: transparent; color: var(--text-normal); font-size: 11.5px; font-weight: 600; line-height: 1.3; text-align: left; white-space: normal; cursor: pointer; }
+.pahlavan-view button.pv-mv-chip:hover { border-color: var(--pv-acc-movements); background: var(--background-modifier-hover); }
+.pahlavan-view .pv-mv-chip-n { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--background-modifier-hover); color: var(--text-muted); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pahlavan-view .pv-mv-chip.is-plan { border-color: color-mix(in srgb, var(--pv-acc-plan) 60%, var(--pv-card-line)); }
+.pahlavan-view .pv-mv-chip.is-now { border-color: var(--pv-acc-movements); background: color-mix(in srgb, var(--pv-acc-movements) 14%, transparent); }
+.pahlavan-view .pv-mv-chip.is-now .pv-mv-chip-n { background: var(--pv-acc-movements); color: var(--pv-card); }
+.pahlavan-view .pv-mv-chip.is-off { border-style: dashed; color: var(--text-muted); cursor: default; }
+.pahlavan-view .pv-mv-legend { margin: 8px 0 0; padding-top: 10px; border-top: 1px solid var(--pv-card-line); color: var(--text-faint); font-size: 11.5px; line-height: 1.45; }
+@container pahlavan (max-width: 980px) {
+  .pahlavan-view .pv-mv-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@container pahlavan (max-width: 560px) {
+  .pahlavan-view .pv-mv-search, .pahlavan-view .pv-mv-group { padding: 14px 14px 16px; }
+  .pahlavan-view .pv-mv-levels button { padding: 0 8px; }
+  .pahlavan-view .pv-mv-sel { max-width: none; }
+  .pahlavan-view .pv-mv-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pahlavan-view .pv-mv-row.is-flash { animation: none; }
+}

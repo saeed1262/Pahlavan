@@ -1,8 +1,9 @@
 // The Home tab drawn in Node with the small fake DOM on the synthetic vault:
 // the banner (the session, the notes, Log session and See the workout, the
 // week's ring and its line), Needs you (each row to its tab, the quiet line
-// when nothing is left), Food and habits, the Progress tiles, and a vault
-// with no plan (the welcome, as on Today).
+// when nothing is left, the coach's version to the settings), Food and
+// habits, the Progress tiles, a vault with no plan (the welcome, as on
+// Today), and where each part leads (the view's moves).
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -10,9 +11,9 @@ import { readVault } from '../../src/adapters/vault/read.ts';
 import { readTracking } from '../../src/adapters/vault/tracking-read.ts';
 import { momentAt } from '../../src/core/clock.ts';
 import { dueToday } from '../../src/core/nudges.ts';
-import { buildFood, buildHome, buildProgress, buildSession, buildToday, coachStepsOf, trainingToday, yourDay, type Home } from '../../src/report/index.ts';
+import { buildFood, buildHome, buildProgress, buildSession, buildToday, coachStepsOf, trainingToday, yourDay, type Home, type HomeGo, type HomeInputs } from '../../src/report/index.ts';
 import { fixtureFiles, memoryIo } from '../../test/helpers.ts';
-import { renderHome, type HomeContext } from '../src/ui/home.ts';
+import { homeMove, renderHome, type HomeContext, type HomeMoves } from '../src/ui/home.ts';
 import { weekRing } from '../src/ui/today.ts';
 import { FakeElement, installFakeDom, text } from './fake-dom.ts';
 
@@ -22,7 +23,7 @@ const click = (el: FakeElement | null) => {
   for (const fn of el!.listeners.get('click') ?? []) fn({ target: el });
 };
 
-function draw(date: string, opts: { edit?: (f: Record<string, string>) => void; change?: (h: Home) => void; welcome?: boolean; intro?: boolean } = {}) {
+function draw(date: string, opts: { edit?: (f: Record<string, string>) => void; change?: (h: Home) => void; welcome?: boolean; intro?: boolean; coach?: HomeInputs['coach'] } = {}) {
   const files = fixtureFiles('v');
   opts.edit?.(files);
   const io = memoryIo(files, date);
@@ -33,7 +34,7 @@ function draw(date: string, opts: { edit?: (f: Record<string, string>) => void; 
   const due = dueToday({ now: momentAt(date, '12:15', 0), tracking: tr.tracking, nudges: tr.nudges, body: tr.body, photoFolders: tr.photoFolders, habits: tr.habits, program: read.data.program, training: trainingToday(read.data, date), coach: coachStepsOf(read, date, null).now?.value ?? null }).value;
   const food = buildFood(read, tr, date);
   const day = yourDay(today, { session, due, food, items: tr.tracking?.items ?? [] })?.value ?? null;
-  const home = buildHome({ read, today, session, progress: buildProgress(read, date, 'v'), due, food, day, items: tr.tracking?.items ?? [] });
+  const home = buildHome({ read, today, session, progress: buildProgress(read, date, 'v'), due, food, day, items: tr.tracking?.items ?? [], ...(opts.coach !== undefined ? { coach: opts.coach } : {}) });
   opts.change?.(home);
   const calls: string[] = [];
   const welcome = opts.welcome ? (document.createElement('section') as unknown as HTMLElement) : null;
@@ -95,6 +96,18 @@ describe('Home', () => {
     assert.match(text(extra[0]!.querySelector('b')!), /^Seated Cable Row: \d+ or \d+\?$/);
     click(extra[0]!);
     assert.equal(calls.at(-1), 'progress-training');
+  });
+
+  it('Needs you: the coach on another version than Pahlavan, a row to Pahlavan’s settings', () => {
+    for (const [coach, title] of [[{ direction: 'coach-older', installed: '0.26.0', bundled: '0.27.0' }, 'Update the coach'], [{ direction: 'coach-newer', installed: '0.28.0', bundled: '0.27.0' }, 'Update Pahlavan']] as const) {
+      // Alone in the list, so it is one of the rows shown.
+      const { root, calls } = draw('2026-04-10', { coach, change: (h) => { h.needs.items = h.needs.items.concat(h.needs.rest).filter((n) => n.id === 'coach-version'); h.needs.rest = []; h.needs.more = 0; } });
+      const row = root.querySelector('[data-need="coach-version"]')!;
+      assert.equal(text(row.querySelector('b')!), title);
+      assert.equal(row.getAttribute('data-go'), 'settings');
+      click(row);
+      assert.deepEqual(calls, ['settings']);
+    }
   });
 
   it('Needs you with nothing left: the quiet line, no count', () => {
@@ -170,5 +183,33 @@ describe('Home', () => {
     assert.equal(root.querySelector('.pv-hero'), null);
     assert.equal(text(root.querySelector('.pv-serif-title')!), 'Home');
     assert.ok(root.querySelector('.pv-welcome'), 'the welcome card');
+  });
+});
+
+describe('where a part of Home leads (the view’s moves)', () => {
+  const moves = (settings: boolean) => {
+    const calls: string[] = [];
+    const m: HomeMoves = {
+      tab: (section) => void calls.push(`tab ${section}`),
+      due: () => void calls.push('due'),
+      morning: () => void calls.push('morning'),
+      progress: (view) => void calls.push(`progress ${view}`),
+      ...(settings ? { settings: () => void calls.push('settings') } : {}),
+      notify: (message) => void calls.push(`notify ${message}`),
+    };
+    return { m, calls };
+  };
+
+  it('each destination to its move; the coach’s version to Pahlavan’s settings', () => {
+    const { m, calls } = moves(true);
+    const all: HomeGo[] = ['today', 'due', 'morning', 'progress', 'progress-training', 'progress-body', 'plan', 'checkin', 'food', 'settings'];
+    for (const go of all) homeMove(go, m);
+    assert.deepEqual(calls, ['tab today', 'due', 'morning', 'progress overview', 'progress training', 'progress body', 'tab plan', 'tab checkin', 'tab food', 'settings']);
+  });
+
+  it('without a way to open the settings, a line says where they are', () => {
+    const { m, calls } = moves(false);
+    homeMove('settings', m);
+    assert.deepEqual(calls, ['notify The coach’s version is in Obsidian’s settings: Pahlavan, Coach.']);
   });
 });

@@ -45,13 +45,13 @@ export class CheckinWriter {
   /** The morning fields into body-data.json: only those the form changed; everyone else's fields and days stay. */
   async saveMorning(date: IsoDate, change: MorningChange): Promise<MorningOutcome> {
     const path = join(this.root, paths().body);
-    // Landed: every changed field holds the new value (and the sore muscles, the levels asked for).
+    // Landed: every changed field holds the new value (and the sore muscles, the levels asked for; "I'm ill today", as asked).
     const landed = (text: string | null, keys: MorningKey[]) => {
       if (text === null) return false;
       try {
         const doc = JSON.parse(text) as { days?: Record<string, { soreMuscles?: Record<string, string> }> };
-        const now = morningFrom(doc, date).values;
-        return keys.every((k) => now[k] === (change.values[k] ?? null));
+        const now = morningFrom(doc, date);
+        return keys.every((k) => now.values[k] === (change.values[k] ?? null)) && (change.illness === undefined || now.illness === change.illness);
       } catch {
         return false;
       }

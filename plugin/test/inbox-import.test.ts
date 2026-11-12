@@ -10,7 +10,9 @@ import { describe, it } from 'node:test';
 import { readVault } from '../../src/adapters/vault/read.ts';
 import { readTracking } from '../../src/adapters/vault/tracking-read.ts';
 import { momentAt } from '../../src/core/clock.ts';
+import { gymFromHash } from '../../src/core/gym.ts';
 import { habitCheckinKey } from '../../src/core/tracking.ts';
+import { applyInbox, INBOX_TEXT_KEYS, inboxTextPaths, type InboxTexts } from '../../src/report/inbox.ts';
 import { buildDue } from '../../src/report/tracking.ts';
 import { fixtureFiles, memoryIo } from '../../test/helpers.ts';
 import { CheckinWriter } from '../src/checkin-writer.ts';
@@ -96,6 +98,45 @@ describe('the plugin imports the phone\'s inbox through its own writers', () => 
     assert.equal((await importer(v).run(TODAY))!.wrote, true);
     assert.deepEqual(v.json(`${IN}/refused.json`), { v: 1, refused: [] });
     assert.equal((await importer(v).run(TODAY))!.wrote, false);
+  });
+
+  it('writes a session sent at Every set as the engine\'s merge does: every set, the checklist and why, Today\'s ticks', async () => {
+    const GYM = {
+      v: 1,
+      kind: 'session',
+      at: '2026-04-10T19:02:00-04:00',
+      date: TODAY,
+      session: {
+        type: 'A',
+        lift1: { weight: 55, reps: 10 },
+        lift2: { weight: 60, reps: 6 },
+        durationMin: 52,
+        cardioMin: 8,
+        trackingLevel: 'full',
+        exerciseSets: [
+          { name: 'Goblet Squat', sets: [{ weight: 55, unit: 'lb', reps: 10, rir: 2 }, { weight: 55, unit: 'lb', reps: 9 }] },
+          { name: 'Flat DB Bench Press', sets: [{ weight: 60, unit: 'lb', reps: 6 }] },
+          { name: 'Band External Rotation', sets: [{ reps: 15 }] },
+        ],
+        skipped: ['Zone 2 finisher'],
+        skipWhy: { 'Zone 2 finisher': 'time' },
+        _say: 'A · 4 sets',
+      },
+    };
+    const v = memVault();
+    drop(v, '2026-04-10T19-02-00-session.json', GYM);
+    const s = (await importer(v).run(TODAY))!;
+    assert.deepEqual([s.imported.length, s.refused], [1, []]);
+    // The engine's own plan on the same vault: the plugin's log writer leaves the file exactly as its merge did.
+    const f = fixtureFiles('v');
+    const io = memoryIo(f, TODAY);
+    const texts = Object.fromEntries(INBOX_TEXT_KEYS.map((k) => [k, f[`v/${inboxTextPaths()[k]}`] ?? null])) as InboxTexts;
+    const engine = applyInbox({ read: readVault(io, 'v', { asOf: TODAY }), tracking: readTracking(io, 'v'), texts, applied: [] }, [{ file: 'x.json', text: JSON.stringify(GYM) }], TODAY);
+    assert.equal(v.files.get(LOG), engine.texts.log);
+    const log = v.json(LOG);
+    const e = log.sessions.find((x: Json) => x.date === TODAY && x.type === 'A');
+    assert.deepEqual([e.trackingLevel, e.checklist, e.exerciseSets.length, Array.isArray(e.exercises)], ['full', { done: 4, total: 5, skipped: ['Zone 2 finisher'], why: { 'Zone 2 finisher': 'time' } }, 3, true]);
+    assert.deepEqual(log.todayChecklist, { date: TODAY, type: 'A', express: false, checked: [true, true, true, true, false], picked: false });
   });
 
   it('does nothing without an inbox, and uses the adapter\'s rename for the move when it has one', async () => {
@@ -192,6 +233,8 @@ describe('phone.json from the plugin', () => {
     assert.equal(await imp.writePhone(TODAY), 'written');
     const p = v.json(`${IN}/phone.json`);
     assert.deepEqual([p.date, p.open.includes('multivitamin')], [TODAY, true]);
+    // The gym page's link, read back as the page reads it.
+    assert.deepEqual([gymFromHash(String(p.gym).split('#')[1]!)?.date, gymFromHash(String(p.gym).split('#')[1]!)?.next], [TODAY, p.next.type]);
     assert.equal(await imp.writePhone(TODAY), 'unchanged');
     drop(v, 't.json', TICK);
     await imp.run(TODAY);

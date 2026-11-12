@@ -73,7 +73,7 @@ export function bodyRecordCard(ctx: BodyRecordContext): HTMLElement {
           h('button', { class: plan ? '' : 'is-on', disabled: !ctx.canWrite || ui.busy, onclick: () => plan && ctx.onSchedule(fixed({})), ...kb('br-fixed') }, 'Every N days')),
         fixedRow('Tape and photos', fx.tapeEvery, fx.tapeFrom, (every, from) => ctx.onSchedule(fixed({ tapeEvery: every, tapeFrom: from })), 'br-tape'),
         fixedRow('Tests', fx.testsEvery, fx.testsFrom, (every, from) => ctx.onSchedule(fixed({ testsEvery: every, testsFrom: from })), 'br-tests'),
-        h('div', { class: 'pv-sf-hint' }, icon('info'), h('span', {}, 'From the plan: the tape every second Sunday, photos on each light week’s Sunday, tests at each phase end. Before there’s a plan, every N days.')),
+        h('div', { class: 'pv-sf-hint' }, icon('info'), h('span', {}, `From the plan: ${m.planLine}. Before there’s a plan, every N days.`)),
         ui.error ? h('div', { class: 'pv-ci-error' }, ui.error) : null,
       )
     : null;

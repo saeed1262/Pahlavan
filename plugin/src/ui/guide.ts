@@ -30,6 +30,7 @@ export function guidePanel(entries: readonly GuideEntry[]): HTMLElement {
         h('div', { class: 'pv-gd-text' },
           h('div', { class: 'pv-gd-title' }, e.title),
           e.unset ? h('div', { class: 'pv-gd-note' }, 'Level not set yet, so this is level 1. Set yours on Progress, Skills.') : null,
+          e.planStart ? h('div', { class: 'pv-gd-note' }, 'The plan’s starting level, not logged yet. Log it on Progress, Skills.') : null,
           ([['Works', e.works], ['Setup', e.setup], ['Do', e.do], ['Avoid', e.avoid]] as const).filter(([, v]) => v).map(([k, v]) => h('div', { class: 'pv-gd-line' }, h('span', { class: 'pv-gd-key' }, k), h('span', {}, v))),
           h('a', { class: 'pv-gd-video external-link', href: e.video.url, target: '_blank', rel: 'noopener' }, icon('play'), h('span', {}, e.video.label)),
         ),

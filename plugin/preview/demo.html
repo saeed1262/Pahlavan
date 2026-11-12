@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The Try it demo: tools/build-demo.mjs puts the styles, the made-up vault and the script inline.
+     Nothing leaves the page: no requests of any kind, only its own inline script and style
+     (and the pictures and font it carries as data). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Pahlavan demo</title>
+<meta name="description" content="Try Pahlavan, a science-based training coach for Obsidian, in your browser: its real screens on a made-up athlete. Nothing to install, nothing sent anywhere.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Try Pahlavan in your browser">
+<meta property="og:description" content="The real screens of Pahlavan, a training coach for Obsidian, on a made-up athlete. Nothing to install.">
+<meta property="og:url" content="https://saeed1262.github.io/pahlavan/demo/">
+<meta property="og:image" content="https://saeed1262.github.io/pahlavan/images/brand/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:,">
+<!--demo-style-->
+<style>
+/* The demo's own frame: a bar above the preview's Obsidian-like window, in the theme's own colours. */
+body { display: flex; flex-direction: column; }
+.preview-app { flex: 1; min-height: 0; height: auto; }
+.demo-bar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 16px; background: var(--background-secondary); border-bottom: 1px solid var(--background-modifier-border); color: var(--text-normal); font: 13px/1.4 var(--font-interface); }
+.demo-name { font-family: "Isfahan Cormorant", Georgia, serif; font-weight: 600; font-size: 21px; line-height: 1; }
+.demo-what { flex: 1 1 340px; min-width: 0; color: var(--text-muted); }
+.demo-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.demo-bar .demo-btn, .demo-bar .demo-link { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); color: var(--text-normal); font: inherit; white-space: nowrap; text-decoration: none; cursor: pointer; box-shadow: none; }
+.demo-bar .demo-btn[aria-pressed="true"] { border-color: var(--interactive-accent); color: var(--interactive-accent); }
+.demo-bar .demo-get { background: var(--interactive-accent); border-color: transparent; color: var(--text-on-accent); }
+.demo-bar .demo-btn:focus-visible, .demo-bar .demo-link:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
+.demo-phone { display: none; color: var(--text-muted); }
+/* The plugin's notices sit below the bar. */
+.preview-notice { top: 64px; }
+@media (max-width: 700px) {
+  /* A phone: the window's frame, the reload hint and the Isfahan toggle make way for the screens. */
+  .preview-ribbon, .preview-tabbar, .demo-hint, .demo-bar [data-demo="isfahan"] { display: none; }
+  .demo-bar { gap: 4px 10px; padding: 8px 12px; font-size: 12px; }
+  .demo-name { font-size: 19px; }
+  .demo-what { flex: 0 1 auto; }
+  .demo-phone { display: block; flex-basis: 100%; }
+  .demo-tools { gap: 6px; }
+  .demo-bar .demo-btn, .demo-bar .demo-link { height: 26px; padding: 0 9px; }
+  .preview-notice { top: 96px; left: 12px; right: 12px; }
+}
+</style>
+</head>
+<body>
+<header class="demo-bar">
+  <span class="demo-name">Pahlavan</span>
+  <span class="demo-what">A made-up athlete on {{date}}.<span class="demo-hint"> Click anything: changes last until you reload.</span></span>
+  <span class="demo-phone">Pahlavan is a desktop plugin: best seen on a computer.</span>
+  <span class="demo-tools">
+    <button type="button" class="demo-btn" data-demo="theme">Dark</button>
+    <button type="button" class="demo-btn" data-demo="isfahan" aria-pressed="false">Isfahan look</button>
+    <a class="demo-link demo-get" href="https://community.obsidian.md/plugins/pahlavan" target="_blank" rel="noopener">Get it for Obsidian</a>
+    <a class="demo-link" href="https://github.com/saeed1262/pahlavan" target="_blank" rel="noopener">Source and guide</a>
+  </span>
+</header>
+<div class="preview-app">
+  <nav class="preview-ribbon"><div class="lights"><i></i><i></i><i></i></div><span></span><span></span><span></span><span class="is-on"></span></nav>
+  <div class="preview-workspace">
+    <div class="preview-tabbar"><div class="preview-tab">Pahlavan</div></div>
+    <div class="preview-leaf"></div>
+  </div>
+</div>
+<!--demo-script-->
+</body>
+</html>

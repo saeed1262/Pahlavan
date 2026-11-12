@@ -137,14 +137,16 @@ const ACTION_WORDS: Record<string, string> = {
   'no-hard-training': 'No hard training: easy Zone 2 or mobility at most',
   'no-tests': 'Train as planned, but no tests or PR attempts',
 };
-const SIGNAL: Record<string, { label: string; icon: string; scale: [number, number]; unit: (v: number) => string }> = {
+/** Each input's row: its words, icon and unit, and the bar's ends (HRV's around your own usual: people differ too much for one scale). */
+const SIGNAL: Record<string, { label: string; icon: string; scale: [number, number] | ((x: ReadinessInput) => [number, number]); unit: (v: number) => string; log?: true }> = {
   energy: { label: 'Energy', icon: 'zap', scale: [1, 5], unit: (v) => `${fmt.num(v)}/5` },
   soreness: { label: 'Soreness', icon: 'body', scale: [1, 5], unit: (v) => `${fmt.num(v)}/5` },
   sleepQ: { label: 'Sleep quality', icon: 'star', scale: [1, 5], unit: (v) => `${fmt.num(v)}/5` },
   sleepH: { label: 'Sleep', icon: 'bed', scale: [4, 9], unit: (v) => `${fmt.num(v)} h` },
   rhr: { label: 'Resting HR', icon: 'pulse', scale: [48, 72], unit: (v) => `${fmt.num(v, 0)} bpm` },
+  hrv: { label: 'HRV', icon: 'heart', scale: (x) => { const c = x.mean ?? x.value ?? 60; return [c * 0.5, c * 1.5]; }, unit: (v) => `${fmt.num(v, 0)} ms`, log: true },
 };
-const SIGNAL_ORDER = ['energy', 'soreness', 'sleepQ', 'sleepH', 'rhr'];
+const SIGNAL_ORDER = ['energy', 'soreness', 'sleepQ', 'sleepH', 'rhr', 'hrv'];
 
 function statusChip(st: string, ic: string, label: string): HTMLElement {
   return h('span', { class: `pv-status is-${st}` }, icon(ic), label);
@@ -180,14 +182,17 @@ function gauge(score: number, band: string): SVGElement {
 
 function inputRow(x: ReadinessInput): HTMLElement {
   const meta = SIGNAL[x.signal]!;
-  const [lo, hi] = meta.scale;
+  const [lo, hi] = typeof meta.scale === 'function' ? meta.scale(x) : meta.scale;
   const pct = (v: number) => Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100));
   const verdict = x.z === null ? 'usual' : x.z <= -1 ? 'worse' : x.z >= 1 ? 'better' : 'usual';
   const word = x.z === null ? 'Not scored' : { worse: 'Worse', better: 'Better', usual: 'Usual' }[verdict];
-  const bar = h('div', { class: 'pv-ibar', 'data-tip': tip(meta.label, x.value !== null && `Today: ${meta.unit(x.value)}`, x.mean !== null && x.sd !== null && `Usual: ${meta.unit(x.mean)} ± ${fmt.num(x.sd)} (previous ${x.days} days)`, x.z !== null && `z ${fmt.signed(x.z)} (${x.better} is better)`) });
+  // The usual range: mean ± SD, or for HRV (scored on its log) the range itself in ms.
+  const usual = x.mean !== null && x.sd !== null && (meta.log && x.range ? `Usual: ${meta.unit(x.range[0])} to ${meta.unit(x.range[1])} (previous ${x.days} days)` : `Usual: ${meta.unit(x.mean)} ± ${fmt.num(x.sd)} (previous ${x.days} days)`);
+  const bar = h('div', { class: 'pv-ibar', 'data-tip': tip(meta.label, x.value !== null && `Today: ${meta.unit(x.value)}`, usual, x.z !== null && `z ${fmt.signed(x.z)} (${x.better} is better)`) });
   if (x.mean !== null && x.sd !== null) {
-    const b0 = pct(x.mean - x.sd);
-    const b1 = pct(x.mean + x.sd);
+    const [r0, r1] = x.range ?? [x.mean - x.sd, x.mean + x.sd];
+    const b0 = pct(r0);
+    const b1 = pct(r1);
     bar.append(h('span', { class: 'pv-ib-band', style: `left:${b0}%;width:${Math.max(2, b1 - b0)}%` }), h('span', { class: 'pv-ib-mean', style: `left:${pct(x.mean)}%` }));
   }
   if (x.value !== null) bar.append(h('span', { class: `pv-ib-dot is-${verdict}`, style: `left:${pct(x.value)}%` }));
@@ -253,15 +258,21 @@ function readinessCard(m: TodayModel, r: Review): HTMLElement {
       h('ul', { class: 'pv-inputs' }, inputs.map(inputRow)),
       h('div', { class: 'pv-inputs-key' }, h('span', {}, h('i', {}), 'Your usual range'), h('span', {}, h('i', { class: 'dot is-worse' }), 'Worse'), h('span', {}, h('i', { class: 'dot is-usual' }), 'Usual'), h('span', {}, h('i', { class: 'dot is-better' }), 'Better')),
     );
-  } else card.append(h('p', { class: 'pv-calm' }, icon('info'), 'The five inputs appear after this morning’s check-in.'));
+  } else card.append(h('p', { class: 'pv-calm' }, icon('info'), 'The inputs appear after this morning’s check-in.'));
   card.append(readinessHow(scored.band, r.rules.readiness.value.low));
   readinessActionsInto(card, r);
   return card;
 }
 
-/** The active readiness actions (the safety ones stay on while the baseline builds), else "Train as planned". */
+/** The active readiness actions (the safety ones stay on while the baseline builds), else "Train as planned"; the HRV note when it is on alone. */
 function readinessActionsInto(card: HTMLElement, r: Review): void {
   const active = r.readiness.actions.filter((a) => a.value.active);
+  // HRV low two mornings running is a note: it changes the session only with the resting-HR flag or a low score,
+  // and then the no-hard-training action says so itself.
+  const hrv = r.readiness.hrv;
+  if (hrv?.value.flag && !active.some((a) => a.value.action === 'no-hard-training')) {
+    card.append(h('div', { class: 'pv-action is-quiet', 'data-rule': hrv.reason.rule }, icon('heart'), h('div', {}, h('b', { 'data-tip': `${hrv.reason.title}|Rule ${hrv.reason.rule}` }, 'HRV low two mornings running'), clean(hrv.reason.note))));
+  }
   if (active.length) {
     for (const a of active) {
       // A low day's change in words from the plan's rule (or the old default); the note leads with the rule itself.

@@ -34,23 +34,50 @@ true`; `Coach/local.md` may describe the vault's own sheet).
 
 1. Work out the session type and its two **logged** lifts from `plan-data.json`
    (`logged: true` items of that session). A lift done instead of the planned
-   one: `{"name": "<done>", "planned": "<plan's>"}`.
+   one: `{"name": "<done>", "planned": "<plan's>", "swapWhy": "<reason>"}`,
+   where the reason is why the user swapped it, when they say: `mine` (their
+   own choice), `ledger` (a Ledger limit), `soreness` or `hotel` (the Hotel
+   version). Leave `swapWhy` out when it isn't known; anything else is
+   refused.
 2. Write `<scratchpad>/session.json` with only what's known: `date` (the
    session's date, above), `type`
    (`custom` + `label` for anything off-plan), `lift1`/`lift2` as `{name,
    weight, reps, unit}` for lifting days, and any of `express`, `durationMin`,
-   `cardioMin`, `cardioMode`, `rating`, `postureDrill`, `notes`, and `skipped`
+   `cardioMin`, `cardioMode`, `rating`, `postureDrill`, `notes`, `skipped`
    (the plan's line names the user didn't do, as Pahlavan's Today names them;
-   a pair is "A + B"). `unit` is
-   the one the user says ("60 lb", "40 kg"); when they don't say, leave it
-   out and `log add` uses the lift's unit in the plan.
+   a pair is "A + B"), `skipWhy` (why a skipped line was skipped, when the
+   user says: `{"<the line, as in skipped>": "time" | "pain" | "equipment" |
+   "energy"}`; any other reason, or a line not in `skipped`, is refused),
+   `swaps` (another item done in place of one that
+   isn't a logged lift:
+   `[{"from": "<plan's>", "to": "<done>", "why": "<reason>"}]`, `why` as
+   `swapWhy` above, left out when not known) and `pain` (a pain or niggle
+   the user reports with the session:
+   `[{"area": "Knee", "severity": 4, "exercise": "<the movement>"}]`,
+   `severity` 0 to 10, left out when the user doesn't say how bad: never a
+   number they didn't give). `unit` is the one the user says ("60 lb", "40
+   kg"); when they don't say, leave it out and `log add` uses the lift's
+   unit in the plan.
+   - **Every set** (the user gives each set, or a sheet lists them):
+     `"trackingLevel": "full"` with `"exerciseSets": [{"name", "sets":
+     [{"weight", "unit", "reps", "rir"}]}]`, one item per exercise done (each
+     part of a pair is its own item). Only the sets done: never pad to the
+     plan's count. `weight` is left out for a bodyweight or timed set (reps
+     are then seconds), `rir` when the user doesn't say it. A swap names the
+     plan's item as `"planned"`. `lift1`/`lift2` still carry each logged
+     lift's heaviest set, and a logged lift with a top set needs its sets in
+     `exerciseSets`. The weight goes up only when every set the day called
+     for (a trimmed day's or Express's count) reached the top of the range,
+     so fewer sets hold it.
 3. `log add --file <file>` (a dry run), show the user the session in one
    line with its date ("A on Mon 2026-11-02: ..."), then run it again with
    `--write` on their yes. The output's `session` is the entry; `habit`
    says whether the day's Workout habit was ticked.
    - **Exit 1**: the input is wrong (a lift that isn't the session's, a
-     custom without a label, a skipped line the plan doesn't have…); the
-     error says what. Nothing was written.
+     custom without a label, a skipped line the plan doesn't have, an
+     `exerciseSets` name that isn't the session's item, reps that aren't a
+     whole number, an RIR over 10…); the error says what. Nothing was
+     written.
    - `"result": "already"`: that date and type are logged; offer to edit it in
      Pahlavan instead.
 4. A ladder level that moved in the session (the plan's rule: the top of the
@@ -59,9 +86,12 @@ true`; `Coach/local.md` may describe the vault's own sheet).
 
 Pahlavan re-reads the log when the file changes, so a session added here
 shows there even if it was already open. `log add` freezes the session's
-`exercises` list and its `checklist` (done, total, skipped) as Pahlavan's Save
+`exercises` list and its `checklist` (done, total, skipped, and `why` from
+`skipWhy`) as Pahlavan's Save
 does, so a later plan change doesn't rewrite what this session planned; a
-custom session has no checklist. A session dated today also ticks Today's
+custom session has no checklist. Each strength item also keeps the day's
+working sets (`daySets`: one fewer on a readiness or soreness trim,
+Express's own), from the engine's session for that date and version. A session dated today also ticks Today's
 circles (every line but the skipped ones), as Pahlavan's Save does.
 
 Coach checks while logging (say them in the same one-line confirmation, don't
@@ -70,7 +100,9 @@ block the log):
 - A logged lift that an active `Coach/Ledger.md` entry rules out (for
   example a high-IAP lift during an abdominal-wall window): note it, ask how
   it felt, add a line to that Ledger entry.
-- Pain reported in the notes: the pain rule (`adhoc.md`), and a Ledger entry.
+- Pain the user reports: into `pain` (above), then the pain rule
+  (`adhoc.md`) and a Ledger entry. The engine reads pain from `pain` only,
+  never from the notes.
 - A value that looks like a typo or the other unit (65 reps of RDL; 70 when
   the last top set was 30): ask before writing.
 

@@ -18,7 +18,8 @@ decision its evidence and grade (`planning.md`, "The proposal").
 Weak spots to be honest about: per-person volume landmarks and the 0.5 weight
 for indirect sets are assumptions; Pelland 2025's tier numbers come from its
 open preprint (the published tables are paywalled); the per-session cap rests
-on one preprint; readiness thresholds are heuristics; light-week timing has no
+on one preprint; readiness thresholds are heuristics, and its HRV studies are
+endurance ones with rMSSD (Apple Health reports SDNN); light-week timing has no
 evidence-based schedule; RIR is less accurate above 12 reps; no muscle region
 has a meta-analysis of its own, and the region credit and the coverage
 numbers are heuristics.
@@ -36,7 +37,8 @@ numbers are heuristics.
 | Macrocycle | 12–24 weeks, in phases of two mesocycles (the lengths **(H)**: Pahlavan's clock). Periodized plans beat non-periodized ones a little for 1RM (ES 0.31), with no effect on muscle size | [Moesgaard 2022](https://doi.org/10.1007/s40279-021-01636-1), [ACSM 2026](https://doi.org/10.1249/MSS.0000000000003897) · **Moderate** (1RM) |
 | Mesocycle | 3 loading weeks + 1 light week (deload); its timing: "Deloads" | **(H)** |
 | Undulation (heavy/light days) | Each main lift heavy once and lighter once a week (four full-body days: a heavy pair at 5–8 reps and a lighter pair at 10–15 with variations, a lighter day after each heavy one). An advantage only for a trained lifter with a strength goal: undulating beat linear only in trained people (ES 0.61), and periodization added nothing for muscle. For a muscle goal it is a preference, never a score | [Moesgaard 2022](https://doi.org/10.1007/s40279-021-01636-1) · **Moderate** (trained strength) |
-| Exercise changes | Only at mesocycle boundaries; main lifts kept for a whole phase; rotate at most half the accessories at a time. Systematic variation helps regional growth and strength; frequent random rotation may hurt (8 studies, all young men) | [Kassiano 2022](https://doi.org/10.1519/JSC.0000000000004258) · **Weak** |
+| Exercise changes | In a running plan (the next month, a phase's next block, a change), by default: only at mesocycle boundaries; main lifts kept for a whole phase; rotate at most half the accessories at a time. These are defaults the data can override with a stated reason: each movement is kept or changed by its verdict from the block's data (pain, a stall the triage ladder hasn't fixed, a movement often skipped or disliked, off the next phase's aim; `review.md`). Systematic variation helps regional growth and strength; frequent random rotation may hurt (8 studies, all young men) | [Kassiano 2022](https://doi.org/10.1519/JSC.0000000000004258) · **Weak** |
+| Redesign overlap **(H)** | A redesign (a new plan in place of the running one) is designed from a blank draft and measured for how much it keeps: over half of its movements also in the plan as written reads as an edit (`similar-to-current`), and two candidates sharing over half are one plan twice. A rough guide, answered by a change or a stated reason (an override); the logged lifts it keeps are the user's choice, each with its trade-off | No source: no study sets how much a new plan should change (`planning.md`, steps 1.4 and 1.7) |
 | Planned variation | Planned variation changes **where** a muscle grows, not how much: an exercise chosen to bias a region (the leg extension for the rectus femoris, a lateral raise for the side delts) is kept for the whole phase. Random variation doesn't help: rotating exercises at random each session gave no more growth | [Costa 2021](https://doi.org/10.1055/a-1308-3674), [Fonseca 2014](https://doi.org/10.1519/jsc.0000000000000539), [Kassiano 2022](https://doi.org/10.1519/JSC.0000000000004258); random rotation [Baz-Valle 2019](https://doi.org/10.1371/journal.pone.0226989) · **Moderate** |
 
 ## Split families
@@ -50,10 +52,7 @@ fatigue, skip risk and interference. The coach designs each candidate from
 a family whose Fits column the week and the person meet, or names the
 mismatch as a cost; the Costs are flags in the comparison, not points (the
 points are the Scoring row above). At 30 minutes or less a session holds a
-minimum-dose week; a novice lifts on 4 days at most **(H)**. The generator's
-optional baseline (`engine plan`) builds some of these families itself
-(`proposal.families` says which), as one comparison, never as the reason
-for a pick.
+minimum-dose week; a novice lifts on 4 days at most **(H)**.
 
 | Family | Structure | Fits | Costs | Evidence |
 |---|---|---|---|---|
@@ -104,7 +103,7 @@ numbers).
 |---|---|---|
 | Minimum dose | 4 | Maintenance; the floor for any muscle (the minimum effective dose) |
 | Efficient | 5–10 | Most muscles, most of the time (the most growth per set) |
-| Priority | 10–16 | Up to 2–3 priority muscles per phase: the ones the user names first, then from a muscle or recomposition goal **(H: which muscles)**; the week's room is 3 with 4 or more lifting days, 2 with 3, 1 with 2 or 30-minute sessions **(H)**, and `check` warns `priority-room` past it (the user picks which come first, the rest wait under Later priorities). The minimum is met by **direct sets taken near failure** (0–3 RIR, the "Muscle" row above): half-credit from compound lifts and easy work don't fill it; a hold counts when it is at least 75% of the user's tested best **(H: the 75%)**, a ladder item when it is at the user's level. With the posture emphasis, upper back and lats may run to the cap to keep pull at about twice push |
+| Priority | 10–16 | Up to 2–3 priority muscles per phase: the coach's ranked list from the body assessment, the self-check, pain, the goals and the user's wish, confirmed by the user (`intake.md`, "The coach's priorities") **(H: which muscles)**; the week's room is 3 with 4 or more lifting days, 2 with 3, 1 with 2 or 30-minute sessions **(H)**, and `check` warns `priority-room` past it (the coach proposes which come first, the user confirms, the rest wait under Later priorities). The minimum is met by **direct sets taken near failure** (0–3 RIR, the "Muscle" row above): half-credit from compound lifts and easy work don't fill it; a hold counts when it is at least 75% of the user's tested best **(H: the 75%)**, a ladder item when it is at the user's level. With the posture emphasis, upper back and lats may run to the cap to keep pull at about twice push |
 | Cap **(H)** | 20–24 | Never planned above. Returns keep falling with no clear plateau and few studies go past about 25 sets, so the cap is for fatigue and time, not a ceiling on growth. Above 20 only as a short deliberate block (a specialization block) |
 | Per session **(Weak)** | ≤ 6–8 direct sets per muscle | Past about 8 direct sets in one session, more sets were unlikely to add a detectable effect (one preprint): a muscle needing more than about 16 a week needs 2+ sessions |
 | Strength | More exposures (frequency), not more sets | Strength gains little past about 4 weekly sets |
@@ -202,13 +201,14 @@ bias it; `engine catalogue --region <region>` searches them.
   muscle only helps; the muscles' own counts never change.
 - **Coverage (H):** each region of a priority muscle that is in the
   coverage rule gets at least 4 direct sets a week from a movement that
-  biases it; a region the user declares weak gets at least 6 direct sets
-  near failure, inside its muscle's 10–16. `engine check` warns
+  biases it; a declared region (a part the coach proposed and the user
+  confirmed) gets at least 6 direct sets near failure, inside its muscle's
+  10–16. `engine check` warns
   `region-coverage` and `region-declared-short`, each with catalogue options
   that fit the equipment, the Ledger, the dislikes and what a confirmed
   finding rules out. The rear delts, the
   upper chest and the upper back's regions are reported, never held to it,
-  unless the user declares them.
+  unless declared.
 - **Planned variation (Moderate):** the movement that biases a declared
   region stays for the whole phase ("Plan structure", Planned variation).
 - **Muscle activity alone is Weak at most:** a claim resting on EMG, with no
@@ -217,7 +217,9 @@ bias it; `engine catalogue --region <region>` searches them.
   ([Vigotsky 2022](https://doi.org/10.1007/s40279-021-01619-2)).
 - **Declared, never diagnosed (Weak):** only imaging measures a region
   reliably; no validated way spots a lagging region from photos or the tape,
-  so a weak region is the user's word and photos only prompt the question
+  so a declared region is never a diagnosis: the coach proposes one from
+  the user's wish, or from a goal or a confirmed finding it serves, says
+  which, and the user confirms; a photo only prompts the question
   ([Stokes 2021](https://doi.org/10.14814/phy2.14683)).
 
 **Not modelled, and why.** The popular ideas the evidence doesn't support
@@ -238,9 +240,9 @@ are explained, with the nearest supported option, never planned for:
 |---|---|
 | Double progression | All sets at the top of the range at the target RIR → next increment, back to the bottom of the range. Adding reps at a fixed load matched adding load **(Moderate)** |
 | Below the range | Top set under the bottom of the range → hold the weight |
-| Two misses | Two sessions in a row under the bottom → 5–10% lighter, rounded to the lift's step |
+| Two misses | Two sessions in a row under the bottom → 5–10% lighter, rounded to the lift's step (with the gym's `loads`, the nearest real weight below) |
 | Big steps | Where one dumbbell step is over 10% of the load, widen the range (e.g. 8–15) so reps carry the progress |
-| Load ceiling | A load ceiling (the heaviest weight available, such as the gym's heaviest dumbbell) calls for a rep range with double progression, not linear steps: once the load tops out, reps carry the progress |
+| Load ceiling | A load ceiling (the heaviest weight available, such as the gym's heaviest dumbbell) calls for a rep range with double progression, not linear steps: once the load tops out, reps carry the progress. The engine applies it from `profile.json` `loads`: at the heaviest real weight `next` holds it, action `hold` with one rep more than the last session's fewest, and says so ("the heaviest dumbbell here is 30 kg, so reps carry it") |
 | Linear (novices) | Load up every successful session; in `plan-data.json`, a `lifts` entry with `lo` = `hi` |
 | By equipment **(H)** | Bodyweight progresses by leverage, range, tempo and reps; dumbbells by double progression, going unilateral when the heaviest dumbbell gets light; a full gym allows barbell linear progression for novices |
 | Novices and trained **(Weak)** | Novices: simple plans and frequent practice of the main lifts (untrained lifters gained most near 60% of 1RM and 3 days a week per muscle, trained ones near 80% and 2 days) |
@@ -281,17 +283,18 @@ Source: [SBS on plateaus](https://www.strongerbyscience.com/thoughts-on-breaking
 
 | Part | Rule |
 |---|---|
-| Signals | `sleepH`, `sleepQ`, `energy`, `rhr` (inverted), `soreness` (inverted) from `body-data.json` |
+| Signals | `sleepH`, `sleepQ`, `energy`, `rhr` (inverted), `soreness` (inverted), `hrv` (on its natural log) from `body-data.json` |
 | Baseline | Each signal against its own previous 28 days of the current cycle (a fresh start builds it again); needs ≥ 14 entries, else unscored, so no score until the cycle holds 14 morning check-ins (train as planned meanwhile) |
-| Score | z-score per signal, clipped to ±2.5 (sd floored: 0.5 for hours and 1–5 scales, 2 bpm for RHR); daily score = mean of ≥ 3 signals |
+| Score | z-score per signal, clipped to ±2.5 (sd floored: 0.5 for hours and 1–5 scales, 2 bpm for RHR, 0.1 on HRV's ln scale); daily score = mean of ≥ 3 signals, at least one of them a card answer (energy, soreness or sleep quality), so watch numbers alone never score a morning |
 | Smoothing | 3-day EWMA (α 0.5); act on the smoothed score, never on one day |
 | Bands | ≥ +0.5 good · −0.5 to +0.5 normal · −1.0 to −0.5 watch · ≤ −1.0 low |
 | Low | One set fewer per exercise and RIR +1 that day |
 | Low 5 days running + falling e1RM | Offer an early deload |
 | RHR 7+ bpm over baseline 2 days running, or illness | No hard training (easy Zone 2 or mobility at most) |
+| HRV 20%+ under its 28-day geometric mean 2 mornings running (needs ≥ 14 HRV mornings) | A note only, on Today and in the review; with the RHR flag or a low score as well: no hard training |
 | Under 6 h of sleep | No tests or PR attempts that day |
 
-Sources: [Saw 2016](https://bjsm.bmj.com/content/50/5/281) (subjective measures track load better than objective ones), [Craven 2022](https://doi.org/10.1007/s40279-022-01706-y). Recipe and code: `checkin.md`, `numbers.md`.
+Sources: [Saw 2016](https://bjsm.bmj.com/content/50/5/281) (subjective measures track load better than objective ones), [Craven 2022](https://doi.org/10.1007/s40279-022-01706-y). Resting HR and HRV: [Buchheit 2014](https://doi.org/10.3389/fphys.2014.00073) (near-daily resting HR and HRV are useful monitoring tools, but miss parts of fatigue: read them with the log and the questions, hence the RHR flag, the HRV note and the card-answer rule). HRV: [Plews 2013](https://doi.org/10.1007/s40279-013-0071-8) (vagal HRV falls with poor adaptation and fatigue, and rises with good adaptation), [Manresa-Rocamora 2021](https://doi.org/10.3390/ijerph181910299) (HRV-guided training beat fixed plans by a small margin for fitness). The HRV studies are endurance ones with rMSSD, none in lifting, and Apple Health reports SDNN. The 7 bpm and 20% lines are the coach's own rough guides **(H)**, not numbers from these papers. Recipe and code: `checkin.md`, `numbers.md`.
 
 ## Deloads
 
@@ -371,8 +374,8 @@ Quote `engine review`'s slope and band for the weight's rate.
 | Weekly check-in and letter | Sundays | |
 | Weight | Daily if the user likes, trend only | Morning, after the bathroom |
 | Tape (waist, hips, chest, arm) | Every second Sunday | Waist at the navel, relaxed, after breathing out |
-| Calisthenics and posture tests | Each phase end, the Saturday of its light week | Not after < 6 h of sleep; same order and rest each time |
-| Photos | Each light week's Sunday, via the `progress` job | Same light, distance, poses |
+| Calisthenics and posture tests | Each phase end, the Saturday of its light week (or of each test week `rules.tests` lists) | Not after < 6 h of sleep; same order and rest each time |
+| Photos | Each light week's Sunday, and each listed test week's, via the `progress` job | Same light, distance, poses |
 | e1RM | Every logged session | Code only |
 | RIR calibration set | Last loading week of each mesocycle | See Effort |
 | Re-screening | Every 12 months, or when health changes | `intake.md` |

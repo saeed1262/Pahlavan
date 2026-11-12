@@ -12,6 +12,7 @@ import { buildBodyRecord, buildDeskCard, buildHabitsScreen } from '../../src/rep
 import { buildFood } from '../../src/report/food.ts';
 import { INBOX_FILES, INBOX_PATHS, isEntryFile, readRefused, refusedLine, type RefusedEntry } from '../../src/report/inbox.ts';
 import { buildCheckin, buildPlan, buildProgress, buildProgressMore, buildRoutine, buildSession, buildToday, type SessionPick } from '../../src/report/index.ts';
+import { buildMovements, planLevelsOf, planNamesOf, type MovementsQuery } from '../../src/report/movements-screen.ts';
 import { paths } from '../../src/adapters/vault/layout.ts';
 
 /** The parts of Obsidian's DataAdapter the plugin reads with (read-only). */
@@ -32,6 +33,7 @@ export type BodyRecordModel = ReturnType<typeof buildBodyRecord>;
 export type DeskCardModel = ReturnType<typeof buildDeskCard>;
 export type FoodModel = ReturnType<typeof buildFood>;
 export type RoutineModel = ReturnType<typeof buildRoutine>;
+export type MovementsModel = ReturnType<typeof buildMovements>;
 
 /** The vault paths whose change means a re-read (the vault's layout, when called). */
 export const watchedPaths = (): string[] => VAULT_FILE_KEYS.map((k) => paths()[k]);
@@ -183,6 +185,23 @@ export class PahlavanData {
   }
   private at(p: string): string {
     return this.root ? `${this.root.replace(/\/$/, '')}/${p}` : p;
+  }
+
+  /** The plan's names and ladder levels for the Movements tab, worked out once per read. */
+  private mvPlan: { read: VaultRead | null; names: string[]; levels: Record<string, number> } | null = null;
+
+  /**
+   * The Movements tab for a query: the whole catalogue, with the plan's
+   * movements and ladders and the profile's equipment from the files as last
+   * read. Before the first read (or with no plan or profile) nothing is
+   * marked and the catalogue still shows.
+   */
+  movements(query: MovementsQuery): MovementsModel {
+    const raw = this.read?.raw;
+    if (!this.mvPlan || this.mvPlan.read !== this.read) this.mvPlan = { read: this.read, names: planNamesOf(raw?.plan, raw?.log), levels: planLevelsOf(raw?.plan, raw?.log) };
+    const plan = raw?.plan;
+    const ladders = typeof plan === 'object' && plan !== null ? (plan as { ladders?: unknown }).ladders : undefined;
+    return buildMovements(query, { planLadders: ladders, planNames: this.mvPlan.names, planLevels: this.mvPlan.levels, equipment: this.read?.data.profile?.equipment ?? null });
   }
 
   /** The Plan screen for `date`, from the data already read (and Coach/Decisions.md, and the newest letter for the coach step). */

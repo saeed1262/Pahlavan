@@ -21,13 +21,20 @@ still to write.
 
 **`priority-room` is raised once.** A plan written before the check (or one
 that kept its priorities knowingly) gives it every Sunday. Say it in one
-letter, with the choice: which priorities come first (the rest under the
-Athlete profile's Later priorities, as `planning.md`, "The order", step A
-item 2, records each kind), or one override with its reason if the user
-keeps them all. Either way it then waits for the phase review; it is not
-repeated week after week without new data (a priority added, the week
-resized, a lagging area confirmed), as a declined proposal is not (SKILL.md
-house rule 3).
+letter, with the coach's proposal: which priorities come first, each with
+its reason from the data (`intake.md`, "The coach's priorities"), the rest
+under the Athlete profile's Later priorities (as `planning.md`, "The
+order", step A item 2, records each kind); the user confirms, or keeps
+them all with one override and its reason. Either way it then waits for
+the phase review; it is not repeated week after week without new data (a
+priority added, the week resized, a lagging area confirmed), as a declined
+proposal is not (SKILL.md house rule 3).
+
+**`no-why-card` is offered once.** A plan written before the Why this plan
+card gives it every Sunday. Offer the card in one letter, in a line with
+its command (`/fitness-coach plan why`: `plan-files.md`, "The Why this plan
+card"); it is not raised again unless the user asks, and no change at the
+check-in waits for it.
 
 **The standing rules.** The Sunday check-in is where the coach revises the
 plan's standing rules (`rules`, a lift's `progression`; formats.md, "The plan's standing rules") when the
@@ -215,7 +222,8 @@ Exact recipe, computed by the engine (`review`'s `readiness`, or `engine
 readiness`; thresholds are heuristics):
 
 - **Signals** for day *d*, from `body-data.json` `days`: `sleepH`, `sleepQ`,
-  `energy` (sign +1), `rhr`, `soreness` (sign −1: higher is worse).
+  `energy`, `hrv` (sign +1; HRV on its natural log), `rhr`, `soreness`
+  (sign −1: higher is worse).
 - **Baseline** for signal *k* on day *d*: its values on days *d*−28 … *d*−1
   of the current cycle (from the newest `Baseline - <date>.md`; the mornings
   before a fresh start never count). Needs **n ≥ 14**, else *k* is unscored
@@ -223,14 +231,19 @@ readiness`; thresholds are heuristics):
   (`readiness.baseline`: "Building your baseline: n of 14"): train as
   planned meanwhile; the first score comes with the check-in after the 14th.
 - **z** = sign × (x − mean) / max(sd, floor), sample sd; floor 0.5 for
-  `sleepH` and the 1–5 scales, 2 bpm for `rhr`. Clipped to **[−2.5, +2.5]**.
-- **Daily score R** = mean of the scored z values; needs **≥ 3** signals.
+  `sleepH` and the 1–5 scales, 2 bpm for `rhr`, 0.1 for ln(`hrv`). Clipped
+  to **[−2.5, +2.5]**.
+- **Daily score R** = mean of the scored z values; needs **≥ 3** signals,
+  at least one of them a card answer (`energy`, `soreness`, `sleepQ`): watch
+  numbers alone never score a morning.
 - **Smoothed S** = 0.5 × R + 0.5 × S(previous scored day), a 3-day EWMA
   (α = 2 / (3 + 1)); re-seeded with R after a gap of more than 3 days.
 - **Bands on S:** ≥ +0.5 good; −0.5 to +0.5 normal; −1.0 to −0.5 watch;
   ≤ −1.0 low.
 - **Flags:** RHR ≥ baseline mean + 7 bpm on two consecutive days; `sleepH`
-  under 6.
+  under 6; the HRV note (`readiness.hrv`): ln(`hrv`) ≤ the baseline's
+  ln-mean + ln(0.8) on two consecutive days, so 20% or more under the
+  28-day geometric mean, with ≥ 14 HRV mornings (else "building").
 
 Not enough history: while `readiness.baseline.value.building`, quote its
 note ("Building your baseline: 6 of 14 morning check-ins this cycle; train
@@ -274,7 +287,11 @@ focus. Every accepted change gets a Decision entry.
    plan's `rules.readiness.low` (the default, `legacy-default`: one set fewer
    and RIR +1) until it's back to watch or better; RHR flag or
    illness → no hard training until RHR is back under baseline + 7; sleep
-   under 6 h the night before → no tests or PRs.
+   under 6 h the night before → no tests or PRs. The HRV note alone
+   (`readiness.hrv.value.flag`) changes nothing: mention it in the letter
+   as a note and ask how they feel; with the RHR flag or a low score it is
+   already in `no-hard-training`. HRV is a rough guide for lifting (the
+   studies are endurance ones with rMSSD; Apple reports SDNN).
 6. **Progression** per logged lift, from the coming week's `lifts[].next` and
    the RIR answer: `next` follows the lift's `progression` (its note names
    the rule, the plan's or the default, `legacy-default`). Under the default:
@@ -337,7 +354,13 @@ focus. Every accepted change gets a Decision entry.
     fixed number.
     **Skips** (`skips.flags`): a pain or equipment flag is that week's swap
     proposal for the exercise (the pain rule, `adhoc.md`); a time flag points at
-    `review.time` (the session too long for the user's week).
+    `review.time` (the session too long for the user's week). The proposal
+    quotes the exercise's evidence: its `exercises` row (skipped and swapped
+    this cycle and over `last4`, with the reasons; the row's `note`) and
+    `pain.byExercise` (its reports, `direction` and worst `verdict`; a
+    severity not given is asked, never guessed). An exercise the user swaps by
+    choice again and again (`swapped.why.mine`) is worth a swap proposal too,
+    even with no flag.
 12. **Conditioning:** active minutes (`thisWeek.cardioMin`, intervals counted
     double) against the current phase's cardio target in `6-Month Roadmap.md`
     (its Targets table), read each time as rule 11 reads steps; 150–300 a week

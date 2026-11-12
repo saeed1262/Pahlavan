@@ -32,6 +32,8 @@ interface Draft {
   scales: Partial<Record<MorningKey, number | null>>;
   /** The morning card's quick sore-areas pick, by area id. */
   sore: Record<string, 'mild' | 'sore' | null>;
+  /** The morning card's "I'm ill today". */
+  ill: boolean;
   fields: Partial<Record<MorningKey, string>>;
   tape: Record<string, string>;
   tests: Record<string, string>;
@@ -172,8 +174,8 @@ export class CardController {
     switch (b.kind) {
       case 'morning':
         return [
-          h('div', { class: 'pv-nv-taps' }, b.scales.map((sc) => this.tapRow(sc.key, sc.label, sc.lo, sc.hi))),
-          h('div', { class: 'pv-nv-fields is-5' }, b.fields.map((f) => this.field(f, this.draft.fields as Record<string, string>))),
+          h('div', { class: 'pv-nv-taps' }, b.scales.map((sc) => this.tapRow(sc.key, sc.label, sc.lo, sc.hi)), this.illRow()),
+          h('div', { class: 'pv-nv-fields is-6' }, b.fields.map((f) => this.field(f, this.draft.fields as Record<string, string>))),
           b.tape ? this.tapeSection(b.tape.text, b.tape.fields) : null,
           this.soreRow(b.sore),
           h('div', { class: 'pv-nv-link' }, icon('body'), h('span', {}, 'Another muscle: the body map in the Check-in screen'), h('a', { href: '#', onclick: (ev: Event) => { ev.preventDefault(); void this.send({ do: 'open-checkin' }); } }, 'Open Check-in')),
@@ -280,6 +282,16 @@ export class CardController {
 
   private choice(ic: string, title: string, sub: string, choice: 'logged' | 'rest' | 'not-today', main = false): HTMLElement {
     return h('button', { class: `pv-nv-choice${main ? ' is-main' : ''}`, disabled: this.saving, onclick: () => void this.send({ do: 'train', choice }) }, icon(ic), h('div', {}, h('b', {}, title), h('span', {}, sub)));
+  }
+
+  /** "I'm ill today": one tap on a sick day (saved as the day's illness: no hard training that day), again to take it back. */
+  private illRow(): HTMLElement {
+    const on = this.draft.ill;
+    return h('div', { class: 'pv-tap-row is-compact' },
+      h('span', { class: 'pv-tap-label' }, 'Illness'),
+      h('button', { class: `pv-pill${on ? ' is-on' : ''}`, 'aria-pressed': on ? 'true' : 'false', 'data-k': 'ill', onclick: () => { this.draft.ill = !on; this.touched = true; this.draw(); } }, 'I’m ill today'),
+      h('span', { class: 'pv-tap-anchor' }, on ? 'No hard training today' : 'Tap on a sick day'),
+    );
   }
 
   /** Sore today: one tap per area, none to mild to sore, as the body map's taps go. */
@@ -425,7 +437,7 @@ export class CardController {
           const v = this.draft.sore[a.id] ?? null;
           if (v !== a.level) for (const m of a.muscles) sore[m] = v;
         }
-        const out: CardPayload = { kind: 'morning', values: now.values, baseline: base, ...(Object.keys(sore).length ? { sore } : {}), ...(force ? { force: true } : {}) };
+        const out: CardPayload = { kind: 'morning', values: now.values, baseline: base, ...(Object.keys(sore).length ? { sore } : {}), ...(this.draft.ill !== b.ill ? { illness: this.draft.ill } : {}), ...(force ? { force: true } : {}) };
         if (b.tape) {
           const t = recordValues(TAPE_FIELDS, { ...Object.fromEntries(b.tape.fields.map((f) => [f.id, f.value])), ...this.draft.tape }, v.units);
           if (t.errors.length) return bad(t.bad, t.errors);
@@ -473,11 +485,12 @@ export class CardController {
 }
 
 function freshDraft(v: CardView): Draft {
-  const d: Draft = { scales: {}, sore: {}, fields: {}, tape: {}, tests: {}, ticks: {}, added: 0, another: '', photos: {} };
+  const d: Draft = { scales: {}, sore: {}, ill: false, fields: {}, tape: {}, tests: {}, ticks: {}, added: 0, another: '', photos: {} };
   const b = v.body;
   if (b.kind === 'morning') {
     for (const s of b.scales) d.scales[s.key] = s.value;
     for (const a of b.sore) d.sore[a.id] = a.level;
+    d.ill = b.ill;
   }
   if (b.kind === 'habits') for (const it of b.items) d.ticks[it.id] = it.done;
   return d;

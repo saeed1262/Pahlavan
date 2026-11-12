@@ -10,7 +10,7 @@ import { Notice, PluginSettingTab, Setting, type App, type Plugin, type TextComp
 import { DEFAULT_GUIDE_URL, isTime, isWebAddress, SNOOZE_CHOICES, type PluginData, type Section } from './settings.ts';
 import { h, icon } from './ui/dom.ts';
 import { DEFAULT_FOLDERS, folders, paths, type Folders } from '../../src/adapters/vault/layout.ts';
-import { COACH_DIR, nodeOk, type CoachState, type SetupResult } from './coach-setup.ts';
+import { coachRow, nodeOk, type CoachState, type SetupResult } from './coach-setup.ts';
 import { BETA_LINE, SAFETY_LINE } from './ui/help.ts';
 
 /** Where the reminders' shared state lives (snoozes, skips and answers, for both Macs). */
@@ -176,22 +176,19 @@ export class PahlavanSettingTab extends PluginSettingTab {
     el.append(h('div', { class: 'pv-st-foot pv-st-foot-tight', 'data-k': 'st-beta' }, icon('info'), h('span', {}, BETA_LINE)));
   }
 
-  /** The coach in Claude Code: set up, up to date or older, Node found or not, and the button. Filled in once the vault is read. */
+  /** The coach in Claude Code: set up, up to date, older or newer, Node found or not, and the button. Filled in once the vault is read. */
   private coachSection(el: HTMLElement, coach: NonNullable<SettingsHost['coach']>): void {
     new Setting(el).setName('Coach').setHeading();
     const row = new Setting(el).setName('The coach in Claude Code').setDesc('Checking this vault…');
     const node = new Setting(el).setName('Node').setDesc('Looking for it…');
     void coach.state().then((st) => {
-      const upToDate = st.installed === st.bundled && !st.missing.length && !st.differ.length;
-      row.setDesc(st.installed === null
-        ? `Not set up in this vault. The coach is a Claude Code skill (/fitness-coach); this writes it into ${COACH_DIR}.`
-        : upToDate
-          ? `Set up, version ${st.bundled}. In Claude Code, open this vault and run /fitness-coach.`
-          : `Version ${st.installed} is set up; this Pahlavan carries ${st.bundled}.${st.differ.length ? ` ${st.differ.length} of its files differ and will be replaced.` : ''}`);
-      if (!upToDate) {
+      // A newer coach (from the other Mac's newer Pahlavan) gets no button: this Pahlavan's copy is older.
+      const { line, button } = coachRow(st);
+      row.setDesc(line);
+      if (button) {
         let armed = false;
         row.addButton((b) => {
-          b.setButtonText(st.installed === null ? 'Set up the coach' : 'Update the coach').setCta().onClick(async () => {
+          b.setButtonText(button).setCta().onClick(async () => {
             // Files that differ may be the user's own edits: a second click replaces them.
             if (st.differ.length && !armed) {
               armed = true;

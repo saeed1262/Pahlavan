@@ -126,10 +126,10 @@ describe('rebuildForm: what the user typed stays where the same field exists', (
   it('every set typed stays; sets still as prefilled take the new date’s', () => {
     const f = formFor(TODAY);
     f.tracking = 'full';
-    row(f, /^Seated Cable Row/)!.rows = [{ weight: 120, reps: 10, rir: 2 }, { weight: 120, reps: 9, rir: 1 }, { weight: 120, reps: 8, rir: 0 }];
+    row(f, /^Seated Cable Row/)!.rows = [{ weight: 120, reps: 10, rir: 2, done: true }, { weight: 120, reps: 9, rir: 1, done: true }, { weight: 120, reps: 8, rir: 0, done: false }];
     const next = rebuildForm(at(DAY), f, { date: DAY })!;
     assert.equal(next.tracking, 'full');
-    assert.deepEqual(row(next, /^Seated Cable Row/)!.rows.map((x) => x.reps), [10, 9, 8]);
+    assert.deepEqual(row(next, /^Seated Cable Row/)!.rows.map((x) => [x.reps, x.done]), [[10, true], [9, true], [8, false]], 'the ticks come along');
     assert.deepEqual(row(next, /^Bulgarian/)!.rows, row(fresh, /^Bulgarian/)!.rows);
   });
 

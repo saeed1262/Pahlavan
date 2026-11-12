@@ -5,7 +5,7 @@
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DEFAULT_REMINDERS, DEFAULT_SETTINGS, defaultPluginData, inQuietHours, loadPluginData, progressScope, REMIND_HERE_KEY, remindHere, setProgressScope, setRemindHere, SETTINGS_VERSION, type PahlavanSettings } from '../src/settings.ts';
+import { DEFAULT_REMINDERS, DEFAULT_SETTINGS, defaultPluginData, inQuietHours, loadPluginData, LOG_TRACKING_KEY, logTracking, progressScope, REMIND_HERE_KEY, remindHere, setLogTracking, setProgressScope, setRemindHere, SETTINGS_VERSION, type PahlavanSettings } from '../src/settings.ts';
 
 const GIT = { gitSynced: true };
 const NO_GIT = { gitSynced: false };
@@ -166,6 +166,21 @@ describe('Remind on this Mac', () => {
     setRemindHere(store, true);
     assert.equal(remindHere(store), true);
     assert.equal('remindHere' in defaultPluginData(GIT), false);
+  });
+});
+
+describe('the Log panel\'s tracking on this Mac', () => {
+  it('is the last one chosen, Standard until Every set is, in local storage only', () => {
+    const m = new Map<string, string>();
+    const store = { get: (k: string) => m.get(k) ?? null, set: (k: string, v: string) => void m.set(k, v) };
+    assert.equal(logTracking(store), 'standard');
+    setLogTracking(store, 'full');
+    assert.deepEqual([logTracking(store), m.get(LOG_TRACKING_KEY)], ['full', 'full']);
+    setLogTracking(store, 'standard');
+    assert.equal(logTracking(store), 'standard');
+    m.set(LOG_TRACKING_KEY, 'every');
+    assert.equal(logTracking(store), 'standard', 'anything else reads Standard');
+    assert.equal(JSON.stringify(defaultPluginData(GIT)).includes('racking'), false, 'never in data.json');
   });
 });
 

@@ -72,13 +72,21 @@ describe('words the screens never show', () => {
     assert.doesNotMatch(text, SKILL_FILE);
   });
 
-  it('one photo rule everywhere: each light week’s Sunday, the tape every second Sunday', () => {
+  it('one photo rule everywhere: each light week’s Sunday (and each test week’s when the plan lists them), the tape every second Sunday', () => {
     const WRONG = /every two weeks, with the photos|photo day comes with the tape|photos? (?:come )?with the tape|at the end of each deload week/i;
     const sources = [...FILES.map((f) => SRC + f), new URL('../../src/report/progress-more.ts', import.meta.url).pathname, new URL('../../src/core/body-schedule.ts', import.meta.url).pathname];
     for (const p of sources) for (const lit of literals(readFileSync(p, 'utf8'))) assert.doesNotMatch(lit, WRONG, `${p}: ${lit.slice(0, 120)}`);
     const sched = readFileSync(new URL('../../src/core/body-schedule.ts', import.meta.url).pathname, 'utf8');
     assert.match(sched, /tape: 'Every second Sunday'/);
     assert.match(sched, /photos: 'Each light week’s Sunday'/);
+    // A plan that lists its own test weeks adds their Sundays: the one other photo wording.
+    assert.match(sched, /PHOTOS_AND_TEST_WEEKS = 'Each light week’s Sunday, and each test week’s'/);
+  });
+
+  it('the tests card claims the light week only at a phase end: a test week the plan lists is named by its plan week', () => {
+    const card = readFileSync(SRC + 'reminders/card-model.ts', 'utf8');
+    assert.match(card, /`End of \$\{clean\(phase\.name\)\} · in the light week, so you test fresh`/);
+    assert.match(card, /`Plan week \$\{i \+ 1\} · the plan’s own test week`/);
   });
 
   it('Pahlavan says light week: no deload in the screens’ words, and the dashboard’s ported words are renamed on the way', async () => {

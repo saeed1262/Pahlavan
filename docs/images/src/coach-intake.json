@@ -1,6 +1,6 @@
 {
   "title": "The coach's intake, recorded",
-  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach intake asks a safety screen, goals, priority muscles and a movement self-check, drafts the profile with the engine, and writes it on a yes.",
+  "desc": "A recorded Claude Code session with a made-up athlete: /fitness-coach intake asks a safety screen, goals and a movement self-check, drafts the profile with the engine, and writes it on a yes.",
   "window": "Claude Code · a demo vault, a made-up athlete",
   "steps": [
     { "user": "/fitness-coach intake" },
@@ -25,15 +25,7 @@
       "3. **Which goals matter for the next 6 months?** Pick up to 3, and put them in order if you pick more than one: …"
     ], "hold": 2.5 },
     { "user": "Male. 34, 178 cm, 82 kg, waist 89 cm. Goals in order: 1 build strength, 2 build muscle, 3 posture and mobility capacity." },
-    { "say": [
-      "5. **Is there a muscle or a look you care about most?** Up to 3, most important first: …",
-      "   - **Back:** upper back (rows, posture) or lats (width, pull-ups)",
-      "   - **Legs:** quads or hamstrings",
-      "Each pick becomes one priority muscle, which means 10 to 16 direct sets a week for it. So every one you add makes your sessions a bit longer."
-    ], "hold": 3 },
-    { "user": "Build strength: 9 / 8. Build muscle: 8 / 7. Posture and mobility: 7 / 6. Priorities: 1 back, upper back; 2 legs, quads; 3 shoulders." },
-    { "say": [ "Got it. Your priority muscles, in order: **upper back, quads, shoulders**." ], "hold": 1.5 },
-    { "note": "⋯ three more rounds: the week, equipment and history ⋯" },
+    { "note": "⋯ a wish for muscles to focus on (the coach decides the priorities after the assessment), then three more rounds: the week, equipment and history ⋯" },
     { "say": [
       "**Movement self-check.** Type the results back in one reply. Stop any test that hurts and tell me which one it was.",
       "3. **Hang and pull:** dead hang for as long as you can (seconds), then max strict pull-ups.",
