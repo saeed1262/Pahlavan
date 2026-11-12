@@ -5,9 +5,8 @@
 // - hard leg intervals within 24 h before a heavy lower-body day;
 // - two hard days in a row for the same muscle, unless the second is the
 //   lighter one for it (`backToBack`).
-// `plan` (the generator's check) and `review` (the written plan on the
-// user's week) both build their lifting items with `liftItem`, so both
-// judge the same week the same way.
+// `review` (the written plan, or a draft, on the user's week) builds its
+// lifting items with `liftItem`, the one definition of a hard lifting slot.
 //
 // The week is the user's real one (`weekLayout`): each session on the
 // weekday the log shows it done most often in the last 2 to 4 complete
@@ -61,8 +60,8 @@ export interface PlannedItem {
 }
 
 /**
- * A lifting slot as the concurrent checks see it, the one definition `plan`
- * and `review` share: hard when it is a main lift or a compound pattern (not
+ * A lifting slot as the concurrent checks see it, the one definition
+ * `review` uses: hard when it is a main lift or a compound pattern (not
  * a hold) taken near failure (RIR 3 or less), with its rep range and RIR for
  * the lighter-day test.
  */

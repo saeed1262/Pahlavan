@@ -1,14 +1,12 @@
 // Desk breaks: a short posture routine at set times in the working day. They
-// come from the plan (`Program.deskBreaks`): the generator proposes them for
-// desk work, and the vault adapter reads this vault's plan-data.json
-// `deskRoutine` on its `deskTiming`, else Habit Nudges' timing. A desk-break
-// item that follows the plan takes its routine and times from there; one that
-// doesn't keeps its own.
+// come from the plan (`Program.deskBreaks`): the vault adapter reads this
+// vault's plan-data.json `deskRoutine` on its `deskTiming`, else Habit
+// Nudges' timing. A desk-break item that follows the plan takes its routine
+// and times from there; one that doesn't keeps its own.
 
 import { toMinutes, hhmm } from './clock.ts';
-import { appliedEmphasis } from './findings.ts';
 import { explain, type Result } from './reason.ts';
-import { WEEKDAYS, type DeskBreaks, type DeskConfig, type DeskStep, type Profile, type Program, type TrackedItem, type Weekday } from './schema.ts';
+import { WEEKDAYS, type DeskBreaks, type DeskConfig, type DeskStep, type Program, type TrackedItem, type Weekday } from './schema.ts';
 
 /** Habit Nudges' built-in routine, used when the plan has none (its DESK_FALLBACK). */
 export const DEFAULT_DESK_STEPS: readonly DeskStep[] = [
@@ -104,30 +102,6 @@ export function deskBreaksFromPlanData(routine: unknown, guide: unknown, timing:
   if (!steps.length) return null;
   const t = { ...NUDGES_DESK_TIMING, ...timing };
   return { steps, every: t.every, from: t.from, to: t.to, minutes: t.minutes, days: [...t.days] };
-}
-
-/**
- * The generator's desk breaks: for desk work (the intake's answer), the
- * default routine on Habit Nudges' timing, with the reasons the profile
- * gives (desk hours, a forward-head posture finding that acts in full:
- * confirmed, or a profile from before the question). Without a band, the pull-apart becomes wall slides. Null, with
- * the reason, when there is no desk work.
- */
-export function deskBreaksFor(profile: Profile): Result<DeskBreaks | null> {
-  const work = profile.work;
-  const inputs = { desk: work?.desk ?? null, sittingHours: work?.sittingHours ?? null, emphasis: profile.emphasis.map((e) => e.kind).filter(Boolean) };
-  if (!work?.desk) {
-    return explain<DeskBreaks | null>(null, 'plan.desk-breaks', inputs, { note: work ? 'No desk work in the intake: no desk breaks in this plan.' : 'The intake has no answer about desk work yet: no desk breaks in this plan.' });
-  }
-  const band = profile.equipment.some((e) => /band/i.test(e));
-  const steps = DEFAULT_DESK_STEPS.map((s) => (s.name === 'Band Pull-Apart' && !band ? { name: 'Wall slides', dose: '×10' } : { ...s }));
-  const why = [{ what: work.sittingHours ? `Desk job, about ${work.sittingHours} hours seated` : 'Desk job', from: 'intake' }];
-  const posture = appliedEmphasis(profile).find((e) => e.kind === 'forward-head-rounded-shoulders');
-  if (posture) why.push({ what: posture.seen, from: 'the body assessment' });
-  const t = NUDGES_DESK_TIMING;
-  return explain<DeskBreaks | null>({ steps, every: t.every, from: t.from, to: t.to, minutes: t.minutes, days: [...t.days], why }, 'plan.desk-breaks', inputs, {
-    note: `A ${t.minutes}-minute routine every ${t.every} minutes from ${t.from} to ${t.to} on weekdays, for desk work${posture ? ' and the posture finding' : ''}.`,
-  });
 }
 
 /** A desk-break item's routine and times today: the plan's when it follows the plan (and the plan has them), else its own. */

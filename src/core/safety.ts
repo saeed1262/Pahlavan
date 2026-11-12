@@ -10,6 +10,7 @@
 import { RED_FLAGS, REFERRAL, WARNING_SIGNS, type RedFlag, type RedFlagSeverity } from './data/red-flags.ts';
 import { LOWER_BODY, UPPER_BODY } from './data/muscles.ts';
 import { addDays, dayText, daysBetween, isIsoDate } from './dates.ts';
+import { nextWeight } from './loads.ts';
 import type { ProgressionTarget } from './progression.ts';
 import { explain, joinNotes, type Result } from './reason.ts';
 import type { Exercise, IsoDate, LedgerConstraint, RiskTag, ScreeningOutcome, SessionTemplate, Unit } from './schema.ts';
@@ -403,7 +404,8 @@ export interface LoadCapInput {
   date: IsoDate;
   /** This exercise's top-set weights in its own unit, oldest first; the last is the latest session. */
   history: readonly { date: IsoDate; weight: number }[];
-  exercise: { unit: Unit; increment: number };
+  /** `weights`: the gym's real weights (loads.ts); one step is then the next real weight up, and a capped weight is a real one. */
+  exercise: { unit: Unit; increment: number; weights?: readonly number[] };
 }
 
 const EPS = 1e-9;
@@ -417,10 +419,16 @@ const isBig = (from: number, to: number) => to - from > LOAD_CAP.maxWeekFraction
  * flagged as a big jump, but never twice within 7 days. A capped weight is
  * rounded down to the step and never goes below the last weight. Progression
  * applies it to every target that adds weight; other proposers should call it.
+ *
+ * With the gym's real weights, one step is the plan's increment or the next
+ * real weight up, whichever is more, and a capped weight is the heaviest real
+ * one within the cap (never under the last weight). When even the next real
+ * weight is over the cap, the weight holds and reps carry the progression.
  */
 export function capLoadJump(input: LoadCapInput): Result<LoadCap> {
   const { proposed, date, history, exercise } = input;
   const inc = exercise.increment;
+  const weights = exercise.weights?.length ? exercise.weights : null;
   const rule = 'safety.load-cap';
   const threshold = { perSession: `one step (${inc} ${exercise.unit})`, perWeek: `${LOAD_CAP.maxWeekFraction * 100} % over ${LOAD_CAP.windowDays} days` };
   const last = history.at(-1);
@@ -436,15 +444,18 @@ export function capLoadJump(input: LoadCapInput): Result<LoadCap> {
   };
   const recent = history.filter((h) => inWindow(h.date));
   const ref = recent.length ? Math.min(...recent.map((h) => h.weight)) : last.weight;
-  const sessionLimit = Number((last.weight + inc).toFixed(6));
+  // With real weights, one step is at least the next real weight up (a 2 kg dumbbell step under a 1 kg increment).
+  const nextUp = weights ? nextWeight(last.weight, 'up', weights) : null;
+  const sessionLimit = Number((nextUp !== null ? Math.max(last.weight + inc, nextUp) : last.weight + inc).toFixed(6));
   const weekLimit = Number((ref * (1 + LOAD_CAP.maxWeekFraction)).toFixed(6));
-  const bigStep = isBig(last.weight, last.weight + inc);
+  const bigStep = isBig(last.weight, nextUp ?? last.weight + inc);
   const earlierBig = history.some((h, i) => i > 0 && inWindow(h.date) && isBig(history[i - 1]!.weight, h.weight));
 
   let limit: number;
   let binding: LoadCapBinding;
   if (bigStep) {
-    limit = earlierBig ? last.weight : sessionLimit;
+    // A big step is allowed as one step: the next real weight up, with real weights.
+    limit = earlierBig ? last.weight : (nextUp ?? sessionLimit);
     binding = earlierBig ? 'big-jump-repeat' : 'session';
   } else {
     limit = Math.min(sessionLimit, weekLimit);
@@ -453,20 +464,27 @@ export function capLoadJump(input: LoadCapInput): Result<LoadCap> {
   const capped = proposed > limit + EPS;
   let weight = proposed;
   if (capped) {
-    weight = Number((Math.floor(limit / inc + EPS) * inc).toFixed(6));
+    weight = weights
+      ? (weights.filter((w) => w <= limit + EPS && w >= last.weight - EPS).at(-1) ?? last.weight)
+      : Number((Math.floor(limit / inc + EPS) * inc).toFixed(6));
     if (weight < last.weight) weight = last.weight;
   }
   const bigJump = weight > last.weight + EPS && isBig(last.weight, weight);
+  // Real weights: the next one up is over the cap, so the weight holds and reps carry the progression.
+  const held = capped && weights !== null && weight <= last.weight + EPS;
+  const unit = exercise.unit;
+  const hold = `hold ${weight} ${unit} and let reps carry it`;
+  const carry = !held ? null : nextUp === null || Math.abs(nextUp - proposed) <= EPS ? `it is the next weight here, so ${hold}` : `the next weight here, ${nextUp} ${unit}, is over the cap too, so ${hold}`;
   return explain<LoadCap>(
     { weight, capped, limit, bigJump, binding: capped ? binding : 'none' },
     rule,
-    { proposed, date, last, weekReference: ref, sessionsInWindow: recent.length, unit: exercise.unit, increment: inc },
+    { proposed, date, last, weekReference: ref, sessionsInWindow: recent.length, unit, increment: inc, ...(weights ? { nextWeight: nextUp } : {}) },
     {
       threshold,
       note: joinNotes(
-        capped && binding === 'session' && `${proposed} ${exercise.unit} is more than one step over ${last.weight}: capped at ${weight}.`,
-        capped && binding === 'week' && `${proposed} ${exercise.unit} would be more than 10 % over ${ref} within 7 days: capped at ${weight}.`,
-        capped && binding === 'big-jump-repeat' && `A big jump already happened within 7 days: hold ${weight} ${exercise.unit}.`,
+        capped && binding === 'session' && `${proposed} ${unit} is more than one step over ${last.weight}: ${carry ?? `capped at ${weight}`}.`,
+        capped && binding === 'week' && `${proposed} ${unit} would be more than 10 % over ${ref} within 7 days: ${carry ?? `capped at ${weight}`}.`,
+        capped && binding === 'big-jump-repeat' && `A big jump already happened within 7 days: hold ${weight} ${unit}${held ? ' and let reps carry it' : ''}.`,
         bigJump && `One step is more than 10 % of the load (a big jump): start at the bottom of the range.`,
       ),
     },

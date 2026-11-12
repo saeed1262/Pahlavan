@@ -8,6 +8,7 @@ import { PATTERNS } from './data/exercises.ts';
 import { isIsoDate, mondayOf } from './dates.ts';
 import { MORNING_KEYS, MORNING_LIMITS, type MorningKey } from './morning.ts';
 import { explain, type Result } from './reason.ts';
+import { LOADS } from './loads.ts';
 import { LB_PER_KG } from './units.ts';
 import {
   INBOX_KINDS,
@@ -15,6 +16,8 @@ import {
   TRAINED_ANSWERS,
   type InboxKind,
   type InboxMorningFields,
+  type InboxLift,
+  type InboxSessionFields,
   ABDOMEN_RISK,
   CONFIDENCE,
   DAY_MARKS,
@@ -46,6 +49,7 @@ import {
   ADJUST_STEPS,
   REASON_SOURCES,
   SKIP_REASONS,
+  SWAP_REASONS,
   type CheckinLog,
   type EatingPlan,
   type ItemDay,
@@ -194,6 +198,97 @@ const rateBand = then(shape('rateBand', { unit: oneOf(['pct', 'kg']), lo: num(),
   if (b.lo > b.hi) fail(e, p, 'lo is above hi');
 });
 
+// The gym's real weights (profile.loads, loads.ts): each kind optional, every weight above 0.
+const weightSet = then(
+  shape('weightSet', {}, { weights: arr(num({ above: 0 }), { min: 1 }), from: num({ above: 0 }), to: num({ above: 0 }), step: num({ above: 0 }) }),
+  (v, p, e) => {
+    const w = v as { weights?: number[]; from?: number; to?: number; step?: number };
+    const range = [w.from, w.to, w.step].filter((x) => x !== undefined).length;
+    if (w.weights && range) fail(e, p, 'give the weights as a list or as from, to and step, not both');
+    else if (!w.weights && range < 3) fail(e, p, 'needs the weights as a list ({"weights": [2, 4, 6]}) or a range ({"from": 2, "to": 30, "step": 2})');
+    else if (!w.weights && w.from! > w.to!) fail(e, p, `from (${w.from}) is above to (${w.to})`);
+  },
+);
+const weightStack = then(shape('weightStack', { step: num({ above: 0 }) }, { from: num({ above: 0 }), to: num({ above: 0 }) }), (v, p, e) => {
+  const w = v as { step: number; from?: number; to?: number };
+  if (w.to !== undefined && (w.from ?? w.step) > w.to) fail(e, p, `the lightest load (${w.from ?? w.step}) is above to (${w.to})`);
+});
+const plates = arr(num({ above: 0 }), { min: 1 });
+const gymLoads = then(
+  shape('gymLoads', { unit }, {
+    dumbbell: weightSet,
+    kettlebell: weightSet,
+    barbell: shape('barbellLoads', { bar: num({ above: 0 }), plates }),
+    'trap-bar': shape('trapBarLoads', { bar: num({ above: 0 }) }, { plates }),
+    machine: weightStack,
+    cable: weightStack,
+  }),
+  (v, p, e) => {
+    const l = v as { barbell?: unknown; 'trap-bar'?: { plates?: unknown } };
+    if (l['trap-bar'] && !l['trap-bar'].plates && !l.barbell) fail(e, at(p, 'trap-bar'), 'needs its plates, or a barbell whose plates it uses');
+    loadBounds(v as LoadsShape, p, e);
+  },
+);
+
+interface LoadsShape {
+  unit: 'kg' | 'lb';
+  dumbbell?: { weights?: number[]; from?: number; to?: number; step?: number };
+  kettlebell?: { weights?: number[]; from?: number; to?: number; step?: number };
+  barbell?: { bar: number; plates: number[] };
+  'trap-bar'?: { bar: number; plates?: number[] };
+  machine?: { step: number; from?: number; to?: number };
+  cable?: { step: number; from?: number; to?: number };
+}
+
+/**
+ * The bounds Pahlavan reads a kit within: steps and plates of at least
+ * 0.25 kg (0.5 lb), loads of at most 500 kg (1100 lb), and at most 200
+ * dumbbells or kettlebells in a range or a list.
+ */
+function loadBounds(l: LoadsShape, p: string, e: ValidationError[]): void {
+  const u = l.unit;
+  const max = u === 'kg' ? LOADS.maxKg : LOADS.maxLb;
+  const min = u === 'kg' ? LOADS.minStepKg : LOADS.minStepLb;
+  const heavy = (x: number | undefined, path: string) => {
+    if (x !== undefined && x > max) fail(e, path, `must be at most ${max} ${u} (the heaviest load Pahlavan reads)`);
+  };
+  const fine = (x: number | undefined, path: string) => {
+    if (x !== undefined && x < min) fail(e, path, `must be at least ${min} ${u} (the smallest step Pahlavan reads)`);
+  };
+  for (const k of ['dumbbell', 'kettlebell'] as const) {
+    const w = l[k];
+    if (!w) continue;
+    const kp = at(p, k);
+    if (w.weights) {
+      w.weights.forEach((x, i) => heavy(x, at(at(kp, 'weights'), i)));
+      if (w.weights.length > LOADS.maxListed) fail(e, at(kp, 'weights'), `${w.weights.length} weights; at most ${LOADS.maxListed}`);
+      continue;
+    }
+    heavy(w.to, at(kp, 'to'));
+    fine(w.step, at(kp, 'step'));
+    const n = Math.floor((w.to! - w.from!) / w.step! + 1e-9) + 1;
+    if (n > LOADS.maxListed) fail(e, kp, `from ${w.from} to ${w.to} in steps of ${w.step} is ${n} weights; at most ${LOADS.maxListed} (list the ones the gym has)`);
+  }
+  for (const k of ['barbell', 'trap-bar'] as const) {
+    const b = l[k];
+    if (!b) continue;
+    const kp = at(p, k);
+    heavy(b.bar, at(kp, 'bar'));
+    (b.plates ?? []).forEach((x, i) => {
+      fine(x, at(at(kp, 'plates'), i));
+      heavy(x, at(at(kp, 'plates'), i));
+    });
+  }
+  for (const k of ['machine', 'cable'] as const) {
+    const s = l[k];
+    if (!s) continue;
+    const kp = at(p, k);
+    fine(s.step, at(kp, 'step'));
+    heavy(s.from, at(kp, 'from'));
+    heavy(s.to, at(kp, 'to'));
+  }
+}
+
 const goal = shape(
   'goal',
   { id, kind: oneOf(GOAL_KINDS), label: text, importance: num({ min: 0, max: 10 }), confidence: num({ min: 0, max: 10 }) },
@@ -281,6 +376,7 @@ const profileShape = shape(
       liftSession: shape('liftSessionRule', { patterns: arr(str({ nonEmpty: true }), { min: 1 }) }),
       shortDayCore: bool,
     }),
+    loads: gymLoads,
   },
 );
 
@@ -334,6 +430,7 @@ const exercise = then(
       kind: oneOf(EXERCISE_KINDS),
       risk: arr(riskTag),
       equipment: str(),
+      weights: arr(num({ above: 0 })),
     },
   ),
   (v, p, e) => {
@@ -385,7 +482,8 @@ const planSnapshot = shape(
   { program: id, phase: id, mesocycle: id, week: num({ min: 1, int: true }), kind: oneOf(SESSION_KINDS) },
 );
 
-const sessionPain = shape('sessionPain', { area: text, severity: num({ min: 0, max: 10 }) }, { exercise: str() });
+// The severity is left out when it wasn't given (a pain skip whose slider wasn't moved).
+const sessionPain = shape('sessionPain', { area: text }, { severity: num({ min: 0, max: 10 }), exercise: str() });
 
 const sessionShape = shape(
   'session',
@@ -419,6 +517,7 @@ const daily = shape(
     energy: scale5,
     soreness: scale5,
     rhr: num({ min: 20, max: 250 }),
+    hrv: num({ min: 1, max: 500 }),
     illness: bool,
     steps: num({ min: 0, int: true }),
     floors: num({ min: 0, int: true }),
@@ -722,11 +821,51 @@ const inboxKind = (kind: InboxKind): Check => (v, p, e) => {
   if (v !== kind) fail(e, p, `expected ${kind}`);
 };
 const inboxBase = (kind: InboxKind) => ({ v: inboxVersion, kind: inboxKind(kind), at: inboxAt, date });
-const inboxLift = shape('inboxLift', { weight: num({ min: 0 }), reps: num({ min: 0, int: true }) }, { unit });
-const inboxSessionFields = shape(
-  'inboxSessionFields',
-  { type: text },
-  { lift1: inboxLift, lift2: inboxLift, durationMin: num({ min: 1, max: 600, int: true }), express: bool, rating: num({ min: 1, max: 10, int: true }), notes: str() },
+// A lift's top set; a swap (at Every set only) names the lift done and the plan's, its reason the log's code.
+const inboxLift = then(shape('inboxLift', { weight: num({ min: 0 }), reps: num({ min: 0, int: true }) }, { unit, name: text, planned: text, swapWhy: oneOf(SWAP_REASONS) }), (v, p, e) => {
+  const l = v as InboxLift;
+  if (l.planned !== undefined && l.name === undefined) fail(e, at(p, 'planned'), 'goes with "name": a swap names the lift done and the plan\'s it replaces');
+  if (l.swapWhy !== undefined && l.planned === undefined) fail(e, at(p, 'swapWhy'), 'goes with "planned": a swap\'s reason');
+});
+/** A value that may also be null ("not given", as `log add` takes it). */
+const orNull = (check: Check): Check => (v, p, e) => {
+  if (v !== null) check(v, p, e);
+};
+// Every set, as `log add` checks it: reps whole, 0 or more; weight 0 or more; RIR 0 to 10; weight, unit and RIR may be null.
+const inboxSet = shape('inboxSet', { reps: num({ min: 0, int: true }) }, { weight: orNull(num({ min: 0 })), unit: orNull(unit), rir: orNull(num({ min: 0, max: 10 })) });
+const inboxExerciseSets = shape('inboxExerciseSets', { name: text, sets: arr(inboxSet) }, { planned: text });
+const inboxSwap = shape('inboxSwap', { from: text, to: text }, { why: oneOf(SWAP_REASONS) });
+/** The session's Every set fields: they go with `trackingLevel` ("full", the gym page's entry). */
+const EVERY_SET_KEYS = ['exerciseSets', 'swaps', 'skipped', 'skipWhy', 'cardioMin', 'cardioMode'] as const;
+/** A lift's swap fields: at Every set only, too. */
+const LIFT_SWAP_KEYS = ['name', 'planned', 'swapWhy'] as const;
+const inboxSessionFields = then(
+  shape(
+    'inboxSessionFields',
+    { type: text },
+    {
+      lift1: inboxLift,
+      lift2: inboxLift,
+      durationMin: num({ min: 1, max: 600, int: true }),
+      express: bool,
+      rating: num({ min: 1, max: 10, int: true }),
+      notes: str(),
+      trackingLevel: oneOf(['full']),
+      exerciseSets: arr(inboxExerciseSets),
+      swaps: arr(inboxSwap),
+      skipped: arr(text),
+      skipWhy: record(oneOf(SKIP_REASONS)),
+      cardioMin: num({ min: 0, max: 600, int: true }),
+      cardioMode: str(),
+    },
+  ),
+  (v, p, e) => {
+    const s = v as InboxSessionFields;
+    if (s.trackingLevel !== undefined) return;
+    const why = 'goes with "trackingLevel": "full" (a session logged at Every set)';
+    for (const k of EVERY_SET_KEYS) if (s[k] !== undefined) fail(e, at(p, k), why);
+    for (const l of ['lift1', 'lift2'] as const) for (const k of LIFT_SWAP_KEYS) if (s[l]?.[k] !== undefined) fail(e, at(at(p, l), k), why);
+  },
 );
 // The morning fields with the card's limits; the weight's (in kg) is checked once its unit is known.
 const morningField = (k: MorningKey): Check => (k === 'weight' ? num({ above: 0 }) : num({ min: MORNING_LIMITS[k].min, max: MORNING_LIMITS[k].max, int: MORNING_LIMITS[k].int }));

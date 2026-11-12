@@ -7,7 +7,7 @@
 // plugin draws the panel and keeps what the user opened and folded.
 
 import { trimWords } from '../core/readiness.ts';
-import type { CoachNow, CoachStep } from '../core/coach-steps.ts';
+import { COACH_COMMANDS, type CoachNow, type CoachStep } from '../core/coach-steps.ts';
 import { addDays, dayText, daysBetween, mondayOf, type IsoDate } from '../core/dates.ts';
 import { shortDay } from '../core/diet.ts';
 import { isMorningDone } from '../core/morning.ts';
@@ -360,7 +360,16 @@ export interface PlanExtras {
 
 const UPCOMING: Readonly<Record<string, string>> = { tape: 'Tape', checkin: 'Sunday check-in', deload: 'Light week', tests: 'Phase tests', photos: 'Progress photos', 'phase-review': 'Phase review', rescreen: 'Re-screening', 'ledger-end': 'A Ledger limit ends', 'change-end': 'A temporary change ends' };
 
-/** The Plan: This mesocycle and Coming up open, the rest folded. */
+/** The Why this plan card's line: its first reason and the split picked over the others; else what's wrong. */
+function whyStatus(m: Extract<Plan, { templates: unknown }>): Run[] {
+  const w = m.why;
+  if (!w) return [m.whyUnreadable ? 'Can’t be read as written: ' : 'Not written yet: ', { b: COACH_COMMANDS.planWhy }];
+  const others = w.split.compared.length + w.split.leftOut.length;
+  const split = others ? `${w.split.picked.label}, picked over ${plural(others, 'other')}` : `${w.split.picked.label}, picked`;
+  return w.reasons[0] ? dots([{ b: w.reasons[0].title }], [split]) : [split];
+}
+
+/** The Plan: Why this plan, This mesocycle and Coming up open, the rest folded. */
 export function planGlance(pm: Plan, x: PlanExtras): Glance {
   if (!('templates' in pm) || !pm.weeks?.length) return { sums: [], sections: [] };
   const m = pm;
@@ -395,6 +404,7 @@ export function planGlance(pm: Plan, x: PlanExtras): Glance {
   const mw = m.minimumWeek?.value ?? null;
   const sections: GlanceSection[] = [
     { id: 'timeline', title: `The plan, ${m.weeks.length} weeks`, line: 'The phases week by week: light weeks, tests, decisions', status: now && ph ? dots(['Week ', { b: `${now.index} of ${m.weeks.length}` }], [`${name(ph)} ends ${dayText(ph.to)}${next ? `, then ${name(next)}` : ''}`]) : [`From ${dayText(m.weeks[0]!.start)}`], start: 'folded' },
+    { id: 'why', title: 'Why this plan', line: 'Your coach’s reasons, and why this split over the others', status: whyStatus(m), start: 'open' },
     { id: 'meso', title: 'This mesocycle', line: 'This block’s weeks and each session as planned', status: now && cur ? dots(['Mesocycle ', { b: String(now.meso) }, `, week ${cur.weekInMeso} of ${mesoLength}`], light ? [light.start <= m.date ? 'the light week now' : `light week from ${shortDay(light.start)}`] : null) : ['The sessions as planned'], start: 'open' },
     { id: 'vol', title: 'Sets per muscle', line: 'Planned weekly sets against each muscle’s band', status: dots(under.length ? [{ b: `${under.length} under the minimum` }] : short.length ? null : ['Every muscle at its minimum or more'], short.length ? [{ b: `${and(short.map((b) => lab(b.muscle)))} short of direct sets near failure` }] : null, high.length ? [`${and(high.slice(0, 2).map((b) => lab(b.muscle)))} above ${high.length === 1 ? 'its' : 'their'} band`] : null), start: 'folded' },
     { id: 'upcoming', title: 'Coming up', line: 'Dates to the phase end: tape, check-ins and the coach, tests', status: first ? dots([`${and(onFirst)} `, { b: dayText(first.date) }, `, ${inDays(m.date, first.date)}`], coach ? [`then ${stepWords(coach)}: `, { b: coach.command }] : null) : ['Nothing before the phase ends'], start: 'open' },

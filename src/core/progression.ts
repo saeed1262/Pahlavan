@@ -9,6 +9,7 @@ import { topSet } from './history.ts';
 import { cited, explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
 import type { LiftProgression, RuleSource } from './rules.ts';
 import { capLoadJump } from './safety.ts';
+import { atOrUnder, gcdStep, kitWord, snapLoad, type LoadKind } from './loads.ts';
 import type { IsoDate, LoggedSet, RepRange, SlotProgression, Unit } from './schema.ts';
 import { roundToStep, setInUnit, weightInUnit } from './units.ts';
 
@@ -21,7 +22,11 @@ export const PROGRESSION = {
   deloadRirAdd: 3,
   /** A logged RIR of 5 or more is unreliable: the set was too light to judge. */
   unreliableRir: 5,
-  /** The dashboard rounds base + increment to 0.5. */
+  /**
+   * The dashboard rounds base + increment to 0.5; an increment finer than
+   * that keeps its own (gcd of the two: 1.25 rounds to 0.25, so 60 + 1.25
+   * stays 61.25). With the gym's real weights the increase lands on one.
+   */
   incrementRounding: 0.5,
   /** The lighter step should land inside 5-10 %. */
   lighterBand: [0.05, 0.1],
@@ -57,7 +62,14 @@ export interface ProgressionTarget {
 export interface ProgressionInput {
   /** This exercise's sessions, oldest first (history.ts exerciseHistory). */
   history: readonly ExerciseSession[];
-  exercise: { unit: Unit; increment: number };
+  /**
+   * `weights`: the gym's real weights for this lift (loads.ts, lightest
+   * first), and `kit` the kind they are, for the notes. With them every
+   * target lands on a real weight: an increase on the nearest one up, a
+   * lighter target on the nearest one down, and at the heaviest the weight
+   * holds while reps carry the progression. Without them, the step.
+   */
+  exercise: { unit: Unit; increment: number; weights?: readonly number[]; kit?: LoadKind | null };
   repRange: RepRange;
   targetRir: number;
   /** The coming session is in a deload week. */
@@ -85,11 +97,34 @@ export interface ProgressionInput {
   exerciseName?: (id: string) => string;
 }
 
-/** The sets the rule judges: every set at Full tracking, otherwise the top set for all. */
-function judged(h: ExerciseSession): { sets: LoggedSet[]; assumed: boolean } {
-  if (h.trackingLevel === 'full') return { sets: h.sets, assumed: false };
+/**
+ * The sets the rule judges: every set at Full tracking, otherwise the top
+ * set for all. At Full, `planned` is the sets the session called for: the
+ * day's working sets frozen with it (`_daySets`: a readiness or soreness
+ * trim, Express's own), else its plan snapshot's sets (an older entry,
+ * `plannedFrom: 'plan'`, reported only: see partialSets).
+ */
+function judged(h: ExerciseSession): { sets: LoggedSet[]; assumed: boolean; planned?: number; plannedFrom?: 'day' | 'plan' } {
+  if (h.trackingLevel === 'full') {
+    const slot = h.slot as (ExerciseSession['slot'] & { _daySets?: number }) | undefined;
+    const day = slot?._daySets;
+    const planned = day !== undefined && day > 0 ? { planned: day, plannedFrom: 'day' as const } : slot && slot.sets > 0 ? { planned: slot.sets, plannedFrom: 'plan' as const } : {};
+    return { sets: h.sets, assumed: false, ...planned };
+  }
   const t = topSet(h.sets);
   return { sets: t ? [t] : [], assumed: true };
+}
+
+/**
+ * At Every set, fewer sets logged than the day called for: no increase.
+ * The weight goes up only when every set of the day reached the top of the
+ * range, so a set not logged never counts as reached. Only a session that
+ * froze the day's count: an older one was logged one row per set of the
+ * day (a trim's included), which its plan snapshot doesn't record, so it is
+ * judged as before, on the sets it logged.
+ */
+function partialSets(j: ReturnType<typeof judged>): { loggedSets: number; plannedSets: number } | null {
+  return j.plannedFrom === 'day' && j.planned !== undefined && j.sets.length < j.planned ? { loggedSets: j.sets.length, plannedSets: j.planned } : null;
 }
 
 /** The session as progression read it: every set in the exercise's unit, the logged weight beside it. */
@@ -189,6 +224,21 @@ function cappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
       },
     };
   }
+  const weights = input.exercise.weights?.length ? input.exercise.weights : null;
+  if (weights && r.value.action === 'increase' && cap.value.weight <= base + 1e-9) {
+    // The next real weight is over the cap: the weight holds and reps carry the progression.
+    const reps = carryReps(r.reason.inputs['judgedReps'], input.repRange);
+    const unit = input.exercise.unit;
+    return {
+      value: { ...r.value, action: 'hold', weight: base, reps },
+      reason: {
+        ...r.reason,
+        title: 'Load cap',
+        inputs: { ...r.reason.inputs, loadCap },
+        note: joinNotes(r.reason.note, cap.reason.note, `Next: ${base} ${unit} x ${reps}.`) ?? '',
+      },
+    };
+  }
   return {
     value: { ...r.value, weight: cap.value.weight },
     reason: {
@@ -200,6 +250,12 @@ function cappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   };
 }
 
+/** Reps carry the progression while the weight holds: one more than the last session's fewest, at least the top of the range. */
+function carryReps(judged: unknown, repRange: RepRange): number {
+  const reps = Array.isArray(judged) ? judged.filter((x): x is number => typeof x === 'number') : [];
+  return Math.max(repRange[1], (reps.length ? Math.min(...reps) : repRange[1]) + 1);
+}
+
 function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const { history, exercise, repRange, targetRir } = input;
   const [lo, hi] = repRange;
@@ -208,6 +264,9 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const deload = input.deload === true;
   const lightWeek = { load: input.lightWeek?.load ?? PROGRESSION.deloadFactor, rirAdd: input.lightWeek?.rirAdd ?? PROGRESSION.deloadRirAdd, from: input.lightWeek?.from };
   const stepUp = input.rule?.rule === 'linear' && input.rule.step ? input.rule.step : inc;
+  // The gym's real weights (a ladder moves to its next variation instead of adding load).
+  const weights = input.rule?.rule !== 'ladder' && exercise.weights?.length ? exercise.weights : null;
+  const kit = kitWord(exercise.kit);
   const threshold = { lo, hi, targetRir, increment: inc, ...(stepUp !== inc ? { linearStep: stepUp } : {}) };
   // The plan's own lift rule (double, linear, hold, target) names the result; else the slot's (double by default).
   const own = input.standing?.source === 'plan' ? input.standing.rule : null;
@@ -254,7 +313,9 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const top = topSet(last.sets)!;
   // A top set logged in the other unit is converted and rounded to the step.
   const base = weightInUnit(top.weight, top.unit, exercise);
-  const { sets, assumed } = judged(last);
+  const judgedLast = judged(last);
+  const { sets, assumed } = judgedLast;
+  const partial = partialSets(judgedLast);
   const reps = sets.map((s) => s.reps);
   let rirs = sets.map((s) => s.rir).filter((r): r is number => r !== undefined);
   const rirNotes: string[] = [];
@@ -285,7 +346,11 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
     increment: inc,
     deload,
     judgedReps: reps,
+    // Every set: the sets logged against the sets the session planned.
+    ...(judgedLast.planned !== undefined ? { loggedSets: sets.length, plannedSets: judgedLast.planned, plannedFrom: judgedLast.plannedFrom } : {}),
     ...rirInputs,
+    // The gym's real weights: the target lands on one (the lightest and heaviest here).
+    ...(weights ? { realWeights: { lightest: weights[0], heaviest: weights.at(-1) } } : {}),
   };
   const assumption = joinNotes(
     assumed &&
@@ -303,13 +368,48 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
     rir,
     assumedAllSets: assumed,
   });
+  // Fewer sets logged than planned: the weight holds at the top of the range (a ladder keeps its variation).
+  const partialNote = partial
+    ? `${partial.loggedSets} of ${partial.plannedSets} sets logged: ${input.rule?.rule === 'ladder' ? 'the next variation comes' : 'the weight goes up'} when every set reaches the top.`
+    : null;
+  const partialHold = () => explain(make('hold', base, hi), rule, inputs, { threshold, title: 'Sets not logged', note: joinNotes(partialNote, assumption, unreliable) ?? '' });
+  // An increase: on the nearest real weight up, else rounded to the finer of 0.5 and the step.
+  const up = (proposed: number) => (weights ? snapLoad(proposed, base, 'up', weights) : { weight: roundToStep(proposed, gcdStep(PROGRESSION.incrementRounding, stepUp)), ceiling: false, floor: false });
+  // At the heaviest real weight the weight holds and reps carry the progression (the load ceiling). A last weight
+  // above the kit's heaviest (another gym, or a kind the loads leave out) is kept: never a silent drop.
+  const ceiling = (w: number) => {
+    const r = carryReps(reps, repRange);
+    const above = base > w + 1e-9;
+    const held = above ? base : w;
+    return explain(make('hold', held, r), rule, { ...inputs, ceiling: w, ...(above ? { aboveKit: true } : {}) }, {
+      threshold,
+      title: 'Load ceiling',
+      note: joinNotes(
+        above
+          ? `Every set reached ${hi}: ${base} ${unit} is heavier than the heaviest ${kit} here (${w} ${unit}), so the weight holds and reps carry it: ${base} ${unit} x ${r}. If the gym's weights have changed, correct the profile's loads.`
+          : `Every set reached ${hi}: the heaviest ${kit} here is ${w} ${unit}, so reps carry it: ${w} ${unit} x ${r}.`,
+        assumption,
+        unreliable,
+      ),
+    });
+  };
 
   if (deload) {
-    const w = roundToStep(base * lightWeek.load, inc);
+    // On real weights: the nearest one under the last loading weight; a light week that keeps the load keeps a real
+    // one, the last weight or the nearest real one under it (one logged at another gym).
+    const keep = lightWeek.load >= 1;
+    const snap = weights && !keep ? snapLoad(base * lightWeek.load, base, 'down', weights) : null;
+    let w: number;
+    if (!weights) w = roundToStep(base * lightWeek.load, inc);
+    else if (keep) w = atOrUnder(base, weights) ?? base;
+    else w = snap!.floor ? Math.min(base, snap!.weight) : snap!.weight;
+    const under = weights ? (base > 0 ? 1 - w / base : 0) : 1 - lightWeek.load;
+    const load = under <= 1e-9 || (keep && !weights) ? 'the load of the last loading session' : keep ? `the nearest weight here under the last loading session's` : `about ${Math.round(under * 100)} % under the last loading session`;
     return explain(make('deload', w, lo, targetRir + lightWeek.rirAdd), rule, inputs, {
       threshold: { ...threshold, deloadFactor: lightWeek.load, deloadRirAdd: lightWeek.rirAdd },
       note: joinNotes(
-        `Deload week: ${w} ${unit} x ${lo}, ${lightWeek.load >= 1 ? 'the load of' : `about ${Math.round((1 - lightWeek.load) * 100)} % under`} the last loading session (${base} ${unit}), RIR +${lightWeek.rirAdd}.`,
+        `Deload week: ${w} ${unit} x ${lo}, ${load} (${base} ${unit}), RIR +${lightWeek.rirAdd}.`,
+        snap?.floor && `The lightest ${kit} here is ${snap.weight} ${unit}: nothing lighter to drop to.`,
         assumption,
       ),
       ...(lightWeek.from ? { from: lightWeek.from } : {}),
@@ -318,13 +418,14 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
 
   if (target) {
     // The coach's numbers; met once every judged set reached its reps at its weight or more.
-    const met = base >= target.weight - 1e-9 && reps.length > 0 && reps.every((r) => r >= target.reps);
+    const met = base >= target.weight - 1e-9 && reps.length > 0 && reps.every((r) => r >= target.reps) && !partial;
     return explain<ProgressionTarget>({ ...make('target', target.weight, target.reps, target.rir), targetMet: met }, rule, { ...inputs, target, targetMet: met }, {
       threshold,
       note: joinNotes(
         met
           ? `The coach's target is met (${base} ${unit} x ${reps.join(', ')}): ${target.weight} ${unit} x ${target.reps} at RIR ${target.rir} holds until the coach sets the next one.`
           : `The coach's target: ${target.weight} ${unit} x ${target.reps} at RIR ${target.rir}.`,
+        partial && `${partial.loggedSets} of ${partial.plannedSets} sets logged: the target is met when every set reaches it.`,
         assumption,
       ),
     });
@@ -335,17 +436,26 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
   const missRun = onMiss === 'hold' ? null : logged.slice(-onMiss.after);
   if (onMiss !== 'hold' && missRun!.length === onMiss.after && missRun!.every(miss)) {
     const factor = own ? 1 - onMiss.drop : PROGRESSION.lighterFactor;
-    let w = roundToStep(base * factor, inc);
-    if (w >= base) w = Math.max(0, Number((base - inc).toFixed(6))); // the step is too coarse for the drop
+    // On real weights: the nearest one under the base; without them, the step.
+    const snap = weights ? snapLoad(base * factor, base, 'down', weights) : null;
+    const runText = onMiss.after === 1 ? 'A session' : onMiss.after === 2 ? 'Two sessions in a row' : `${onMiss.after} sessions in a row`;
+    if (snap?.floor) {
+      // Nothing lighter here: the weight holds and the reps are the aim, said plainly.
+      return explain(make('hold', base, lo), rule, { ...inputs, ...(prev ? { previous: summary(prev, exercise) } : {}), lightest: snap.weight }, {
+        threshold: { ...threshold, lighterFactor: factor },
+        note: joinNotes(`${runText} under ${lo} reps, and the lightest ${kit} here is ${snap.weight} ${unit}: nothing lighter, so hold ${base} ${unit} and aim for ${lo}; a wider rep range or an easier variation lets reps carry the progress.`, assumption),
+      });
+    }
+    let w = snap ? snap.weight : roundToStep(base * factor, inc);
+    if (!snap && w >= base) w = Math.max(0, Number((base - inc).toFixed(6))); // the step is too coarse for the drop
     const drop = base > 0 ? 1 - w / base : 0;
     const [bandLo, bandHi] = own ? [Math.max(0, onMiss.drop - 0.05), onMiss.drop] : PROGRESSION.lighterBand;
-    const runText = onMiss.after === 1 ? 'A session' : onMiss.after === 2 ? 'Two sessions in a row' : `${onMiss.after} sessions in a row`;
     return explain(make('lighter', w, lo), rule, { ...inputs, ...(prev ? { previous: summary(prev, exercise) } : {}), drop }, {
       threshold: { ...threshold, lighterFactor: factor, lighterBand: own ? [bandLo, bandHi] : PROGRESSION.lighterBand },
       note: joinNotes(
         `${runText} under ${lo} reps: ${w} ${unit} x ${lo}, ${(drop * 100).toFixed(1)} % lighter.`,
         (drop < bandLo - 1e-9 || drop > bandHi + 1e-9) &&
-          `The ${inc} ${unit} step makes this outside ${Math.round(bandLo * 100)}-${Math.round(bandHi * 100)} %; a wider rep range lets reps carry the progress.`,
+          `${snap ? 'The weights here make' : `The ${inc} ${unit} step makes`} this outside ${Math.round(bandLo * 100)}-${Math.round(bandHi * 100)} %; a wider rep range lets reps carry the progress.`,
         assumption,
       ),
     });
@@ -359,7 +469,10 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
     if (rirs.some((r) => r < targetRir)) {
       return explain(make('hold', base, hi), rule, { ...inputs, judgedRir: rirs }, { threshold, note: joinNotes(`Reached ${hi} reps but with less than ${targetRir} in reserve: repeat ${base} ${unit} x ${hi} at the target RIR before adding weight.`, assumption) });
     }
-    const w = roundToStep(base + stepUp, PROGRESSION.incrementRounding);
+    if (partial) return partialHold();
+    const next = up(base + stepUp);
+    if (next.ceiling) return ceiling(next.weight);
+    const w = next.weight;
     return explain(make('increase', w, hi), rule, inputs, { threshold, note: joinNotes(`Every set reached ${hi}: ${w} ${unit} x ${hi}.`, assumption, unreliable) });
   }
 
@@ -384,7 +497,10 @@ function uncappedTarget(input: ProgressionInput): Result<ProgressionTarget> {
     if (own?.rule === 'hold') {
       return explain(make('hold', base, hi), rule, inputs, { threshold, note: joinNotes(`Every set reached ${hi}: the weight stays at ${base} ${unit} x ${hi} (the rule adds no weight).`, assumption) });
     }
-    const w = roundToStep(base + stepUp, PROGRESSION.incrementRounding);
+    if (partial) return partialHold();
+    const next = up(base + stepUp);
+    if (next.ceiling) return ceiling(next.weight);
+    const w = next.weight;
     return explain(make('increase', w, lo), rule, inputs, {
       threshold,
       note: joinNotes(

@@ -521,7 +521,8 @@ export function weeksThrough(lw: Pick<LightWeeksRules, 'every' | 'weeks'>, planW
 // ---------------------------------------------------------------- in words
 
 const pct = (f: number) => `${Math.round(f * 100)} %`;
-const weeksText = (ws: readonly number[]) => (ws.length === 1 ? `week ${ws[0]}` : `weeks ${ws.slice(0, -1).join(', ')} and ${ws.at(-1)}`);
+/** Plan weeks in words: "week 6", "weeks 6 and 12", "weeks 4, 8 and 13". */
+export const weeksText = (ws: readonly number[]) => (ws.length === 1 ? `week ${ws[0]}` : `weeks ${ws.slice(0, -1).join(', ')} and ${ws.at(-1)}`);
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
 function adjustmentText(a: Adjustment): string {

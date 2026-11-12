@@ -18,6 +18,7 @@ export * from './habits-screen.ts';
 export * from './item-form.ts';
 export * from './body-add.ts';
 export * from './food.ts';
+export * from './energy.ts';
 export * from './eating-write.ts';
 export * from './baseline.ts';
 export * from './welcome.ts';

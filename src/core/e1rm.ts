@@ -2,7 +2,7 @@
 // misses and unit flags"). Each exercise is compared only with itself, in its
 // own unit.
 
-import { dayText } from './dates.ts';
+import { dayText, daysBetween } from './dates.ts';
 import type { TopSet } from './history.ts';
 import { explain, joinNotes, type Result } from './reason.ts';
 import type { IsoDate, Unit } from './schema.ts';
@@ -23,6 +23,8 @@ export const E1RM = {
   /** A trend needs this many qualifying sessions (best[-1] against best[-4]). */
   trendSessions: 4,
 } as const;
+
+const r2 = (v: number) => Math.round(v * 100) / 100;
 
 /** Epley: weight x (1 + n / 30), n = reps + RIR (reps alone without RIR); null when n > 10. */
 export function epley(weight: number, reps: number, rir?: number): Result<number | null> {
@@ -145,4 +147,84 @@ export function e1rmTrend(topSets: readonly TopSet[], exercise: Unit | { unit: U
       ...(unitFlag ? { title: 'Unit check' } : {}),
     },
   );
+}
+
+// ---------------------------------------------------------------- rises
+
+/** A session's set for the rises: in the lift's unit, oldest first. */
+export interface RiseSet {
+  date: IsoDate;
+  weight: number;
+  reps: number;
+  rir?: number | null;
+}
+
+/**
+ * Each set's e1RM (Epley; null when reps + RIR is over 10) and whether it is
+ * a rise: an e1RM above every earlier one from `from` on (the sets before it,
+ * older than a unit flag, are left out). The first e1RM is never a rise. The
+ * Progress tab marks these as its PRs.
+ */
+export function e1rmRises(sets: readonly RiseSet[], from = 0): { e1rm: number | null; rise: boolean }[] {
+  let high = -Infinity;
+  return sets.map((s, i) => {
+    const e = epley(s.weight, s.reps, s.rir ?? undefined).value;
+    const used = i >= from;
+    const rise = used && e !== null && high > -Infinity && e > high + 1e-9;
+    if (used && e !== null && e > high) high = e;
+    return { e1rm: e, rise };
+  });
+}
+
+export interface LastRise {
+  date: IsoDate;
+  /** In the lift's unit, to 0.01. */
+  e1rm: number;
+  /** The lift's sessions logged after it. */
+  sessionsSince: number;
+  daysSince: number;
+}
+
+/** What a rise is read against: the span's first day (this cycle's start; null: the whole log) and the best e1RM before it. */
+export interface RiseSpan {
+  since?: IsoDate | null;
+  before?: { date: IsoDate; e1rm: number } | null;
+}
+
+/**
+ * The lift's latest rise (`e1rmRises`, the Progress tab's PR) and how long
+ * ago it was: the sessions since and the days to `date`. Null with its
+ * reason when there is none: no sets, no e1RM (reps + RIR over 10 on every
+ * set), or none above the first. With a `since` the sets are that span's
+ * (this cycle's), and the note names the best before it when given.
+ */
+export function lastRise(sets: readonly RiseSet[], date: IsoDate, from = 0, span: RiseSpan = {}): Result<LastRise | null> {
+  const marks = e1rmRises(sets, from);
+  const i = marks.map((m) => m.rise).lastIndexOf(true);
+  const since = span.since ?? null;
+  const before = span.before ?? null;
+  const inputs = { sets: sets.length, from, date, ...(since ? { since, before } : {}) };
+  const threshold = { maxRepsPlusRir: E1RM.maxReps };
+  const cycle = since ? ` since ${dayText(since)}` : '';
+  const prior = before && `The best before this cycle: ${before.e1rm} on ${dayText(before.date)}.`;
+  if (i < 0) {
+    const firstAt = marks.findIndex((m, k) => k >= from && m.e1rm !== null);
+    const note = !sets.length
+      ? `No logged sets${cycle}: no rise yet.`
+      : firstAt < 0
+        ? `No e1RM${cycle}: reps + RIR over 10 on every set; judge by load at the same reps.`
+        : `No rise${since ? ' this cycle' : ''} yet: the first e1RM${cycle}, ${r2(marks[firstAt]!.e1rm!)} on ${dayText(sets[firstAt]!.date)}, is still the best.`;
+    return explain(null, 'e1rm.rise', inputs, { threshold, note: joinNotes(note, prior) });
+  }
+  const s = sets[i]!;
+  const sessionsSince = sets.length - 1 - i;
+  const daysSince = daysBetween(s.date, date);
+  const value: LastRise = { date: s.date, e1rm: r2(marks[i]!.e1rm!), sessionsSince, daysSince };
+  return explain(value, 'e1rm.rise', inputs, {
+    threshold,
+    note: joinNotes(
+      `Last rise${since ? ' this cycle' : ''}: an e1RM of ${value.e1rm} on ${dayText(s.date)}, above every earlier one${cycle}; ${sessionsSince === 0 ? 'the latest session' : `${sessionsSince} session${sessionsSince === 1 ? '' : 's'} since`}, ${daysSince} day${daysSince === 1 ? '' : 's'} ago.`,
+      before && (before.e1rm > value.e1rm ? `Under the best before this cycle (${before.e1rm} on ${dayText(before.date)}).` : `Above the best before this cycle too (${before.e1rm} on ${dayText(before.date)}).`),
+    ),
+  });
 }

@@ -1,7 +1,6 @@
-// The minimum week: the least that keeps a bad week on track, as the plan
-// generator writes it ("Express: each session's main lifts at 2 working
-// sets; accessories and conditioning optional"), from a plan's lifting days
-// and its Express block. It beats skipping the week; the roadmap's
+// The minimum week: the least that keeps a bad week on track ("Express:
+// each session's main lifts at 2 working sets; accessories and conditioning
+// optional"), from a plan's lifting days and its Express block. It beats skipping the week; the roadmap's
 // pre-mortem points at it for a bad week. Pure.
 
 import { explain, type Result } from './reason.ts';

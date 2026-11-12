@@ -149,7 +149,7 @@ export function buildTrackDay(data: VaultData, tr: TrackingRead, date: IsoDate) 
         done: isMorningDone(day) || morningEntry?.how === 'done',
         checkedAt: checked,
         answer: morningEntry?.how ?? null,
-        filled: daily !== undefined && (['energy', 'soreness', 'sleepQ', 'sleepH', 'rhr'] as const).some((k) => typeof daily[k] === 'number'),
+        filled: daily !== undefined && (['energy', 'soreness', 'sleepQ', 'sleepH', 'rhr', 'hrv'] as const).some((k) => typeof daily[k] === 'number'),
       },
       'tracking.day-morning',
       { date, checkedAt: checked, answer: morningEntry?.how ?? null },

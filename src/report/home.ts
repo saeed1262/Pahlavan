@@ -12,6 +12,7 @@ import { isProteinItem } from '../core/protein.ts';
 import type { Adjustment } from '../core/rules.ts';
 import type { TrackedItem } from '../core/schema.ts';
 import { bodyUnitsOf, inWeight } from '../core/units.ts';
+import type { CoachVersion } from '../core/version.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
 import { scopeInfo } from './cycle.ts';
 import type { buildFood } from './food.ts';
@@ -26,8 +27,8 @@ type Session = ReturnType<typeof buildSession>;
 type Food = ReturnType<typeof buildFood>;
 type Progress = ReturnType<typeof buildProgress>;
 
-/** Where a part of Home leads: a tab, a Progress view, Today's Due today, or the morning card. */
-export type HomeGo = 'today' | 'due' | 'morning' | 'progress' | 'progress-training' | 'progress-body' | 'plan' | 'checkin' | 'food';
+/** Where a part of Home leads: a tab, a Progress view, Today's Due today, the morning card, or Pahlavan's settings (the coach's version). */
+export type HomeGo = 'today' | 'due' | 'morning' | 'progress' | 'progress-training' | 'progress-body' | 'plan' | 'checkin' | 'food' | 'settings';
 
 /** One line in the banner under the session: a bold lead and the rest. */
 export interface HomeNote {
@@ -114,6 +115,8 @@ export interface HomeInputs {
   day: YourDay | null;
   /** What is tracked (the protein item's goal without an eating plan). */
   items?: readonly TrackedItem[];
+  /** The coach in this vault against the one Pahlavan carries (the plugin looks; absent or null: not known, no need). */
+  coach?: { direction: CoachVersion; installed: string | null; bundled: string } | null;
 }
 
 const DAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -146,6 +149,12 @@ function lowChange(low: Adjustment | null): string | null {
 /** What readiness changes today, only when it changes something (a baseline still building, and a normal or good day, say nothing). */
 function readinessNote(r: NonNullable<Today['review']>, date: IsoDate): HomeNote | null {
   const rd = readinessNow(r);
+  // A sick day ("I'm ill today" on the morning check-in) says so, even while the baseline builds: the safety rules stay on.
+  const hard = r.readiness.actions.find((a) => a.value.action === 'no-hard-training' && a.value.active);
+  if (hard?.reason.inputs['illness'] === true) {
+    const asOf = hard.reason.inputs['asOf'] as IsoDate | null;
+    return { icon: 'pulse', lead: 'Take it easy today.', text: `${asOf && asOf !== date ? `You said you were ill on ${dayText(asOf)}` : 'You said you’re ill today'}: no hard training, an easy walk or mobility at most.` };
+  }
   if (rd.building || !rd.scored) return null;
   // Before today's check-in, the last scored one stands (as on Today), and the line says which.
   const who = rd.scored.date === date ? 'Your morning check-in was' : `Your last morning check-in, ${dayText(rd.scored.date)}, was`;
@@ -239,6 +248,13 @@ function coachNeed(m: Today): HomeNeed | null {
   return null;
 }
 
+/** The coach and Pahlavan on different versions: an older coach to update from the settings, or a newer one that needs Pahlavan updated. */
+function versionNeed(c: HomeInputs['coach']): HomeNeed | null {
+  if (c?.direction === 'coach-older') return { id: 'coach-version', icon: 'sync', tone: 'due', title: 'Update the coach', line: `This Pahlavan carries a newer coach (${c.bundled}) than the one in this vault (${c.installed}). Update it in Pahlavan’s settings, Coach.`, go: 'settings' };
+  if (c?.direction === 'coach-newer') return { id: 'coach-version', icon: 'alert', tone: 'warn', title: 'Update Pahlavan', line: `The coach in this vault (${c.installed}) is newer than this Pahlavan’s (${c.bundled}). Update Pahlavan from Community plugins.`, go: 'settings' };
+  return null;
+}
+
 function needs(x: HomeInputs): Home['needs'] {
   const m = x.today;
   const all: HomeNeed[] = [];
@@ -258,6 +274,8 @@ function needs(x: HomeInputs): Home['needs'] {
       if (f) all.push({ id: `units-${l.exercise}`, icon: 'alert', tone: 'warn', title: `${clean(l.name)}: ${f.from.weight} or ${f.to.weight}?`, line: 'One entry looks like a kg and lb mix-up. Pick the right one.', go: 'progress-training' });
     }
   }
+  const version = versionNeed(x.coach);
+  if (version) all.push(version);
   if (m.errors.length) all.push({ id: 'data', icon: 'alert', tone: 'warn', title: `${plural(m.errors.length, 'problem')} in your fitness files`, line: 'Today’s data notes, at the bottom, say which.', go: 'today' });
   return { items: all.slice(0, 3), rest: all.slice(3), more: Math.max(0, all.length - 3), empty: 'Nothing needs you today.' };
 }

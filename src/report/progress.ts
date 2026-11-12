@@ -12,7 +12,7 @@ import { markedDays } from '../core/checkins.ts';
 import { adherenceSince } from '../core/cycle.ts';
 import { MUSCLES } from '../core/data/muscles.ts';
 import { addDays, dayText, daysBetween, mondayOf } from '../core/dates.ts';
-import { E1RM, epley } from '../core/e1rm.ts';
+import { E1RM } from '../core/e1rm.ts';
 import { effectiveSlot } from '../core/plan.ts';
 import { READINESS, readinessBaseline, readinessSeries } from '../core/readiness.ts';
 import type { Result } from '../core/reason.ts';
@@ -23,7 +23,7 @@ import { weightTrend } from '../core/weight.ts';
 import { cycleOf, scopeInfo, withinCycle, type Scope, type ScopeInfo } from './cycle.ts';
 import { envelope, sourcesOf } from './envelope.ts';
 import { regionOptionsFor, type RegionOptions } from './region-options.ts';
-import { buildReview, context, doneEffortOf, liftTopSets, sessionLabel, type Ctx } from './review.ts';
+import { buildReview, context, doneEffortOf, liftRises, sessionLabel, type Ctx } from './review.ts';
 import { dayStateOf, type DayState } from './today.ts';
 import { paths } from '../adapters/vault/layout.ts';
 
@@ -173,7 +173,7 @@ function readiness28(ctx: Ctx, date: IsoDate, since: IsoDate | null) {
   const scope = { since };
   const points = readinessSeries(ctx.daily, date, scope)
     .filter((d) => d.date >= from && d.r !== null)
-    .map((d) => ({ date: d.date, r: d.r!, s: d.s!, band: d.band, flags: [d.rhrFlag && 'rhr-flag', d.shortSleep && 'short-sleep', d.illness && 'illness'].filter((x): x is string => Boolean(x)) }));
+    .map((d) => ({ date: d.date, r: d.r!, s: d.s!, band: d.band, flags: [d.rhrFlag && 'rhr-flag', d.hrvFlag && 'hrv-flag', d.shortSleep && 'short-sleep', d.illness && 'illness'].filter((x): x is string => Boolean(x)) }));
   const baseline = readinessBaseline(ctx.daily, date, scope);
   const note = since ? `This cycle's mornings only, since ${dayText(since)}: each day against the cycle's own previous ${READINESS.baselineDays} days.` : `The last 28 days, each day against its own previous ${READINESS.baselineDays}.`;
   return { from, to: date, since, bands: READINESS.bands, points, baseline, note };
@@ -218,16 +218,17 @@ export function liftTrends(ctx: Ctx, review: Review, date: IsoDate) {
   return review.lifts.filter((l) => l.sessions > 0).map((l) => {
     const t = l.e1rm.value;
     const ex = { unit: l.unit, increment: l.increment };
-    // Every session's set for the trend (its best by e1RM; the top set at Standard tracking), in the lift's unit; those before a unit flag are left out of the trend.
-    const all = liftTopSets(ctx, l.exercise).sort((a, b) => (a.date < b.date ? -1 : 1));
+    // Every session's set for the trend (its best by e1RM; the top set at Standard tracking), in the lift's unit, oldest
+    // first; those before the trend's unit flag are left out. A PR is a rise (review.ts liftRises): above every earlier
+    // e1RM since the flag; the review's `lastRise` is the last one at the cycle scope.
+    const rises = liftRises(ctx, l.exercise);
+    const all = rises.tops;
     const best = new Map(t.points.map((p) => [p.date, p.best]));
-    let high = -Infinity;
     const sets = all.map((s, i) => {
-      const set = setInUnit(s, ex);
-      const e = epley(set.weight, set.reps, set.rir).value;
-      const used = i >= t.ignored;
-      const pr = used && e !== null && high > -Infinity && e > high + 1e-9;
-      if (used && e !== null && e > high) high = e;
+      const set = rises.sets[i]!;
+      const e = rises.marks[i]!.e1rm;
+      const used = i >= rises.from;
+      const pr = rises.marks[i]!.rise;
       // Every set logged: the session's heaviest set, when its best by e1RM is another.
       const top = s.top ? setInUnit(s.top, ex) : null;
       return { date: s.date, weight: set.weight, unit: set.unit, logged: set.logged, reps: set.reps, rir: set.rir ?? null, e1rm: e === null ? null : r2(e), best: best.has(s.date) ? r2(best.get(s.date)!) : null, used, pr, ...(top ? { top: { weight: top.weight, reps: top.reps } } : {}) };

@@ -1,14 +1,13 @@
-// How long a plan session takes, from its items as plan-data writes them,
-// timed the way the plan generator times its sessions (core/plan/dose.ts):
-// the warm-up, then each item's work and the rest after it. A cardio or
-// other timed item gives its own minutes ("20 min"), intervals their
-// warm-up, rounds of work, the easy minutes between and cool-down (the
-// item's `timed`, else the intervals its note describes); a set takes its own
-// time (half a minute of reps, a hold's seconds at the low end of its
-// range, both sides of a "/side" or "/leg" item) and the item's rest (the
-// low end of "2–3 min" or "60–90 s", as the generator's time budget counts
-// 2-3 min; 90 s when it gives none); a superset round is a set of each and
-// the pair's one rest. And the time check: each session against the day's
+// How long a plan session takes, from its items as plan-data writes them
+// (a set's time and the rests in core/plan/dose.ts): the warm-up, then each
+// item's work and the rest after it. A cardio or other timed item gives its
+// own minutes ("20 min"), intervals their warm-up, rounds of work, the easy
+// minutes between and cool-down (the item's `timed`, else the intervals its
+// note describes); a set takes its own time (half a minute of reps, a hold's
+// seconds at the low end of its range, both sides of a "/side" or "/leg"
+// item) and the item's rest (the low end of "2–3 min" or "60–90 s"; 90 s
+// when it gives none); a superset round is a set of each and the pair's one
+// rest. And the time check: each session against the day's
 // length the profile gives, lifting days `minutesPerSession`, short days
 // `shortSessions.minutes`, an estimate over it flagged with its reason.
 // Pure.
@@ -162,7 +161,7 @@ export function sessionMinutes(input: { items: readonly TimedItem[]; warmup: str
     threshold: { workMinutes: DOSE.workMinutes, restWhenNone: REST.sets.minutes, warmup: TIME.warmup },
     note: joinNotes(
       `About ${total} min: a ${warmup}-min warm-up${timed.length ? `, ${timed.map((x) => `${x.minutes} min of ${x.name}${x.how === `${x.minutes} min` ? '' : ` (${x.how})`}`).join(', ')}` : ''}${sets.length ? `, and ${r2(sets.reduce((a, x) => a + x.minutes, 0))} min of sets with their rests` : ''}.`,
-      'Each set counts its own time (half a minute of reps, a hold’s seconds at the low end, both sides) and the rest after it, the low end of a range, as the plan generator times a session; set-up and walking between stations are not counted.',
+      'Each set counts its own time (half a minute of reps, a hold’s seconds at the low end, both sides) and the rest after it, the low end of a range; set-up and walking between stations are not counted.',
       untimed.length > 0 && `Not timed: ${untimed.join(', ')} (its sets and reps give no time).`,
     ),
   });

@@ -7,6 +7,7 @@
 
 import { daysBetween, isIsoDate, mondayOf } from '../../core/dates.ts';
 import { MUSCLE_IDS, MUSCLES } from '../../core/data/muscles.ts';
+import { swapReasonOf } from '../../core/exercise-facts.ts';
 import { dashboardSets, deloadSr, planStartOf, type PlanData } from '../../core/plan-data.ts';
 import type { IsoDate, SorenessLevel } from '../../core/schema.ts';
 import { habitCheckinKey } from '../../core/tracking.ts';
@@ -35,6 +36,8 @@ const pyList = (xs: readonly string[]) => `[${xs.map(pyRepr).join(', ')}]`;
 export interface RawLift {
   name?: string;
   planned?: string;
+  /** A swap's reason (with `planned`): mine, ledger, soreness or hotel, or the Log panel's word for one. */
+  swapWhy?: string | null;
   weight?: number | null;
   reps?: number | null;
   unit?: string | null;
@@ -73,14 +76,18 @@ export interface LogInput {
   rating?: number | null;
   postureDrill?: boolean;
   notes?: string | null;
-  swaps?: { from: string; to: string }[];
+  /** Swapped items other than the logged lifts, each with its reason when known (as `RawLift.swapWhy`). */
+  swaps?: { from: string; to: string; why?: string | null }[];
   /** The checklist lines, in the dashboard's order (`checklistLines`). */
   lines?: LogLine[];
   sessionRpe?: number | null;
-  pain?: { area: string; severity: number; exercise?: string | null }[];
+  /** Severity 0-10, left out (or null) when it wasn't given. */
+  pain?: { area: string; severity?: number | null; exercise?: string | null }[];
   hotel?: boolean;
   trackingLevel?: 'standard' | 'full';
   exerciseSets?: { name: string; planned?: string | null; sets: LoggedSetInput[] }[];
+  /** The day's working sets by the exercise list's names (a trim, Express's): frozen beside the plan's as `daySets`. */
+  daySets?: Record<string, number>;
 }
 
 export interface LogContext {
@@ -166,7 +173,10 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
       if (!isNum(w) || w < 0 || !isNum(r) || !Number.isInteger(r) || r < 0) return fail(`${k}: weight is a number, reps a whole number`);
       const unit = truthy(li.unit) ? li.unit : liftUnit(plan, name);
       if (unit !== 'lb' && unit !== 'kg') return fail(`${k}: unit is lb or kg, not ${pyRepr(unit)}`);
-      lifts.push({ name, ...(name !== planned ? { planned } : {}), weight: w, reps: r, unit });
+      // A swap's reason goes with the swap only (never on a lift done as planned).
+      const why = swapReasonOf(li.swapWhy);
+      if (why === undefined) return fail(`${k}: swapWhy is one of mine, ledger, soreness, hotel, not ${pyRepr(li.swapWhy)}`);
+      lifts.push({ name, ...(name !== planned ? { planned, ...(why ? { swapWhy: why } : {}) } : {}), weight: w, reps: r, unit });
     }
   } else if (truthy(raw.lift1) || truthy(raw.lift2)) return fail(`a ${t} session has no logged lifts`);
   if (truthy(raw.express) && !lifting) return fail('only a lifting session can be Express');
@@ -184,7 +194,20 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
     postureDrill: truthy(raw.postureDrill),
     notes: String(raw.notes ?? '').trim(),
   });
-  if (truthy(raw.swaps)) entry['swaps'] = raw.swaps;
+  // A swap the every-set list names (`planned`) and `swaps` lacks, a logged lift's apart, is saved in `swaps` too, so every reader finds it.
+  const lifted = new Set(lifts.map((l) => l['planned']).filter(Boolean));
+  const named = raw.trackingLevel === 'full' && Array.isArray(raw.exerciseSets) ? raw.exerciseSets.filter((x) => isObj(x) && isStr(x.planned) && x.planned && x.planned !== x.name && !lifted.has(x.planned) && !(raw.swaps ?? []).some((sw) => isObj(sw) && sw.from === x.planned)) : [];
+  const allSwaps: NonNullable<LogInput['swaps']> = [...(raw.swaps ?? []), ...named.map((x) => ({ from: x.planned!, to: x.name }))];
+  if (truthy(allSwaps)) {
+    const swaps: Obj[] = [];
+    for (const sw of allSwaps) {
+      const why = isObj(sw) ? swapReasonOf(sw.why) : null;
+      if (why === undefined) return fail(`swaps: why is one of mine, ledger, soreness, hotel, not ${pyRepr(sw.why)}`);
+      // The script's {from, to}, with the reason when known; anything else as given.
+      swaps.push(isObj(sw) ? { from: sw.from, to: sw.to, ...(why ? { why } : {}) } : sw);
+    }
+    entry['swaps'] = swaps;
+  }
 
   // The dashboard's two: the checklist (from the form's done and skipped
   // lines) and the plan's exercise list frozen with the session.
@@ -202,12 +225,14 @@ export function buildLogEntry(raw: LogInput, ctx: LogContext): BuildResult {
     const history = ladderHistory(ctx.log);
     const week = planWeekAt(pd, ctx.log, date);
     const lw = readRules(ctx.plan).rules.lightWeeks;
-    entry['exercises'] = plannedWork(pd, t, Boolean(entry['express']), isLightWeek(lw, week), (id) => ladderNameAt(pd, history, id, date), lw.sets);
+    const list = plannedWork(pd, t, Boolean(entry['express']), isLightWeek(lw, week), (id) => ladderNameAt(pd, history, id, date), lw.sets);
+    const day = raw.daySets ?? {};
+    entry['exercises'] = list.map((x) => (isNum(day[x.name]) ? { ...x, daySets: day[x.name] } : x));
   }
 
   // Pahlavan's own fields; the engine reads them, the script and the dashboard keep them.
   if (isNum(raw.sessionRpe)) entry['sessionRpe'] = raw.sessionRpe;
-  if (raw.pain && raw.pain.length) entry['pain'] = raw.pain.map((p) => ({ area: p.area, severity: p.severity, ...(p.exercise ? { exercise: p.exercise } : {}) }));
+  if (raw.pain && raw.pain.length) entry['pain'] = raw.pain.map((p) => ({ area: p.area, ...(isNum(p.severity) ? { severity: p.severity } : {}), ...(p.exercise ? { exercise: p.exercise } : {}) }));
   if (raw.hotel) entry['hotel'] = true;
   if (raw.trackingLevel === 'full' && raw.exerciseSets) {
     entry['trackingLevel'] = 'full';
@@ -534,7 +559,11 @@ export function mergeFix(logText: string | null, rawPlan: unknown, req: FixReque
   const before: Obj = { ...li };
   if (weight !== null) li['weight'] = weight;
   if (reps !== null) li['reps'] = reps;
-  if (req.clearPlanned) delete li['planned'];
+  // The swap's reason goes with it.
+  if (req.clearPlanned) {
+    delete li['planned'];
+    delete li['swapWhy'];
+  }
   const changed = Object.keys({ ...before, ...li }).filter((f) => (f in before) !== (f in li) || JSON.stringify(before[f]) !== JSON.stringify(li[f]));
   const after: Obj = { ...li };
   if (!changed.length) return { result: 'already', changed, before, after };

@@ -1,13 +1,16 @@
 // The body record's schedule: when the tape, the progress photos and the
 // fitness tests are due. From the plan: the tape every second Sunday, photos
 // on the Sunday of each mesocycle's light (deload) week, tests on the Saturday of the
-// deload week that ends each phase (the generator's calendar). Before there
+// deload week that ends each phase (the default calendar). A plan that
+// lists its own test weeks (plan-data's rules.tests) has the tests on each
+// one's Saturday and a photo set on each one's Sunday too. Before there
 // is a plan, or by choice: every N days from a start date (Habit Nudges'
 // measureFrom / testsFrom schedule, continued). Each occurrence stays due
 // until an entry dated on or after it exists, or it is skipped.
 
 import { addDays, daysBetween, dayText, type IsoDate } from './dates.ts';
 import { explain, type Reason, type Result } from './reason.ts';
+import { weeksText } from './rules.ts';
 import type { BodyRecordSchedule, Program } from './schema.ts';
 
 export const BODY_PARTS = ['tape', 'photos', 'tests'] as const;
@@ -69,9 +72,27 @@ export function planOccurrences(program: Pick<Program, 'macrocycle'>): Record<Bo
   const flagged = weeks.some((w) => w.tests);
   return {
     tape: weeks.filter((w) => w.n % 2 === 0).map((w) => addDays(w.start, 6)),
-    photos: weeks.filter((w) => w.lastOfMeso).map((w) => addDays(w.start, 6)),
+    // Each light week's Sunday, and each test week's: a test week that is a light week gives one photo day, not two.
+    photos: weeks.filter((w) => w.lastOfMeso || w.tests).map((w) => addDays(w.start, 6)),
     tests: weeks.filter((w) => (flagged ? w.tests : w.lastOfPhase)).map((w) => addDays(w.start, 5)),
   };
+}
+
+/**
+ * The plan weeks with the fitness tests when the plan lists its own
+ * (plan-data's rules.tests), by plan week number; null when the tests are
+ * at each phase end (the default).
+ */
+export function listedTestWeeks(program: Pick<Program, 'macrocycle'>): number[] | null {
+  const weeks = planWeeks(program);
+  const tests = weeks.filter((w) => w.tests).map((w) => w.n);
+  const ends = weeks.filter((w) => w.lastOfPhase).map((w) => w.n);
+  return tests.length && tests.join() !== ends.join() ? tests : null;
+}
+
+/** Whether the plan's test weeks add photo days: a test week that is not a light week has a photo set of its own. */
+export function testWeekPhotos(program: Pick<Program, 'macrocycle'>): boolean {
+  return planWeeks(program).some((w) => w.tests && !w.lastOfMeso);
 }
 
 const PLAN_TEXT: Record<BodyPart, string> = {
@@ -79,6 +100,30 @@ const PLAN_TEXT: Record<BodyPart, string> = {
   photos: 'Each light week’s Sunday',
   tests: 'Each phase end, in its light week',
 };
+/** The photos when the plan's test weeks add Sundays to the light weeks'. */
+const PHOTOS_AND_TEST_WEEKS = 'Each light week’s Sunday, and each test week’s';
+
+/** How each part repeats on the plan, in words: the plan's own test weeks name the tests' weeks and add to the photos'. */
+export function planScheduleText(program: Pick<Program, 'macrocycle'>): Record<BodyPart, string> {
+  const listed = listedTestWeeks(program);
+  return {
+    tape: PLAN_TEXT.tape,
+    photos: testWeekPhotos(program) ? PHOTOS_AND_TEST_WEEKS : PLAN_TEXT.photos,
+    tests: listed ? `In plan ${weeksText(listed)}` : PLAN_TEXT.tests,
+  };
+}
+
+/**
+ * The plan's schedule in one line, for Check-in's schedule editor: "the tape
+ * every second Sunday, photos on each light week’s Sunday, tests at each
+ * phase end"; the plan's own test weeks when it lists them. Without a plan,
+ * the default's.
+ */
+export function planScheduleLine(program: Pick<Program, 'macrocycle'> | null): string {
+  const listed = program ? listedTestWeeks(program) : null;
+  const photos = program && testWeekPhotos(program) ? 'photos on each light week’s Sunday and each test week’s' : 'photos on each light week’s Sunday';
+  return `the tape every second Sunday, ${photos}, ${listed ? `tests in plan ${weeksText(listed)}` : 'tests at each phase end'}`;
+}
 
 /** What the schedule settings resolve to: the plan, or every N days from a start. */
 export interface ResolvedSchedule {
@@ -118,6 +163,7 @@ export function bodySchedule(rs: ResolvedSchedule, program: Pick<Program, 'macro
   const out = {} as Record<BodyPart, PartSchedule>;
   if (rs.source === 'plan' && program) {
     const occ = planOccurrences(program);
+    const texts = planScheduleText(program);
     for (const part of BODY_PARTS) {
       const list = occ[part];
       const current = [...list].reverse().find((d) => d <= date) ?? null;
@@ -129,9 +175,9 @@ export function bodySchedule(rs: ResolvedSchedule, program: Pick<Program, 'macro
         current,
         next,
         afterCurrent,
-        text: PLAN_TEXT[part],
+        text: texts[part],
         reason: explain(current, `plan.calendar.${part}`, { date, occurrences: list.length, current, next }, {
-          note: `${PLAN_TEXT[part]}, from your plan.${next ? ` Next: ${dayText(next)}.` : ' None left in this plan.'}`,
+          note: `${texts[part]}, from your plan.${next ? ` Next: ${dayText(next)}.` : ' None left in this plan.'}`,
         }).reason,
       };
     }

@@ -14,6 +14,7 @@ import { stepsGoal } from '../core/plan/conditioning.ts';
 import type { BodyTargets, DailyCheckin, IsoDate, TapeEntry, TestEntry } from '../core/schema.ts';
 import { STALL } from '../core/stall.ts';
 import { weightTrend } from '../core/weight.ts';
+import { testWeekPhotos } from '../core/body-schedule.ts';
 import { isLightWeek, phaseWeeks as phaseWeeksOf } from '../core/rules.ts';
 import { cycleOf, scopeInfo, withinCycle, type Scope } from './cycle.ts';
 import { envelope, sourcesOf } from './envelope.ts';
@@ -192,7 +193,8 @@ export type TargetStatus = 'met' | 'on-the-way' | 'not-yet' | 'at-goal' | 'under
  * The profile's targets against now: a drop target counts down from the
  * cycle's first value (met at its low end; the bar runs to the stretch at
  * hi); a level target is the 7-day average against the goal. Steps and sleep
- * fall back to the plan generator's steps and the engine's 7 h.
+ * fall back to the phase's steps (plan/conditioning.ts, `stepsGoal`) and the
+ * engine's 7 h.
  */
 export function bodyTargets(t: BodyTargets | undefined, now: { waist?: { first: number; last: number } | null; weight?: { first: number; last: number } | null; rhr?: { first: number; last: number; n: number } | null; steps?: { avg: number; n: number } | null; sleep?: { avg: number; n: number } | null }, fallback: { steps: number; sleepH: number }) {
   const rows: { key: string; label: string; kind: 'drop' | 'level'; unit: string; lo?: number; hi?: number; goal?: number; base?: number | null; cur: number | null; drop?: number | null; status: TargetStatus; source: 'profile' | 'plan' | 'engine'; days?: number }[] = [];
@@ -323,7 +325,9 @@ export function buildProgressMore(read: VaultRead, date: IsoDate, root = '', opt
   }, { steps: stepGoal, sleepH: STALL.sleepH });
   if (!targets) notes.push({ section: 'body', code: 'no-targets', text: 'No numeric targets in the profile yet (Coach/profile.json, "targets"): steps and sleep use the plan’s and the engine’s goals.' });
   const photos = data.body.photos.map((p) => ({ date: p.date, poses: p.poses, folder: p.folder ?? `Progress Photos/${p.date}/` }));
-  if (!photos.length) notes.push({ section: 'body', code: 'no-photos', text: `No photo sets${thisCycle} yet: photos come on each light week’s Sunday, every four weeks.` });
+  // When the sets come, for the empty card: the plan's own test weeks add their Sundays (body-schedule.ts).
+  const photoDays = `each light week’s Sunday, every four weeks${testWeekPhotos(data.program) ? ', and on each test week’s' : ''}`;
+  if (!photos.length) notes.push({ section: 'body', code: 'no-photos', text: `No photo sets${thisCycle} yet: photos come on ${photoDays}.` });
   else if (photos.length === 1) notes.push({ section: 'body', code: 'one-photo-set', text: 'One photo set so far: comparing starts with the second.' });
 
   // Health.
@@ -336,9 +340,9 @@ export function buildProgressMore(read: VaultRead, date: IsoDate, root = '', opt
   const ladders = data.plan.ladders.map((l) => {
     const st = status.find((s) => s.id === l.id);
     const field = LADDER_TEST[l.id] ?? null;
-    // The level is where you are now; the day it was reached is shown only when it falls in the cycle.
+    // The level is where you are now (the log's, else the plan's start: `from`); the day it was reached is shown only when it falls in the cycle.
     const at = st?.since ?? null;
-    return { id: l.id, name: l.name, level: st?.level ?? 0, levelName: st?.levelName ?? null, since: at && (!since || at >= since) ? at : null, path: ladderPath(l, st?.level ?? 0, since), test: field, tests: field ? testHistory(data.body.tests, field) : [], goal: field ? skillGoal(targets, field) : null, testShowsLevel: st?.testShowsLevel ?? null };
+    return { id: l.id, name: l.name, level: st?.level ?? 0, from: st?.from ?? ('lowest' as const), levelName: st?.levelName ?? null, since: at && (!since || at >= since) ? at : null, path: ladderPath(l, st?.level ?? 0, since), test: field, tests: field ? testHistory(data.body.tests, field) : [], goal: field ? skillGoal(targets, field) : null, testShowsLevel: st?.testShowsLevel ?? null };
   });
   const laddered = new Set(Object.values(LADDER_TEST));
   const testedOnly = [...new Set(data.body.tests.flatMap((t) => Object.keys(t.results)))].filter((f) => !laddered.has(f) || !ladders.some((l) => l.test === f)).map((f) => ({ test: f, tests: testHistory(data.body.tests, f), goal: skillGoal(targets, f) }));
@@ -352,7 +356,7 @@ export function buildProgressMore(read: VaultRead, date: IsoDate, root = '', opt
     cycle,
     week: { planWeek: week.planWeek, phase: week.phase, planStart: week.planStart },
     training: { lifts, notLogged, weeks, months, target: { lift: data.plan.weekTarget.lift, short: data.plan.weekTarget.short }, cardio, activeMinutes: activeGoals.some((g) => ['fat-loss', 'recomposition', 'health', 'conditioning'].includes(g)) ? [150, 300] : null },
-    body: { tape, targets: targetRows, targetsBy: targets?.by ?? null, photos, cycleStart: since },
+    body: { tape, targets: targetRows, targetsBy: targets?.by ?? null, photos, photoDays, cycleStart: since },
     health,
     skills: { ladders, testedOnly },
     notes,

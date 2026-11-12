@@ -41,8 +41,8 @@ export function validateMorning(values: MorningValues): string[] {
   return out;
 }
 
-/** The morning fields as body-data.json holds them for `date` (steps from yesterday). */
-export function morningFrom(doc: unknown, date: IsoDate): { values: Record<MorningKey, number | null>; checkedAt: string | null } {
+/** The morning fields as body-data.json holds them for `date` (steps from yesterday), and whether the day is marked ill. */
+export function morningFrom(doc: unknown, date: IsoDate): { values: Record<MorningKey, number | null>; checkedAt: string | null; illness: boolean } {
   const days = isObj(doc) && isObj(doc['days']) ? doc['days'] : {};
   const at = (d: IsoDate): Obj => (isObj(days[d]) ? (days[d]) : {});
   const values = {} as Record<MorningKey, number | null>;
@@ -51,7 +51,7 @@ export function morningFrom(doc: unknown, date: IsoDate): { values: Record<Morni
     values[k] = typeof v === 'number' && Number.isFinite(v) ? v : null;
   }
   const c = at(date)['checkedAt'];
-  return { values, checkedAt: typeof c === 'string' ? c : null };
+  return { values, checkedAt: typeof c === 'string' ? c : null, illness: at(date)['illness'] === true };
 }
 
 export interface MorningChange {
@@ -61,6 +61,8 @@ export interface MorningChange {
   baseline: MorningValues;
   /** Sore muscles that changed (engine ids or body-map slugs; null clears one). */
   sore?: Readonly<Record<string, SorenessLevel | null>>;
+  /** "I'm ill today": true sets the day's `illness`, false takes it off; left out, it stays as it is. */
+  illness?: boolean;
   /** Write over a field that changed on disk since the form read it. */
   force?: boolean;
   /**
@@ -79,7 +81,7 @@ export interface MorningConflict {
 }
 
 export type MorningMerge =
-  | { result: 'merged'; text: string; changed: MorningKey[]; sore: boolean; stamped: boolean }
+  | { result: 'merged'; text: string; changed: MorningKey[]; sore: boolean; illness: boolean; stamped: boolean }
   | { result: 'unchanged' }
   | { result: 'conflict'; conflicts: MorningConflict[] }
   | { result: 'invalid'; errors: string[] }
@@ -133,7 +135,19 @@ export function mergeMorning(text: string | null, date: IsoDate, change: Morning
     changed.push(k);
   }
   const sore = change.sore && Object.keys(change.sore).length ? applySore(dayObj(date), change.sore) : false;
-  if (!changed.length && !sore) return { result: 'unchanged' };
+  // "I'm ill today" is a yes or a no on the day: a yes writes true, a no takes the field off (never false).
+  let illness = false;
+  if (change.illness !== undefined) {
+    const day = dayObj(date);
+    if (change.illness && day['illness'] !== true) {
+      day['illness'] = true;
+      illness = true;
+    } else if (!change.illness && day['illness'] !== undefined) {
+      delete day['illness'];
+      illness = true;
+    }
+  }
+  if (!changed.length && !sore && !illness) return { result: 'unchanged' };
   let stamped = false;
   if (change.checkedAt) {
     const today = dayObj(date);
@@ -146,7 +160,7 @@ export function mergeMorning(text: string | null, date: IsoDate, change: Morning
     if (Object.keys(obj).length) days[d] = obj;
     else delete days[d];
   }
-  return { result: 'merged', text: pretty(doc), changed, sore, stamped };
+  return { result: 'merged', text: pretty(doc), changed, sore, illness, stamped };
 }
 
 // ---------------------------------------------------------------- the body record

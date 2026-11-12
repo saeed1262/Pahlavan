@@ -118,7 +118,7 @@ export interface Emphasis {
    */
   confirmed?: boolean;
   emphasis: string;
-  /** Which intake.md row this is, so the plan generator can act on it. */
+  /** Which intake.md row this is, so the engine can act on it (the findings, the plan check's options, the priorities). */
   kind?: EmphasisKind;
   /** The weaker side, for an asymmetry. */
   side?: 'left' | 'right';
@@ -130,9 +130,10 @@ export interface Emphasis {
 /**
  * The intake's movement self-check (intake.md, "The movement self-check"):
  * each result as typed back, with the date. Every test is optional (a test
- * that hurt was stopped and is left out). The plan generator reads it for the
- * ladders' starting levels, pull-up and single-leg work, and the squat,
- * hinge and overhead regressions.
+ * that hurt was stopped and is left out). The coach sets the ladders'
+ * starting levels from it; the engine reads its findings (the sit-to-stand,
+ * the hinge, the overhead reach and balance), which rule movements out once
+ * the user confirms them, and its holds.
  */
 export interface SelfCheck {
   date: IsoDate;
@@ -189,6 +190,24 @@ export interface BadWeek {
  */
 export const SPLIT_KINDS = ['full-body', 'upper-lower', 'push-pull-legs', 'heavy-and-light-days', 'body-part', 'torso-limbs', 'upper-lower-full', 'specialization', 'hift', 'circuit', 'calisthenics'] as const;
 export type SplitKind = (typeof SPLIT_KINDS)[number];
+/**
+ * Each split family in words, as rules.md's "Split families" table names it
+ * (the Why this plan card, the version facts). The table's Concurrent row is
+ * how cardio fits into any plan, not a split, so it has no kind.
+ */
+export const SPLIT_LABELS: Readonly<Record<SplitKind, string>> = {
+  'full-body': 'Full body',
+  'upper-lower': 'Upper/lower',
+  'push-pull-legs': 'Push/pull/legs',
+  'heavy-and-light-days': 'Heavy/light full body',
+  'body-part': 'Body-part split',
+  'torso-limbs': 'Torso/limbs',
+  'upper-lower-full': 'Upper/lower/full',
+  specialization: 'Specialization block',
+  hift: 'CrossFit-style (HIFT)',
+  circuit: 'Circuit or minimalist',
+  calisthenics: 'Calisthenics skill blocks',
+};
 
 export interface Profile {
   schemaVersion: SchemaVersion;
@@ -228,6 +247,42 @@ export interface Profile {
   work?: DeskWork;
   /** The user's own standing rules for any plan the coach writes; `engine check` reports a plan that breaks one. */
   planRules?: ProfilePlanRules;
+  /** The weights the gym actually has, by kind of kit: every weight target lands on one of them (loads.ts). */
+  loads?: GymLoads;
+}
+
+/**
+ * Dumbbells or kettlebells: every weight there is (`weights`), or a range
+ * from the lightest to the heaviest in even steps (`from`, `to`, `step`).
+ */
+export interface WeightSet {
+  weights?: number[];
+  from?: number;
+  to?: number;
+  step?: number;
+}
+
+/** A stack or a plate-loaded machine: loads go up by `step`, from `from` (default one step) to `to` (default no top). */
+export interface WeightStack {
+  step: number;
+  from?: number;
+  to?: number;
+}
+
+/**
+ * The gym's real weights (profile.loads), in `unit`. Each key is a catalogue
+ * equipment id; every kind is optional, and a lift whose kind has none keeps
+ * its plan step. A barbell is the bar plus a pair of plates for each plate
+ * on a side; a trap bar uses the barbell's plates unless it lists its own.
+ */
+export interface GymLoads {
+  unit: Unit;
+  dumbbell?: WeightSet;
+  kettlebell?: WeightSet;
+  barbell?: { bar: number; plates: number[] };
+  'trap-bar'?: { bar: number; plates?: number[] };
+  machine?: WeightStack;
+  cable?: WeightStack;
 }
 
 /**
@@ -314,6 +369,8 @@ export interface Exercise {
   kind?: ExerciseKind;
   risk?: RiskTag[];
   equipment?: string;
+  /** The real weights this exercise can be loaded with, in `unit`, lightest first (from the profile's loads); without them, targets round to `increment`. */
+  weights?: number[];
 }
 
 /** [lo, hi] reps. */
@@ -480,7 +537,7 @@ export interface Session {
   skipped?: string[];
   plan?: PlanSnapshot;
   note?: string;
-  /** Pain or a niggle during the session, as the Log panel saves it: where, how bad (0-10), and the exercise. */
+  /** Pain or a niggle during the session, as the Log panel saves it: where, how bad (0-10, when given), and the exercise. */
   pain?: SessionPain[];
   /**
    * Done as the Hotel version (bodyweight, light dumbbells, bands): it counts
@@ -496,10 +553,14 @@ export interface Session {
 export const SKIP_REASONS = ['time', 'pain', 'equipment', 'energy'] as const;
 export type SkipReason = (typeof SKIP_REASONS)[number];
 
-/** A pain logged with a session: the area, its severity 0-10, and the exercise it came with. */
+/** Why a planned item was done as another, as the Log panel saves it: your own swap, the Ledger's, soreness's or the Hotel version's. */
+export const SWAP_REASONS = ['mine', 'ledger', 'soreness', 'hotel'] as const;
+export type SwapReason = (typeof SWAP_REASONS)[number];
+
+/** A pain logged with a session: the area, its severity 0-10 (left out when not given), and the exercise it came with. */
 export interface SessionPain {
   area: string;
-  severity: number;
+  severity?: number;
   exercise?: string;
 }
 
@@ -522,6 +583,9 @@ export interface DailyCheckin {
   soreness?: number;
   /** Resting heart rate, bpm. */
   rhr?: number;
+  /** Heart rate variability that morning, ms (Apple Health's is SDNN). */
+  hrv?: number;
+  /** The user said they were ill that day (the morning check-in's "I'm ill today"). */
   illness?: boolean;
   steps?: number;
   /** Floors climbed that day. */
@@ -1159,8 +1223,9 @@ export interface MorningReminder {
 
 /**
  * When the tape, photos and tests are due: from the plan (tape every second
- * Sunday, photos in each deload week, tests at each phase end), or every N
- * days from a start date (before there is a plan, or by choice).
+ * Sunday, photos in each deload week, tests at each phase end; the plan's
+ * own test weeks, when it lists them, have the tests and a photo set too),
+ * or every N days from a start date (before there is a plan, or by choice).
  */
 export interface BodyRecordSchedule {
   schedule: 'plan' | 'fixed';
@@ -1251,14 +1316,39 @@ export type InboxKind = (typeof INBOX_KINDS)[number];
 export const TRAINED_ANSWERS = ['trained', 'rest', 'missed'] as const;
 export type TrainedAnswer = (typeof TRAINED_ANSWERS)[number];
 
-/** A logged lift's top set, as the log takes it; the unit, when left out, is the lift's own in the plan. */
+/**
+ * A logged lift's top set, as the log takes it; the unit, when left out, is
+ * the lift's own in the plan. At Every set only (`trackingLevel: "full"`) a
+ * swap names the lift done (`name`) and the plan's logged item it replaces
+ * (`planned`), with the swap's reason when known, as `engine log add` takes
+ * them; a lift without `planned` is the plan's.
+ */
 export interface InboxLift {
+  name?: string;
+  planned?: string;
+  swapWhy?: SwapReason;
   weight: number;
   reps: number;
   unit?: Unit;
 }
 
-/** A session from the phone: one of the plan's sessions, its two logged lifts (lifting days only) and what the Log panel's quick fields hold. */
+/** One set logged at Every set, as `engine log add` takes it: weight and unit only on a loaded exercise (null or left out for bodyweight), reps seconds on a timed one. */
+export interface InboxSet {
+  weight?: number | null;
+  unit?: Unit | null;
+  reps: number;
+  /** 0 to 10. */
+  rir?: number | null;
+}
+
+/**
+ * A session from the phone: one of the plan's sessions, its two logged
+ * lifts (lifting days only) and what the Log panel's quick fields hold. At
+ * Every set (the gym page's entry, `trackingLevel: "full"`) also every set
+ * by exercise, a swapped lift's names, the other swaps, the checklist lines
+ * skipped and why, and the cardio minutes: `engine log add`'s fields,
+ * checked as it checks them. Those go with `trackingLevel` only.
+ */
 export interface InboxSessionFields {
   type: string;
   lift1?: InboxLift;
@@ -1268,6 +1358,19 @@ export interface InboxSessionFields {
   /** How it went, 1 to 10 (the Log panel's Session rating). */
   rating?: number;
   notes?: string;
+  trackingLevel?: 'full';
+  /** Every set done, one item per exercise (each part of a superset its own); a swap names the plan's item as `planned`. */
+  exerciseSets?: { name: string; planned?: string; sets: InboxSet[] }[];
+  /** Every swap but the logged lifts' (they carry their own): the plan's item, the one done, and why when known. */
+  swaps?: { from: string; to: string; why?: SwapReason }[];
+  /** The checklist lines not done, by name as the Log panel names them. */
+  skipped?: string[];
+  /** Why a skipped line was skipped, by its name in `skipped`. */
+  skipWhy?: Record<string, SkipReason>;
+  /** Cardio minutes, 0 to 600. */
+  cardioMin?: number;
+  /** How the cardio was done, as the Log panel's pills write it ("bike"), or the plan's. */
+  cardioMode?: string;
 }
 
 /** The morning check-in's fields (body-data.json's names); steps and floors are yesterday's, as the card asks them. */
@@ -1277,6 +1380,8 @@ export interface InboxMorningFields {
   sleepQ?: number;
   sleepH?: number;
   rhr?: number;
+  /** Heart rate variability, ms. */
+  hrv?: number;
   weight?: number;
   steps?: number;
   floors?: number;

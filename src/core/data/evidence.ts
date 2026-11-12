@@ -73,6 +73,12 @@ export const SOURCES = {
   coleman2024: doi('Coleman 2024', '10.7717/peerj.16777'),
   bell2023: doi('Bell 2023', '10.1186/s40798-023-00633-0'),
   rogerson2024: doi('Rogerson 2024', '10.1186/s40798-024-00691-y'),
+  // Readiness: the morning check-in and the watch's numbers
+  saw2016: url('Saw 2016', 'https://bjsm.bmj.com/content/50/5/281'),
+  craven2022: doi('Craven 2022', '10.1007/s40279-022-01706-y'),
+  plews2013: doi('Plews 2013', '10.1007/s40279-013-0071-8'),
+  buchheit2014: doi('Buchheit 2014', '10.3389/fphys.2014.00073'),
+  manresaRocamora2021: doi('Manresa-Rocamora 2021', '10.3390/ijerph181910299'),
   // Concurrent training, cardio and activity
   schumann2022: doi('Schumann 2022', '10.1007/s40279-021-01587-7'),
   petre2021: doi('Petré 2021', '10.1007/s40279-021-01426-9'),

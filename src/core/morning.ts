@@ -5,22 +5,27 @@
 // limits are Habit Nudges', so both plugins accept the same values.
 
 /** The fields, in the card's order. */
-export const MORNING_KEYS = ['energy', 'soreness', 'sleepQ', 'sleepH', 'rhr', 'weight', 'steps', 'floors'] as const;
+export const MORNING_KEYS = ['energy', 'soreness', 'sleepQ', 'sleepH', 'rhr', 'hrv', 'weight', 'steps', 'floors'] as const;
 export type MorningKey = (typeof MORNING_KEYS)[number];
 
-/** Habit Nudges' limits for the same fields, so both writers accept the same values. Weight is in kg, as body-data.json holds it. */
+/**
+ * Habit Nudges' limits for the same fields, so both writers accept the same
+ * values. Weight is in kg, as body-data.json holds it. HRV (heart rate
+ * variability, in ms) is Pahlavan's own: Habit Nudges has no such field.
+ */
 export const MORNING_LIMITS: Record<MorningKey, { min: number; max: number; int: boolean; label: string }> = {
   energy: { min: 1, max: 5, int: true, label: 'Energy' },
   soreness: { min: 1, max: 5, int: true, label: 'Soreness' },
   sleepQ: { min: 1, max: 5, int: true, label: 'Sleep quality' },
   sleepH: { min: 0, max: 16, int: false, label: 'Sleep' },
   rhr: { min: 30, max: 120, int: true, label: 'Resting HR' },
+  hrv: { min: 5, max: 300, int: true, label: 'HRV' },
   weight: { min: 30, max: 250, int: false, label: 'Weight' },
   steps: { min: 0, max: 100000, int: true, label: 'Steps yesterday' },
   floors: { min: 0, max: 500, int: true, label: 'Floors yesterday' },
 };
 
-/** The morning card's own questions: Health's numbers (sleep hours, resting HR, weight, steps) can come from elsewhere. */
+/** The morning card's own questions: Health's numbers (sleep hours, resting HR, HRV, weight, steps) can come from elsewhere. */
 export const MORNING_QUESTIONS = ['energy', 'soreness', 'sleepQ'] as const satisfies readonly MorningKey[];
 
 /**
@@ -47,6 +52,7 @@ export const MORNING_WORDS: Record<MorningKey, { unit?: string; lo?: string; hi?
   sleepQ: { lo: 'Poor', hi: 'Great' },
   sleepH: { unit: 'h' },
   rhr: { unit: 'bpm' },
+  hrv: { unit: 'ms' },
   weight: { unit: 'kg' },
   steps: {},
   floors: {},

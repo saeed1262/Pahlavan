@@ -20,7 +20,7 @@ import type { Program } from './schema.ts';
  * anything said in your own words, and its two scheduled jobs), the one
  * place they are spelled: the skill's name may change for public users.
  */
-export const COACH_COMMANDS = { ask: '/fitness-coach', intake: '/fitness-coach intake', plan: '/fitness-coach plan', checkin: '/fitness-coach checkin', review: '/fitness-coach review' } as const;
+export const COACH_COMMANDS = { ask: '/fitness-coach', intake: '/fitness-coach intake', plan: '/fitness-coach plan', planWhy: '/fitness-coach plan why', checkin: '/fitness-coach checkin', review: '/fitness-coach review' } as const;
 
 export type CoachStepKind = 'letter' | 'mesocycle-review' | 'phase-review';
 export type CoachState = 'answer-first' | 'due' | 'late' | 'done';

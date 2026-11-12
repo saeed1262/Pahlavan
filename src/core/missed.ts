@@ -7,6 +7,7 @@
 
 import { CALIBRATION, calibrateTarget, calibrationNote } from './calibration.ts';
 import { addDays, dayText, daysBetween } from './dates.ts';
+import { snapLoad } from './loads.ts';
 import type { ProgressionTarget } from './progression.ts';
 import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
 import type { MissedRules } from './rules.ts';
@@ -197,7 +198,8 @@ export function returnProtocol(input: ReturnInput): Result<ReturnProtocol> {
 export function applyReturn(
   target: ProgressionTarget,
   protocol: ReturnProtocol,
-  exercise: { unit: Unit; increment: number; repRange?: RepRange },
+  /** `weights`: the gym's real weights (loads.ts): the lighter week lands on the nearest one down. */
+  exercise: { unit: Unit; increment: number; repRange?: RepRange; weights?: readonly number[] },
   date: IsoDate,
   from?: RuleFrom,
   /** The plan's calibration RIR for a restart's calibration week (default 3). */
@@ -214,9 +216,18 @@ export function applyReturn(
     return explain<ProgressionTarget>(c.value, 'missed.apply', { ...inputs, calibration: c.reason.inputs }, { threshold: { calibrationRir }, ...(c.reason.note ? { note: c.reason.note } : {}), ...cite });
   }
   let weight = target.weight;
+  // No lighter real weight: the weight stays and the added RIR alone eases the week.
+  let lightest = false;
   if (weight !== null) {
-    const lighter = roundToStep(weight * protocol.loadFactor, exercise.increment);
-    weight = lighter < weight ? lighter : Math.max(0, Number((weight - exercise.increment).toFixed(6)));
+    const weights = exercise.weights?.length ? exercise.weights : null;
+    if (weights) {
+      const snap = snapLoad(weight * protocol.loadFactor, weight, 'down', weights);
+      lightest = snap.floor;
+      weight = snap.floor ? Math.min(weight, snap.weight) : snap.weight;
+    } else {
+      const lighter = roundToStep(weight * protocol.loadFactor, exercise.increment);
+      weight = lighter < weight ? lighter : Math.max(0, Number((weight - exercise.increment).toFixed(6)));
+    }
   }
   return explain<ProgressionTarget>(
     { ...target, action: 'ease-back', weight, rir: target.rir + protocol.rirAdd },
@@ -224,7 +235,10 @@ export function applyReturn(
     inputs,
     {
       threshold: { loadFactor: protocol.loadFactor, rirAdd: protocol.rirAdd },
-      note: `First week back: ${weight === null ? 'a lighter load' : `${weight} ${exercise.unit}`} x ${target.reps}, RIR ${target.rir + protocol.rirAdd} (was ${target.weight ?? '-'} at RIR ${target.rir}).`,
+      note: joinNotes(
+        `First week back: ${weight === null ? 'a lighter load' : `${weight} ${exercise.unit}`} x ${target.reps}, RIR ${target.rir + protocol.rirAdd} (was ${target.weight ?? '-'} at RIR ${target.rir}).`,
+        lightest && `${weight} ${exercise.unit} is the lightest weight here: the RIR alone eases it.`,
+      ) ?? '',
       ...cite,
     },
   );

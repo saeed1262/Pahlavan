@@ -3,5 +3,4 @@
 export * from './convert.ts';
 export * from './read.ts';
 export { matchCatalogue, normalizeName, NAME_SYNONYMS } from './catalogue-match.ts';
-export { vaultMuscleMap } from './muscle-map.ts';
 export { canonicalTags, type CanonicalTags, type TagSource } from './muscle-tags.ts';

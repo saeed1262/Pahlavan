@@ -11,25 +11,28 @@
 // (it moves on with nothing to write), or is refused with its reason and
 // stays; a value on record is never written over. And phone.json, what the
 // shortcuts read with one GET: today's items, the plan's sessions, the next
-// one, the morning's fields. Pure: the caller lists, reads, writes and moves
+// one, the gym page's link, the morning's fields. Pure: the caller lists, reads, writes and moves
 // the files, and passes today in.
 
 import { dayOfField, mergeDayMark, mergeMorning, morningFrom, type MorningChange, type MorningValues } from '../adapters/vault/body-write.ts';
 import { readPlanData } from '../adapters/vault/convert.ts';
 import { mergeHabitChanges, type HabitChange } from '../adapters/vault/habits-write.ts';
 import { buildLogEntry, habitKey, liftUnit, mergeHabit, mergeLog } from '../adapters/vault/log-write.ts';
+import type { GymEntry } from '../core/gym.ts';
 import { type VaultRead } from '../adapters/vault/read.ts';
 import { type TrackingRead } from '../adapters/vault/tracking-read.ts';
 import { mergeNudges, mergeTracking, type TrackingOp } from '../adapters/vault/tracking-write.ts';
 import { parseTs, toTs } from '../core/clock.ts';
-import { addDays, dayText, daysBetween, mondayOf, type IsoDate } from '../core/dates.ts';
+import { addDays, dayText, type IsoDate } from '../core/dates.ts';
 import { MORNING_KEYS, MORNING_LIMITS, MORNING_QUESTIONS, MORNING_WORDS, YESTERDAY_KEYS } from '../core/morning.ts';
 import type { NudgeChange } from '../core/nudges.ts';
-import { INBOX_KINDS, INBOX_VERSION, TRAINED_ANSWERS, type InboxEntry, type InboxKind, type NudgeAnswer, type NudgeState, type TrackedItem, type Tracking, type TrainedAnswer } from '../core/schema.ts';
+import { INBOX_KINDS, INBOX_VERSION, TRAINED_ANSWERS, type InboxEntry, type InboxSessionFields, type InboxKind, type NudgeAnswer, type NudgeState, type TrackedItem, type Tracking, type TrainedAnswer } from '../core/schema.ts';
 import { habitsView } from '../core/tracking.ts';
 import { bodyUnitsOf, LB_PER_KG } from '../core/units.ts';
 import { validateInboxEntry } from '../core/validate.ts';
-import { CALENDAR, rotationNext } from './review.ts';
+import { gymPhoneLink } from './gym.ts';
+import { logAddEntry } from './log-add.ts';
+import { nextOfDay } from './review.ts';
 import { buildTrackDay, planTick } from './track-day.ts';
 import { paths } from '../adapters/vault/layout.ts';
 
@@ -106,6 +109,8 @@ export interface InboxRead {
 export interface InboxWrites {
   /** A session for fitness-log-data.json (mergeLog's add); the log writer ticks the Workout habit after it. */
   session?: Obj;
+  /** The session also sets Today's ticks (mergeLog's `ticks`, the plan and today), as `log add` does: a session sent at Every set. */
+  sessionTicks?: true;
   /** Ticks and amounts for Coach/tracking.json (mergeTracking), as Due today writes them. */
   tracking?: TrackingOp[];
   /** The same on the linked habits in habits-data.json (mergeHabitChanges). */
@@ -266,6 +271,15 @@ function applyOne(input: InboxRead, texts: InboxTexts, file: string, e: InboxEnt
 
 // ---------------------------------------------------------------- a session (the Log panel's save)
 
+/**
+ * The gym page's Send is this entry's `session` (GymEntry, src/core/gym.ts;
+ * `_say` is the shortcut's own, and the inbox ignores keys that start with
+ * `_`): a field of another type, or one the inbox doesn't take, fails the
+ * typecheck here.
+ */
+type SentAsSession<T extends InboxSessionFields, Other extends never> = [T, Other];
+export type GymEntrySession = SentAsSession<Omit<GymEntry, '_say'>, Exclude<keyof Omit<GymEntry, '_say'>, keyof InboxSessionFields>>;
+
 function sessionStep(input: InboxRead, texts: InboxTexts, e: Extract<InboxEntry, { kind: 'session' }>, today: IsoDate): Step {
   const plan = input.read.raw?.plan;
   const pd = readPlanData(plan);
@@ -280,19 +294,33 @@ function sessionStep(input: InboxRead, texts: InboxTexts, e: Extract<InboxEntry,
   const given = [s.lift1, s.lift2] as const;
   const missing = logged.map((n, i) => (given[i] ? null : `lift${i + 1} (${n})`)).filter((x): x is string => x !== null);
   if (missing.length) return { code: 'invalid', reason: `${name} logs its top sets for ${logged.map((n, i) => `lift${i + 1}, ${n}`).join(' and ')}: the entry has no ${list(missing)}` };
+  const full = s.trackingLevel === 'full';
   const lift = (i: 0 | 1) => {
     const li = given[i];
     if (!li) return null;
-    return { name: logged[i] ?? '', weight: li.weight, reps: li.reps, ...(li.unit ? { unit: li.unit } : {}) };
+    // At Every set a swap keeps the lift done as its name and the plan's logged item as `planned` (log add checks
+    // that it is); a lift without `planned` is the plan's logged item. The old entry never names a lift.
+    const named = !full ? { name: logged[i] ?? '' } : li.planned ? { name: li.name ?? '', planned: li.planned, ...(li.swapWhy ? { swapWhy: li.swapWhy } : {}) } : { name: li.name ?? logged[i] ?? '' };
+    return { ...named, weight: li.weight, reps: li.reps, ...(li.unit ? { unit: li.unit } : {}) };
   };
   const log = parseText(texts.log);
   if (log === undefined) return { code: 'unreadable', reason: unreadable(paths().log) };
-  const built = buildLogEntry(
-    { date: e.date, type: s.type, ...(lifting || s.lift1 || s.lift2 ? { lift1: lift(0), lift2: lift(1) } : {}), ...(s.express ? { express: true } : {}), durationMin: s.durationMin ?? null, rating: s.rating ?? null, notes: s.notes ?? '' },
-    { plan, log, today },
-  );
+  const lifts = lifting || s.lift1 || s.lift2 ? { lift1: lift(0), lift2: lift(1) } : {};
+  // At Every set (the gym page's entry) the session is `log add`'s, checked as it checks it: every set by exercise,
+  // the swaps, the checklist frozen with its skipped lines and why, and Today's ticks set as its merge sets them. On
+  // the log as the entries before this one left it.
+  const built = full
+    ? logAddEntry(
+        { ...input.read, raw: { ...input.read.raw, log } },
+        { date: e.date, type: s.type, ...lifts, ...(s.express ? { express: true } : {}), durationMin: s.durationMin ?? null, cardioMin: s.cardioMin ?? null, ...(s.cardioMode ? { cardioMode: s.cardioMode } : {}), rating: s.rating ?? null, notes: s.notes ?? '', ...(s.swaps ? { swaps: s.swaps } : {}), trackingLevel: 'full', exerciseSets: s.exerciseSets, skipped: s.skipped ?? [], skipWhy: s.skipWhy ?? {} },
+        today,
+      )
+    : buildLogEntry(
+        { date: e.date, type: s.type, ...lifts, ...(s.express ? { express: true } : {}), durationMin: s.durationMin ?? null, rating: s.rating ?? null, notes: s.notes ?? '' },
+        { plan, log, today },
+      );
   if (!built.ok) return { code: 'invalid', reason: built.error };
-  const m = mergeLog(texts.log, built.entry, { mode: 'add' });
+  const m = mergeLog(texts.log, built.entry, full ? { mode: 'add', ticks: { plan, today } } : { mode: 'add' });
   if (m.result === 'already') return { code: 'already', reason: `${name} is logged on ${dayText(e.date)} already: the log keeps that one (open it in Pahlavan to change it), so delete this entry` };
   if (m.result === 'unreadable') return { code: 'unreadable', reason: `${m.error}: nothing was written` };
   if (m.result === 'conflict') return { code: 'conflict', reason: `the log changed while this entry was read: it is tried again on the next refresh` };
@@ -300,9 +328,12 @@ function sessionStep(input: InboxRead, texts: InboxTexts, e: Extract<InboxEntry,
   const h = mergeHabit(texts.habits, e.date);
   if (h.result === 'ticked') texts.habits = h.text;
   const tops = [built.entry['lift1'], built.entry['lift2']].filter(isObj).map((l) => `${String(l['name'])} ${String(l['weight'])} ${String(l['unit'])} x ${String(l['reps'])}`);
+  // At Every set the note counts the sets logged before the top sets.
+  const sets = full && Array.isArray(built.entry['exerciseSets']) ? (built.entry['exerciseSets'] as Obj[]).reduce((n, x) => n + (Array.isArray(x['sets']) ? x['sets'].length : 0), 0) : null;
+  const what = [...(sets !== null ? [`${sets} set${sets === 1 ? '' : 's'}`] : []), ...tops];
   return {
-    writes: { session: built.entry },
-    note: `${name}${built.entry['express'] ? ' (Express)' : ''} on ${dayText(e.date)}${tops.length ? `: ${tops.join(', ')}` : ''}${h.result === 'ticked' ? ', and the Workout habit ticked' : ''}.`,
+    writes: { session: built.entry, ...(full ? { sessionTicks: true as const } : {}) },
+    note: `${name}${built.entry['express'] ? ' (Express)' : ''} on ${dayText(e.date)}${what.length ? `: ${what.join(', ')}` : ''}${h.result === 'ticked' ? ', and the Workout habit ticked' : ''}.`,
     warnings: [],
   };
 }
@@ -568,10 +599,10 @@ function lastTop(log: unknown, name: string): { date: IsoDate; weight: number; r
  * not, and the amounts with their totals) with `open`, the ones not done; the
  * plan's sessions (type, name, the two logged lifts with their units and last
  * top sets, whether Express is there); the rotation's next session for the
- * calendar's day; the sessions logged today; the morning check-in's fields
- * with their limits, words and today's values; the evening answers; and the
- * entry format. No clock in it, so the same vault gives the same file on
- * both Macs.
+ * calendar's day; the sessions logged today; the gym page's link (`gym`,
+ * src/report/gym.ts); the morning check-in's fields with their limits, words
+ * and today's values; the evening answers; and the entry format. No clock in
+ * it, so the same vault gives the same file on both Macs.
  */
 export function buildPhone(read: VaultRead, tr: TrackingRead, date: IsoDate) {
   const data = read.data;
@@ -602,13 +633,11 @@ export function buildPhone(read: VaultRead, tr: TrackingRead, date: IsoDate) {
       })
     : [];
   // The rotation's next for the calendar's day, as Today suggests it (even once today's is logged: the one after it).
-  const weekday = daysBetween(mondayOf(date), date);
-  const liftDay = (CALENDAR.liftDays as readonly number[]).includes(weekday) || !data.plan.types.some((t) => t.kind === 'short');
-  const rot = sessions.length ? rotationNext(data, date) : { lift: null, short: null };
-  const nextType = (liftDay ? rot.lift : rot.short) ?? rot.lift ?? rot.short;
+  const nextType = sessions.length ? nextOfDay(data, date) : null;
   const nextSession = sessions.find((s) => s.type === nextType) ?? null;
   const values = morningFrom(tr.body, date).values;
   const training = day.training.value;
+  const logged = training.sessions.map((s) => s.type);
   return {
     v: INBOX_VERSION,
     date,
@@ -616,7 +645,9 @@ export function buildPhone(read: VaultRead, tr: TrackingRead, date: IsoDate) {
     open: day.open,
     sessions,
     next: nextSession ? { type: nextSession.type, name: nextSession.name, kind: nextSession.kind } : null,
-    logged: training.sessions.map((s) => s.type),
+    logged,
+    // The gym page's link: every session as the Every set form starts it today (its own size guard).
+    gym: sessions.length ? gymPhoneLink(read, date, logged) : null,
     morning: {
       done: day.morning.value.done,
       weightUnit: bodyUnitsOf(data.profile).value.weight,

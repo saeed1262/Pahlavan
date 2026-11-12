@@ -10,7 +10,7 @@ import { bodyUnitsOf, inLength, METRIC, type BodyUnits } from '../core/units.ts'
 import { POSES, TAPE_FIELDS, TEST_FIELDS } from '../adapters/vault/body-write.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
 import type { TrackingRead } from '../adapters/vault/tracking-read.ts';
-import type { BodyPart } from '../core/body-schedule.ts';
+import { planScheduleLine, type BodyPart } from '../core/body-schedule.ts';
 import { addDays, daysBetween, type IsoDate } from '../core/dates.ts';
 import { deskHours, deskRoutine, deskTimes, planDeskBreaks, WORKDAYS, type DeskRoutine } from '../core/desk-breaks.ts';
 import { bodyParts } from '../core/nudges.ts';
@@ -219,6 +219,8 @@ export function buildBodyRecord(read: VaultRead, tr: TrackingRead, date: IsoDate
     tapeNext: parts.tape.value.nextDate,
     tapeText: tape.text,
     testsText: tests.text,
+    /** What "From the plan" means for this plan, for the schedule editor's hint: "the tape every second Sunday, photos on ...". */
+    planLine: planScheduleLine(hasPlan ? program : null),
     canWrite: tr.files.tracking !== 'invalid',
   };
 }

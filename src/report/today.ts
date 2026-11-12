@@ -7,7 +7,7 @@ import type { VaultData } from '../adapters/vault/convert.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
 import { dayMarks } from '../core/checkins.ts';
 import { addDays, mondayOf } from '../core/dates.ts';
-import { readinessInputs } from '../core/readiness.ts';
+import { READINESS, readinessInputs } from '../core/readiness.ts';
 import type { IsoDate } from '../core/schema.ts';
 import type { SessionMode } from '../core/variant.ts';
 import { cycleOf, scopeInfo } from './cycle.ts';
@@ -90,16 +90,20 @@ export function todayNotes(read: VaultRead, review: Review | null, session: Sess
   const notes: TodayNote[] = [];
   const { data } = read;
   if (read.files.plan === 'missing') notes.push({ code: 'no-plan', text: `No plan found (${paths().plan}), so there is no session to show.` });
-  if (data.coach.profile === 'missing') notes.push({ code: 'no-profile', text: 'No coach profile yet (Coach/profile.json): the goal band uses the roadmap’s, and the plan generator waits for it.' });
+  if (data.coach.profile === 'missing') notes.push({ code: 'no-profile', text: 'No coach profile yet (Coach/profile.json): the goal band uses the roadmap’s, and the coach’s plan waits for it.' });
   if (data.coach.ledger === 'missing') notes.push({ code: 'no-ledger', text: 'No Ledger yet (Coach/ledger.json): no injury limits are applied.' });
   if (data.coach.checkins === 'missing') notes.push({ code: 'no-checkins', text: 'No weekly check-in answers yet (Coach/checkins.json): the Sunday check-in writes them.' });
   if (review && review.readiness.today.value.band === 'unscored') {
     const latest = review.readiness.latestScored as { date: IsoDate } | null;
-    const hasCheckin = data.checkins.daily.some((d) => d.date === date && (d.energy !== undefined || d.sleepH !== undefined || d.rhr !== undefined));
+    const hasCheckin = data.checkins.daily.some((d) => d.date === date && (d.energy !== undefined || d.sleepH !== undefined || d.rhr !== undefined || d.hrv !== undefined));
     // While the cycle's baseline builds, the readiness card says how far; only a missing check-in is worth a note.
     const building = review.readiness.baseline.value.building;
     if (!hasCheckin) notes.push({ code: 'no-checkin-today', text: `No morning check-in today yet${latest && !building ? `: readiness shows the latest, from ${dayText(latest.date)}` : ''}.` });
-    else if (!building) notes.push({ code: 'no-checkin-today', text: 'Today’s check-in is not scored yet: readiness needs 3 signals with 14 days of history.' });
+    else if (!building) {
+      // 3 signals scored and still no score: the card-answer guard (watch numbers alone never score a morning).
+      const watchOnly = review.readiness.today.value.signals >= READINESS.minSignals;
+      notes.push({ code: 'no-checkin-today', text: watchOnly ? 'Today’s check-in is not scored yet: watch numbers alone don’t score a morning; it needs energy, soreness or sleep quality too, with 14 days of history.' : 'Today’s check-in is not scored yet: readiness needs 3 signals with 14 days of history.' });
+    }
   }
   if (session && !session.session) notes.push({ code: 'no-session', text: (session as { note?: string }).note ?? 'No planned session for today.' });
   if (session?.pickNote) notes.push({ code: 'pick-unknown', text: session.pickNote });

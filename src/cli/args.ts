@@ -8,7 +8,7 @@ export interface ParsedArgs {
 }
 
 /** Flags that take a value; every other flag is a switch. */
-const VALUE_FLAGS = new Set(['vault', 'date', 'plan', 'lift', 'profile', 'ledger', 'start', 'weeks', 'format', 'kind', 'file', 'mode', 'type', 'time', 'item', 'id', 'at', 'schedule', 'tape-from', 'tape-every', 'tests-from', 'tests-every', 'amount', 'lift1', 'lift2', 'skip', 'level', 'label', 'weight', 'reps', 'topic', 'pattern', 'region', 'muscle', 'equipment', 'query']);
+const VALUE_FLAGS = new Set(['vault', 'date', 'plan', 'lift', 'kind', 'file', 'mode', 'type', 'time', 'item', 'id', 'at', 'schedule', 'tape-from', 'tape-every', 'tests-from', 'tests-every', 'amount', 'lift1', 'lift2', 'skip', 'level', 'label', 'weight', 'reps', 'topic', 'pattern', 'region', 'muscle', 'equipment', 'query', 'plans', 'pal', 'rate', 'meals']);
 /** Flags whose value is optional: "true" or "false" when it follows, else a switch (true). */
 const OPTIONAL_VALUE = new Set(['done']);
 const SHORT: Record<string, string> = { h: 'help', v: 'version' };

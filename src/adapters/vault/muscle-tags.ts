@@ -1,9 +1,9 @@
 // One source of muscle tags for a vault movement. A movement the engine's
 // catalogue knows (matchCatalogue: its name, id, an alias or a common
 // synonym) counts with the catalogue's tags, so Review, Progress, Plan, the
-// movement guide and `engine plan` agree; the vault guide's `muscles` count only for a
-// movement the catalogue does not know, or when the entry gives a reason to
-// keep its own (`muscles.override`). Either way the tags are on plan-data's
+// movement guide and `engine check` agree; the vault guide's `muscles` count
+// only for a movement the catalogue does not know, or when the entry gives a
+// reason to keep its own (`muscles.override`). Either way the tags are on plan-data's
 // 14 groups, with a muscle in `main` never also in `helps`. The muscle
 // regions follow the same rule: the catalogue's for a movement it knows, the
 // guide's `regions` for one it does not know or with an override. Pure: it

@@ -7,8 +7,8 @@
 import { CATALOGUE, MOVEMENT_TAGS, MOVEMENT_USES, PATTERNS, type CatalogueEntry, type Pattern } from '../core/data/exercises.ts';
 import { searchCatalogue, vocabulary } from './catalogue.ts';
 
-/** Each pattern's section title, in plain words. */
-const PATTERN_TITLE: Readonly<Record<string, string>> = {
+/** Each pattern's section title, in plain words (this page and the Movements tab). */
+export const PATTERN_TITLE: Readonly<Record<string, string>> = {
   squat: 'Squat',
   hinge: 'Hinge',
   lunge: 'Lunge and single leg',
@@ -34,8 +34,10 @@ const PATTERN_TITLE: Readonly<Record<string, string>> = {
   skill: 'Skills',
 };
 
-const LOAD_WORDS: Readonly<Record<CatalogueEntry['load'], string>> = { external: 'added weight', bodyweight: 'bodyweight', timed: 'a hold for time', cardio: 'cardio' };
-const LEVEL_WORDS: Readonly<Record<CatalogueEntry['level'], string>> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
+/** How a movement is loaded, in plain words. */
+export const LOAD_WORDS: Readonly<Record<CatalogueEntry['load'], string>> = { external: 'added weight', bodyweight: 'bodyweight', timed: 'a hold for time', cardio: 'cardio' };
+/** A movement's level, in plain words. */
+export const LEVEL_WORDS: Readonly<Record<CatalogueEntry['level'], string>> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
 
 const words = (id: string) => id.replace(/^(joint|demand):/, '').replace(/-/g, ' ');
 const sentence = (t: string) => (t.endsWith('.') ? t : `${t}.`);

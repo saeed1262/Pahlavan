@@ -135,3 +135,24 @@ export function latestSlot(sessions: readonly Session[], exercise: string): Exer
   const withSlot = exerciseHistory(sessions, exercise).filter((h) => h.slot);
   return withSlot.at(-1)?.slot;
 }
+
+/** What a new log starts an exercise from: the newest session that logged it. */
+export interface LastSets {
+  date: IsoDate;
+  /** Every set when that session logged every set; else its top set alone. */
+  sets: LoggedSet[];
+  every: boolean;
+}
+
+/**
+ * The sets a new log starts an exercise from: the newest session that
+ * logged it, with every set when every set was logged (Full tracking),
+ * else its top set alone. Null when no session logged it. The caller picks
+ * the sessions (before the new log's date, its version).
+ */
+export function lastSets(sessions: readonly Session[], exercise: string): LastSets | null {
+  const h = exerciseHistory(sessions, exercise).filter((x) => x.sets.length > 0).at(-1);
+  if (!h) return null;
+  if (h.trackingLevel === 'full') return { date: h.date, sets: h.sets.map((s) => ({ ...s })), every: true };
+  return { date: h.date, sets: [{ ...topSet(h.sets)! }], every: false };
+}

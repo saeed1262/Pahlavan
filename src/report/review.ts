@@ -8,7 +8,8 @@ import { backToBack, checkConcurrent, liftItem, weekLayout, type PlannedItem, ty
 import { LOWER_BODY } from '../core/data/muscles.ts';
 import { addDays, dayText, daysBetween, mondayOf, weekOf } from '../core/dates.ts';
 import { decideDeload, deloadPrescription } from '../core/deload.ts';
-import { e1rmTrend } from '../core/e1rm.ts';
+import { e1rmRises, e1rmTrend, lastRise } from '../core/e1rm.ts';
+import { exerciseFacts } from '../core/exercise-facts.ts';
 import { asksConfirmation, findingUnconfirmed } from '../core/findings.ts';
 import { exerciseHistory, topSet, trendSets, type TopSet } from '../core/history.ts';
 import { applyReturn, restartStart, returnProtocol, type ReturnProtocol } from '../core/missed.ts';
@@ -34,18 +35,19 @@ import {
 } from '../core/checkins.ts';
 import { nextTarget, type ProgressionTarget } from '../core/progression.ts';
 import { proteinForProfile } from '../core/protein.ts';
-import { readinessActions, readinessBaseline, readinessOn, readinessSeries, type ReadinessBand, type ReadinessDay } from '../core/readiness.ts';
+import { readinessActions, readinessBaseline, readinessHrv, readinessOn, readinessSeries, type ReadinessBand, type ReadinessDay } from '../core/readiness.ts';
 import { explain, joinNotes, type Result, type RuleFrom } from '../core/reason.ts';
 import { cite, fromKind, fromLift, legacyLift, liftRuleText, lightWeekAt, ruleText, RULE_KINDS, RULE_PATHS, type LiftProgression, type MissedRules, type PlanRules, type RuleKind, type RuleSource } from '../core/rules.ts';
 import { roundToStep } from '../core/units.ts';
+import { kitWord, loadKindOf, snapLoad, type LoadKind } from '../core/loads.ts';
 import { dayLength, sessionMinutes, timeCheck, type SessionMinutes } from '../core/session-time.ts';
-import { timedMinutes } from '../core/timed.ts';
-import { PAIN, painRule, painText, type PainReport, type PainVerdict } from '../core/pain.ts';
+import { isIntervals, timedMinutes } from '../core/timed.ts';
+import { PAIN, painRule, painText, painTrend, worstVerdict, type PainReport } from '../core/pain.ts';
 import { findingsToConfirm } from '../core/plan/self-check.ts';
-import { skipReport, type SkipLine } from '../core/skips.ts';
-import { cycleOf } from './cycle.ts';
+import { skipReport, SKIPS, type SkipLine } from '../core/skips.ts';
+import { cycleOf, scopeInfo, withinCycle } from './cycle.ts';
 import { screenExercise } from '../core/safety.ts';
-import type { BusyPeriod, DailyCheckin, Exercise, ExerciseSlot, IsoDate, LedgerConstraint, RateBand, Session, SessionTemplate, Unit, Week, WeeklyCheckin } from '../core/schema.ts';
+import type { BusyPeriod, DailyCheckin, Exercise, ExerciseSlot, IsoDate, GoalKind, LedgerConstraint, Profile, RateBand, Session, SessionTemplate, SlotProgression, Unit, Week, WeeklyCheckin } from '../core/schema.ts';
 import { detectStall, triageLadder } from '../core/stall.ts';
 import { checkRegions, checkVolume, declaredRegions, holdBests, holdKindOf, plannedSetsPerMuscle, priorityMuscles, pullPushAim, pullPushSets, setEffort, setsPerMuscle, volumeTier, type DoneEffortItem, type Effort, type EffortContext, type SetEffort } from '../core/volume.ts';
 import { RATE_BANDS, rateStatus, weightRate, weightTrend, type RateStatus } from '../core/weight.ts';
@@ -126,7 +128,7 @@ export const typeOf = (ctx: Ctx, templateId: string) => ctx.data.plan.types.find
 // ---------------------------------------------------------------- readiness
 
 function compactDay(d: ReadinessDay) {
-  const flags = [d.rhrFlag && 'rhr-flag', d.shortSleep && 'short-sleep', d.illness && 'illness'].filter((x): x is string => Boolean(x));
+  const flags = [d.rhrFlag && 'rhr-flag', d.hrvFlag && 'hrv-flag', d.shortSleep && 'short-sleep', d.illness && 'illness'].filter((x): x is string => Boolean(x));
   return { date: d.date, r: d.r, s: d.s, band: d.band, signals: d.signals, z: d.z, flags };
 }
 
@@ -148,6 +150,8 @@ function readinessSection(ctx: Ctx, e1rmFalling: boolean | undefined) {
     latestScored: latest ? compactDay(latest) : null,
     last14: series.slice(-14).map(compactDay),
     scoredDays: scored.length,
+    // HRV low two mornings running: a note on its own (no-hard-training takes it only with the resting-HR flag or a low score).
+    hrv: readinessHrv(ctx.daily, ctx.date, scope),
     // The plan's low-day change (or none), cited by the trim.
     actions: readinessActions(ctx.daily, ctx.date, { since, ...(e1rmFalling === undefined ? {} : { e1rmFalling }), low: ctx.data.rules.rules.readiness.low, from: fromKind(ctx.data.rules, 'readiness') }),
   };
@@ -164,14 +168,26 @@ function last7(ctx: Ctx, field: 'sleepH' | 'steps' | 'floors' | 'rhr') {
   return { value: r2(win.reduce((a, d) => a + (d[field] as number), 0) / win.length), days: win.length, through: end };
 }
 
-function goalBand(ctx: Ctx): { band: RateBand; source: string } {
-  const goals = [...(ctx.data.profile?.goals ?? [])].sort((a, b) => b.importance - a.importance);
+/**
+ * The weight band the review checks the rate against, and `energy` sizes the
+ * goal energy from: the most important goal's own band, else its kind's
+ * (RATE_BANDS), else the roadmap's. `kind` is that goal's (null for the
+ * roadmap), `ownBand` whether the profile gives it its own band, `roadmap`
+ * that the profile gave no weight goal.
+ */
+export function goalBandOf(profile: Profile | null): { band: RateBand; source: string; kind: GoalKind | null; ownBand: boolean; roadmap: boolean } {
+  const goals = [...(profile?.goals ?? [])].sort((a, b) => b.importance - a.importance);
   for (const g of goals) {
-    if (g.rateBand) return { band: g.rateBand, source: `profile goal ${g.id} (its own band)` };
+    if (g.rateBand) return { band: g.rateBand, source: `profile goal ${g.id} (its own band)`, kind: g.kind, ownBand: true, roadmap: false };
     const b = (RATE_BANDS as Record<string, RateBand | undefined>)[g.kind];
-    if (b) return { band: b, source: `profile goal ${g.id} (${g.kind})` };
+    if (b) return { band: b, source: `profile goal ${g.id} (${g.kind})`, kind: g.kind, ownBand: false, roadmap: false };
   }
-  return { band: ROADMAP_BAND, source: ctx.data.profile ? 'the roadmap (no weight goal in the profile)' : 'the roadmap (no Coach/profile.json yet)' };
+  return { band: ROADMAP_BAND, source: profile ? 'the roadmap (no weight goal in the profile)' : 'the roadmap (no Coach/profile.json yet)', kind: null, ownBand: false, roadmap: true };
+}
+
+function goalBand(ctx: Ctx): { band: RateBand; source: string } {
+  const { band, source } = goalBandOf(ctx.data.profile);
+  return { band, source };
 }
 
 /**
@@ -239,6 +255,8 @@ export interface LiftContext {
   plannedPerWeek: Record<string, number>;
   /** The light-week rule (the plan's or the old default), for this week's light targets. */
   lightWeek: { load: number; rirAdd: number; from: RuleFrom };
+  /** Where the last rise is read (`riseScope`): this cycle's sessions; worked out from the context when not given. */
+  rise?: { since: IsoDate | null; ctx: Ctx };
 }
 
 /**
@@ -329,7 +347,46 @@ function trendOf(ctx: Ctx, exercise: string) {
   const trend = cut && from
     ? { ...own, reason: { ...own.reason, inputs: { ...own.reason.inputs, ...(byReset ? { resetFrom: from } : { calibrationFrom: from }), leftOut: cut }, note: joinNotes(own.reason.note, `${cut} top set${cut === 1 ? '' : 's'} ${why(from)}.`) ?? '' } }
     : own;
-  return { info, ex, unit, increment, tops, trend };
+  // The trend's unit flag on the whole list of top sets: its count of sets left out is counted from where the trend starts.
+  const flagAt = own.value.ignored > 0 ? cut + own.value.ignored : 0;
+  return { info, ex, unit, increment, tops, trend, flagAt };
+}
+
+/**
+ * A lift's top sets in its unit, each with its e1RM and whether it is a rise
+ * (a PR), as the Progress tab marks them and `lastRise` reads them: every
+ * top set of the context's sessions (Hotel ones left out), those before the
+ * trend's unit flag left out (`from`, its place on this list).
+ */
+export function liftRises(ctx: Ctx, exercise: string) {
+  const { unit, increment, tops, flagAt } = trendOf(ctx, exercise);
+  const sets = tops.map((t) => ({ date: t.date, ...setInUnit(t, { unit, increment }) }));
+  return { tops, sets, from: flagAt, marks: e1rmRises(sets, flagAt) };
+}
+
+/** Where a lift's last rise is read: this cycle's sessions (Progress's default scope), from the cycle start; the whole log without one. */
+export function riseScope(ctx: Ctx): { since: IsoDate | null; ctx: Ctx } {
+  const since = scopeInfo(ctx.data, ctx.date, 'cycle').since;
+  return { since, ctx: since ? context(withinCycle(ctx.data, since), ctx.date) : ctx };
+}
+
+/**
+ * The lift's last rise this cycle, the last PR Progress marks at its default
+ * scope, with the best e1RM before the cycle (the whole log's marks) as its
+ * context.
+ */
+function cycleRise(ctx: Ctx, exercise: string, scope: { since: IsoDate | null; ctx: Ctx }) {
+  const r = liftRises(scope.ctx, exercise);
+  const since = scope.since;
+  let before: { date: IsoDate; e1rm: number } | null = null;
+  if (since) {
+    const all = liftRises(ctx, exercise);
+    all.sets.forEach((x, i) => {
+      const e = all.marks[i]!.e1rm;
+      if (x.date < since && i >= all.from && e !== null && (before === null || e > before.e1rm + 1e-9)) before = { date: x.date, e1rm: r2(e) };
+    });
+  }
+  return lastRise(r.sets, ctx.date, r.from, { since, before });
 }
 
 /**
@@ -368,12 +425,31 @@ export function missedRule(data: VaultData): { rule: MissedRules & { afterRestar
   return { rule: { ...data.rules.rules.missed, afterRestart: cal.afterRestart, calibrationRir: cal.rir }, from: fromKind(data.rules, 'missed') };
 }
 
+/**
+ * A lift's load as progression, the stall reset and the first week back read
+ * it: its unit and step, and the gym's real weights (the profile's loads, in
+ * its unit) with their kind. A ladder slot moves to its next variation
+ * instead of adding load, so it never snaps: no weights.
+ */
+export function liftLoad(
+  ex: (Exercise & ExerciseExtras) | undefined,
+  unit: Unit,
+  increment: number,
+  slot?: { progression?: SlotProgression } | null,
+): { unit: Unit; increment: number; weights?: readonly number[]; kit?: LoadKind | null } {
+  const weights = slot?.progression?.rule !== 'ladder' && ex?.weights?.length && (ex.unit ?? unit) === unit ? ex.weights : undefined;
+  return weights ? { unit, increment, weights, kit: loadKindOf(ex?.equipment, ex?._lift?.db) } : { unit, increment };
+}
+
 function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
-  const { info, unit, increment, tops, trend: own } = trendOf(ctx, exercise);
+  const { info, ex, unit, increment, tops, trend: own } = trendOf(ctx, exercise);
   // The Hotel sessions left out, said in the trend's own note too.
   const hotel = hotelLeftOut(ctx, exercise);
   const trend = hotel ? { ...own, reason: { ...own.reason, note: joinNotes(own.reason.note, hotel.reason.note) ?? '' } } : own;
   const slot = currentSlot(ctx, exercise);
+  // The gym's real weights for this lift: every target lands on one (never for a ladder slot).
+  const load = liftLoad(ex as (Exercise & ExerciseExtras) | undefined, unit, increment, slot);
+  const weights = load.weights;
   const detected = detectStall(trend.value, lc.adherencePct);
   const stall = lc.calibration ? calibrationStall(detected, lc.calibration) : detected;
   const repRange = info?.repRange ?? (slot?.main ? slot.repRange : null);
@@ -398,7 +474,7 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
     const t = nextTarget({
       exerciseName: (id) => nameOf(ctx, id),
       history,
-      exercise: { unit, increment },
+      exercise: load,
       repRange,
       // In plan week 1 the slot carries the calibration RIR: progression (held for the week after) reads the ordinary one.
       targetRir: (lc.calibration === 'plan' ? (ordinarySlot(ctx, exercise) ?? slot) : slot)?.rir ?? 2,
@@ -417,23 +493,31 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
     const onStall = standing?.rule.onStall;
     const base = t.reason.inputs['base'];
     if (onStall && onStall !== 'report' && stall.value.stalled && !lc.deloadThisWeek && !lc.calibration && typeof base === 'number' && t.value.action !== 'target') {
-      const w = roundToStep(base * (1 - onStall.drop), increment);
-      stallReset = t;
-      next = explain({ ...t.value, action: 'lighter' as const, weight: w, reps: repRange[0] }, t.reason.rule, { base, unit, repRange, drop: onStall.drop, stall: stall.value }, {
-        threshold: { drop: onStall.drop },
-        note: `Stalled (${stall.reason.note ?? 'e1RM flat over 3 sessions'}): ${w} ${unit} x ${repRange[0]}, about ${Math.round(onStall.drop * 100)} % under ${base} ${unit}, as the rule says.`,
-        ...(liftFrom ? { from: liftFrom } : {}),
-      });
+      // On the gym's real weights: the nearest one under the base; with nothing lighter here, no reset.
+      const snap = weights ? snapLoad(base * (1 - onStall.drop), base, 'down', weights) : null;
+      const w = snap ? snap.weight : roundToStep(base * (1 - onStall.drop), increment);
+      if (snap?.floor) {
+        next = { value: t.value, reason: { ...t.reason, note: joinNotes(t.reason.note, `Stalled, and the rule takes it about ${Math.round(onStall.drop * 100)} % lighter, but the lightest ${kitWord(load.kit)} here is ${snap.weight} ${unit}: nothing lighter to reset to, so the target stays; a wider rep range or an easier variation answers the stall.`) ?? '' } };
+      } else {
+        stallReset = t;
+        next = explain({ ...t.value, action: 'lighter' as const, weight: w, reps: repRange[0] }, t.reason.rule, { base, unit, repRange, drop: onStall.drop, stall: stall.value }, {
+          threshold: { drop: onStall.drop },
+          note: snap
+            ? `Stalled (${stall.reason.note ?? 'e1RM flat over 3 sessions'}): ${w} ${unit} x ${repRange[0]}, the nearest weight here to the rule's ${Math.round(onStall.drop * 100)} % under ${base} ${unit}.`
+            : `Stalled (${stall.reason.note ?? 'e1RM flat over 3 sessions'}): ${w} ${unit} x ${repRange[0]}, about ${Math.round(onStall.drop * 100)} % under ${base} ${unit}, as the rule says.`,
+          ...(liftFrom ? { from: liftFrom } : {}),
+        });
+      }
     }
     const p = lc.protocol;
     const firstWeekBack = p !== null && p.firstWeek !== null && ctx.date >= p.firstWeek.from && ctx.date <= p.firstWeek.to;
     const easing = p !== null && (p.protocol === 'ease-back' || (p.protocol === 'restart' && !p.calibration));
-    const eased = firstWeekBack && easing ? applyReturn((next as Result<ProgressionTarget>).value, p, { unit, increment }, ctx.date, missedRule(ctx.data).from, ctx.data.rules.rules.calibration.rir) : null;
+    const eased = firstWeekBack && easing ? applyReturn((next as Result<ProgressionTarget>).value, p, load, ctx.date, missedRule(ctx.data).from, ctx.data.rules.rules.calibration.rir) : null;
     const calRule = ctx.data.rules.rules.calibration;
     const calFrom = fromKind(ctx.data.rules, 'calibration');
     const weightOf = (h: typeof lastLogged) => {
       const top = h ? topSet(h.sets) : undefined;
-      return top ? weightInUnit(top.weight, top.unit, { unit, increment }) : null;
+      return top ? weightInUnit(top.weight, top.unit, load) : null;
     };
     if (lc.calibration === 'restart' && p?.firstWeek) {
       // The first week back after a restart: nothing from before the gap carries over; a weight found since is held.
@@ -470,6 +554,8 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
   // The last top set: with every set logged, the session's heaviest, even where its e1RM used another.
   const lastTop = tops.at(-1) ?? null;
   const last = lastTop ? { date: lastTop.date, ...setInUnit(lastTop.top ?? lastTop, { unit, increment }) } : null;
+  // The latest rise this cycle, as Progress marks its PRs at its default scope.
+  const rise = cycleRise(ctx, exercise, lc.rise ?? riseScope(ctx));
   return {
     exercise,
     name,
@@ -483,6 +569,8 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
     sessions: tops.length,
     last,
     e1rm: trend,
+    /** The latest e1RM above every earlier one (Progress's last PR), with the sessions and days since; null with its reason. */
+    lastRise: rise,
     stall,
     ...(hotel ? { hotel } : {}),
     ...(start ? { triageStart: start } : {}),
@@ -520,6 +608,13 @@ export function calendarWeek(ctx: Ctx, templates: readonly SessionTemplate[]): {
       const e = ex[s.exercise];
       const label = e?.name ?? s.exercise;
       if (e?.kind === 'mobility') return [];
+      // Intervals are hard conditioning, whether the guide calls the item cardio or it is a timed item the guide does
+      // not name (two or more rounds of timed work, from the item's timed field or its note). Steady minutes stay easy,
+      // and so does the calibration week: it has already made intervals steady minutes (calibrateTimedSlot).
+      if ((e?.kind === 'cardio' || e?.kind === 'timed') && isIntervals(s.timed)) {
+        const minutes = minutesOf(s);
+        return [{ kind: 'conditioning', hard: true, label, ...(minutes !== undefined ? { minutes } : {}) }];
+      }
       if (e?.kind === 'cardio') {
         const minutes = minutesOf(s);
         return [{ kind: 'conditioning', hard: false, label, ...(minutes !== undefined ? { minutes } : {}) }];
@@ -660,7 +755,7 @@ export function buildReview(data: VaultData, date: IsoDate) {
     doneTiers: Object.fromEntries(muscles.map((m) => [m, volumeTier(done.value.perWeek[m] ?? 0)])),
     /** Every modelled muscle region, planned and done, against the region rules (`check` warns on the short ones, with options): the declared ones, and a priority muscle's coverage regions. */
     regions: checkRegions(planned.value.regions ?? {}, { priority, declared, done: done.value.regions ?? {} }),
-    /** Weekly pulling against pushing sets of this week's plan, weighted as `planned`, against the posture emphasis's ratio (as `plan` checks it). */
+    /** Weekly pulling against pushing sets of this week's plan, weighted as `planned`, against the posture emphasis's ratio (as `check` checks it). */
     pullPush: pullPushSets(templates, exercises, { weights, aim: pullPushAim(data.profile) }),
   };
 
@@ -678,6 +773,7 @@ export function buildReview(data: VaultData, date: IsoDate) {
     weeksToMesocycleEnd: place?.weeksToMesocycleEnd ?? null,
     plannedPerWeek: planned.value.perWeek,
     lightWeek: { load: lw.load, rirAdd: lw.rirAdd, from: lwFrom },
+    rise: riseScope(ctx),
   };
   const lifts = ids.map((id) => analyseLift(ctx, id, lc));
 
@@ -797,11 +893,36 @@ export function buildReview(data: VaultData, date: IsoDate) {
     },
     /** Each plan session's minutes as planned, against the profile's lifting-day and short-day lengths. */
     time,
-    /** The week's pain, from the log and the Sunday check-in, with the pain rule applied to each. */
+    /** The week's pain, from the log and the Sunday check-in, with the pain rule applied to each; `byExercise` the cycle's, by exercise. */
     pain: painSection(ctx, from),
     /** The last 4 weeks' skipped lines with their reasons, by exercise, and the flags they raise. */
     skips: skipsSection(ctx, time),
+    /** Each planned exercise since the cycle start and over the last 4 weeks: planned, done as planned, skipped and swapped with their reasons, not recorded, the last day done, and the lift's last rise. */
+    exercises: exercisesSection(ctx, lifts),
   };
+}
+
+/**
+ * The exercise facts since the cycle start (every session without one), and
+ * over the last 4 weeks inside it: an older entry with no checklist leaves
+ * its items not recorded. Each logged lift's row carries its `lastRise`.
+ */
+function exercisesSection(ctx: Ctx, lifts: readonly ReturnType<typeof analyseLift>[]) {
+  const from = cycleOf(ctx.data, ctx.date).value.start;
+  const four = addDays(ctx.date, -(SKIPS.days - 1));
+  const facts = exerciseFacts(ctx.sessions, {
+    from,
+    to: ctx.date,
+    last4From: from && from > four ? from : four,
+    // A vault session recorded done and skipped when it saved a checklist; a session of the engine's own format always does.
+    recorded: (s) => {
+      const v = (s as Session & { _vault?: Record<string, unknown> })._vault;
+      return v === undefined || (typeof v['checklist'] === 'object' && v['checklist'] !== null);
+    },
+    nameOf: (id) => ctx.data.program.exercises[id]?.name ?? null,
+  });
+  const rises = new Map(lifts.filter((l) => l.sessions > 0).map((l) => [l.exercise, l.lastRise]));
+  return { ...facts, value: { ...facts.value, exercises: facts.value.exercises.map((x) => (rises.has(x.id) ? { ...x, lastRise: rises.get(x.id)! } : x)) } };
 }
 
 /**
@@ -888,6 +1009,20 @@ export function rotationNext(data: VaultData, date: IsoDate): { lift: string | n
   return nextInRotation(context(data, date));
 }
 
+/**
+ * The rotation's next session type for the calendar's day, as Today
+ * suggests it (even once today's is logged: the one after it): the next
+ * lift on a lifting day (or in a plan with no short sessions), the next
+ * short session on a short day, else whichever the rotation has. phone.json's
+ * `next` and the gym page's first session.
+ */
+export function nextOfDay(data: VaultData, date: IsoDate): string | null {
+  const weekday = daysBetween(mondayOf(date), date);
+  const liftDay = (CALENDAR.liftDays as readonly number[]).includes(weekday) || !data.plan.types.some((t) => t.kind === 'short');
+  const rot = rotationNext(data, date);
+  return (liftDay ? rot.lift : rot.short) ?? rot.lift ?? rot.short;
+}
+
 /** The week's check-in effort for a date: the record whose reviewed week holds it. */
 function effortOn(ctx: Ctx, date: IsoDate): number | null {
   const r = ctx.data.checkins.weekly.find((w) => {
@@ -938,7 +1073,7 @@ function loadSection(ctx: Ctx, next: { lift: string | null; short: string | null
 /** Every pain on record up to the date, tagged with where it came from: each session's in the log, and each check-in's joint aches (on its date). */
 export function painReports(data: VaultData, date: IsoDate): PainReport[] {
   const ctx = context(data, date);
-  const log = ctx.sessions.flatMap((s) => (s.pain ?? []).map((p): PainReport => ({ date: s.date, area: p.area, severity: p.severity, exercise: p.exercise ?? null, source: 'log', session: sessionLabel(ctx, s) })));
+  const log = ctx.sessions.flatMap((s) => (s.pain ?? []).map((p): PainReport => ({ date: s.date, area: p.area, severity: p.severity ?? null, exercise: p.exercise ?? null, source: 'log', session: sessionLabel(ctx, s) })));
   const checkins = ctx.records.flatMap((w) => {
     const on = checkinDate(w);
     // A first-v1 true or false says nothing of where or how bad: only the list is read.
@@ -947,12 +1082,28 @@ export function painReports(data: VaultData, date: IsoDate): PainReport[] {
   return [...log, ...checkins];
 }
 
-/** The review's pain: each report in its week (the log's and the check-in's) with the pain rule applied, and the worst verdict. */
+/** The exercise a name stands for: the plan exercise it names (its id, plan name, short name or catalogue id, in any case), else the name's own id. */
+function exerciseOfName(ctx: Ctx, name: string): string {
+  const id = exerciseId(name);
+  if (ctx.data.program.exercises[id]) return id;
+  const said = name.trim().toLowerCase();
+  return Object.keys(ctx.data.program.exercises).find((ex) => aliasesOf(ctx, ex).some((a) => a.trim().toLowerCase() === said || exerciseId(a) === id)) ?? id;
+}
+
+/**
+ * The review's pain: each report in its week (the log's and the check-in's)
+ * with the pain rule applied, and the worst verdict; and `byExercise`, the
+ * cycle's reports by exercise (by area where none is named) with their
+ * direction and the exercise's skips for pain.
+ */
 function painSection(ctx: Ctx, from: IsoDate) {
-  const reads = painRule(painReports(ctx.data, ctx.date), from, ctx.date);
-  const order: PainVerdict[] = ['fine', 'swap', 'professional'];
-  const worst = reads.reduce<PainVerdict | null>((w, r) => (w === null || order.indexOf(r.value.verdict) > order.indexOf(w) ? r.value.verdict : w), null);
-  return { from, to: ctx.date, reports: reads, worst };
+  const all = painReports(ctx.data, ctx.date);
+  const reads = painRule(all, from, ctx.date);
+  const worst = worstVerdict(reads.map((r) => r.value.verdict));
+  const since = cycleOf(ctx.data, ctx.date).value.start ?? [ctx.sessions[0]?.date, ...all.map((r) => r.date)].filter((d): d is IsoDate => Boolean(d)).sort()[0] ?? ctx.date;
+  const painSkips = skipLines(ctx).filter((l) => l.reason === 'pain').map((l) => ({ exercise: l.exercise, date: l.date }));
+  const byExercise = painTrend(all, since, ctx.date, { exerciseOf: (n) => exerciseOfName(ctx, n), nameOf: (id) => ctx.data.program.exercises[id]?.name ?? null, painSkips });
+  return { from, to: ctx.date, reports: reads, worst, byExercise };
 }
 
 /**
@@ -961,7 +1112,7 @@ function painSection(ctx: Ctx, from: IsoDate) {
  * with its day and the exercise, and the pain rule's action.
  */
 export function painWarning(data: VaultData, date: IsoDate): VaultWarning | null {
-  const reads = painRule(painReports(data, date), addDays(date, -6), date).filter((r) => r.value.source === 'log' && r.value.severity > PAIN.fine);
+  const reads = painRule(painReports(data, date), addDays(date, -6), date).filter((r) => r.value.source === 'log' && r.value.severity !== null && r.value.severity > PAIN.fine);
   if (!reads.length) return null;
   const pro = reads.some((r) => r.value.verdict === 'professional');
   return {
@@ -1026,7 +1177,7 @@ export function skipWarnings(skips: ReturnType<typeof skipReport>): VaultWarning
 /**
  * Each plan session's minutes as planned, from a loading week's items (the
  * plan's own sets, rests and cardio minutes, not a light week's halves),
- * timed as the plan generator times a session (core/session-time.ts).
+ * timed by core/session-time.ts.
  */
 export function planMinutes(data: VaultData, date: IsoDate): { type: string; template: string; name: string; kind: 'lift' | 'short'; estimate: Result<SessionMinutes> }[] {
   const ctx = context(data, date);

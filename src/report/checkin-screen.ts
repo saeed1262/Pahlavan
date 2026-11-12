@@ -352,8 +352,10 @@ export function buildCheckin(read: VaultRead, date: IsoDate, letter: { path: str
     baseline: { ...m.values } as Record<MorningKey, number | null>,
     sore,
     soreFrom: { ...sore },
+    /** "I'm ill today", as the day holds it. */
+    illness: m.illness,
     checkedAt: m.checkedAt,
-    filled: Object.values(m.values).some((v) => v !== null) || Object.keys(sore).length > 0,
+    filled: Object.values(m.values).some((v) => v !== null) || Object.keys(sore).length > 0 || m.illness,
     sessionName: trains.name,
     trains: trains.slugs,
   };

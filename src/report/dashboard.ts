@@ -14,6 +14,7 @@ import { calibrationNote } from '../core/calibration.ts';
 import { lightDoseText, readRules } from '../core/rules.ts';
 import { MUSCLES } from '../core/data/muscles.ts';
 import { daysBetween, mondayOf } from '../core/dates.ts';
+import { ladderLevelOn, ladderStartOf, type LadderLevelFrom } from '../core/plan-data.ts';
 import type { IsoDate } from '../core/schema.ts';
 import { paths } from '../adapters/vault/layout.ts';
 import { canonicalTags } from '../adapters/vault/muscle-tags.ts';
@@ -248,7 +249,19 @@ export function planDetailDash(rawPlan: unknown, log: unknown, type: string, lin
   return { hint, temp, noteText: notes.map((n) => n.note).filter(Boolean).join('  ·  ') };
 }
 
-/** levelsText: "Your levels: Push-up L2 · Floor push-up · …" for a type that trains ladders. */
+/**
+ * A ladder's latest level from the raw plan and log, as the count reads it
+ * (ladderLevelOn): the log's last level, else the plan's `startLevel`
+ * (through ladderStartOf, so one that is not among the levels is read
+ * around), else the lowest, 1.
+ */
+export function ladderNow(ladder: Obj | undefined, log: unknown, id: string): { level: number; from: LadderLevelFrom } {
+  const hist = asObj(asObj(log)['ladders'])[id];
+  const logged = Array.isArray(hist) ? hist.filter((x): x is { level: number; date: IsoDate } => isObj(x) && typeof x['level'] === 'number') : [];
+  return ladderLevelOn(logged, ladderStartOf(ladder).level, null);
+}
+
+/** levelsText: "Your levels: Push-up L2 · Floor push-up · …" for a type that trains ladders; a level not logged yet is the plan's start, else "not set". */
 export function levelsText(rawPlan: unknown, log: unknown, type: string): string {
   const plan = asObj(rawPlan);
   const ids = strs(asObj(plan['laddersFor'])[type]);
@@ -256,10 +269,11 @@ export function levelsText(rawPlan: unknown, log: unknown, type: string): string
   const ladders = Array.isArray(plan['ladders']) ? (plan['ladders'] as Obj[]) : [];
   const parts = ids.map((id) => {
     const l = ladders.find((x) => x['id'] === id);
-    const hist = asObj(asObj(log)['ladders'])[id];
-    const cur = Array.isArray(hist) && hist.length ? (hist.at(-1) as { level: number }) : null;
+    const cur = ladderNow(l, log, id);
     const levels = Array.isArray(l?.['levels']) ? (l['levels'] as Obj[]).map((v) => String(v['name'])) : [];
-    return cur ? `${String(l?.['name'] ?? id)} L${cur.level} · ${levels[cur.level - 1] ?? ''}` : `${String(l?.['name'] ?? id)}: not set`;
+    const name = String(l?.['name'] ?? id);
+    if (cur.from === 'lowest') return `${name}: not set`;
+    return `${name} L${cur.level} · ${levels[cur.level - 1] ?? ''}${cur.from === 'plan' ? ' (the plan\'s start)' : ''}`;
   });
   return `Your levels: ${parts.join(' · ')}`;
 }
@@ -355,8 +369,10 @@ export function recordsIn(entry: Obj, logBefore: unknown, rawPlan: unknown): str
 
 export interface GuideEntry {
   title: string;
-  /** A ladder item whose level is not set yet: the guide shows level 1. */
+  /** A ladder item whose level is not set yet (none logged, no start in the plan): the guide shows level 1. */
   unset: boolean;
+  /** A ladder item at the plan's starting level (`startLevel`), no level logged yet. */
+  planStart: boolean;
   works: string;
   setup: string | null;
   do: string | null;
@@ -368,6 +384,18 @@ export interface GuideEntry {
 }
 
 const SLUG_OF = new Map(MUSCLES.map((m) => [m.id, m.highlighter]));
+
+/** The body map's slugs for engine muscle ids (each muscle's `highlighter`), each once. */
+export function muscleSlugs(ids: readonly string[]): string[] {
+  return [...new Set(ids.map((id) => SLUG_OF.get(id)).filter((x): x is string => Boolean(x)))];
+}
+
+/** The guide's video: the plan's checked one, else a YouTube search for `q` (a link the user opens; nothing is fetched). */
+export function guideVideo(video: unknown, q: string): GuideEntry['video'] {
+  const v = asObj(video);
+  if (typeof v['url'] === 'string') return { url: v['url'], label: `${String(v['title'] ?? 'Video')} · ${String(v['channel'] ?? '')}`.replace(/ · $/, ''), checked: true };
+  return { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, label: `Search YouTube: ${q}`, checked: false };
+}
 
 /** guideEntries: the guide for a checklist or session name (a ladder item at its level; parts expanded; a combined line piece by piece). */
 export function guideFor(rawPlan: unknown, log: unknown, name: string, depth = 0): GuideEntry[] {
@@ -381,13 +409,12 @@ export function guideFor(rawPlan: unknown, log: unknown, name: string, depth = 0
   if (item && typeof item['ladder'] === 'string') {
     const ladders = Array.isArray(plan['ladders']) ? (plan['ladders'] as Obj[]) : [];
     const l = ladders.find((x) => x['id'] === item['ladder']);
-    const hist = asObj(asObj(log)['ladders'])[item['ladder']];
-    const cur = Array.isArray(hist) && hist.length ? (hist.at(-1) as { level: number }) : null;
-    const n = cur ? cur.level : 1;
+    // The level the count reads: the log's, else the plan's start, else level 1 (unset).
+    const { level: n, from } = ladderNow(l, log, item['ladder']);
     const levels = Array.isArray(l?.['levels']) ? (l['levels'] as Obj[]).map((v) => String(v['name'])) : [];
     const lvl = levels[n - 1];
     if (!lvl) return [];
-    return guideFor(rawPlan, log, lvl, depth + 1).map((e) => ({ ...e, title: `${String(l?.['name'] ?? '')} · L${n} ${lvl}`, unset: !cur }));
+    return guideFor(rawPlan, log, lvl, depth + 1).map((e) => ({ ...e, title: `${String(l?.['name'] ?? '')} · L${n} ${lvl}`, unset: from === 'lowest', planStart: from === 'plan' }));
   }
   const key = keys.get(name.toLowerCase());
   if (key) {
@@ -412,18 +439,17 @@ function entryOf(plan: Obj, key: string, e: Obj): GuideEntry {
     const main = list(tags.tags.main).toLowerCase();
     works = main.charAt(0).toUpperCase() + main.slice(1) + (tags.tags.helps.length ? ` · helps ${list(tags.tags.helps).toLowerCase()}` : '');
   }
-  const slugs = (ids: readonly string[]) => [...new Set(ids.map((id) => SLUG_OF.get(id)).filter((x): x is string => Boolean(x)))];
-  const v = asObj(e['video']);
-  const checked = typeof v['url'] === 'string';
+  const slugs = muscleSlugs;
   const q = String(e['q'] ?? key);
   return {
     title: key,
     unset: false,
+    planStart: false,
     works,
     setup: typeof e['setup'] === 'string' ? e['setup'] : null,
     do: typeof e['do'] === 'string' ? e['do'] : null,
     avoid: typeof e['avoid'] === 'string' ? e['avoid'] : null,
-    video: checked ? { url: String(v['url']), label: `${String(v['title'] ?? 'Video')} · ${String(v['channel'] ?? '')}`.replace(/ · $/, ''), checked } : { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, label: `Search YouTube: ${q}`, checked },
+    video: guideVideo(e['video'], q),
     main: slugs(tags.tags.main),
     helps: slugs(tags.tags.helps).filter((x) => !slugs(tags.tags.main).includes(x)),
   };

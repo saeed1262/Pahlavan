@@ -3,8 +3,8 @@
 // exercise finds a load that leaves CALIBRATION.rir reps in reserve at the
 // bottom of its range, and nothing progresses or stalls until the week after.
 // Intervals that week are easy steady cardio for the same minutes. One rule
-// for every place that says or applies it: the generator's week 1, the
-// vault's week 1, review's targets, Today, the log form and the coach.
+// for every place that says or applies it: the vault's week 1, review's
+// targets, Today, the log form and the coach.
 
 import type { ProgressionTarget } from './progression.ts';
 import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';

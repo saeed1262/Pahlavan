@@ -64,12 +64,25 @@ export function inExerciseUnit(
  * converted (1 kg = 2.20462 lb) and rounded to the exercise's step, the
  * nearest weight that exercise loads. That value is the set everywhere: shown,
  * progressed from, held against the load cap, and in the e1RM. With no step
- * known, 0.1 (the numbers.md snippets' rounding).
+ * known, 0.1 (the numbers.md snippets' rounding). With the gym's real weights
+ * (loads.ts), the nearest real one (a tie to the lighter): the weight it was.
  */
-export function weightInUnit(weight: number, from: Unit, exercise: { unit: Unit; increment?: number }): number {
+export function weightInUnit(weight: number, from: Unit, exercise: { unit: Unit; increment?: number; weights?: readonly number[] }): number {
   if (from === exercise.unit) return weight;
   const raw = convert(weight, from, exercise.unit);
+  if (exercise.weights?.length) return nearestOf(raw, exercise.weights);
   return exercise.increment && exercise.increment > 0 ? roundToStep(raw, exercise.increment) : roundPy1(raw);
+}
+
+/** The value in `weights` nearest `x`, a tie to the lighter. */
+function nearestOf(x: number, weights: readonly number[]): number {
+  let best = weights[0]!;
+  for (const w of weights) {
+    const d = Math.abs(w - x);
+    const b = Math.abs(best - x);
+    if (d < b - 1e-9 || (Math.abs(d - b) <= 1e-9 && w < best)) best = w;
+  }
+  return best;
 }
 
 /** A logged set in the exercise's unit, with the weight and unit as logged kept beside it. */
@@ -81,7 +94,7 @@ export interface SetInUnit {
   logged: { weight: number; unit: Unit };
 }
 
-export function setInUnit(set: { weight: number; unit: Unit; reps: number; rir?: number }, exercise: { unit: Unit; increment?: number }): SetInUnit {
+export function setInUnit(set: { weight: number; unit: Unit; reps: number; rir?: number }, exercise: { unit: Unit; increment?: number; weights?: readonly number[] }): SetInUnit {
   const out: SetInUnit = { weight: weightInUnit(set.weight, set.unit, exercise), unit: exercise.unit, reps: set.reps, logged: { weight: set.weight, unit: set.unit } };
   if (set.rir !== undefined) out.rir = set.rir;
   return out;

@@ -602,8 +602,8 @@ export function regionPriority(priority: readonly string[], declared: readonly s
 
 /**
  * The muscles of the body assessment's lagging areas that act in full
- * (confirmed rows, or every row in a profile that records no answers, as the
- * plan generator reads them); an unanswered or declined row adds none.
+ * (confirmed rows, or every row in a profile that records no answers);
+ * an unanswered or declined row adds none.
  */
 export function laggingMuscles(profile: Pick<Profile, 'emphasis' | 'selfCheck'> | null | undefined): string[] {
   if (!profile) return [];
@@ -813,7 +813,7 @@ function pullOrPush(ex: Exercise | undefined): { side: 'pull' | 'push'; by: 'pat
 
 /**
  * Weekly pulling against pushing sets for one week's templates, weighted as
- * `plannedSetsPerMuscle` weighs them. `plan` checks its draft with it and
+ * `plannedSetsPerMuscle` weighs them. `check` holds a plan to it and
  * `review` reports the written plan with it, so the two count alike. The
  * ratio is held to the profile's aim (`pullPushAim`: 2 to 1 with the posture
  * finding, at least 1 to 1 with a posture goal alone); without one there is

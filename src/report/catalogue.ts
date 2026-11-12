@@ -264,7 +264,7 @@ function resolveRegion(v: string, notes: CatalogueNote[]): { region?: string; mu
 }
 
 /** The engine's ladders, the catalogue's, and the plan's own (each level matched to a catalogue movement by name). */
-function ladderViews(planLadders: unknown): LadderView[] {
+export function ladderViews(planLadders: unknown): LadderView[] {
   const engine: LadderView[] = LADDERS.map((l) => ({
     id: l.id,
     name: l.name,

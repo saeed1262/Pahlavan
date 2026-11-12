@@ -4,24 +4,18 @@
 // one day's R. The mornings read are the current cycle's (`since`, the cycle
 // start): a fresh start builds its baseline again from 14 morning check-ins,
 // then scores each day against the cycle's own previous 28 days, so the body
-// before the reset is never "your usual".
+// before the reset is never "your usual". A day's score needs at least one of
+// the card's own answers (energy, soreness, sleep quality): watch numbers
+// alone (sleep hours, resting HR, HRV) never score a morning.
 
 import { addDays, dayText, daysBetween } from './dates.ts';
 import { explain, joinNotes, type Result, type RuleFrom } from './reason.ts';
 import type { Adjustment } from './rules.ts';
+import { MORNING_QUESTIONS } from './morning.ts';
 import type { DailyCheckin, IsoDate } from './schema.ts';
 import { clip, mean, stdev } from './stats.ts';
 
-export type ReadinessSignal = 'sleepH' | 'sleepQ' | 'energy' | 'rhr' | 'soreness';
-
-/** Sign makes higher better; the floor stops a tiny sd from inflating z. */
-export const SIGNALS: Readonly<Record<ReadinessSignal, { sign: 1 | -1; floor: number }>> = {
-  sleepH: { sign: 1, floor: 0.5 },
-  sleepQ: { sign: 1, floor: 0.5 },
-  energy: { sign: 1, floor: 0.5 },
-  rhr: { sign: -1, floor: 2.0 },
-  soreness: { sign: -1, floor: 0.5 },
-};
+export type ReadinessSignal = 'sleepH' | 'sleepQ' | 'energy' | 'rhr' | 'soreness' | 'hrv';
 
 export const READINESS = {
   baselineDays: 28,
@@ -35,7 +29,30 @@ export const READINESS = {
   shortSleepH: 6,
   lowRunDays: 5,
   bands: { good: 0.5, normal: -0.5, watch: -1.0 },
+  /** HRV's sd floor, on the ln scale it is scored on (about 10 %). */
+  hrvFloorLn: 0.1,
+  /** The HRV note: this much under the usual (the 28-day geometric mean), this morning and the one before. */
+  hrvFlagPct: 20,
 } as const;
+
+/**
+ * Sign makes higher better; the floor stops a tiny sd from inflating z. HRV
+ * is scored on its natural log (`log`), as HRV is usually analysed: its
+ * spread grows with its size, so its floor is on the ln scale too.
+ */
+export const SIGNALS: Readonly<Record<ReadinessSignal, { sign: 1 | -1; floor: number; log?: true }>> = {
+  sleepH: { sign: 1, floor: 0.5 },
+  sleepQ: { sign: 1, floor: 0.5 },
+  energy: { sign: 1, floor: 0.5 },
+  rhr: { sign: -1, floor: 2.0 },
+  soreness: { sign: -1, floor: 0.5 },
+  hrv: { sign: 1, floor: READINESS.hrvFloorLn, log: true },
+};
+
+/** A signal's value as it is scored: HRV on its natural log, the rest as they are. */
+const scaled = (k: ReadinessSignal, v: number): number => (SIGNALS[k].log ? Math.log(v) : v);
+/** The HRV note's line on the ln scale: ln(1 - 20 %) under the ln-mean, so 20 % under the geometric mean. */
+const HRV_FLAG_LN = Math.log(1 - READINESS.hrvFlagPct / 100);
 
 export type ReadinessBand = 'good' | 'normal' | 'watch' | 'low' | 'unscored';
 
@@ -60,6 +77,8 @@ export interface ReadinessDay {
   signals: number;
   /** RHR at least baseline + 7 on this day and the day before. */
   rhrFlag: boolean;
+  /** HRV 20 % or more under its 28-day geometric mean on this day and the day before (14+ HRV mornings): a note on its own. */
+  hrvFlag: boolean;
   /** Under 6 h of sleep: no tests or PRs. */
   shortSleep: boolean;
   illness: boolean;
@@ -127,16 +146,28 @@ function byDate(daily: readonly DailyCheckin[]): Map<IsoDate, DailyCheckin> {
   return m;
 }
 
-/** Signal k's values on the days d-28 .. d-1 (the snippet's `base`). */
+/** Signal k's values on the days d-28 .. d-1 (the snippet's `base`), as they are scored (HRV's on the ln scale). */
 function baseline(days: Map<IsoDate, DailyCheckin>, dates: readonly IsoDate[], d: IsoDate, k: ReadinessSignal): number[] {
   const out: number[] = [];
   for (const e of dates) {
     const v = days.get(e)?.[k];
     if (v === undefined || v === null) continue;
     const gap = daysBetween(e, d);
-    if (gap >= 1 && gap <= READINESS.baselineDays) out.push(v);
+    if (gap >= 1 && gap <= READINESS.baselineDays) out.push(scaled(k, v));
   }
   return out;
+}
+
+/** HRV on day x at or under the note's line (ln scale; a hair of slack so exactly 20 % counts). */
+function hrvUnder(days: Map<IsoDate, DailyCheckin>, x: IsoDate, limitLn: number | null): boolean {
+  const v = days.get(x)?.hrv;
+  return limitLn !== null && typeof v === 'number' && v > 0 && Math.log(v) <= limitLn + 1e-9;
+}
+
+/** The HRV note's line for day d on the ln scale: the ln-mean of its 28-day baseline + ln(0.8); null under 14 HRV mornings. */
+function hrvLimitLn(days: Map<IsoDate, DailyCheckin>, dates: readonly IsoDate[], d: IsoDate): { limit: number | null; base: number[] } {
+  const base = baseline(days, dates, d, 'hrv');
+  return { limit: base.length >= READINESS.minBaseline ? mean(base) + HRV_FLAG_LN : null, base };
 }
 
 /** The scored series for every check-in dated on or before `through` (from `scope.since` on). */
@@ -155,11 +186,12 @@ export function readinessSeries(daily: readonly DailyCheckin[], through: IsoDate
       const x = entry[k];
       const b = baseline(days, dates, d, k);
       if (x !== undefined && x !== null && b.length >= READINESS.minBaseline) {
-        z[k] = clip((sign * (x - mean(b))) / Math.max(stdev(b), floor), -READINESS.clip, READINESS.clip);
+        z[k] = clip((sign * (scaled(k, x) - mean(b))) / Math.max(stdev(b), floor), -READINESS.clip, READINESS.clip);
       }
     }
     const zs = Object.values(z);
-    const r = zs.length >= READINESS.minSignals ? zs.reduce((a, v) => a + v, 0) / zs.length : null;
+    // The card-answer guard: 3 scored signals, at least one of them the card's own (energy, soreness, sleep quality).
+    const r = zs.length >= READINESS.minSignals && hasCardAnswer(z) ? zs.reduce((a, v) => a + v, 0) / zs.length : null;
     if (r !== null) {
       s = s === null || prev === null || daysBetween(prev, d) > READINESS.reseedAfterDays ? r : READINESS.alpha * r + (1 - READINESS.alpha) * s;
       prev = d;
@@ -180,11 +212,21 @@ export function readinessSeries(daily: readonly DailyCheckin[], through: IsoDate
       z,
       signals: zs.length,
       rhrFlag: over(d) && over(addDays(d, -1)),
+      hrvFlag: hrvDays(days, dates, d),
       shortSleep: typeof entry.sleepH === 'number' && entry.sleepH < READINESS.shortSleepH,
       illness: entry.illness === true,
     });
   }
   return rows;
+}
+
+/** A scored answer to one of the card's own questions (energy, soreness, sleep quality). */
+const hasCardAnswer = (z: Partial<Record<ReadinessSignal, number>>): boolean => MORNING_QUESTIONS.some((k) => z[k] !== undefined);
+
+/** The HRV note on day d: HRV at or under the line on d and on the day before, both against d's baseline (as the RHR flag). */
+function hrvDays(days: Map<IsoDate, DailyCheckin>, dates: readonly IsoDate[], d: IsoDate): boolean {
+  const { limit } = hrvLimitLn(days, dates, d);
+  return hrvUnder(days, d, limit) && hrvUnder(days, addDays(d, -1), limit);
 }
 
 const THRESHOLDS = {
@@ -195,15 +237,22 @@ const THRESHOLDS = {
   alpha: READINESS.alpha,
   bands: READINESS.bands,
   signals: SIGNALS,
+  cardAnswers: MORNING_QUESTIONS,
 };
 
 export interface ReadinessInput {
   signal: ReadinessSignal;
   /** Today's value; null when the check-in did not give it. */
   value: number | null;
-  /** The previous 28 days' mean and sample SD (the floor applied), as the score uses them. */
+  /**
+   * The previous 28 days' mean and sample SD (the floor applied), as the
+   * score uses them. HRV is scored on its natural log: its mean is the
+   * geometric mean in ms, and its SD is on the ln scale.
+   */
   mean: number | null;
   sd: number | null;
+  /** Your usual range in the signal's own unit: the mean ± SD (for HRV, the geometric mean times or divided by e^SD). */
+  range: [number, number] | null;
   /** Entries in the baseline (14 or more are needed to score the signal). */
   days: number;
   /** The clipped z-score, signed so that higher is better; null when not scored. */
@@ -215,23 +264,27 @@ export interface ReadinessInput {
  * Each signal of the check-in on `date` against its personal baseline: the
  * same previous 28 days, mean, SD floor and clip that `readinessSeries`
  * scores with, so a screen can draw today's value against the usual range.
- * Empty when there is no morning check-in that day.
+ * Empty when there is no morning check-in that day. HRV is left out when
+ * neither that morning nor its 28 days hold one: most people never send it.
  */
 export function readinessInputs(daily: readonly DailyCheckin[], date: IsoDate, scope: ReadinessScope = {}): ReadinessInput[] {
   const days = byDate(inScope(daily, scope));
   const entry = days.get(date);
   if (!entry) return [];
   const dates = [...days.keys()].filter((d) => d <= date).sort();
-  return (Object.keys(SIGNALS) as ReadinessSignal[]).map((k) => {
-    const { sign, floor } = SIGNALS[k];
+  const shown = (Object.keys(SIGNALS) as ReadinessSignal[]).filter((k) => k !== 'hrv' || typeof entry.hrv === 'number' || baseline(days, dates, date, k).length > 0);
+  return shown.map((k) => {
+    const { sign, floor, log } = SIGNALS[k];
     const b = baseline(days, dates, date, k);
     const x = entry[k];
     const value = typeof x === 'number' ? x : null;
     const scored = value !== null && b.length >= READINESS.minBaseline;
     const m = b.length ? mean(b) : null;
     const sd = b.length >= 2 ? Math.max(stdev(b), floor) : b.length ? floor : null;
-    const z = scored ? clip((sign * (value - m!)) / sd!, -READINESS.clip, READINESS.clip) : null;
-    return { signal: k, value, mean: m, sd, days: b.length, z, better: sign > 0 ? 'higher' : 'lower' };
+    const z = scored ? clip((sign * (scaled(k, value) - m!)) / sd!, -READINESS.clip, READINESS.clip) : null;
+    const back = (v: number) => (log ? Math.exp(v) : v);
+    const range: [number, number] | null = m !== null && sd !== null ? [back(m - sd), back(m + sd)] : null;
+    return { signal: k, value, mean: m === null ? null : back(m), sd, range, days: b.length, z, better: sign > 0 ? 'higher' : 'lower' };
   });
 }
 
@@ -241,17 +294,20 @@ export function readinessOn(daily: readonly DailyCheckin[], date: IsoDate, scope
   const base = readinessBaseline(daily, date, scope).value;
   const since = scope.since ?? null;
   if (!row || row.date !== date) {
-    const empty: ReadinessDay = { date, r: null, s: null, band: 'unscored', z: {}, signals: 0, rhrFlag: false, shortSleep: false, illness: false };
+    const empty: ReadinessDay = { date, r: null, s: null, band: 'unscored', z: {}, signals: 0, rhrFlag: false, hrvFlag: false, shortSleep: false, illness: false };
     return explain(empty, 'readiness.score', { date, checkin: false, since }, { threshold: THRESHOLDS, note: joinNotes('No check-in that day.', base.building && buildingNote(base)) });
   }
+  const unscored = base.building
+    ? buildingNote(base)
+    : row.signals >= READINESS.minSignals
+      ? `Not scored: watch numbers alone never score a morning; it needs energy, soreness or sleep quality too, each with 14 entries in the previous 28 days${since ? ' of this cycle' : ''}.`
+      : `Not scored: ${row.signals} signal(s) had 14 entries in the previous 28 days${since ? ' of this cycle' : ''}; a day needs 3.`;
   return explain(row, 'readiness.score', { date, z: row.z, signals: row.signals, since }, {
     threshold: THRESHOLDS,
-    note:
-      row.r === null
-        ? base.building
-          ? buildingNote(base)
-          : `Not scored: ${row.signals} signal(s) had 14 entries in the previous 28 days${since ? ' of this cycle' : ''}; a day needs 3.`
-        : `R ${row.r.toFixed(2)}, S ${row.s!.toFixed(2)}: ${row.band}.`,
+    note: joinNotes(
+      row.r === null ? unscored : `R ${row.r.toFixed(2)}, S ${row.s!.toFixed(2)}: ${row.band}.`,
+      row.hrvFlag && `HRV ${READINESS.hrvFlagPct}% or more under your usual two mornings running: a note on its own.`,
+    ),
   });
 }
 
@@ -290,6 +346,68 @@ function buildingNote(b: ReadinessBaseline): string {
   return `Building your baseline: ${n} of ${b.needed} morning check-ins ${b.since ? 'this cycle' : 'so far'}; train as planned${n >= b.needed ? '. Scored from your next check-in' : ' meanwhile'}.`;
 }
 
+export interface ReadinessHrv {
+  /** The latest check-in on or before the date, the one the actions read (null: none). */
+  asOf: IsoDate | null;
+  /** HRV that morning and the morning before it, ms (null: none given). */
+  value: number | null;
+  dayBefore: number | null;
+  /** The previous 28 days' geometric mean, ms (null under 14 HRV mornings). */
+  usual: number | null;
+  /** The note's line, ms: 20 % under the usual. */
+  limit: number | null;
+  /** HRV mornings in those 28 days; `needed` (14) before the note can come. */
+  days: number;
+  needed: number;
+  building: boolean;
+  /** 20 % or more under the usual that morning and the one before: a note, not a change to the session. */
+  flag: boolean;
+}
+
+/**
+ * The HRV note for the latest check-in on or before `date` (the one the
+ * actions read): HRV 20 % or more under its own 28-day geometric mean that
+ * morning and the one before. A note on its own, for Today and the review;
+ * `no-hard-training` takes it only with the resting-HR flag or a low score.
+ * No HRV that morning: no note. Under 14 HRV mornings: "building".
+ */
+export function readinessHrv(daily: readonly DailyCheckin[], date: IsoDate, scope: ReadinessScope = {}): Result<ReadinessHrv> {
+  const days = byDate(inScope(daily, scope));
+  const dates = [...days.keys()].filter((d) => d <= date).sort();
+  const asOf = dates.at(-1) ?? null;
+  const since = scope.since ?? null;
+  const needed = READINESS.minBaseline;
+  const pct = READINESS.hrvFlagPct;
+  const threshold = { underBaselinePct: pct, days: 2, minBaseline: needed, baselineDays: READINESS.baselineDays };
+  if (asOf === null) {
+    const v: ReadinessHrv = { asOf, value: null, dayBefore: null, usual: null, limit: null, days: 0, needed, building: true, flag: false };
+    return explain(v, 'readiness.hrv-flag', { asOf, since }, { threshold, note: since ? 'No check-ins this cycle yet.' : 'No check-ins on or before today.' });
+  }
+  const { limit, base } = hrvLimitLn(days, dates, asOf);
+  const at = (x: IsoDate) => {
+    const v = days.get(x)?.hrv;
+    return typeof v === 'number' ? v : null;
+  };
+  const value = at(asOf);
+  const dayBefore = at(addDays(asOf, -1));
+  const usual = limit === null ? null : Math.exp(mean(base));
+  const flag = hrvDays(days, dates, asOf);
+  const v: ReadinessHrv = { asOf, value, dayBefore, usual, limit: usual === null ? null : usual * (1 - pct / 100), days: base.length, needed, building: base.length < needed, flag };
+  const ms = (x: number) => `${Math.round(x)} ms`;
+  const row = readinessSeries(daily, asOf, scope).at(-1);
+  const hard = row?.rhrFlag ? 'with the resting-HR flag as well: no hard training' : row?.band === 'low' ? 'with a low score as well: no hard training' : null;
+  const stale = asOf !== date ? `From the check-in on ${dayText(asOf)}: ` : '';
+  const note =
+    value === null
+      ? `No HRV on the latest check-in (${dayText(asOf)}).`
+      : v.building
+        ? `${stale}HRV baseline building: ${base.length} of ${needed} mornings with HRV in the previous ${READINESS.baselineDays} days${since ? ' of this cycle' : ''}; no HRV note until then.`
+        : flag
+          ? `${stale}HRV ${ms(dayBefore!)} and ${ms(value)}, ${pct}% or more under your usual ${ms(usual!)} two mornings running${hard ? `, ${hard}.` : ": a note only. On its own it doesn't stop hard training; with the resting-HR flag or a low score it would."}`
+          : `${stale}HRV ${ms(value)} against your usual ${ms(usual!)}; the note comes at ${ms(v.limit!)} or less two mornings running.`;
+  return explain(v, 'readiness.hrv-flag', { asOf, value, dayBefore, days: base.length, since }, { threshold, note });
+}
+
 export type ReadinessActionId = 'trim' | 'early-deload' | 'no-hard-training' | 'no-tests';
 
 export interface ReadinessAction {
@@ -301,7 +419,8 @@ export interface ReadinessAction {
  * The actions for `today`, read from the latest check-in on or before it:
  * - trim: S is low (one set fewer per exercise and RIR +1);
  * - early-deload: low 5 days running and a falling e1RM (offer it; the user decides);
- * - no-hard-training: the resting-HR flag, or illness;
+ * - no-hard-training: the resting-HR flag, illness, or the HRV note together
+ *   with the resting-HR flag or a low score (the HRV note alone changes nothing);
  * - no-tests: under 6 h of sleep, only when the check-in is today's.
  */
 export function readinessActions(
@@ -334,7 +453,9 @@ export function readinessActions(
   const isLow = row?.band === 'low';
   const trim = isLow && low !== null;
   const earlyDeload = lowRun >= READINESS.lowRunDays && opts.e1rmFalling === true;
-  const noHard = row ? row.rhrFlag || row.illness : false;
+  // The HRV note stops hard training only with the resting-HR flag (which stops it anyway) or a low score.
+  const hrvHard = row ? row.hrvFlag && (row.rhrFlag || row.band === 'low') : false;
+  const noHard = row ? row.rhrFlag || row.illness || hrvHard : false;
   const noTests = row ? row.date === today && row.shortSleep : false;
 
   return [
@@ -358,10 +479,13 @@ export function readinessActions(
         none,
       ),
     }),
-    explain<ReadinessAction>({ action: 'no-hard-training', active: noHard }, 'readiness.rhr-flag', { asOf, rhrFlag: row?.rhrFlag ?? false, illness: row?.illness ?? false }, {
-      threshold: { rhrOverBaselineBpm: READINESS.rhrFlagBpm, days: 2 },
+    explain<ReadinessAction>({ action: 'no-hard-training', active: noHard }, 'readiness.rhr-flag', { asOf, rhrFlag: row?.rhrFlag ?? false, illness: row?.illness ?? false, hrvFlag: row?.hrvFlag ?? false, band: row?.band ?? 'unscored' }, {
+      threshold: { rhrOverBaselineBpm: READINESS.rhrFlagBpm, days: 2, hrvUnderBaselinePct: READINESS.hrvFlagPct, hrvWith: ['rhr-flag', 'low'] },
       note: joinNotes(
         row?.rhrFlag && 'Resting HR 7+ bpm over its 28-day baseline two days running: no hard training (easy Zone 2 or mobility at most).',
+        row?.rhrFlag && row.hrvFlag && `HRV ${READINESS.hrvFlagPct}% or more under its baseline two mornings running too.`,
+        row && !row.rhrFlag && hrvHard && `HRV ${READINESS.hrvFlagPct}% or more under its 28-day baseline two mornings running, with a low score: no hard training (easy Zone 2 or mobility at most).`,
+        row?.hrvFlag && !hrvHard && `HRV ${READINESS.hrvFlagPct}% or more under its 28-day baseline two mornings running: a note only. On its own it doesn't stop hard training; with the resting-HR flag or a low score it would.`,
         row?.illness && 'Illness reported: no hard training.',
         stale,
         none,

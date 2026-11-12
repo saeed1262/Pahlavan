@@ -28,11 +28,11 @@ export function normalizeName(name: string): string {
  * trains the same muscles (a tempo push-up, a cable curl). The entry gives
  * the pattern, the abdominal-strain tag and the muscle tags that count
  * (muscle-tags.ts), so a synonym must train the same muscles: a variant that
- * trains materially different ones (an L-sit pull-up's abs) is left out, and
- * its guide entry's tags count. A synonym is checked before the names, so
- * none may be another entry's own name or alias (a test checks): a movement
- * the catalogue has answers to its own name. Generic exercise vocabulary, not
- * anyone's plan.
+ * trains materially different ones (a thruster's press on top of a front
+ * squat) is left out, and its guide entry's tags count. A synonym is checked
+ * before the names, so none may be another entry's own name or alias (a test
+ * checks): a movement the catalogue has answers to its own name. Generic
+ * exercise vocabulary, not anyone's plan.
  */
 export const NAME_SYNONYMS: Readonly<Record<string, string>> = {
   'barbell back squat': 'back-squat',

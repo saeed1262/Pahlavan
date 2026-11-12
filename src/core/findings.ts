@@ -11,8 +11,8 @@
 // - left out (unconfirmed): not asked yet. In a profile that records an
 //   answer anywhere, the finding is a preference and warm-ups only and
 //   rules no movement out. A profile with no answer anywhere was written
-//   before the question: it keeps the old behaviour, and the proposal and
-//   the review carry a `finding-unconfirmed` warning with the question.
+//   before the question: it keeps the old behaviour, and `review` carries a
+//   `finding-unconfirmed` warning with the question.
 
 import { MUSCLES } from './data/muscles.ts';
 import { explain, type Result } from './reason.ts';

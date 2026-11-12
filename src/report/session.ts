@@ -88,9 +88,23 @@ const repsText = (r: RepRange) => (r[0] === r[1] ? `${r[0]}` : `${r[0]}-${r[1]}`
 /** "easy, conversational." reads "Easy, conversational.". */
 const sentence = (t: string) => (t ? t[0]!.toUpperCase() + t.slice(1) : t);
 
-export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, pick: SessionPick = {}) {
+/**
+ * A session's last item is its finisher when it is cardio after other work
+ * (rules.md: a short easy finisher after lifting). A session whose only item
+ * is cardio, such as an intervals day, has it as its item: there is nothing
+ * for it to finish. The session and the log form's edit take it the same way.
+ */
+export function endsInFinisher(exercises: readonly string[], kindOf: (id: string) => string): boolean {
+  return exercises.length > 1 && kindOf(exercises.at(-1)!) === 'cardio';
+}
+
+/**
+ * `review`: the day's review when the caller builds it already (the gym
+ * page builds every session of one day on one review); it is only read.
+ */
+export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, pick: SessionPick = {}, shared: { review?: ReturnType<typeof buildReview> } = {}) {
   const ctx = context(data, date);
-  const review = buildReview(data, date);
+  const review = shared.review ?? buildReview(data, date);
   const week = weekAt(data.program, date);
   const flags: Reason[] = [];
 
@@ -149,11 +163,11 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   // Hotel: what the profile says travel usually offers, else bodyweight, light dumbbells and bands (its swaps and the lighter variations for soreness).
   const travelKit = travelEquipment(data.profile);
 
-  // The finisher: the plan's trailing cardio item (Express: its own finisher).
+  // The finisher: the plan's trailing cardio item after other work (Express: its own finisher).
   const kindOf = (id: string) => all[id]?.kind ?? 'strength';
   let body = tpl.slots;
   let finisherSlot: ExerciseSlot | null = null;
-  if (body.length && kindOf(body.at(-1)!.exercise) === 'cardio') {
+  if (endsInFinisher(body.map((s) => s.exercise), kindOf)) {
     finisherSlot = body.at(-1)!;
     body = body.slice(0, -1);
   }
@@ -357,6 +371,8 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     ? {
       exercise: finisherSlot.exercise,
       name: name(finisherSlot.exercise),
+      // A finish that is an exercise, not cardio (Express's face pull): its sets and reps, so it is logged by its sets.
+      ...(kindOf(finisherSlot.exercise) !== 'cardio' ? { sets: finisherSlot.sets, repRange: finisherSlot.repRange } : {}),
       // The plan's line; a light week's copy of the slot has none, so a timed finisher says its minutes.
       sr: finisherEasy ? `${finisherEasy.value.minutes} min` : (finisherSlot as ExerciseSlot & SlotExtras)._item?.sr ?? (finisherSlot.timed ? `${timedMinutes(finisherSlot.timed)} min` : mode === 'express' && data.plan.express?.finish ? data.plan.express.finish.sr : `${finisherSlot.sets} × ${finisherSlot.repRange[0]}`),
       ...(finisherTimed ? { timed: finisherTimed } : {}),

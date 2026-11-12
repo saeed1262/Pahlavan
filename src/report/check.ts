@@ -20,21 +20,26 @@ import { canonicalTags } from '../adapters/vault/muscle-tags.ts';
 import { paths } from '../adapters/vault/layout.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
 import { EFFORT_TARGETS, MAX_LOADING_RUN, REP_LIMITS, type Grade } from '../core/data/evidence.ts';
-import { CATALOGUE_BY_ID, PATTERNS, type CatalogueEntry } from '../core/data/exercises.ts';
+import { CATALOGUE_BY_ID, PATTERNS, usableWith, type CatalogueEntry } from '../core/data/exercises.ts';
 import { LOWER_BODY, MUSCLES, MUSCLE_IDS, UPPER_BODY } from '../core/data/muscles.ts';
 import { dayText } from '../core/dates.ts';
 import { readOverrides, type PlanOverride } from '../core/overrides.ts';
+import { readPlanWhy } from '../core/plan-why.ts';
 import { effectiveSlot } from '../core/plan.ts';
 import { PROGRESSION } from '../core/progression.ts';
+import { normalizeEquipment } from '../core/plan/context.ts';
+import { finestStep, kitWord, loadKindOf, stepInKit } from '../core/loads.ts';
 import { CORE, ISOLATION, REST } from '../core/plan/dose.ts';
-import { ITEM_KEYS, itemRir, itemSets, LIFT_KEYS, noteRir, parseNote, parseSr, readRir, type PlanDataItem, type SlotExtras } from '../core/plan-data.ts';
+import { ITEM_KEYS, itemRir, itemSets, LIFT_KEYS, noteRir, parseNote, parseSr, readRir, type ExerciseExtras, type PlanDataItem, type SlotExtras } from '../core/plan-data.ts';
 import { isLightWeek, lightWeekAt } from '../core/rules.ts';
 import { screenExercise, screeningCaps } from '../core/safety.ts';
 import type { Exercise, ExerciseSlot, IsoDate, SessionTemplate } from '../core/schema.ts';
+import { SPLIT_LABELS } from '../core/schema.ts';
 import { restMinutes, timeCheck } from '../core/session-time.ts';
 import { isIntervals, readTimed, timedFromText, timedMinutes, timedText } from '../core/timed.ts';
 import { checkRegions, checkVolume, declaredRegions, overRoom, plannedSetsPerMuscle, postureEmphasis, PRIORITY_ROOM, priorityMuscles, pullPushAim, pullPushSets, REGION_RULES, VOLUME, weekRoom } from '../core/volume.ts';
 import { checkGrade } from './evidence.ts';
+import { limitText, overlapShare, overLimit, percent, planMovements, sharedMovements } from './overlap.ts';
 import { regionOptionsFor, type RegionOptions } from './region-options.ts';
 import { buildReview, context, effortOf, ledgerConstraints, planMinutes, type Ctx } from './review.ts';
 
@@ -78,6 +83,19 @@ export interface CheckReport {
 export interface CheckOptions {
   /** The plan as written (plan-data.json parsed), when the plan checked is a draft: exercise changes are judged against it. */
   previous?: unknown;
+  /**
+   * Facts about the vault outside the plan that the CLI found with its file
+   * access (Pahlavan's version against the coach's, `version-differs`): each
+   * a warning, ungraded (a fact, not evidence), never blocking a write.
+   */
+  outside?: readonly VaultWarning[];
+  /**
+   * The draft is a redesign (`--redesign`): a new plan rather than a change
+   * inside this one. Its exercise changes are information
+   * (redesign-changes), and a draft that keeps most of the plan as written
+   * warns (similar-to-current). Never stored in the plan.
+   */
+  redesign?: boolean;
 }
 
 // ---------------------------------------------------------------- the collector
@@ -131,6 +149,8 @@ export interface CheckContext {
   /** The plan week holding the date, and its place in the light-week calendar; null before the plan starts. */
   place: ReturnType<typeof lightWeekAt> | null;
   previous?: unknown;
+  /** The draft is a redesign (CheckOptions.redesign). */
+  redesign: boolean;
 }
 
 export interface SlotRef {
@@ -273,6 +293,10 @@ function structure(c: CheckContext, f: Findings): void {
   f.add('invalid-data', 'error', 'Data in the plan Pahlavan cannot read as written.', out, { reason: BLOCKING_REASON });
   f.add('override-without-reason', 'error', 'Overrides with no reason: an override states why the plan goes outside the evidence, so one without a reason is refused.', ov.withoutReason.map((t) => item(t)), {
     reason: 'An override records the coach\'s reason for going outside an evidence range (and, ideally, the Decision that holds it). Without a reason it is an unexplained exception, so it blocks the write.',
+  });
+  f.add('why-shape', 'error', 'A Why this plan card (the plan\'s `why`) Pahlavan cannot read as written.', readPlanWhy(raw).problems.map((p) => item(p)), {
+    rule: 'plan.why-card',
+    reason: 'The card is the coach\'s reasons for the plan, which the person reads on the Plan tab: a date, a lead, the reasons with their grades, and the split (the family picked, the ones compared, the ones left out). Written wrong, it would show half a reason, so it blocks the write.',
   });
 }
 
@@ -483,11 +507,11 @@ function volume(c: CheckContext, f: Findings): void {
 /**
  * More priority muscles than the week has room for (H): the effective ones
  * (the profile's, the declared regions' muscles and the confirmed lagging
- * areas) against the generator's room for the plan's lifting days at the
- * profile's minutes. A priority the plan trains only on its short sessions
- * does not count (the generator's `priority-over-room` counts the same
- * list the same way). planning.md: ask which come first, the rest wait
- * under Later priorities; keeping them all is an override with its reason.
+ * areas) against the room (volume.ts, `weekRoom`) for the plan's lifting
+ * days at the profile's minutes. A priority the plan trains only on its
+ * short sessions does not count. planning.md: the coach ranks which come first (the user confirms), the rest
+ * wait under Later priorities; keeping them all is an override with its
+ * reason.
  */
 function priorityRoom(c: CheckContext, f: Findings): void {
   const profile = c.data.profile;
@@ -505,7 +529,7 @@ function priorityRoom(c: CheckContext, f: Findings): void {
   f.add('priority-room', 'warning', 'More priority muscles than the week has room for.', [item(text, ...over.counted, ...over.counted.map(labelOf))], {
     rule: 'volume.priority-room',
     grade: checkGrade('priority-room'),
-    reason: `Up to 2–3 priority muscles per phase (rules.md, "Volume", the Priority row; which muscles, and how many a week holds, are heuristics): each takes ${VOLUME.efficientTop}–${VOLUME.priorityTop} weekly sets, so the week has room for ${PRIORITY_ROOM.fourDays} with 4 or more lifting days, ${PRIORITY_ROOM.threeDays} with 3, ${PRIORITY_ROOM.twoDaysOr30Min} with 2 or ${PRIORITY_ROOM.shortSessionMinutes}-minute sessions. Past it every priority gets less, or the sessions run longer. Ask the user which come first this phase and keep the rest under the Athlete profile's Later priorities; keeping them all (longer sessions, chosen knowingly) is an override with that reason.`,
+    reason: `Up to 2–3 priority muscles per phase (rules.md, "Volume", the Priority row; which muscles, and how many a week holds, are heuristics): each takes ${VOLUME.efficientTop}–${VOLUME.priorityTop} weekly sets, so the week has room for ${PRIORITY_ROOM.fourDays} with 4 or more lifting days, ${PRIORITY_ROOM.threeDays} with 3, ${PRIORITY_ROOM.twoDaysOr30Min} with 2 or ${PRIORITY_ROOM.shortSessionMinutes}-minute sessions. Past it every priority gets less, or the sessions run longer. The coach ranks which come first this phase from the assessment and the data, the user confirms, and the rest wait under the Athlete profile's Later priorities; keeping them all (longer sessions, chosen knowingly) is an override with that reason.`,
   });
 }
 
@@ -810,10 +834,43 @@ function exerciseChanges(c: CheckContext, f: Findings): void {
   for (const type of Object.keys(prev['sessions'])) {
     if (!accessoryOk && c.data.plan.types.every((t) => t.type !== type) && [...(Array.isArray(prev['liftTypes']) ? prev['liftTypes'] : []), ...(Array.isArray(prev['shortTypes']) ? prev['shortTypes'] : [])].includes(type)) out.push(item(`${type}: dropped (${when})`, type));
   }
+  // A redesign is a new plan, so its changes are the point: listed for the record, not warned about.
+  if (c.redesign) {
+    f.add('redesign-changes', 'info', 'A redesign: the exercises that change, against the plan as written.', out, {
+      rule: 'plan.exercise-changes',
+      reason: 'Inside a plan, exercises change only at mesocycle boundaries (exercise-change). A redesign replaces the plan, so its changes are listed for the record rather than warned about; the Decision says why the plan is redesigned, and similar-to-current says when the redesign keeps most of the old plan.',
+    });
+    return;
+  }
   f.add('exercise-change', 'warning', 'Exercises changed inside a mesocycle, against the plan as written.', out, {
     rule: 'plan.exercise-changes',
     grade: checkGrade('exercise-change'),
-    reason: 'Exercises change only at mesocycle boundaries, main lifts are kept for a whole phase, and at most half the accessories rotate at a time: systematic variation helps regional growth and strength, frequent random rotation may hurt.',
+    reason: 'By default exercises change at mesocycle boundaries, main lifts are kept for a whole phase and at most half the accessories rotate at a time; a change the data calls for (a stall, pain, a movement often skipped) is made with its reason: systematic variation helps regional growth and strength, frequent random rotation may hurt.',
+  });
+}
+
+/**
+ * A redesign that keeps most of the plan as written (overlap.ts): over half
+ * of the draft's movements are also in the old plan, so it reads as an edit
+ * of it. The shared movements are the items, so an override can answer one
+ * (a main lift kept for its trend) or, with no item, all of them.
+ */
+function similarToCurrent(c: CheckContext, f: Findings): void {
+  if (!c.redesign || !isObj(c.previous)) return;
+  const draft = planMovements(c.raw);
+  const current = planMovements(c.previous);
+  const share = overlapShare(draft, current);
+  if (!overLimit(share)) return;
+  const shared = sharedMovements(draft, current);
+  const items = shared.map((m) => {
+    const was = current.find((x) => x.id === m.id)!.name;
+    const same = was.toLowerCase() === m.name.toLowerCase();
+    return item(`${m.name}${same ? '' : ` (${was} in the plan as written)`}`, m.name, was, m.id);
+  });
+  f.add('similar-to-current', 'warning', `${percent(share!)} of the draft's movements (${shared.length} of ${draft.length}) are in the plan as written (over ${limitText()}).`, items, {
+    rule: 'plan.redesign',
+    grade: checkGrade('similar-to-current'),
+    reason: `A redesign is a new plan for the person as they are now, designed from a blank draft (engine draft), not an edit of the old one. Variety against continuity: keeping a movement that works (a main lift still progressing, one the person likes, the only one the equipment allows) is fine, and an override says why; a redesign that keeps most of the old plan should say why it is a redesign. Over ${limitText()} of the draft's movements shared warns (a heuristic).`,
   });
 }
 
@@ -836,6 +893,80 @@ function startChange(c: CheckContext, f: Findings): void {
   });
 }
 
+/** Each plan movement once per session that the fit checks judge: catalogue-matched, not timed. */
+const catalogued = (c: CheckContext) => uniqueItems(c).filter((s): s is SlotRef & { catalogue: CatalogueEntry } => s.catalogue !== undefined && !s.slot.timed);
+
+/** The tools a movement needs that `have` lacks, in words ("cable or band", "dumbbell or kettlebell and bench"). */
+function toolsMissing(e: CatalogueEntry, have: ReadonlySet<string>): string {
+  const ok = (q: string) => q === 'bodyweight' || have.has(q);
+  const [first, ...rest] = e.equipment;
+  const out: string[] = [];
+  if (first && !ok(first)) out.push([first, ...e.alsoWith].join(' or '));
+  out.push(...rest.filter((q) => !ok(q)));
+  return out.join(' and ');
+}
+
+/**
+ * Movements the profile's equipment does not cover (the catalogue's tools;
+ * a tool that stands in for the defining one counts, bodyweight always
+ * does). Cardio is left out (its mode is the person's choice on the day),
+ * and so are movements the catalogue does not know. No profile: nothing to
+ * judge by; an empty equipment list is bodyweight only.
+ */
+function equipmentFit(c: CheckContext, f: Findings): void {
+  const profile = c.data.profile;
+  if (!profile) return;
+  const have = normalizeEquipment(profile.equipment ?? []).equipment;
+  const out = catalogued(c)
+    .filter((s) => s.catalogue.load !== 'cardio' && !usableWith(s.catalogue, have))
+    .map((s) => item(`${s.type} ${s.name}: needs ${toolsMissing(s.catalogue, have)}`, `${s.type} ${s.name}`, s.name, s.catalogue.id));
+  f.add('equipment-missing', 'warning', 'Movements the profile\'s equipment does not cover (a tool that stands in counts).', out, {
+    rule: 'profile.equipment',
+    reason: 'The profile\'s equipment is what the person has, in its words read as the catalogue\'s tools: bodyweight always counts, and so does a tool that stands in for the defining one (a kettlebell for a goblet squat). A movement that needs a tool they do not have cannot be done as written: swap it, or add the tool to the profile; an override says why it stays (a gym the profile does not list yet).',
+  });
+}
+
+/** Movements the person said they dislike (the profile's preferences.dislikes, catalogue ids). */
+function dislikedMovements(c: CheckContext, f: Findings): void {
+  const dislikes = new Set(c.data.profile?.preferences?.dislikes ?? []);
+  if (!dislikes.size) return;
+  const out = uniqueItems(c)
+    .filter((s) => s.catalogue && dislikes.has(s.catalogue.id))
+    .map((s) => item(`${s.type} ${s.name}: ${s.catalogue!.name} is on the profile's dislikes`, `${s.type} ${s.name}`, s.name, s.catalogue!.id));
+  f.add('disliked-movement', 'warning', 'Movements the person said they dislike (the profile\'s preferences.dislikes).', out, {
+    rule: 'profile.dislikes',
+    reason: 'The plan is built around what the person will do: a movement they said they dislike is swapped for one that trains the same muscles and fits the equipment and the Ledger, or kept with an override saying why.',
+  });
+}
+
+/**
+ * Lifts whose step (`lifts[name].inc`) the gym's real weights cannot make
+ * (the profile's loads): a 1 kg step on dumbbells that go 2 kg at a time, a
+ * 1.25 kg step on a bar whose smallest pair of plates is 2.5 kg. The targets
+ * still land on real weights; the plan's step should be one the gym has. A
+ * fact the profile states, no grade.
+ */
+function gymSteps(c: CheckContext, f: Findings): void {
+  if (!c.data.profile?.loads) return;
+  const out: CheckItem[] = [];
+  for (const l of c.data.plan.lifts) {
+    const ex = c.data.program.exercises[l.exercise] as (Exercise & ExerciseExtras) | undefined;
+    const weights = ex?.weights;
+    if (!weights?.length || stepInKit(l.increment, weights)) continue;
+    const fine = finestStep(weights);
+    if (fine === null) continue;
+    // The nearest step the kit makes: a multiple of its finest step (ties to the smaller).
+    const k = Math.max(1, Math.round(l.increment / fine - 1e-9));
+    const fix = [k, k + 1, k - 1].filter((n) => n >= 1).map((n) => Number((n * fine).toFixed(2))).find((x) => stepInKit(x, weights)) ?? fine;
+    const word = kitWord(loadKindOf(ex?.equipment, ex?._lift?.db));
+    out.push(item(`${l.name}: inc ${l.increment} ${l.unit}, but no ${word} here is ${l.increment} ${l.unit} from another (the finest step is ${fine} ${l.unit}): set inc to ${fix}`, l.name));
+  }
+  f.add('step-not-in-gym', 'warning', 'Lifts whose step (lifts[name].inc) the gym\'s weights cannot make (the profile\'s loads).', out, {
+    rule: 'profile.loads',
+    reason: 'The profile\'s loads are the weights the gym has. Every target lands on one of them, but the load-jump cap and the notes still read the lift\'s inc, so it should be a step the gym can make: the dumbbells\' step, two of the smallest plate on a bar, a stack\'s step. Set inc to the step given, or correct the loads; an override says why it stays.',
+  });
+}
+
 /** "Week 1 (...)" or "Weeks 2–3:" in a note: a week-by-week change plan-data has no place for. */
 const WEEK_OVERRIDE = /\bweeks?\s+\d+(?:\s*(?:[–-]|and|,|&)\s*\d+)*\s*[:(]/i;
 
@@ -852,6 +983,15 @@ function conventions(c: CheckContext, f: Findings): void {
   f.add('no-why', 'warning', 'Items with no "Why:" line in their note.', why, {
     rule: 'plan.why',
     reason: 'Each item says why it is in the plan ("Why: ..."), in words tied to the person (a goal, a finding, a preference): Today and the movement guide show it, and the next coach reads it.',
+  });
+  const card = readPlanWhy(c.raw);
+  f.add('no-why-card', 'warning', 'The plan has no Why this plan card (`why`): the Plan tab says the coach hasn\'t written its reasons yet.', card.present ? [] : [item('why')], {
+    rule: 'plan.why-card',
+    reason: 'Every plan carries the coach\'s reasons to the person, in the coach\'s voice: what in their data shaped it and why this split over the others. A candidate still being compared may skip it; the plan that is written has it.',
+  });
+  f.add('why-split-missing', 'warning', 'Split families the Why this plan card names nowhere (picked, compared or left out).', card.why ? card.missing.map((k) => item(`${SPLIT_LABELS[k]} (${k})`, k)) : [], {
+    rule: 'plan.why-card',
+    reason: 'The card accounts for every family in rules.md\'s Split families table but Concurrent (how cardio fits into any plan, not a split): the one picked, the ones built and compared, and each one left out with a line from its Fits column, so the person can see why this split and not another.',
   });
   f.add('week-override-in-note', 'warning', 'Notes that change the item for certain weeks: Pahlavan reads no week-by-week change from a note.', week, {
     rule: 'plan.week-override',
@@ -906,7 +1046,7 @@ function contextOf(read: VaultRead, date: IsoDate, opts: CheckOptions): CheckCon
   }
   const review = context(data, date);
   const place = review.planWeek ? lightWeekAt(data.rules.rules.lightWeeks, review.planWeek) : null;
-  return { read, data, date, raw, review, templates, slots, place, ...(opts.previous !== undefined ? { previous: opts.previous } : {}) };
+  return { read, data, date, raw, review, templates, slots, place, ...(opts.previous !== undefined ? { previous: opts.previous } : {}), redesign: opts.redesign === true };
 }
 
 // ---------------------------------------------------------------- the check
@@ -918,7 +1058,11 @@ const HARD_CHECKS: readonly PlanCheck[] = [structure, contradictions, duplicateT
  * The evidence and convention checks, each a warning a stated override may
  * turn into information. Each is one PlanCheck: a new rule joins the list.
  */
-export const EVIDENCE_CHECKS: readonly PlanCheck[] = [volume, priorityRoom, regionCoverage, effort, dose, pullPush, lightWeeks, time, planRules, loadJumps, exerciseChanges, startChange, conventions];
+export const EVIDENCE_CHECKS: readonly PlanCheck[] = [volume, priorityRoom, regionCoverage, effort, dose, pullPush, lightWeeks, time, planRules, equipmentFit, dislikedMovements, gymSteps, loadJumps, exerciseChanges, similarToCurrent, startChange, conventions];
+
+/** A warning from outside the plan (`CheckOptions.outside`): what it is, and its reason. */
+const OUTSIDE_MESSAGE = 'A fact about the vault, not the plan: it does not block a plan write.';
+const OUTSIDE_REASON = 'Read from the vault beside the plan (Pahlavan\'s own files); the coach tells the user what to do about it.';
 
 /**
  * The plan's findings on the date: the adapter's warnings and errors
@@ -930,6 +1074,7 @@ export const EVIDENCE_CHECKS: readonly PlanCheck[] = [volume, priorityRoom, regi
 export function buildCheck(read: VaultRead, date: IsoDate, opts: CheckOptions = {}): CheckReport {
   const f = new Findings();
   adapterFindings(read, f);
+  for (const w of opts.outside ?? []) f.add(w.code, 'warning', OUTSIDE_MESSAGE, (w.items?.length ? w.items : [w.message]).map((t) => item(t)), { reason: OUTSIDE_REASON });
   const c = contextOf(read, date, opts);
   if (c) for (const check of [...HARD_CHECKS, ...EVIDENCE_CHECKS]) check(c, f);
   const drafts = applyOverrides(f.list, c ? readOverrides(c.raw['overrides']).overrides : []);

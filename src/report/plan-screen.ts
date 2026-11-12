@@ -20,6 +20,7 @@ import { effectiveSlot } from '../core/plan.ts';
 import { itemTimed, parseNote, type PlanDataItem } from '../core/plan-data.ts';
 import { sameTimed, timedMinutes, timedView } from '../core/timed.ts';
 import { minimumWeek } from '../core/minimum-week.ts';
+import { planWhyView } from '../core/plan-why.ts';
 import { screeningDue } from '../core/safety.ts';
 import type { IsoDate } from '../core/schema.ts';
 import { coachStepsOf } from './checkin-screen.ts';
@@ -95,16 +96,16 @@ export interface PlanWeek {
   phase: number;
   meso: number;
   weekInMeso: number;
-  /** The mesocycle's last week: photo day. */
+  /** Photo day: the mesocycle's last week, or one of the plan's own test weeks. */
   photos: boolean;
 }
 
 /**
- * What comes up, by the generator's calendar rules (schedule.ts) applied to
- * the vault plan's weeks: the check-in every Sunday, tape every second week,
- * photos at each mesocycle's end, tests on the Saturday of a test week, the
- * deload week's Monday, a phase review at each phase's end, and the
- * re-screening date when there is a profile.
+ * What comes up, by the plan calendar's rules applied to the vault plan's
+ * weeks: the check-in every Sunday, tape every second week, photos at each
+ * mesocycle's end and in each test week, tests on the Saturday of a test
+ * week, the deload week's Monday, a phase review at each phase's end, and
+ * the re-screening date when there is a profile.
  */
 export function planCalendar(weeks: readonly PlanWeek[], phases: readonly { index: number; to: IsoDate }[], rescreen: IsoDate | null) {
   const ev: { date: IsoDate; week: number | null; kind: PlanEventKind }[] = [];
@@ -149,7 +150,8 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
       mi++;
       m.weeks.forEach((w, wi) => {
         n++;
-        weeks.push({ index: n, start: w.start, end: addDays(w.start, 6), kind: w.kind, calibration: w.calibration === true, tests: w.tests === true, phase: pi + 1, meso: mi, weekInMeso: wi + 1, photos: wi === m.weeks.length - 1 });
+        // Photos at each mesocycle's end, and in each of the plan's own test weeks (the body record's photo days).
+        weeks.push({ index: n, start: w.start, end: addDays(w.start, 6), kind: w.kind, calibration: w.calibration === true, tests: w.tests === true, phase: pi + 1, meso: mi, weekInMeso: wi + 1, photos: wi === m.weeks.length - 1 || w.tests === true });
       });
       const ws = weeks.filter((w) => w.meso === mi);
       if (ws.length) mesocycles.push({ index: mi, name: m.name, phase: pi + 1, from: ws[0]!.start, to: ws.at(-1)!.end });
@@ -222,8 +224,7 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
   // Planned sets per muscle against the bands (the priority rows' done sets from the cycle start).
   const volume = volumeViews(ctx, review, date, cycle.since);
 
-  // Targets: the profile's own numbers (the coach writes them) and the standing rows. The plan generator is an optional
-  // baseline the coach may run, not a source of targets.
+  // Targets: the profile's own numbers (the coach writes them) and the standing rows.
   const profile = data.profile;
   // The targets count from the cycle start (the newest baseline, else the first plan week).
   const since = cycle.since;
@@ -311,6 +312,14 @@ export function buildPlan(read: VaultRead, date: IsoDate, extra: { decisions?: s
     ledger,
     temporary,
     templates,
+    // The coach's reasons for the plan, to the person (the Why this plan card); null when the plan has none.
+    why: (() => {
+      const v = planWhyView(data.why);
+      // The card's link to the decision: Decisions.md, when the vault has it.
+      return v ? { ...v, decisionsPath: typeof extra.decisions === 'string' ? paths().decisions : null } : null;
+    })(),
+    // A why written but too broken to show (no lead, no family picked): the card says so, not "not written yet".
+    whyUnreadable: data.why.present && data.why.why === null,
     // The least that keeps a bad week on track: the plan's lifting days as Express.
     minimumWeek: minimumWeek({ liftDays: data.plan.weekTarget.lift, mainSets: data.plan.express?.mainSets ?? null, shortDays: data.plan.weekTarget.short }),
     volume: { muscles: volume.views.plan.muscles, priority: volume.priority, labels: volume.labels, topExercises: volume.topExercises, pullPush: pullPushView(review.volume.pullPush) },

@@ -4,19 +4,19 @@
 // tracked item by its reminder time (close times in one row, the interval
 // and desk kinds by the days they run, the rest "Any time"), logging after
 // training and the evening "Did you train?". Sundays: the check-in and the
-// week's letter, the tape. Every four weeks: the light week and the phase
-// end. All of it from the user's plan, tracked items, card times and the
-// body record's schedule; nothing is fixed to one user. The user types
-// everything in Pahlavan, so no row assumes the phone. Pure: the date is an
-// input.
+// week's letter, the tape. Every four weeks: the light week, the plan's own
+// test weeks when it lists them, and the phase end. All of it from the
+// user's plan, tracked items, card times and the body record's schedule;
+// nothing is fixed to one user. The user types everything in Pahlavan, so
+// no row assumes the phone. Pure: the date is an input.
 
-import { legacyRules, lightCalendarText, lightDoseText, type LightWeeksRules } from '../core/rules.ts';
+import { legacyRules, lightCalendarText, lightDoseText, weeksText, type LightWeeksRules } from '../core/rules.ts';
 import type { VaultRead } from '../adapters/vault/read.ts';
 import type { TrackingRead } from '../adapters/vault/tracking-read.ts';
 import { hhmm, toMinutes } from '../core/clock.ts';
 import { COACH_COMMANDS, planSteps } from '../core/coach-steps.ts';
 import { addDays, dayText, type IsoDate } from '../core/dates.ts';
-import { BODY_DEFAULTS, type BodyPart, type PartStatus } from '../core/body-schedule.ts';
+import { BODY_DEFAULTS, listedTestWeeks, type BodyPart, type PartStatus } from '../core/body-schedule.ts';
 import { deskRoutine } from '../core/desk-breaks.ts';
 import { bodyParts, DEFAULT_NUDGE_SETTINGS } from '../core/nudges.ts';
 import { explain, type Reason, type Result } from '../core/reason.ts';
@@ -206,7 +206,7 @@ function lightLine(lw: LightWeeksRules): string {
   return `${when} ${lw.weeks && lw.weeks.length > 1 ? 'are light weeks' : 'is a light week'}: ${lightDoseText(lw)}.`;
 }
 
-/** Every mesocycle (with a plan): the light week, and the phase end with its tests and review. */
+/** Every mesocycle (with a plan): the light week, the plan's own test weeks when it lists them, and the phase end with its tests (by default) and review. */
 function weekRows(input: RoutineInput): RoutineRow[] {
   const program = input.program;
   if (!program) return [];
@@ -225,10 +225,25 @@ function weekRows(input: RoutineInput): RoutineRow[] {
       reason: explain(light, 'routine.light', { next: light }, { note: `${lightLine(input.lightWeeks ?? legacyRules().lightWeeks)} Its Sunday closes the mesocycle: the mesocycle review writes the next one’s plan.` }).reason,
     });
   }
+  // The tests and photos on the plan's dates. A plan that lists its own test weeks (rules.tests) has them in a row of
+  // their own, the photos on each one's Sunday too; the phase end then keeps only its review.
+  const onPlan = input.body?.tests.schedule.source === 'plan';
+  const listed = listedTestWeeks(program);
+  if (onPlan && listed) {
+    const testWeeks = listed.map((n) => ({ n, sat: addDays(weeks[n - 1]!.start, 5), sun: addDays(weeks[n - 1]!.start, 6) }));
+    const next = testWeeks.find((w) => w.sun >= date) ?? null;
+    rows.push({
+      time: 'Test week',
+      what: 'The tests on Saturday, the photos on Sunday.',
+      next: !next ? 'None left in this plan' : `Next: ${dayText(next.sat)} and ${dayText(next.sun)}`,
+      where: 'Body record',
+      reason: explain(next ? next.sat : null, 'routine.tests', { weeks: listed, week: next?.n ?? null, saturday: next?.sat ?? null }, { note: `Your plan has the fitness tests in plan ${weeksText(listed)}: each on its Saturday, then a photo set on its Sunday.${next ? '' : ' None is left in this plan.'}` }).reason,
+    });
+  }
   const reviews = planSteps(program, input.planWeeks ?? null).filter((s) => s.value.kind === 'phase-review');
   const end = reviews.find((s) => s.value.date >= date)?.value ?? null;
   if (reviews.length) {
-    const tests = input.body?.tests.schedule.source === 'plan';
+    const tests = onPlan && !listed;
     const sat = end ? addDays(end.date, -1) : null;
     rows.push({
       time: 'Phase end',

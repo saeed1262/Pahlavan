@@ -29,16 +29,13 @@ import { isIsoDate } from '../core/dates.ts';
 import { CATALOGUE_BY_ID, type Level, type Pattern } from '../core/data/exercises.ts';
 import { MUSCLE_IDS } from '../core/data/muscles.ts';
 import { parentMissingText, REGION_IDS, regionProblems, regionsWithoutParent } from '../core/data/regions.ts';
-import { generatePlan } from '../core/plan/generate.ts';
-import { normalizeEquipment, type PlanHistory, type PlanOptions } from '../core/plan/context.ts';
-import { ITEM_KEYS, LIFT_KEYS, PLAN_DATA_KEYS, toPlanData, UNEXPRESSIBLE, type PlanData } from '../core/plan-data.ts';
+import { normalizeEquipment } from '../core/plan/context.ts';
+import { ITEM_KEYS, LIFT_KEYS, PLAN_DATA_KEYS, UNEXPRESSIBLE } from '../core/plan-data.ts';
+import { WHY_GRADES } from '../core/plan-why.ts';
 import { CALIBRATION } from '../core/calibration.ts';
 import { legacyRules, RULE_KINDS } from '../core/rules.ts';
 import { REGION_RULES, VOLUME } from '../core/volume.ts';
-import { vaultMuscleMap } from '../adapters/vault/muscle-map.ts';
-import { canonicalTags } from '../adapters/vault/muscle-tags.ts';
-import { matchCatalogue } from '../adapters/vault/catalogue-match.ts';
-import { SCHEMA_VERSION, type Ledger, type Profile, type Program } from '../core/schema.ts';
+import { SCHEMA_VERSION, SPLIT_KINDS, SPLIT_LABELS, type Ledger, type Profile, type Program } from '../core/schema.ts';
 import {
   validateBody,
   validateCheckinLog,
@@ -66,20 +63,25 @@ import { envelope, sourcesOf } from '../report/envelope.ts';
 import { buildNext, buildReadiness, buildReview, findingWarnings, findLift, knownLifts, painWarning, skipWarnings, timeWarning } from '../report/review.ts';
 import { buildSession } from '../report/session.ts';
 import { buildCheck, envelopeLists } from '../report/check.ts';
+import { OVERLAP_WARN_ABOVE, overlapShare, overLimit, planMovements, planShape, sharedMovements, type Movement } from '../report/overlap.ts';
 import { CatalogueQueryError, searchCatalogue, type CatalogueQuery } from '../report/catalogue.ts';
 import { catalogueMarkdown } from '../report/catalogue-doc.ts';
 import { buildEvidence, TOPIC_IDS, type Topic } from '../report/evidence.ts';
 import { planDiff, sameJson } from '../report/plan-write.ts';
 import { coachStepsOf } from '../report/checkin-screen.ts';
 import { frozenList } from '../report/log-form.ts';
-import { buildLogEntry, mergeFix, mergeHabit, mergeLadder, mergeLog, sessionKey, type LogInput } from '../adapters/vault/log-write.ts';
+import { logAddEntry, type LogAddInput } from '../report/log-add.ts';
+import { mergeFix, mergeHabit, mergeLadder, mergeLog, sessionKey } from '../adapters/vault/log-write.ts';
 import { readChanges, planTrack, setUp, type TrackChanges } from '../report/track-write.ts';
 import { buildBringOver, buildDue, buildHabitStats, buildTracked, proteinFor } from '../report/tracking.ts';
 import { buildFood } from '../report/food.ts';
+import { buildEnergy } from '../report/energy.ts';
+import { energyFacts, ENERGY, palInTable, PAL_TABLE_TEXT } from '../core/energy.ts';
 import { baselineNote } from '../report/baseline.ts';
 import { eatingLanded, planEating } from '../report/eating-write.ts';
 import { applyInbox, buildPhone, INBOX_FILES, INBOX_PATHS, INBOX_TEXT_KEYS, inboxTextPaths, isEntryFile, phoneText, refusedLine, refusedOf, refusedText, type InboxFile, type InboxTextKey, type InboxTexts } from '../report/inbox.ts';
 import { folders, paths, resolveFolders, useFolders, type FoldersSource } from '../adapters/vault/layout.ts';
+import { versionWarning } from '../adapters/vault/plugin-version.ts';
 
 export interface CliResult {
   code: number;
@@ -126,12 +128,19 @@ Commands (each prints JSON to stdout, with every rule's reason):
             The week holding the date (default today): adherence over 4 weeks,
             readiness and its actions, the weight trend and rate band, per
             lift the e1RM trend, stall verdict, triage and next target (load
-            cap applied), sets per muscle against the bands, deload status,
+            cap applied, on the gym's real weights when the profile lists its
+            loads), sets per muscle against the bands, deload status,
             the missed-time protocol, the concurrent-training check (on the
             weekdays the log shows, else the profile's days), due
             temporary changes, ladders, tests, each session's minutes as
             planned against the profile's day lengths, the week's pain from
-            the log and the check-in with the pain rule, and the warnings.
+            the log and the check-in with the pain rule (and the cycle's by
+            exercise, with its direction), each planned exercise's facts
+            this cycle (done as planned, skipped and swapped with their
+            reasons, the last day done, a lift's last rise this cycle), and
+            the warnings (version-differs: Pahlavan in the vault carries
+            another engine than this one, with which is newer and what to
+            update).
             --plan reads a draft (a whole plan-data.json) in place of the
             vault's, through the same reading: the numbers the draft would
             give once written (sources.plan names it, a draft-plan warning).
@@ -162,7 +171,7 @@ Commands (each prints JSON to stdout, with every rule's reason):
             One lift: plan-data's (by name, short name or id) or one logged
             by that name; a lift renamed in the plan answers to its new name.
             No top sets and not in this week's plan: a warning says so.
-  check     --vault <path> [--plan <file>] [--date D]
+  check     --vault <path> [--plan <file>] [--redesign] [--date D]
             The plan check on the date: the plan (or the draft --plan names,
             read in place of plan-data.json) against the guardrails. findings,
             each {code, level, message, items, rule, grade, reason}: hard
@@ -175,28 +184,44 @@ Commands (each prints JSON to stdout, with every rule's reason):
             posture emphasis, a light week in every mesocycle, the profile's
             day lengths and plan rules, load jumps, exercises changed inside a
             mesocycle against the plan as written, "Why:" lines, week changes
-            in notes); and information. The plan's overrides ({code, item,
-            reason, decision}) turn a matched warning into information with
-            its reason. summary counts each level. Exit 1 on a hard error.
-  plan-write --vault <path> --file <draft.json> [--date D] [--write]
+            in notes); facts the profile states (a movement its equipment does
+            not cover, one it dislikes, a lift step its loads cannot make);
+            and information. --redesign, with
+            --plan: the draft is a new plan, not a change inside this one, so
+            its exercise changes are information (redesign-changes), and a
+            draft holding more than half of the written plan's movements
+            warns (similar-to-current, the shared movements as its items).
+            The plan's overrides ({code, item, reason, decision}) turn a
+            matched warning into information with its reason. A
+            version-differs warning (as review's) is about the vault, not the
+            plan. summary counts each level. Exit 1 on a hard error.
+  plan-write --vault <path> --file <draft.json> [--redesign] [--date D]
+            [--write]
             The coach's write path into plan-data.json: the draft (a whole
-            plan) checked as check checks a draft, refused on a hard error;
-            its warnings and the overrides applied; a key-level diff against
-            plan-data.json as it is. With --write the whole file is written
-            (a temporary file renamed over it) and read back. A dry run unless
-            --write.
-  plan      --profile <file> [--ledger <file>] [--start D] [--weeks 12|16|24]
-            [--history] [--vault <path>] [--format engine|plan-data]
-            An optional baseline; the coach designs the plan. The
-            generator's program and proposal (engine), or the program
-            exported to plan-data.json's shape (plan-data). --history uses the
-            vault's log when the profile opted in; --vault also carries the
-            current plan-data.json's warm-ups, ladders and guide text over,
-            lays the guide's muscle overrides over the catalogue's tags, and
-            counts each week as Pahlavan will (perWeekVault). The proposal
-            compares the templates, gives each
-            ladder's starting level, and says how each input shaped the plan.
-  evidence  [--topic volume|effort|load|rest|tempo|order|range-of-motion|exercise-choice|progression|light-weeks|calibration|concurrent|activity|regions|findings|standing-rules]
+            plan) checked as check checks a draft (--redesign as check's),
+            refused on a hard error; its warnings and the overrides applied; a
+            key-level diff against plan-data.json as it is. With --write the
+            whole file is written (a temporary file renamed over it) and read
+            back. A dry run unless --write.
+  draft     --vault <path>
+            A blank plan to design a new one from, as a redesign starts:
+            planData, plan-data.json's keys in their order with no sessions,
+            lifts, guide entries or rules. Only start, liftUnit and the desk
+            breaks (deskRoutine, deskTiming) come from the plan as written;
+            weekTarget from the profile's days (else 0), liftUnit from the
+            profile when the plan has none (else kg). from says where each
+            came from. No plan yet: the same, with a no-plan warning. Read
+            only.
+  overlap   --plans <a.json,b.json> [--vault <path>]
+            How much plans share, read only. drafts: each file's movements
+            (each item not timed and not cardio, by one identity: a ladder's
+            id, else the catalogue's id, else the name normalized) and shape
+            (lifting days, lifting sessions, each session's pattern order).
+            matrix and pairs: the share of one plan's movements the other also
+            holds, both ways (not symmetric). --vault adds the plan as written
+            (current) and each draft against it (againstCurrent). similar:
+            each share over the limit (over half), one direction each.
+  evidence  [--topic volume|effort|load|rest|tempo|order|range-of-motion|exercise-choice|progression|light-weeks|readiness|calibration|concurrent|activity|regions|findings|standing-rules]
             The evidence library the coach designs from, as data, read only:
             each rule with its number (read from the constant the engine
             computes with), its grade (strong, moderate, weak, heuristic), a
@@ -325,9 +350,16 @@ Commands (each prints JSON to stdout, with every rule's reason):
             The coach's writes into fitness-log-data.json, as Pahlavan's Log
             panel makes them: add a session ({date, type, label, lift1, lift2,
             express, durationMin, cardioMin, cardioMode, rating, notes,
-            swaps, skipped}: the plan's checks, its exercise list and
+            swaps, skipped, skipWhy}: the plan's checks, its exercise list and
             checklist frozen, then the day's Workout habit ticked); a ladder
             level; a logged lift's weight, reps or "planned" corrected.
+            "skipWhy": {<a skipped line>: time | pain | equipment | energy},
+            the line named as in "skipped": into the checklist's "why".
+            Every set: "trackingLevel": "full" with "exerciseSets":
+            [{name, planned?, sets: [{weight, unit, reps, rir}]}], each name
+            an item of the session (a swap names the plan's as "planned"),
+            reps a whole number 0 or more, weight 0 or more (left out for
+            bodyweight), RIR 0 to 10; only the sets done.
             Merged with the file as it is and read back. A dry run unless
             --write.
 
@@ -352,6 +384,22 @@ Commands (each prints JSON to stdout, with every rule's reason):
             adjustment rule (no change, or the step, with the next check),
             the weekly pattern from the Sunday check-ins, and every
             number's Why. Counts from the cycle start.
+  energy    --vault <path> --pal N [--rate R] [--meals N] [--date D]
+            The eating plan's numbers for the diet job, read only, from the
+            profile's basics and goals and the trend weight from the cycle
+            start: resting energy (Mifflin-St Jeor), maintenance at the
+            activity factor --pal (diet.md's table: 1.40-1.69 sedentary or
+            light, 1.70-1.99 active, 2.00-2.39 vigorous), the goal energy for
+            --rate (the weekly change as a fraction of body weight: -0.0025
+            is -0.25 %) or, without it, the most important goal's range
+            (recomposition: maintenance to -250 kcal; gain: +200 to +300
+            kcal; a loss from its band); a rate faster than 1 % a week
+            refused; the floor (1,500 kcal a day for men, 1,200 for women;
+            with no sex given, the female constants); protein a day (the
+            engine's range) and a meal (--meals, else the eating plan's,
+            else 3); the fat and fiber minimums; and the figures as
+            Coach/eating-plan.json keeps them. At the eating plan's Light
+            level only protein and fiber count.
   eating    --vault <path> --file <plan.json> [--replace] [--write]
             The coach's write path into Coach/eating-plan.json: the plan
             (or the part that changes) merged into the file as it is
@@ -399,14 +447,15 @@ const COMMAND_FLAGS: Record<string, readonly string[]> = {
   review: ['vault', 'date', 'plan'],
   readiness: ['vault', 'date'],
   next: ['vault', 'lift', 'date'],
-  plan: ['profile', 'ledger', 'start', 'weeks', 'history', 'vault', 'format'],
   evidence: ['topic'],
   catalogue: ['pattern', 'region', 'muscle', 'equipment', 'level', 'query', 'vault', 'md'],
   validate: ['kind'],
   checkin: ['vault', 'date', 'time', 'file', 'write'],
   session: ['vault', 'date', 'mode', 'type', 'freeze', 'lift1', 'lift2', 'skip', 'plan'],
-  check: ['vault', 'plan', 'date'],
-  'plan-write': ['vault', 'file', 'date', 'write'],
+  check: ['vault', 'plan', 'redesign', 'date'],
+  'plan-write': ['vault', 'file', 'redesign', 'date', 'write'],
+  draft: ['vault'],
+  overlap: ['plans', 'vault'],
   tracked: ['vault', 'date'],
   due: ['vault', 'date', 'time'],
   habits: ['vault', 'date', 'item'],
@@ -415,12 +464,18 @@ const COMMAND_FLAGS: Record<string, readonly string[]> = {
   body: ['vault', 'file', 'replace', 'write'],
   log: ['vault', 'file', 'no-habit', 'write', 'id', 'level', 'date', 'type', 'label', 'lift', 'weight', 'reps', 'clear-planned'],
   food: ['vault', 'date'],
+  energy: ['vault', 'date', 'pal', 'rate', 'meals'],
   baseline: ['vault', 'date'],
   folders: ['vault'],
   eating: ['vault', 'file', 'replace', 'write'],
   inbox: ['vault', 'write', 'phone'],
 };
 const GLOBAL_FLAGS = ['pretty', 'json', 'help', 'version'];
+
+/** Commands that were removed, each with what takes its place: still an unknown command, with that said. */
+const REMOVED_COMMANDS: Readonly<Record<string, string>> = {
+  plan: '`plan` was removed in 0.28.1: a new plan starts from `engine draft`',
+};
 
 function out(value: unknown, pretty: boolean, code: number): CliResult {
   return { code, stdout: `${JSON.stringify(value, null, pretty ? 2 : undefined)}\n`, stderr: '' };
@@ -506,7 +561,7 @@ const vaultFiles = (): readonly { path: string; what: string; checks: string; sh
   {
     path: paths().plan,
     what: "the vault's training plan",
-    checks: '`review --vault <vault>` reads it with the log and gives what it cannot use as warnings and errors; `plan --format plan-data` writes its shape',
+    checks: '`review --vault <vault>` reads it with the log and gives what it cannot use as warnings and errors; `check --plan <draft>` checks a draft of it, and `plan-write` writes it',
     shape: (o) => Array.isArray(o['liftTypes']) || Array.isArray(o['shortTypes']) || (isObj(o['guide']) && isObj(o['lifts'])),
   },
   {
@@ -650,7 +705,7 @@ function semanticWarnings(kind: Kind, v: unknown): VaultWarning[] {
     list('unknown-preference', 'Preference ids that are not in the engine catalogue.', ids.filter((id) => !CATALOGUE_BY_ID.has(id)));
     const muscles = [...(p.priorityMuscles ?? []), ...p.emphasis.flatMap((e) => e.muscles ?? [])];
     list('unknown-muscle', 'Muscle ids the engine does not know.', muscles.filter((m) => !MUSCLE_IDS.includes(m)));
-    list('emphasis-without-kind', 'Body-assessment rows without a kind: the plan generator cannot act on them.', p.emphasis.filter((e) => !e.kind).map((e) => e.area));
+    list('emphasis-without-kind', 'Body-assessment rows without a kind: the engine cannot act on them.', p.emphasis.filter((e) => !e.kind).map((e) => e.area));
     regions('Priority regions and body-assessment regions', [...(p.priorityRegions ?? []), ...p.emphasis.flatMap((e) => e.regions ?? [])]);
   }
   if (kind === 'program') {
@@ -666,7 +721,7 @@ function semanticWarnings(kind: Kind, v: unknown): VaultWarning[] {
   if (kind === 'ledger') {
     const l = v as Ledger;
     const ids = l.constraints.flatMap((c) => (c.noMovements ?? []).map((m) => `${c.id}: ${m}`));
-    list('not-catalogue-movement', 'Movements that are not engine catalogue ids: `plan` ignores them; `review` matches them against the plan\'s own exercise ids.', ids.filter((x) => !CATALOGUE_BY_ID.has(x.split(': ')[1]!)));
+    list('not-catalogue-movement', 'Movements that are not engine catalogue ids: `review` and `check` match them against the plan\'s own exercise ids.', ids.filter((x) => !CATALOGUE_BY_ID.has(x.split(': ')[1]!)));
   }
   return out;
 }
@@ -693,113 +748,6 @@ function cmdValidate(positionals: string[], flags: Record<string, string | true>
   const errs = errors.map((e) => ({ code: 'schema', message: `${e.path}: ${e.message}` }));
   const warnings = errors.length ? [] : semanticWarnings(kind, v);
   return out(envelope('validate', { file, kind, shape, valid: errors.length === 0, inferred: kindFlag === undefined }, warnings, errs), pretty, errors.length ? 1 : 0);
-}
-
-// ---------------------------------------------------------------- plan
-
-function cmdPlan(flags: Record<string, string | true>, io: CliIo, pretty: boolean): CliResult {
-  const profilePath = flags['profile'];
-  if (typeof profilePath !== 'string') throw new Usage('plan needs --profile <file> (Coach/profile.json)');
-  const format = flags['format'] ?? 'engine';
-  if (format !== 'engine' && format !== 'plan-data') throw new Usage('--format must be engine or plan-data');
-  const weeksFlag = flags['weeks'];
-  let weeks: 12 | 16 | 24 | undefined;
-  if (weeksFlag !== undefined) {
-    if (weeksFlag !== '12' && weeksFlag !== '16' && weeksFlag !== '24') throw new Usage('--weeks must be 12, 16 or 24');
-    weeks = Number(weeksFlag) as 12 | 16 | 24;
-  }
-  const start = flags['start'];
-  if (start !== undefined && (start === true || !isIsoDate(start))) throw new Usage('--start must be a date as YYYY-MM-DD');
-  if (flags['history'] === true && typeof flags['vault'] !== 'string') throw new Usage('--history needs --vault <path>');
-
-  // The generator is a baseline the coach may compare against, never the plan's author.
-  const warnings: VaultWarning[] = [{ code: 'generator-baseline', message: 'For information: this is the plan generator\'s optional baseline. The coach designs the plan (the split, the exercises and the standing rules) and may take this as one candidate among its own.' }];
-  const errors: VaultWarning[] = [];
-  const profile = readJson(io, profilePath, 'profile');
-  const perrs = validateProfile(profile);
-  for (const e of perrs) errors.push({ code: 'profile', message: `${profilePath} ${e.path}: ${e.message}` });
-  let ledger: Ledger | null = null;
-  if (typeof flags['ledger'] === 'string') {
-    const l = readJson(io, flags['ledger'], 'ledger');
-    const lerrs = validateLedger(l);
-    for (const e of lerrs) errors.push({ code: 'ledger', message: `${flags['ledger']} ${e.path}: ${e.message}` });
-    if (!lerrs.length) ledger = l as Ledger;
-  }
-  if (errors.length) return out(envelope('plan', { format, program: null, proposal: null }, warnings, errors), pretty, 1);
-
-  const today = io.today();
-  const options: PlanOptions = {};
-  if (typeof start === 'string') options.start = start;
-  if (weeks) options.weeks = weeks;
-  if (ledger) options.ledger = ledger.constraints;
-  let base: PlanData | undefined;
-  let logNames: string[] = [];
-  if (typeof flags['vault'] === 'string') {
-    const root = vaultRoot(flags, io);
-    const read = readVault(io, root, { asOf: today });
-    logNames = loggedLiftNames(read.raw?.log);
-    // A first plan: nothing written yet to export over, so the export is a fresh one.
-    const none = noPlanYet(read, 'the export is a fresh one, with nothing carried over from a plan as written (its names, warm-ups, ladders and guide text). Save it as a draft and write it with plan-write.');
-    if (none) warnings.push(none);
-    errors.push(...read.data.errors);
-    warnings.push(...read.data.warnings.filter((w) => w.code !== 'coach-missing'));
-    // Sets per muscle as review will count the written plan: the catalogue's tags, with the guide's overrides laid over them.
-    options.muscleMap = {};
-    if (read.files.plan === 'found') {
-      base = JSON.parse(io.readText(joinPath(root, paths().plan))!) as PlanData;
-      if (base.guide && typeof base.guide === 'object') options.muscleMap = vaultMuscleMap(base.guide);
-    }
-    if (flags['history'] === true) {
-      const history: PlanHistory = { sessions: read.data.sessions, daily: read.data.checkins.daily, weekly: read.data.checkins.weekly, previousTarget: read.data.plan.weekTarget };
-      options.history = history;
-      if (!(profile as Profile).useHistory) warnings.push({ code: 'history-not-used', message: 'The profile did not opt in to using history (useHistory), so the log is not used to size the week.' });
-    }
-  }
-  const plan = generatePlan({ profile: profile as Profile, today, options });
-  const { program, proposal } = plan.value;
-  // The proposal's own warnings (named priority muscles past the week's room, a priority minimum not reached, a finding to confirm with its question), where the coach reads warnings.
-  for (const w of proposal.warnings) warnings.push({ code: w.code, message: w.reason.note ?? w.code, items: w.finding ? [w.finding.input] : w.muscles });
-  const code = errors.length ? 1 : 0;
-  if (format === 'engine') return out(envelope('plan', { format, today, program, proposal, reason: plan.reason }, warnings, errors), pretty, code);
-  if (!program) {
-    return out(envelope('plan', { format, today, planData: null, proposal: { status: proposal.status, why: proposal.why, checks: proposal.checks }, reason: plan.reason }, warnings, errors), pretty, code);
-  }
-  // Every carried guide entry's muscle copy follows the catalogue too (overrides and movements it does not know are left).
-  const guideMuscles = (key: string, entry: unknown) => {
-    const c = canonicalTags(key, entry);
-    return c.source === 'catalogue' ? c.tags : null;
-  };
-  // Over the vault's plan, a movement keeps the name the plan or the log already gives it (its history is matched by name).
-  const matchId = (name: string) => matchCatalogue(name)?.id ?? null;
-  const exported = toPlanData(program, { ...(options.start ? { date: options.start, start: true } : {}), ...(base ? { base } : {}), warmUp: proposal.warmUp, guideMuscles, logNames, matchId });
-  return out(
-    envelope('plan', {
-      format,
-      today,
-      planData: exported.value.planData,
-      week: exported.value.week,
-      types: exported.value.types,
-      unexpressible: exported.value.unexpressible,
-      proposal: { status: proposal.status, why: proposal.why, templates: proposal.templates.map((t) => ({ id: t.id, label: t.label, picked: t.picked, score: t.score })), ladders: proposal.ladders.map((l) => ({ id: l.id, level: l.level, levelName: l.levelName, used: l.used })), volumeMap: proposal.volumeMap.source, failedChecks: proposal.checks.filter((c) => !c.passed) },
-      reason: exported.reason,
-    }, warnings, errors),
-    pretty,
-    code,
-  );
-}
-
-/** The names the log holds for its logged lifts (`lift1`, `lift2`), each once, in the order first logged. */
-function loggedLiftNames(log: unknown): string[] {
-  const sessions = typeof log === 'object' && log !== null && Array.isArray((log as { sessions?: unknown }).sessions) ? (log as { sessions: unknown[] }).sessions : [];
-  const names: string[] = [];
-  for (const s of sessions) {
-    if (typeof s !== 'object' || s === null) continue;
-    for (const k of ['lift1', 'lift2']) {
-      const n = (s as Record<string, { name?: unknown } | null | undefined>)[k]?.name;
-      if (typeof n === 'string' && n.trim() && !names.includes(n)) names.push(n);
-    }
-  }
-  return names;
 }
 
 // ---------------------------------------------------------------- drafts, check and plan-write
@@ -830,12 +778,17 @@ function cmdCheck(flags: Record<string, string | true>, io: CliIo, pretty: boole
   const root = vaultRoot(flags, io);
   const date = dateFlag(flags, 'date', io);
   const draft = draftFlag(flags, io);
+  // A redesign is a draft judged against the plan as written: the plan as written against itself says nothing.
+  const redesign = flags['redesign'] === true;
+  if (redesign && !draft) throw new Usage('--redesign goes with --plan <draft.json>: a redesign is a draft, judged against the plan as written');
   const read = readVault(io, root, { asOf: date, ...(draft ? { plan: draft } : {}) });
   // A draft's exercise changes are judged against the plan as written.
   const previous = draft ? writtenPlan(io, root).doc : undefined;
-  const report = buildCheck(read, date, previous !== undefined ? { previous } : {});
+  // Pahlavan in the vault on another version than this coach: a warning beside the plan's findings.
+  const version = versionWarning(io, root, CONFIG_DIR, ENGINE_VERSION);
+  const report = buildCheck(read, date, { ...(previous !== undefined ? { previous } : {}), ...(redesign ? { redesign } : {}), ...(version ? { outside: [version] } : {}) });
   const lists = envelopeLists(report);
-  return out(envelope('check', { date, sources: sourcesOf(read, root), findings: report.findings, summary: report.summary }, lists.warnings, lists.errors), pretty, report.summary.ok ? 0 : 1);
+  return out(envelope('check', { date, ...(redesign ? { redesign } : {}), sources: sourcesOf(read, root), findings: report.findings, summary: report.summary }, lists.warnings, lists.errors), pretty, report.summary.ok ? 0 : 1);
 }
 
 /**
@@ -852,11 +805,12 @@ function cmdPlanWrite(flags: Record<string, string | true>, io: CliIo, pretty: b
   const write = flags['write'] === true;
   if (write && !io.writePlan) throw new Usage('this engine cannot write (no plan writer)');
   const date = dateFlag(flags, 'date', io);
+  const redesign = flags['redesign'] === true;
   const text = io.readText(fileFlag);
   if (text === null) throw new Usage(`draft not found: ${fileFlag}`);
   const file = paths().plan;
   const path = joinPath(root, file);
-  const base = { action: 'write', file, draft: fileFlag, date, dryRun: !write, written: false };
+  const base = { action: 'write', file, draft: fileFlag, date, ...(redesign ? { redesign } : {}), dryRun: !write, written: false };
   let doc: unknown;
   try {
     doc = JSON.parse(text) as unknown;
@@ -866,7 +820,7 @@ function cmdPlanWrite(flags: Record<string, string | true>, io: CliIo, pretty: b
   for (let attempt = 0; attempt < 2; attempt++) {
     const written = writtenPlan(io, root);
     const read = readVault(io, root, { asOf: date, plan: { text, file: fileFlag } });
-    const report = buildCheck(read, date, written.doc !== undefined ? { previous: written.doc } : {});
+    const report = buildCheck(read, date, { ...(written.doc !== undefined ? { previous: written.doc } : {}), ...(redesign ? { redesign } : {}) });
     const lists = envelopeLists(report);
     const unchanged = written.doc !== undefined && sameJson(written.doc, doc);
     const overrides = report.findings.filter((x) => x.override).map((x) => ({ code: x.code, items: x.items, reason: x.override!.reason, ...(x.override!.decision ? { decision: x.override!.decision } : {}) }));
@@ -888,6 +842,116 @@ function cmdPlanWrite(flags: Record<string, string | true>, io: CliIo, pretty: b
     return out(envelope('plan-write', { ...payload, written: true }, lists.warnings, []), pretty, 0);
   }
   return out(envelope('plan-write', { ...base, result: null }, [], [{ code: 'busy', message: `${file} kept changing while checking: run it again in a moment` }]), pretty, 1);
+}
+
+// ---------------------------------------------------------------- draft and overlap: a redesign starts blank
+
+/** What a blank draft takes from the plan as written: its unit, the desk breaks (not training) and its first day. */
+const DRAFT_CARRIED = ['liftUnit', 'deskRoutine', 'deskTiming', 'start'] as const;
+
+/**
+ * A blank plan to design from: plan-data's keys in their order, every list
+ * and object empty, so a redesign is designed rather than edited from the
+ * plan as written. Only the unit, the desk breaks and `start` (so the plan
+ * weeks keep counting) are carried; weekTarget comes from the profile's
+ * days. Read only.
+ */
+function cmdDraft(flags: Record<string, string | true>, io: CliIo, pretty: boolean): CliResult {
+  const root = vaultRoot(flags, io);
+  const read = readVault(io, root, { asOf: io.today() });
+  const warnings: VaultWarning[] = [];
+  const none = noPlanYet(read, 'the draft starts blank either way, with nothing carried over.');
+  if (none) warnings.push(none);
+  const written = writtenPlan(io, root);
+  if (written.text !== null && !isObj(written.doc)) warnings.push({ code: 'json', message: `${paths().plan} is not a JSON object: nothing is carried over from it.` });
+  const plan = isObj(written.doc) ? written.doc : {};
+  const profile = read.data.profile;
+  if (read.files.profile === 'found' && !profile) warnings.push({ code: 'profile', message: `${paths().profile} could not be read: weekTarget is 0 and the unit is the plan's, else kg.` });
+  const unit = (v: unknown) => (v === 'kg' || v === 'lb' ? v : null);
+  const liftUnit = unit(plan['liftUnit']) ?? unit(profile?.units?.load) ?? 'kg';
+  // The profile's days: the shorter ones (availability.shortSessions) are the short sessions, the rest lifting days.
+  const days = profile?.availability?.daysPerWeek;
+  const shortDays = profile?.availability?.shortSessions?.days ?? 0;
+  const sensible = Number.isInteger(days) && days! >= 1 && days! <= 7 && Number.isInteger(shortDays) && shortDays >= 0 && shortDays <= days!;
+  const carried = DRAFT_CARRIED.filter((k) => plan[k] !== undefined && (k !== 'liftUnit' || unit(plan[k]) !== null));
+  const parts: Record<string, unknown> = {
+    weekTarget: sensible ? { lift: days! - shortDays, short: shortDays } : { lift: 0, short: 0 },
+    liftTypes: [],
+    shortTypes: [],
+    sessions: {},
+    liftUnit,
+    lifts: {},
+    guide: {},
+    ...Object.fromEntries(carried.filter((k) => k !== 'liftUnit').map((k) => [k, plan[k]])),
+    rules: {},
+  };
+  const planData = Object.fromEntries((PLAN_DATA_KEYS as readonly string[]).filter((k) => k in parts).map((k) => [k, parts[k]]));
+  const from = {
+    liftUnit: unit(plan['liftUnit']) ? 'plan' : unit(profile?.units?.load) ? 'profile' : 'default',
+    weekTarget: sensible ? 'profile' : 'default',
+    carried: [...carried],
+  };
+  return out(envelope('draft', { sources: sourcesOf(read, root), planData, from }, warnings, []), pretty, 0);
+}
+
+/** A plan file for overlap: found, JSON, and a plan (a sessions object); else a usage error naming it. */
+function overlapPlan(io: CliIo, file: string): Record<string, unknown> {
+  const text = io.readText(file);
+  if (text === null) throw new Usage(`--plans: file not found: ${file}`);
+  let doc: unknown;
+  try {
+    doc = JSON.parse(text) as unknown;
+  } catch {
+    throw new Usage(`--plans: ${file} is not valid JSON`);
+  }
+  if (!isObj(doc) || !isObj(doc['sessions'])) throw new Usage(`--plans: ${file} is not a plan (no "sessions" object)`);
+  return doc;
+}
+
+const r3 = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 1000);
+const idList = (xs: readonly Movement[]) => xs.map((m) => m.id);
+
+/**
+ * How much plans share (overlap.ts): each draft's movements and shape, the
+ * share of each one's movements the other holds, both ways, and with
+ * --vault each against the plan as written. Read only.
+ */
+function cmdOverlap(flags: Record<string, string | true>, io: CliIo, pretty: boolean): CliResult {
+  const v = flags['plans'];
+  const files = typeof v === 'string' ? v.split(',').map((x) => x.trim()).filter(Boolean) : [];
+  if (!files.length) throw new Usage('overlap needs --plans <a.json,b.json,...>: the plan files to compare, comma-separated');
+  const drafts = files.map((file) => {
+    const doc = overlapPlan(io, file);
+    return { file, movements: planMovements(doc), shape: planShape(doc) };
+  });
+  const warnings: VaultWarning[] = [];
+  let current: { file: string; movements: Movement[]; shape: ReturnType<typeof planShape> } | null = null;
+  let vault: string | null = null;
+  if (flags['vault'] !== undefined) {
+    vault = vaultRoot(flags, io);
+    const written = writtenPlan(io, vault);
+    if (written.text === null) warnings.push({ code: 'no-plan', message: `There is no plan yet (${paths().plan}): the drafts are compared with each other only.` });
+    else if (!isObj(written.doc) || !isObj(written.doc['sessions'])) warnings.push({ code: 'plan-data', message: `${paths().plan} is not a plan Pahlavan can read (not JSON, or no "sessions" object): the drafts are compared with each other only.` });
+    else current = { file: paths().plan, movements: planMovements(written.doc), shape: planShape(written.doc) };
+  }
+  const matrix = drafts.map((a) => drafts.map((b) => r3(overlapShare(a.movements, b.movements))));
+  const pairs = drafts.flatMap((a, i) => drafts.slice(i + 1).map((b) => ({ a: a.file, b: b.file, aInB: r3(overlapShare(a.movements, b.movements)), bInA: r3(overlapShare(b.movements, a.movements)), shared: idList(sharedMovements(a.movements, b.movements)) })));
+  const againstCurrent = current
+    ? drafts.map((d) => ({ draft: d.file, draftInCurrent: r3(overlapShare(d.movements, current.movements)), currentInDraft: r3(overlapShare(current.movements, d.movements)), shared: idList(sharedMovements(d.movements, current.movements)) }))
+    : null;
+  // Each share over the limit, one direction each: a's movements mostly in b. Against the plan as written, the draft's share (as check --redesign warns).
+  const similar: { a: string; b: string; share: number; current: boolean }[] = [];
+  drafts.forEach((a, i) =>
+    drafts.forEach((b, j) => {
+      const share = overlapShare(a.movements, b.movements);
+      if (i !== j && overLimit(share)) similar.push({ a: a.file, b: b.file, share: r3(share)!, current: false });
+    }),
+  );
+  if (current) for (const d of drafts) {
+    const share = overlapShare(d.movements, current.movements);
+    if (overLimit(share)) similar.push({ a: d.file, b: current.file, share: r3(share)!, current: true });
+  }
+  return out(envelope('overlap', { ...(vault !== null ? { vault } : {}), limit: OVERLAP_WARN_ABOVE, drafts, matrix, pairs, current, againstCurrent, similar }, warnings, []), pretty, 0);
 }
 
 // ---------------------------------------------------------------- the evidence library and the catalogue
@@ -1231,23 +1295,10 @@ function cmdLog(action: LogAction, flags: Record<string, string | true>, io: Cli
     if (typeof fileFlag !== 'string') throw new Usage('log add needs --file <session.json>: {"date", "type", "lift1", "lift2", "durationMin", ..., "skipped": [<line names>]}');
     const raw = readJson(io, fileFlag, 'session file');
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return fail('invalid', 'the session file must hold one object');
-    const input = raw as LogInput & { skipped?: unknown };
-    const built = buildLogEntry(input, { plan, log: read.raw?.log, today });
-    if (!built.ok) return fail('invalid', built.error);
-    let entry = built.entry;
-    // The checklist the Log panel saves with a planned session: its lines, the skipped ones marked (a custom session has none).
-    if (entry['type'] !== 'custom') {
-      const skipped = input.skipped;
-      if (skipped !== undefined && (!Array.isArray(skipped) || !skipped.every((x) => typeof x === 'string'))) return fail('invalid', '"skipped" lists the checklist lines skipped, by name');
-      const swapOf = (l: unknown) => (typeof l === 'object' && l !== null && (l as Obj)['planned'] ? String((l as Obj)['name']) : null);
-      const fz = frozenList(read, { date: String(entry['date']), type: String(entry['type']), mode: entry['express'] ? 'express' : 'full', lifts: [swapOf(entry['lift1']), swapOf(entry['lift2'])], skip: (skipped) ?? [] }, today);
-      if (!fz.ok) return fail('invalid', fz.error);
-      const checklist = (fz.list.value as unknown as Obj)['checklist'];
-      if (checklist) {
-        const { exercises, ...rest } = entry;
-        entry = { ...rest, checklist, ...(exercises !== undefined ? { exercises } : {}) };
-      }
-    }
+    // The entry as the Log panel's save writes it: its checks, its frozen checklist and exercise list.
+    const added = logAddEntry(read, raw as LogAddInput, today);
+    if (!added.ok) return fail('invalid', added.error);
+    const entry = added.entry;
     const key = sessionKey(entry);
     for (let attempt = 0; attempt < 2; attempt++) {
       const text = io.readText(path);
@@ -1369,6 +1420,43 @@ function cmdFood(flags: Record<string, string | true>, io: CliIo, pretty: boolea
   // The eating plan's own problems are the command's; the other files' only say what they touch.
   const elsewhere = [...read.data.errors.filter((e) => e.code !== 'eating'), ...tr.errors].map((e) => ({ code: 'elsewhere', message: e.message }));
   return out({ ...f, sources: { ...sourcesOf(read, root), tracking: tr.files }, warnings: [...(none ? [none] : []), ...f.warnings, ...elsewhere] }, pretty, f.errors.length ? 1 : 0);
+}
+
+/** A number flag's value, or null when it isn't given; `what` says what it takes. */
+function numberFlag(flags: Record<string, string | true>, name: string, what: string): number | null {
+  const v = flags[name];
+  if (v === undefined) return null;
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : Number.NaN;
+  if (!Number.isFinite(n)) throw new Usage(`--${name} takes ${what}`);
+  return n;
+}
+
+/**
+ * The eating plan's numbers for the diet job: resting energy, maintenance
+ * at the coach's activity factor, the goal energy (the coach's rate, else
+ * the goal's band), the floor, protein a meal, fat and fiber. Read only.
+ */
+function cmdEnergy(flags: Record<string, string | true>, io: CliIo, pretty: boolean): CliResult {
+  const root = vaultRoot(flags, io);
+  const date = dateFlag(flags, 'date', io);
+  const palWhat = `the activity factor from diet.md's table: ${PAL_TABLE_TEXT}`;
+  const pal = numberFlag(flags, 'pal', palWhat);
+  if (pal === null) throw new Usage(`energy needs --pal N, ${palWhat}`);
+  if (!palInTable(pal)) throw new Usage(`--pal must be from ${ENERGY.pal.min.toFixed(2)} to ${ENERGY.pal.max.toFixed(2)}, diet.md's table: ${PAL_TABLE_TEXT}`);
+  const rateWhat = 'the weekly change as a fraction of body weight, from -0.05 to 0.05 (-0.0025 is -0.25 % a week)';
+  const rate = numberFlag(flags, 'rate', rateWhat);
+  if (rate !== null && Math.abs(rate) > 0.05) throw new Usage(`--rate takes ${rateWhat}`);
+  const meals = numberFlag(flags, 'meals', 'the meals a day, a whole number from 1 to 8');
+  if (meals !== null && (!Number.isInteger(meals) || meals < 1 || meals > 8)) throw new Usage('--meals takes the meals a day, a whole number from 1 to 8');
+  const read = readVault(io, root, { asOf: date });
+  const none = noPlanYet(read, 'the energy estimate needs none (it reads the profile, the weigh-ins and the eating plan).');
+  const e = buildEnergy(read, date, { pal, rate, meals });
+  // The profile's and the body record's problems are the command's; the other files' only say what they touch.
+  const own = [paths().profile, paths().body];
+  const isOwn = (x: VaultWarning) => x.code === 'profile' || x.code === 'body' || (x.code === 'json' && own.some((p) => x.message.startsWith(`${p} `)));
+  const elsewhere = read.data.errors.filter((x) => !isOwn(x)).map((x) => ({ code: 'elsewhere', message: x.message }));
+  const errors = [...read.data.errors.filter(isOwn), ...e.errors];
+  return out(envelope('energy', { sources: sourcesOf(read, root), ...e.payload }, [...(none ? [none] : []), ...e.warnings, ...elsewhere], errors), pretty, errors.length ? 1 : 0);
 }
 
 /**
@@ -1616,8 +1704,14 @@ export function engineFacts() {
       /** The kinds `rules` holds (Express on a short day is `express.short`). */
       ruleKinds: RULE_KINDS.filter((k) => k !== 'express'),
     },
-    /** Every `what` a plan export's `unexpressible` can name. */
+    /** The Why this plan card (plan-data's `why`, plan-why.ts): every split family it accounts for, with its label, and the evidence grades a reason may carry. */
+    why: { splitKinds: SPLIT_KINDS.map((id) => ({ id, label: SPLIT_LABELS[id] })), grades: [...WHY_GRADES] },
+    /** Every kind of thing plan-data can't hold (plan-data.ts, UNEXPRESSIBLE): the coach's docs name only these. */
     unexpressible: [...UNEXPRESSIBLE],
+    /** A redesign's limit: over this share of its movements also in the plan as written warns (similar-to-current). */
+    redesign: { overlapWarnAbove: OVERLAP_WARN_ABOVE },
+    /** The eating plan's energy constants (`energy`): Mifflin-St Jeor, the activity factors, the floors, the 1 % limit, protein a meal, fat and fiber. */
+    energy: energyFacts(),
   };
 }
 
@@ -1640,7 +1734,10 @@ export function run(argv: readonly string[], io?: CliIo): CliResult {
     return usage(`unknown arguments: ${argv.join(' ')}`);
   }
   const allowed = COMMAND_FLAGS[args.command];
-  if (!allowed) return usage(`unknown command: ${args.command}`);
+  if (!allowed) {
+    const removed = Object.hasOwn(REMOVED_COMMANDS, args.command) ? REMOVED_COMMANDS[args.command] : undefined;
+    return usage(`unknown command: ${args.command}${removed ? ` (${removed})` : ''}`);
+  }
   if (args.flags['help'] === true) return { code: 0, stdout: HELP, stderr: '' };
   const unknown = Object.keys(args.flags).filter((f) => !allowed.includes(f) && !GLOBAL_FLAGS.includes(f));
   if (unknown.length) return usage(`${args.command} does not take ${unknown.map((f) => `--${f}`).join(', ')}`);
@@ -1664,12 +1761,14 @@ export function run(argv: readonly string[], io?: CliIo): CliResult {
     switch (args.command) {
       case 'validate':
         return cmdValidate(args.positionals, args.flags, io, pretty);
-      case 'plan':
-        return cmdPlan(args.flags, io, pretty);
       case 'check':
         return cmdCheck(args.flags, io, pretty);
       case 'plan-write':
         return cmdPlanWrite(args.flags, io, pretty);
+      case 'draft':
+        return cmdDraft(args.flags, io, pretty);
+      case 'overlap':
+        return cmdOverlap(args.flags, io, pretty);
       case 'evidence':
         return cmdEvidence(args.flags, pretty);
       case 'catalogue':
@@ -1691,6 +1790,8 @@ export function run(argv: readonly string[], io?: CliIo): CliResult {
         return cmdLog(args.positionals[0] as LogAction, args.flags, io, pretty);
       case 'food':
         return cmdFood(args.flags, io, pretty);
+      case 'energy':
+        return cmdEnergy(args.flags, io, pretty);
       case 'folders':
         return cmdFolders(args.flags, io, pretty);
       case 'baseline':
@@ -1713,9 +1814,9 @@ export function run(argv: readonly string[], io?: CliIo): CliResult {
         const sources = sourcesOf(read, root);
         const code = data.errors.length ? 1 : 0;
         if (args.command === 'review') {
-          // The review's own warnings: a session over its day's length, a pain over 3 of 10 in the last week, exercises skipped for pain or equipment twice in 4 weeks, each once, and each finding not confirmed with the user.
+          // The review's own warnings: a session over its day's length, a pain over 3 of 10 in the last week, exercises skipped for pain or equipment twice in 4 weeks, each once, each finding not confirmed with the user, and Pahlavan in the vault on another version than this coach.
           const review = buildReview(data, date);
-          const own = [...[timeWarning(review.time), painWarning(data, date)].filter((w): w is VaultWarning => w !== null), ...skipWarnings(review.skips), ...findingWarnings(data)];
+          const own = [...[timeWarning(review.time), painWarning(data, date)].filter((w): w is VaultWarning => w !== null), ...skipWarnings(review.skips), ...findingWarnings(data), ...[versionWarning(io, root, CONFIG_DIR, ENGINE_VERSION)].filter((w): w is VaultWarning => w !== null)];
           return out(envelope('review', { sources, ...review }, [...data.warnings, ...own], data.errors), pretty, code);
         }
         if (args.command === 'readiness') return out(envelope('readiness', { sources, ...buildReadiness(data, date) }, data.warnings, data.errors), pretty, code);

@@ -38,5 +38,3 @@ export const MUSCLE_IDS: readonly string[] = MUSCLES.map((m) => m.id);
 export const LOWER_BODY: readonly string[] = MUSCLES.filter((m) => m.area === 'lower').map((m) => m.id);
 export const UPPER_BODY: readonly string[] = MUSCLES.filter((m) => m.area === 'upper' && m.id !== 'neck').map((m) => m.id);
 
-/** Muscles every lifting plan should reach (the minimum-dose floor applies to these). */
-export const MAJOR_MUSCLES: readonly string[] = ['chest', 'shoulders', 'upper-back', 'lats', 'quads', 'glutes', 'hamstrings', 'abs'];

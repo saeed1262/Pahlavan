@@ -829,7 +829,7 @@ export const CATALOGUE: readonly CatalogueEntry[] = [
     guide: ['Band looped over the bar, under a foot or knee; a thicker band helps more.', 'Pull until the chin clears the bar, then lower to straight arms.', 'Cutting the range short at the bottom.'],
   }),
   x('pull-up', 'Pull-up', 'vertical-pull', ['pull-up-bar'], ['lats'], ['biceps', 'upper-back', 'forearms'], 'low', 'intermediate', {
-    load: BW, easier: ['negative-pull-up', 'assisted-pull-up', 'chin-up', 'ring-row', 'lat-pulldown', 'assisted-pull-up-machine'], harder: ['weighted-pull-up', 'chest-to-bar-pull-up', 'tuck-front-lever'],
+    load: BW, easier: ['negative-pull-up', 'assisted-pull-up', 'chin-up', 'ring-row', 'lat-pulldown', 'assisted-pull-up-machine'], harder: ['weighted-pull-up', 'chest-to-bar-pull-up', 'tuck-front-lever', 'l-sit-pull-up'],
     aliases: ['overhand pull up'], risk: ['joint:shoulder-overhead', 'joint:shoulder-hang', 'joint:grip-heavy'],
     guide: ['Grip a little wider than the shoulders, hanging from straight arms, shoulders down.', 'Pull until the chin clears the bar, then lower to straight arms.', 'Kicking or swinging to get the chin over.'],
   }),
@@ -852,6 +852,12 @@ export const CATALOGUE: readonly CatalogueEntry[] = [
     load: BW, easier: ['pull-up'], harder: ['bar-muscle-up', 'ring-muscle-up'],
     aliases: ['high pull up', 'chest to bar'], risk: ['joint:shoulder-overhead', 'joint:shoulder-hang', 'joint:grip-heavy'],
     guide: ['Grip a little wider than the shoulders.', 'Lean back slightly and drive the elbows down and back until the upper chest touches the bar.', 'Swinging to reach the bar.'],
+  }),
+  // The pull-up with the legs held level: the lats lead, and the abs help, holding the legs up through every rep.
+  x('l-sit-pull-up', 'L-sit pull-up', 'vertical-pull', ['pull-up-bar'], ['lats'], ['biceps', 'upper-back', 'forearms', 'abs'], 'moderate', 'advanced', {
+    load: BW, easier: ['pull-up', 'l-sit'],
+    aliases: ['l pull up'], risk: ['joint:shoulder-overhead', 'joint:shoulder-hang', 'joint:grip-heavy'],
+    guide: ['Hang from straight arms, then lift the legs straight out in front, level with the hips.', 'Keep the legs level and pull until the chin clears the bar, then lower to straight arms.', 'Letting the legs drop or swing to help the pull.'],
   }),
   x('straight-arm-pulldown', 'Straight-arm pulldown', 'vertical-pull', ['cable'], ['lats'], ['upper-back'], 'low', 'beginner', {
     easier: ['band-pulldown'], harder: ['lat-pulldown'],
@@ -1528,7 +1534,7 @@ export const CATALOGUE: readonly CatalogueEntry[] = [
     guide: ['Hands on blocks or bars, one leg tucked, the other straight.', 'Press down to lift, and hold with the toes of the straight leg pointed; switch legs each set.', 'Shrugging the shoulders up.'],
   }),
   x('l-sit', 'L-sit', 'skill', ['bodyweight'], ['abs'], ['triceps'], 'low', 'advanced', {
-    load: 'timed', easier: ['one-leg-l-sit'],
+    load: 'timed', easier: ['one-leg-l-sit'], harder: ['l-sit-pull-up'],
     aliases: ['l sit hold', 'full l sit'], risk: ['joint:wrist-extension'],
     guide: ['Hands on bars, blocks or the floor.', 'Push down hard, and hold the legs straight and level with the hips.', 'Shrugging the shoulders up.'],
   }),
@@ -1573,11 +1579,10 @@ export const CATALOGUE_BY_ID: ReadonlyMap<string, CatalogueEntry> = new Map(CATA
 
 /**
  * The starter movements: the 100 the catalogue held before the exercise
- * library joined it. The plan generator (an optional baseline; the coach
- * designs from the whole catalogue) and the Hotel version's automatic swaps
- * choose from these, so their output stays as it was: their rankings were
- * tuned on this set. A link from one of them to a newer movement is skipped
- * there, as it is not among the candidates.
+ * library joined it. The Hotel version's automatic swaps choose from these
+ * (the coach designs from the whole catalogue), so their output stays as it
+ * was: their ranking was tuned on this set. A link from one of them to a
+ * newer movement is skipped there, as it is not among the candidates.
  */
 export const STARTER_IDS: ReadonlySet<string> = new Set([
   'box-squat', 'bodyweight-squat', 'heel-elevated-goblet-squat', 'goblet-squat', 'tempo-goblet-squat', 'back-squat', 'leg-press', 'leg-extension', 'box-pistol',
