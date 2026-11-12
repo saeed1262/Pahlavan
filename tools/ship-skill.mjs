@@ -1,8 +1,9 @@
 // npm run ship-skill -- <skill-dir> [--no-check] [--from <source-dir>]
 // Builds, then installs the coach skill into <skill-dir>: its text and its
 // self-check from this repository's skill/ folder (or --from <source-dir>,
-// a draft elsewhere: SKILL.md, references/, scripts/selfcheck.mjs, over the
-// folder's own copies; any other file there stays), and dist/engine.cjs as scripts/engine.cjs with a VERSION file (the
+// a draft elsewhere: SKILL.md, references/, scripts/selfcheck.mjs and the
+// self-check's made-up scripts/sample-plan.json, over the folder's own
+// copies; any other file there stays), and dist/engine.cjs as scripts/engine.cjs with a VERSION file (the
 // engine and schema versions). The bundle has no runtime
 // dependencies, so the skill runs it on any machine with Node, without this
 // project. No vault path is built in: the caller names the skill folder.

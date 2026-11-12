@@ -3,14 +3,17 @@
 // declare a start. A draft read with --plan, and a plan written before its
 // first logged level, count the level the plan means; review, check, the
 // Plan screen and Progress read it through the same path, so they agree.
+// The displays follow it too: review's ladders, Progress's Skills data,
+// Today's "Your levels" copy and the movement guide show the plan's start
+// before a level is logged, and say it is the start.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ladderNameAt, ladderHistory, readPlanData } from '../src/adapters/vault/convert.ts';
+import { ladderNameAt, ladderHistory, ladderStatus, readPlanData } from '../src/adapters/vault/convert.ts';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { ladderLevelOn, ladderStartOf } from '../src/core/plan-data.ts';
 import { buildCheck } from '../src/report/check.ts';
-import { buildPlan, buildProgress } from '../src/report/index.ts';
+import { buildPlan, buildProgress, buildProgressMore, guideFor, levelsText } from '../src/report/index.ts';
 import { buildReview } from '../src/report/review.ts';
 import { fixtureFiles, memoryIo } from './helpers.ts';
 
@@ -50,6 +53,22 @@ function readWritten(plan: Json) {
   const files = fixtureFiles('v');
   files[PLAN] = JSON.stringify(plan);
   return readVault(memoryIo(files), 'v', { asOf: DATE });
+}
+
+/** The plan written as plan-data.json, the log's pull-up history set to `logged`, and a made-up pull-up test of `pullups` on 20 Apr when given. */
+function readWith(plan: Json, opts: { logged?: { level: number; date: string }[]; pullups?: number } = {}) {
+  const files = fixtureFiles('v');
+  files[PLAN] = JSON.stringify(plan);
+  const log = JSON.parse(files[LOG]!) as Json;
+  if (opts.logged) log.ladders.pullup = opts.logged;
+  files[LOG] = JSON.stringify(log);
+  if (opts.pullups !== undefined) {
+    const at = 'v/3-Personal/Fitness/body-data.json';
+    const body = JSON.parse(files[at]!) as Json;
+    body.tests.push({ date: '2026-04-20', pullups: opts.pullups });
+    files[at] = JSON.stringify(body);
+  }
+  return { read: readVault(memoryIo(files), 'v', { asOf: DATE }), plan, log };
 }
 
 const perWeek = (read: ReturnType<typeof readVault>) => buildReview(read.data, DATE).volume.planned.value.perWeek;
@@ -197,5 +216,90 @@ describe('a startLevel that is not one of the ladder\'s levels', () => {
     assert.match(errors[0]!.items[0]!, /ladder "pullup" has startLevel 9/);
     assert.equal(ladderSlot(read).exercise, 'dead-hang');
     assert.ok(warningOf(read, 'ladder-start'));
+  });
+});
+
+describe('the displays before a level is logged: the plan\'s start', () => {
+  /** A guide entry for each pull-up level, so the movement guide has something to show. */
+  const guided = (startLevel?: unknown): Json => {
+    const plan = draft(startLevel);
+    for (const l of PULLUP.levels) plan.guide[l.name] = { setup: 'Set up.', do: 'Do it.', avoid: 'Avoid that.', q: 'how to', muscles: { main: ['lats'], helps: ['biceps'] } };
+    return plan;
+  };
+  const pullup = <T extends { id: string }>(rows: readonly T[]) => rows.find((r) => r.id === 'pullup')!;
+
+  it('ladderStatus and review\'s ladders: level 6 from the plan, its name, no since, the reason says it is the start', () => {
+    const { read } = readWith(guided(6));
+    const st = pullup(ladderStatus(read.data, DATE));
+    assert.deepEqual([st.level, st.from, st.levelName, st.since, st.testShowsLevel], [6, 'plan', 'Pull-up', null, undefined]);
+    assert.match(st.reason.note!, /^Pull-up: level 6 \(Pull-up\), the plan's start \(its startLevel\), not logged yet\./);
+    assert.equal(st.reason.inputs['from'], 'plan');
+    const r = pullup(buildReview(read.data, DATE).ladders);
+    assert.deepEqual([r.level, r.from, r.levelName, r.since], [6, 'plan', 'Pull-up', null]);
+    // The fixture's own ladders, which the log holds, say so.
+    assert.deepEqual(ladderStatus(read.data, DATE).filter((l) => l.id !== 'pullup').map((l) => [l.id, l.from]), [['pushup', 'log'], ['handstand', 'log']]);
+  });
+
+  it('Progress\'s Skills: the level, its name and where it comes from; the path is in progress at the start', () => {
+    const { read } = readWith(guided(6));
+    const l = pullup(buildProgressMore(read, DATE, 'v').skills!.ladders);
+    assert.deepEqual([l.level, l.from, l.levelName, l.since, l.testShowsLevel], [6, 'plan', 'Pull-up', null, null]);
+    assert.deepEqual(l.path.map((p) => p.state), ['mastered', 'mastered', 'mastered', 'mastered', 'mastered', 'progress', 'unlocked', 'locked']);
+    assert.ok(l.path.every((p) => p.reached === null), 'nothing logged, so no level has a date');
+  });
+
+  it('a test shows a level only above the start: at the start it shows nothing, under it the hint moves up', () => {
+    // One pull-up shows level 6 (Pull-up).
+    assert.equal(pullup(ladderStatus(readWith(guided(6), { pullups: 1 }).read.data, DATE)).testShowsLevel, undefined);
+    assert.deepEqual(pullup(ladderStatus(readWith(guided(4), { pullups: 1 }).read.data, DATE)).testShowsLevel, { level: 6, name: 'Pull-up' });
+    const more = pullup(buildProgressMore(readWith(guided(4), { pullups: 1 }).read, DATE, 'v').skills!.ladders);
+    assert.deepEqual([more.level, more.from, more.testShowsLevel], [4, 'plan', { level: 6, name: 'Pull-up' }]);
+    // No start: level 0, not set, and the test shows level 6 as before.
+    const none = pullup(ladderStatus(readWith(guided(), { pullups: 1 }).read.data, DATE));
+    assert.deepEqual([none.level, none.from, none.levelName, none.testShowsLevel], [0, 'lowest', null, { level: 6, name: 'Pull-up' }]);
+  });
+
+  it('a logged level wins over the start, from its date; before it the start shows', () => {
+    const { read } = readWith(guided(6), { logged: [{ level: 7, date: '2026-04-20' }] });
+    const st = pullup(ladderStatus(read.data, DATE));
+    assert.deepEqual([st.level, st.from, st.levelName, st.since], [7, 'log', 'Weighted pull-up', '2026-04-20']);
+    assert.match(st.reason.note!, /^Pull-up: level 7 \(Weighted pull-up\) since Mon 20 Apr\./);
+    const before = pullup(ladderStatus(read.data, '2026-04-13'));
+    assert.deepEqual([before.level, before.from, before.since], [6, 'plan', null]);
+    const l = pullup(buildProgressMore(read, DATE, 'v').skills!.ladders);
+    assert.deepEqual([l.level, l.from, l.since], [7, 'log', '2026-04-20']);
+  });
+
+  it('Today\'s "Your levels": the plan\'s start, said as the start; the log\'s level when there is one; not set with neither', () => {
+    const { plan, log } = readWith(guided(6));
+    assert.equal(levelsText(plan, log, 'A'), 'Your levels: Pull-up L6 · Pull-up (the plan\'s start)');
+    assert.equal(levelsText(plan, { ...log, ladders: { ...log.ladders, pullup: [{ level: 7, date: '2026-04-20' }] } }, 'A'), 'Your levels: Pull-up L7 · Weighted pull-up');
+    assert.equal(levelsText(guided(), log, 'A'), 'Your levels: Pull-up: not set');
+  });
+
+  it('the movement guide: the start\'s level, marked as the plan\'s start, not as unset', () => {
+    const { plan, log } = readWith(guided(6));
+    const [e] = guideFor(plan, log, 'Pull-up (your level)');
+    assert.deepEqual([e!.title, e!.unset, e!.planStart], ['Pull-up · L6 Pull-up', false, true]);
+    const [logged] = guideFor(plan, { ...log, ladders: { ...log.ladders, pullup: [{ level: 7, date: '2026-04-20' }] } }, 'Pull-up (your level)');
+    assert.deepEqual([logged!.title, logged!.unset, logged!.planStart], ['Pull-up · L7 Weighted pull-up', false, false]);
+    const [unset] = guideFor(guided(), log, 'Pull-up (your level)');
+    assert.deepEqual([unset!.title, unset!.unset, unset!.planStart], ['Pull-up · L1 Dead hang', true, false]);
+  });
+
+  it('a malformed start is ignored everywhere: not set, level 1 in the guide', () => {
+    for (const bad of [9, 0, 2.5, '6']) {
+      const { read, plan, log } = readWith(guided(bad));
+      const st = pullup(ladderStatus(read.data, DATE));
+      assert.deepEqual([st.level, st.from, st.levelName], [0, 'lowest', null], JSON.stringify(bad));
+      assert.equal(pullup(buildProgressMore(read, DATE, 'v').skills!.ladders).from, 'lowest');
+      assert.equal(levelsText(plan, log, 'A'), 'Your levels: Pull-up: not set');
+      const [e] = guideFor(plan, log, 'Pull-up (your level)');
+      assert.deepEqual([e!.title, e!.unset, e!.planStart], ['Pull-up · L1 Dead hang', true, false]);
+    }
+    // Read straight, too: ladderStatus takes the start through ladderStartOf, never the raw value.
+    const { read } = readWith(guided(6));
+    const raw = { ...read.data, plan: { ...read.data.plan, ladders: read.data.plan.ladders.map((l) => (l.id === 'pullup' ? { ...l, startLevel: 9 } : l)) } };
+    assert.deepEqual([pullup(ladderStatus(raw, DATE)).level, pullup(ladderStatus(raw, DATE)).from], [0, 'lowest']);
   });
 });

@@ -86,6 +86,96 @@ describe('log add', () => {
   });
 });
 
+describe('log add: why a line was skipped', () => {
+  const add = (s: Json) => cli(['log', 'add', '--file', 'v/s.json'], (f) => { f['v/s.json'] = JSON.stringify(s); });
+
+  it('writes each reason into the checklist\'s why, by the line\'s name as skipped names it', () => {
+    const r = add({ ...A, skipped: ['Face Pull + Band External Rotation', 'zone 2 finisher'], skipWhy: { 'Face Pull + Band External Rotation': 'time', 'Zone 2 Finisher': 'energy' } });
+    assert.equal(r.code, 0, JSON.stringify(r.out.errors));
+    assert.deepEqual(r.out.session.checklist, { done: 3, total: 5, skipped: ['Face Pull + Band External Rotation', 'Zone 2 finisher'], why: { 'Face Pull + Band External Rotation': 'time', 'Zone 2 finisher': 'energy' } });
+    // A reason for some skipped lines only; none at all leaves `why` out, as before.
+    assert.deepEqual(add({ ...A, skipped: ['Face Pull + Band External Rotation', 'Zone 2 finisher'], skipWhy: { 'Zone 2 finisher': 'pain' } }).out.session.checklist.why, { 'Zone 2 finisher': 'pain' });
+    assert.equal(add({ ...A, skipWhy: {} }).out.session.checklist.why, undefined);
+  });
+
+  it('refuses a reason that is not one of the four, and a line that is not skipped, writing nothing', () => {
+    const cases: [Json, RegExp][] = [
+      [{ ...A, skipWhy: { 'Face Pull + Band External Rotation': 'tired' } }, /^"skipWhy" for Face Pull \+ Band External Rotation is "tired": a skip's reason is time, pain, equipment or energy$/],
+      [{ ...A, skipWhy: ['time'] }, /^"skipWhy" gives each skipped line's reason by its name/],
+      [{ ...A, skipWhy: { 'Goblet Squat': 'time' } }, /^"skipWhy" gives a reason for "Goblet Squat", which is not skipped: a reason goes with a line in "skipped"$/],
+      [{ ...A, skipWhy: { Burpees: 'time' } }, /^"skipWhy": "Burpees" is not a line of A on /],
+      [{ ...A, skipWhy: { 'Face Pull': 'equipment' } }, /^"skipWhy": "Face Pull" is one part of the paired line "Face Pull \+ Band External Rotation"/],
+      [{ date: TODAY, type: 'custom', label: 'Hike', skipWhy: { Hike: 'time' } }, /^"skipWhy" goes with a planned session's skipped lines: a custom session has no checklist$/],
+    ];
+    for (const [s, msg] of cases) {
+      const r = cli(['log', 'add', '--file', 'v/s.json', '--write'], (f) => { f['v/s.json'] = JSON.stringify(s); });
+      assert.equal(r.code, 1, `${msg}: ${JSON.stringify(r.out)}`);
+      assert.match(r.out.errors[0].message, msg);
+      assert.equal(r.writes.log, 0);
+    }
+  });
+});
+
+describe('log add at Every set', () => {
+  // The lifts' every set, and the pair's two parts each as its own exercise.
+  const FULL = {
+    ...A,
+    skipped: [],
+    trackingLevel: 'full',
+    exerciseSets: [
+      { name: 'Goblet Squat', sets: [{ weight: 24, reps: 10, rir: 2 }, { weight: 24, reps: 10 }, { weight: 24, reps: 9, rir: 1 }] },
+      { name: 'Flat DB Bench Press', sets: [{ weight: 22, unit: 'lb', reps: 9 }] },
+      { name: 'Face Pull', sets: [{ weight: 30, reps: 15 }] },
+      { name: 'Band External Rotation', sets: [{ reps: 15 }, { reps: 12 }] },
+    ],
+  };
+  const add = (s: Json, write = false) => cli(['log', 'add', '--file', 'v/s.json', ...(write ? ['--write'] : [])], (f) => { f['v/s.json'] = JSON.stringify(s); });
+
+  it('writes every set as given, each part of a pair by its own name', () => {
+    const r = add(FULL, true);
+    assert.equal(r.code, 0, JSON.stringify(r.out.errors));
+    const s = sessions(r.files).at(-1)!;
+    assert.equal(s.trackingLevel, 'full');
+    assert.deepEqual(s.exerciseSets.map((x: Json) => [x.name, x.sets.length]), [['Goblet Squat', 3], ['Flat DB Bench Press', 1], ['Face Pull', 1], ['Band External Rotation', 2]]);
+    assert.deepEqual(s.exerciseSets[0].sets[0], { weight: 24, unit: null, reps: 10, rir: 2 });
+  });
+
+  it('refuses what the log cannot read, and writes nothing', () => {
+    const cases: [Json, RegExp][] = [
+      [{ ...FULL, trackingLevel: 'every' }, /"trackingLevel" is "standard" or "full"/],
+      [{ ...FULL, trackingLevel: 'standard' }, /"exerciseSets" needs "trackingLevel": "full"/],
+      [{ ...FULL, exerciseSets: undefined }, /"trackingLevel": "full" needs "exerciseSets"/],
+      [{ ...FULL, exerciseSets: { name: 'Goblet Squat' } }, /"exerciseSets" is a list/],
+      [{ ...FULL, exerciseSets: [{ name: 'Goblet Squat', sets: 3 }] }, /Goblet Squat: "sets" is a list of sets/],
+      [{ ...FULL, exerciseSets: [{ sets: [] }] }, /exerciseSets item 1 needs a "name"/],
+      [{ ...FULL, exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: 24, reps: 9.5 }] }] }, /Goblet Squat, set 1: reps is a whole number, 0 or more/],
+      [{ ...FULL, exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: 24, reps: -1 }] }] }, /reps is a whole number/],
+      [{ ...FULL, exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: 24, reps: 8 }, { weight: 24, reps: 8, rir: 11 }] }] }, /Goblet Squat, set 2: RIR is 0 to 10/],
+      [{ ...FULL, exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: -5, reps: 8 }] }] }, /weight is a number, 0 or more/],
+      [{ ...FULL, exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: 24, unit: 'stone', reps: 8 }] }] }, /unit is lb or kg/],
+      [{ ...FULL, exerciseSets: [...FULL.exerciseSets, { name: 'Back Squat', sets: [{ weight: 60, reps: 5 }] }] }, /Back Squat is not an item of A on .*its items: Goblet Squat; Flat DB Bench Press/],
+      [{ ...FULL, exerciseSets: [...FULL.exerciseSets, { name: 'Cable Fly', planned: 'Pec Deck', sets: [{ weight: 20, reps: 12 }] }] }, /Cable Fly: "planned" Pec Deck is not an item of A/],
+      [{ ...FULL, exerciseSets: FULL.exerciseSets.slice(1) }, /lift1 Goblet Squat has a top set but no sets in "exerciseSets"/],
+    ];
+    for (const [s, msg] of cases) {
+      const r = add(s, true);
+      assert.equal(r.code, 1, `${msg}: ${JSON.stringify(r.out)}`);
+      assert.match(r.out.errors[0].message, msg);
+      assert.equal(r.writes.log, 0);
+    }
+  });
+
+  it('takes a swap that names the plan\'s item, a ladder\'s level by its name that day, and RIR 0 to 10', () => {
+    const swap = add({ ...FULL, exerciseSets: [...FULL.exerciseSets.slice(0, 2), { name: 'Band Pull-Apart', planned: 'Face Pull', sets: [{ reps: 20, rir: 0 }] }, { name: 'band external rotation', sets: [{ reps: 15, rir: 10 }] }] });
+    assert.equal(swap.code, 0, JSON.stringify(swap.out.errors));
+    // Lifts given as 0 x 0 (not logged) need no sets.
+    const none = add({ ...FULL, lift1: { name: 'Goblet Squat', weight: 0, reps: 0 }, exerciseSets: FULL.exerciseSets.slice(1) });
+    assert.equal(none.code, 0, JSON.stringify(none.out.errors));
+    const s1 = add({ date: TODAY, type: 'S1', trackingLevel: 'full', exerciseSets: [{ name: 'Push-up (your level)', sets: [{ reps: 8 }] }, { name: 'Dead Bug', sets: [{ reps: 8 }, { reps: 8 }] }] });
+    assert.equal(s1.code, 0, JSON.stringify(s1.out.errors));
+  });
+});
+
 describe('log ladder', () => {
   it('sets a level with its date, says already for the same level, refuses an unknown ladder or level', () => {
     const r = cli(['log', 'ladder', '--id', 'pushup', '--level', '3', '--date', TODAY, '--write']);

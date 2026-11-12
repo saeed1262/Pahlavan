@@ -205,3 +205,69 @@ describe('profile: the self-check, the bad-week answer, short days and split pre
     assert.deepEqual(paths(validateProfile(p)), ['selfCheck.confirmed']);
   });
 });
+
+describe('profile: the gym\'s real weights (loads)', () => {
+  const kit = () => ({
+    unit: 'kg',
+    dumbbell: { from: 2, to: 30, step: 2 },
+    kettlebell: { weights: [24, 8, 16] },
+    barbell: { bar: 20, plates: [20, 10, 5, 2.5, 1.25] },
+    'trap-bar': { bar: 25 },
+    machine: { step: 5, to: 100 },
+    cable: { step: 2.5 },
+  });
+  const errs = (loads: unknown) => validateProfile({ ...profile(), loads }).map((e) => `${e.path}: ${e.message}`);
+
+  it('accepts every kind, each optional, lists in any order', () => {
+    assert.deepEqual(errs(kit()), []);
+    assert.deepEqual(errs({ unit: 'lb' }), []);
+    assert.deepEqual(errs({ unit: 'kg', 'trap-bar': { bar: 25, plates: [20, 10] } }), []);
+  });
+
+  it('rejects a bad kit with clear errors', () => {
+    assert.deepEqual(errs({ dumbbell: { from: 2, to: 30, step: 2 } }), ['loads.unit: is required']);
+    assert.deepEqual(errs({ unit: 'stone' }), ['loads.unit: expected one of: kg, lb']);
+    assert.deepEqual(errs({ unit: 'kg', dumbbell: { from: 30, to: 2, step: 2 } }), ['loads.dumbbell: from (30) is above to (2)']);
+    assert.deepEqual(errs({ unit: 'kg', dumbbell: { from: 2, to: 30 } }), ['loads.dumbbell: needs the weights as a list ({"weights": [2, 4, 6]}) or a range ({"from": 2, "to": 30, "step": 2})']);
+    assert.deepEqual(errs({ unit: 'kg', dumbbell: { weights: [2, 4], step: 2 } }), ['loads.dumbbell: give the weights as a list or as from, to and step, not both']);
+    assert.deepEqual(errs({ unit: 'kg', kettlebell: { weights: [8, -4] } }), ['loads.kettlebell.weights[1]: must be above 0']);
+    assert.deepEqual(errs({ unit: 'kg', kettlebell: { weights: [] } }), ['loads.kettlebell.weights: needs at least 1 item(s)']);
+    assert.deepEqual(errs({ unit: 'kg', barbell: { bar: 20, plates: [0] } }), ['loads.barbell.plates[0]: must be above 0']);
+    assert.deepEqual(errs({ unit: 'kg', machine: { step: 0 } }), ['loads.machine.step: must be above 0']);
+    assert.deepEqual(errs({ unit: 'kg', cable: { step: 5, from: 50, to: 20 } }), ['loads.cable: the lightest load (50) is above to (20)']);
+    assert.deepEqual(errs({ unit: 'kg', 'trap-bar': { bar: 25 } }), ['loads.trap-bar: needs its plates, or a barbell whose plates it uses']);
+    assert.deepEqual(errs({ unit: 'kg', rack: { step: 5 } }), ['loads.rack: unknown key']);
+  });
+
+  it('a program exercise may carry its real weights', () => {
+    const p = program();
+    (p.exercises.squat as Record<string, unknown>)['weights'] = [20, 22.5, 25];
+    assert.deepEqual(validateProgram(p), []);
+    (p.exercises.squat as Record<string, unknown>)['weights'] = [0];
+    assert.deepEqual(paths(validateProgram(p)), ['exercises.squat.weights[0]']);
+  });
+});
+
+describe('profile: the gym\'s loads have sane bounds', () => {
+  const errs = (loads: unknown) => validateProfile({ ...profile(), loads }).map((e) => `${e.path}: ${e.message}`);
+
+  it('a range or a list of at most 200 weights', () => {
+    assert.deepEqual(errs({ unit: 'kg', dumbbell: { from: 1, to: 1e9, step: 1 } }), [
+      'loads.dumbbell.to: must be at most 500 kg (the heaviest load Pahlavan reads)',
+      'loads.dumbbell: from 1 to 1000000000 in steps of 1 is 1000000000 weights; at most 200 (list the ones the gym has)',
+    ]);
+    assert.deepEqual(errs({ unit: 'kg', kettlebell: { weights: Array.from({ length: 201 }, (_, i) => i + 1) } }), ['loads.kettlebell.weights: 201 weights; at most 200']);
+    assert.deepEqual(errs({ unit: 'kg', dumbbell: { from: 1, to: 200, step: 1 } }), []);
+  });
+
+  it('steps and plates of at least 0.25 kg or 0.5 lb, loads of at most 500 kg or 1100 lb', () => {
+    assert.deepEqual(errs({ unit: 'kg', machine: { step: 0.0001 } }), ['loads.machine.step: must be at least 0.25 kg (the smallest step Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'lb', cable: { step: 0.25 } }), ['loads.cable.step: must be at least 0.5 lb (the smallest step Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'kg', barbell: { bar: 20, plates: [20, 0.001] } }), ['loads.barbell.plates[1]: must be at least 0.25 kg (the smallest step Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'kg', 'trap-bar': { bar: 25, plates: [0.1] } }), ['loads.trap-bar.plates[0]: must be at least 0.25 kg (the smallest step Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'lb', barbell: { bar: 2000, plates: [45] } }), ['loads.barbell.bar: must be at most 1100 lb (the heaviest load Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'kg', cable: { step: 5, to: 600 } }), ['loads.cable.to: must be at most 500 kg (the heaviest load Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'kg', dumbbell: { weights: [2, 4, 900] } }), ['loads.dumbbell.weights[2]: must be at most 500 kg (the heaviest load Pahlavan reads)']);
+    assert.deepEqual(errs({ unit: 'kg', barbell: { bar: 20, plates: [20, 10, 5, 2.5, 1.25, 0.5, 0.25] }, machine: { step: 0.25, to: 50 } }), []);
+  });
+});

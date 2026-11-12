@@ -13,7 +13,7 @@ import { build as pahlavanMenu } from './pahlavan-menu.mjs';
 import { save } from './shortcut.mjs';
 
 const SHORTCUTS = [
-  ['Pahlavan.shortcut', pahlavanMenu, { color: 4292093695, glyph: 59446 }],
+  ['Pahlavan.shortcut', pahlavanMenu, { color: 4292093695, glyph: 59446, input: true }], // the gym page's Send hands it the session
   ['Health to Pahlavan.shortcut', healthToPahlavan, { color: 4282601983, glyph: 59784 }],
 ];
 

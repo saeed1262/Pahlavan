@@ -3,15 +3,10 @@
 // knows, on plan-data's 14 groups, a main muscle never also a helper.
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { canonicalTags } from '../src/adapters/vault/muscle-tags.ts';
 import { CATALOGUE, CATALOGUE_BY_ID } from '../src/core/data/exercises.ts';
-import { generatePlan } from '../src/core/plan/generate.ts';
 import { planDataGroups, PLAN_DATA_MUSCLES } from '../src/core/plan-data.ts';
-import type { Profile } from '../src/core/schema.ts';
-import { ROOT } from './helpers.ts';
 
 const tags = (id: string) => {
   const e = CATALOGUE_BY_ID.get(id);
@@ -60,7 +55,7 @@ describe('catalogue tags: the evidence audit', () => {
     assert.deepEqual(hinges.map((e) => e.id), ['db-rdl', 'single-leg-rdl', 'rdl', 'deadlift', 'kb-deadlift', 'trap-bar-deadlift', 'kickstand-rdl']);
     for (const e of hinges) assert.ok(trains(e.id, 'forearms'), e.id);
     for (const id of ['kb-swing', 'single-arm-kb-swing', 'kb-clean']) assert.ok(trains(id, 'forearms'), id);
-    for (const id of ['pull-up', 'assisted-pull-up', 'negative-pull-up', 'chin-up', 'weighted-pull-up', 'chest-to-bar-pull-up', 'flexed-arm-hang', 'assisted-pull-up-machine', 'db-shrug']) assert.ok(trains(id, 'forearms'), id);
+    for (const id of ['pull-up', 'assisted-pull-up', 'negative-pull-up', 'chin-up', 'weighted-pull-up', 'chest-to-bar-pull-up', 'l-sit-pull-up', 'flexed-arm-hang', 'assisted-pull-up-machine', 'db-shrug']) assert.ok(trains(id, 'forearms'), id);
   });
 
   it('keeps a movement that plans named by another\'s synonym on that one\'s tags, so their sets per muscle do not change', () => {
@@ -86,11 +81,11 @@ describe('catalogue tags: the evidence audit', () => {
     assert.equal(CATALOGUE_BY_ID.get('db-shrug')!.iap, 'moderate');
   });
 
-  it('gives a typical plan of rows and hinges some forearm sets', () => {
-    const fixture = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'plans', 'a-novice-dumbbells.json'), 'utf8')) as { input: { profile: Profile; today: string; options?: Record<string, unknown> } };
-    const p = generatePlan({ profile: fixture.input.profile, today: fixture.input.today, options: (fixture.input.options ?? {}) as never }).value.proposal;
-    assert.ok(p.volume.length > 0);
-    for (const v of p.volume) assert.ok((v.perWeek['forearms'] ?? 0) > 0, `week ${v.week}`);
+  it('gives rows, hinges and pull-ups the forearms as a helper (grip work), on the vault\'s groups too', () => {
+    for (const id of ['db-row', 'seated-cable-row', 'barbell-row', 'db-rdl', 'rdl', 'deadlift', 'pull-up']) {
+      assert.ok(tags(id).helps.includes('forearms'), id);
+      assert.ok(planDataGroups(tags(id)).helps.includes('forearms'), id);
+    }
   });
 
   it('never tags one muscle as main and helping in the same entry', () => {
@@ -115,6 +110,10 @@ describe('catalogue tags as the vault counts them', () => {
     assert.equal(chin.source, 'catalogue');
     assert.deepEqual(chin.tags, { main: ['lats'], helps: ['biceps', 'upper-back', 'forearms'] });
     assert.deepEqual(chin.differs, { guide: { main: ['lats', 'biceps'], helps: [] }, catalogue: chin.tags });
+    // The L-sit pull-up, once only a guide entry's: the pull-up's tags with the abs helping, which hold the legs level.
+    const lsit = canonicalTags('L-sit pull-up', { muscles: { main: ['lats', 'abs'], helps: ['biceps'] } });
+    assert.deepEqual([lsit.source, lsit.catalogue?.id, lsit.tags], ['catalogue', 'l-sit-pull-up', { main: ['lats'], helps: ['biceps', 'upper-back', 'forearms', 'abs'] }]);
+    assert.deepEqual(canonicalTags('L-sit pull-up', undefined).source, 'catalogue');
   });
 
   it('keeps the guide\'s own tags for a movement the catalogue does not know, or with an override reason', () => {

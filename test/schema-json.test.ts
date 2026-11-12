@@ -38,6 +38,7 @@ import {
   INBOX_KINDS,
   TRAINED_ANSWERS,
   SKIP_REASONS,
+  SWAP_REASONS,
 } from '../src/core/schema.ts';
 import { PATTERNS } from '../src/core/data/exercises.ts';
 import { SHAPE_KEYS } from '../src/core/validate.ts';
@@ -115,6 +116,7 @@ describe('JSON Schema', () => {
       reasonSourceKind: REASON_SOURCES,
       trainedAnswer: TRAINED_ANSWERS,
       skipReason: SKIP_REASONS,
+      swapReason: SWAP_REASONS,
     };
     for (const [name, values] of Object.entries(enums)) assert.deepEqual(schema.$defs[name]!.enum, [...values], name);
   });

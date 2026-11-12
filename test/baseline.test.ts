@@ -10,6 +10,7 @@ import { readVault } from '../src/adapters/vault/read.ts';
 import { run } from '../src/cli/cli.ts';
 import { cycleStart } from '../src/core/cycle.ts';
 import { titleFor } from '../src/core/reason.ts';
+import { legacyRules } from '../src/core/rules.ts';
 import { baselineNote } from '../src/report/baseline.ts';
 import { fixtureFiles, memoryIo } from './helpers.ts';
 
@@ -39,6 +40,26 @@ describe('the baseline note', () => {
     for (const h of ['## 1. Body', '## 2. Photos', '## 3. Fitness tests', '## 4. Strength']) assert.ok(text.includes(h), h);
     assert.doesNotMatch(text, /—/);
     assert.doesNotMatch(text, /cholesterol|83\.5|92 cm/);
+  });
+
+  it('with the plan’s own test weeks: the first photos on the earlier of the first light week and the first test week, then on each of both', () => {
+    const lw = legacyRules().lightWeeks;
+    // Plan week 6 comes after the first light week: the photos' first Sunday stays week 4's.
+    const later = baselineNote('2026-11-02', [], lw, [6, 12]).value;
+    assert.deepEqual([later.firstPhotos, later.firstTests], ['2026-11-29', '2026-12-12']);
+    assert.match(later.text, /first light week's Sunday \(Sun 29 Nov\), then on each light week's Sunday and each test week's\.\n/);
+    assert.match(later.text, /The first tests come in plan week 6 \(Sat 12 Dec\); the intake's movement self-check/);
+    // Plan week 2 comes first: its Sunday is the first photo set.
+    const early = baselineNote('2026-11-02', [], lw, [2, 12]);
+    assert.deepEqual([early.value.firstPhotos, early.value.firstTests], ['2026-11-15', '2026-11-14']);
+    assert.match(early.value.text, /first test week's Sunday \(Sun 15 Nov\), then on each light week's Sunday and each test week's\./);
+    assert.match(early.reason.note!, /the first photo set the test week's Sunday Sun 15 Nov, the first tests plan week 2's Saturday Sat 14 Nov\./);
+    // Test weeks at the phase ends read as the default; on light weeks only, they add no photo day.
+    assert.equal(baselineNote('2026-11-02', [], lw, [8, 16, 24]).value.text, baselineNote('2026-11-02', []).value.text);
+    const onLight = baselineNote('2026-11-02', [], lw, [4, 12]).value;
+    assert.equal(onLight.firstPhotos, '2026-11-29');
+    assert.match(onLight.text, /then on each light week's Sunday\.\n/);
+    assert.doesNotMatch(later.text + early.value.text, /—/);
   });
 
   it('a note written from it starts the cycle on its date', () => {

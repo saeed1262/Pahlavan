@@ -8,7 +8,7 @@ import { readVault } from '../src/adapters/vault/read.ts';
 import { paths } from '../src/adapters/vault/layout.ts';
 import type { PlanData } from '../src/core/plan-data.ts';
 import { buildTemplate } from '../src/report/checkin.ts';
-import { buildReview } from '../src/report/review.ts';
+import { buildReview, liftLoad } from '../src/report/review.ts';
 import { buildSession } from '../src/report/session.ts';
 import { fixtureFiles, memoryIo } from './helpers.ts';
 
@@ -100,5 +100,44 @@ describe('the plan\'s stall response', () => {
     assert.deepEqual((t.record as { triage: unknown[] }).triage, []);
     const q = t.ask.find((x) => x.topic === 'triage')!;
     assert.match(q.answer ?? '', /Nothing is pre-filled/);
+  });
+});
+
+// The gym's real weights (profile.loads) under a stall reset and a ladder slot.
+describe('a lift\'s rule on the gym\'s real weights', () => {
+  const PROFILE = `v/${paths().profile}`;
+  function withKit(loads: unknown, progression: Record<string, unknown>, asOf = '2026-04-12') {
+    const f = fixtureFiles('v');
+    const doc = JSON.parse(f[PLAN]!) as PlanData;
+    doc.lifts['Flat DB Bench Press'] = { ...doc.lifts['Flat DB Bench Press']!, progression };
+    f[PLAN] = `${JSON.stringify(doc, null, 2)}\n`;
+    const p = JSON.parse(f[PROFILE]!);
+    p.loads = loads;
+    f[PROFILE] = JSON.stringify(p);
+    return readVault(memoryIo(f, asOf), 'v', { asOf }).data;
+  }
+
+  it('a stall reset lands on the nearest real weight under the base', () => {
+    const l = bench(buildReview(withKit({ unit: 'lb', dumbbell: { from: 5, to: 80, step: 5 } }, { rule: 'double', onMiss: 'hold', onStall: { drop: 0.1 } }), '2026-04-12'));
+    const n = l.next!.value as { action: string; weight: number };
+    assert.deepEqual([n.action, n.weight], ['lighter', 55]);
+  });
+
+  it('a stall reset at the lightest weight: no reset, and the note says there is nothing lighter', () => {
+    const l = bench(buildReview(withKit({ unit: 'lb', dumbbell: { weights: [60, 65, 70] } }, { rule: 'double', onMiss: 'hold', onStall: { drop: 0.1 } }), '2026-04-12'));
+    assert.equal(l.stall.value.stalled, true);
+    const n = l.next!.value as { action: string; weight: number };
+    assert.notEqual(n.action, 'lighter');
+    assert.equal(n.weight, 60);
+    assert.equal((l as { stallReset?: unknown }).stallReset ?? null, null);
+    assert.match(l.next!.reason.note ?? '', /the lightest dumbbell here is 60 lb: nothing lighter to reset to/);
+  });
+
+  it('a ladder slot never snaps: its load carries no real weights, as progression reads it', () => {
+    const ex = { name: 'Kettlebell Swing', unit: 'kg' as const, increment: 4, equipment: 'kettlebell', weights: [8, 12, 16, 20, 24] };
+    assert.deepEqual(liftLoad(ex, 'kg', 4, { progression: { rule: 'ladder', next: 'kb-snatch' } }), { unit: 'kg', increment: 4 });
+    assert.deepEqual(liftLoad(ex, 'kg', 4, { progression: { rule: 'double' } }), { unit: 'kg', increment: 4, weights: [8, 12, 16, 20, 24], kit: 'kettlebell' });
+    assert.deepEqual(liftLoad(ex, 'kg', 4, null), { unit: 'kg', increment: 4, weights: [8, 12, 16, 20, 24], kit: 'kettlebell' });
+    assert.deepEqual(liftLoad(ex, 'lb', 10, null), { unit: 'lb', increment: 10 }, 'weights in another unit than the lift are not used');
   });
 });

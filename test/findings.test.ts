@@ -1,6 +1,6 @@
 // A body-assessment finding is a question before it acts (findings.ts): the
 // confirmation rule itself, and where the coach reads the questions, the
-// warnings of `engine review` and `engine plan` on the synthetic vault.
+// warnings of `engine review` on the synthetic vault.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -120,13 +120,5 @@ describe('the coach reads the questions in the warnings', () => {
     const no = review((p) => { p.emphasis[0]!.confirmed = false; });
     assert.deepEqual(asked(no), []);
     assert.equal(no['volume']['pullPush']['value']['target'], 1.2, 'pull at least equal to push for the posture goal, not 2 to 1');
-  });
-
-  it('plan: the proposal\'s warnings carry the finding, named in items', () => {
-    const r = JSON.parse(run(['plan', '--profile', PROFILE], withProfile(() => {})).stdout) as Json;
-    assert.deepEqual(asked(r).map((w) => w['items']), [['emphasis.forward-head-rounded-shoulders']]);
-    const w = (r['proposal']['warnings'] as Json[]).find((x) => x['code'] === 'finding-unconfirmed')!;
-    assert.deepEqual(w['muscles'], []);
-    assert.equal(w['finding']['answer'], 'emphasis[0].confirmed');
   });
 });

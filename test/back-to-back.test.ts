@@ -1,20 +1,15 @@
 // The back-to-back rule (concurrent.ts): one muscle hard on two days running
-// is allowed only when the second day is the lighter one for it. `plan` and
-// `review` share it (liftItem, backToBack), so a draft and the same draft
-// written to plan-data get the same verdict.
+// is allowed only when the second day is the lighter one for it. `review`
+// reads the written plan (or a draft) through the same rule (liftItem,
+// backToBack).
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { backToBack, checkConcurrent, CONCURRENT, liftItem, type PlannedSession } from '../src/core/concurrent.ts';
-import { toPlanData } from '../src/core/plan-data.ts';
-import { planCandidates } from '../src/core/plan/generate.ts';
-import type { PlanInput } from '../src/core/plan/context.ts';
 import type { Exercise, RepRange } from '../src/core/schema.ts';
 import { buildReview } from '../src/report/review.ts';
-import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
+import { fixtureFiles, memoryIo } from './helpers.ts';
 
 const EX: Record<string, Exercise> = {
   squat: { name: 'Squat', pattern: 'squat', unit: 'kg', increment: 2.5, muscles: { main: ['quads', 'glutes'], helps: [] } },
@@ -74,49 +69,43 @@ describe('backToBack: the second day lighter for the muscle', () => {
   });
 });
 
-describe('the draft and the written plan get the same verdict', () => {
-  const athlete = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'athletes', '2-desk-recomp.json'), 'utf8')) as { input: PlanInput };
-  const cands = planCandidates(athlete.input);
+describe('review: the written plan gets the same verdict', () => {
   const PLAN = 'v/3-Personal/Fitness/plan-data.json';
   const LOG = 'v/3-Personal/Fitness/fitness-log-data.json';
-  /**
-   * The candidate written to plan-data (the exporter) and read back by the
-   * vault adapter, then reviewed. Each ladder starts at the draft's level in
-   * the log, as the exporter's "ladder levels" line asks the coach to set it,
-   * so the written plan holds the same movements as the draft.
-   */
-  const reviewed = (id: string) => {
-    const c = cands.find((x) => x.template.id === id)!;
+  const squat = { name: 'Barbell Back Squat', sr: '3 × 6', rest: '2–3 min', rir: 2, logged: true, note: 'Why: the heavy day.' };
+  const goblet = { name: 'Goblet Squat', sr: '3 × 10–15', rest: '90 s', rir: 3, logged: true, note: 'Why: the lighter day.' };
+  /** The fixture vault with two lifting days of one squat each, A then B, reviewed on the default layout (A Mon, B Tue). */
+  const reviewed = (a: object, b: object) => {
     const f = fixtureFiles('v');
-    const base = JSON.parse(f[PLAN]!);
-    f[PLAN] = `${JSON.stringify(toPlanData(c.program, { base }).value.planData, null, 2)}\n`;
+    const plan = JSON.parse(f[PLAN]!);
+    plan.sessions.A = [a];
+    plan.sessions.B = [b];
+    plan.lifts['Barbell Back Squat'] = { ...plan.lifts['Barbell Back Squat'], lo: 6, hi: 6 };
+    plan.lifts['Goblet Squat'] = { ...plan.lifts['Goblet Squat'], lo: 10, hi: 15 };
+    f[PLAN] = JSON.stringify(plan);
+    // The fixture's log would set the days (weekLayout): its last 4 weeks are custom sessions here, so review uses the default layout.
     const log = JSON.parse(f[LOG]!);
-    const slots = c.program.macrocycle.phases[0]!.mesocycles[0]!.weeks.flatMap((w) => w.sessions.flatMap((t) => t.slots));
-    for (const x of slots) if (x.progression?.ladder && x.progression.level) (log.ladders ??= {})[x.progression.ladder] = [{ level: x.progression.level, date: '2026-01-01' }];
-    // The fixture's log is another plan's: its last 4 weeks would set the days (weekLayout), so they
-    // are custom sessions here and review lays the draft on the default layout, the generator's week.
     for (const s of log.sessions) if (s.date >= '2026-03-16') s.type = 'custom';
     f[LOG] = JSON.stringify(log);
     const read = readVault(memoryIo(f, '2026-04-12'), 'v', { asOf: '2026-04-12' });
-    return { c, review: buildReview(read.data, '2026-04-12') };
+    return buildReview(read.data, '2026-04-12').concurrent;
   };
-  const draftFlags = (c: (typeof cands)[number]) => c.proposal.checks.find((x) => x.id === 'concurrent')!;
+  const sameMuscle = (c: ReturnType<typeof reviewed>) => c.flags.filter((x) => x.value.flag === 'same-muscle-back-to-back');
 
-  it('A/B/C/D: the draft passes, and review allows each heavy day and its lighter day after it', () => {
-    const { c, review } = reviewed('full-body-abcd');
-    assert.ok(draftFlags(c).passed);
-    assert.deepEqual(review.concurrent.flags.filter((x) => x.value.flag === 'same-muscle-back-to-back'), []);
-    const allowed = review.concurrent.backToBack.filter((x) => x.value.lighter);
-    assert.ok(allowed.length > 0, 'the heavy and lighter pairs share muscles');
-    assert.deepEqual([...new Set(allowed.map((x) => `${x.value.first}>${x.value.second}`))].sort(), ['A>B', 'C>D']);
+  it('the heavy squat, then the lighter goblet squat the day after: allowed', () => {
+    const c = reviewed(squat, goblet);
+    assert.deepEqual(c.layout.filter((l) => l.session === 'A' || l.session === 'B').map((l) => `${l.session} ${l.day}`), ['A mon', 'B tue']);
+    assert.deepEqual(sameMuscle(c), []);
+    const allowed = c.backToBack.filter((x) => x.value.lighter);
+    assert.ok(allowed.length > 0, 'the two days share muscles');
+    assert.deepEqual([...new Set(allowed.map((x) => `${x.value.first}>${x.value.second}`))], ['A>B']);
   });
 
-  it('A/B twice: the draft fails, and review flags the same muscles on the same days', () => {
-    const { c, review } = reviewed('full-body-ab-x2');
-    assert.equal(draftFlags(c).passed, false);
-    const draft = new Set([...draftFlags(c).detail.matchAll(/(\S+) trains hard/g)].map((m) => m[1]));
-    const written = new Set(review.concurrent.flags.filter((x) => x.value.flag === 'same-muscle-back-to-back').map((x) => x.value.muscle));
-    assert.ok(written.size > 0);
-    assert.deepEqual([...written].sort(), [...draft].sort());
+  it('the lighter day first, then the heavy one: flagged for the same muscles', () => {
+    const c = reviewed(goblet, squat);
+    const flagged = sameMuscle(c);
+    assert.ok(flagged.length > 0);
+    assert.ok(flagged.every((x) => x.value.sessions.join('>') === 'A>B'));
+    assert.deepEqual(c.backToBack.filter((x) => x.value.lighter), []);
   });
 });

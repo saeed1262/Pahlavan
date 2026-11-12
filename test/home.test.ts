@@ -1,8 +1,9 @@
 // Home, the overview tab, on the synthetic vault: the banner (the session,
 // what readiness changes, a swap, the week in words), Needs you (three at
-// most, in order, the rest counted), food and habits, and the progress
-// lead and tiles; a vault with no plan; and the plain-words rule (no engine
-// terms or band names in any string Home shows).
+// most, in order, the rest counted; the coach and Pahlavan on different
+// versions), food and habits, and the progress lead and tiles; a vault with
+// no plan; and the plain-words rule (no engine terms or band names in any
+// string Home shows).
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -10,12 +11,12 @@ import { readVault } from '../src/adapters/vault/read.ts';
 import { readTracking } from '../src/adapters/vault/tracking-read.ts';
 import { momentAt } from '../src/core/clock.ts';
 import { dueToday } from '../src/core/nudges.ts';
-import { buildFood, buildHome, buildProgress, buildSession, buildToday, coachStepsOf, trainingToday, yourDay, type Home } from '../src/report/index.ts';
+import { buildFood, buildHome, buildProgress, buildSession, buildToday, coachStepsOf, trainingToday, yourDay, type Home, type HomeInputs } from '../src/report/index.ts';
 import { fixtureFiles, memoryIo } from './helpers.ts';
 
 const PLAN = 'v/3-Personal/Fitness/plan-data.json';
 
-function home(date: string, edit: (f: Record<string, string>) => void = () => {}, opts: { due?: boolean } = {}): Home {
+function home(date: string, edit: (f: Record<string, string>) => void = () => {}, opts: { due?: boolean; coach?: HomeInputs['coach'] } = {}): Home {
   const files = fixtureFiles('v');
   edit(files);
   const io = memoryIo(files, date);
@@ -26,8 +27,12 @@ function home(date: string, edit: (f: Record<string, string>) => void = () => {}
   const due = opts.due === false ? null : dueToday({ now: momentAt(date, '12:15', 0), tracking: tr.tracking, nudges: tr.nudges, body: tr.body, photoFolders: tr.photoFolders, habits: tr.habits, program: read.data.program, training: trainingToday(read.data, date), coach: coachStepsOf(read, date, null).now?.value ?? null }).value;
   const food = buildFood(read, tr, date);
   const day = yourDay(today, { session, due, food, items: tr.tracking?.items ?? [] })?.value ?? null;
-  return buildHome({ read, today, session, progress: buildProgress(read, date, 'v'), due, food, day, items: tr.tracking?.items ?? [] });
+  return buildHome({ read, today, session, progress: buildProgress(read, date, 'v'), due, food, day, items: tr.tracking?.items ?? [], ...(opts.coach !== undefined ? { coach: opts.coach } : {}) });
 }
+
+/** The coach in the vault against the one Pahlavan carries, for Home's need. */
+const OLDER = { direction: 'coach-older', installed: '0.26.0', bundled: '0.27.0' } as const;
+const NEWER = { direction: 'coach-newer', installed: '0.28.0', bundled: '0.27.0' } as const;
 
 /** Every string in Home, at any depth. */
 function strings(v: unknown, out: string[] = []): string[] {
@@ -111,6 +116,20 @@ describe('Home on other days', () => {
     assert.deepEqual([tab('today')?.now, tab('today')?.tone], ['Morning check-in open', 'due']);
   });
 
+  it('a sick day ("I’m ill today") says so on Home, not that the check-in was low', () => {
+    const ill = (day: string) => (f: Record<string, string>) => {
+      const p = Object.keys(f).find((k) => k.endsWith('body-data.json'))!;
+      const b = JSON.parse(f[p]!);
+      b.days[day] = { ...b.days[day], illness: true };
+      f[p] = JSON.stringify(b);
+    };
+    const h = home('2026-04-12', ill('2026-04-12'));
+    assert.equal(h.hero?.notes[0]?.lead, 'Take it easy today.');
+    assert.equal(h.hero?.notes[0]?.text, 'You said you’re ill today: no hard training, an easy walk or mobility at most.');
+    // Before today's check-in, the latest one stands, and the line names its day.
+    assert.equal(home('2026-04-12', ill('2026-04-11')).hero?.notes[0]?.text, 'You said you were ill on Sat 11 Apr: no hard training, an easy walk or mobility at most.');
+  });
+
   it('without the reminders, the morning check-in comes from Your day and the habits part is left out', () => {
     const h = home('2026-04-12', () => {}, { due: false });
     assert.equal(h.needs.items[0]?.id, 'morning');
@@ -124,6 +143,22 @@ describe('Home on other days', () => {
     });
     assert.deepEqual([early.progress?.lead, early.progress?.after], ['Early days: 3 of 3 lifting days done so far.', 'The trends show after a few more sessions and weigh-ins.']);
     assert.equal(home('2026-03-05').progress?.lead, 'Your progress shows here after a few logged sessions and weigh-ins.');
+  });
+
+  it('the coach and Pahlavan on different versions: update the coach, or update Pahlavan, from the settings', () => {
+    const all = (h: Home) => [...h.needs.items, ...h.needs.rest];
+    const older = all(home('2026-04-10', () => {}, { coach: OLDER })).find((n) => n.id === 'coach-version');
+    assert.deepEqual(older, { id: 'coach-version', icon: 'sync', tone: 'due', title: 'Update the coach', line: 'This Pahlavan carries a newer coach (0.27.0) than the one in this vault (0.26.0). Update it in Pahlavan’s settings, Coach.', go: 'settings' });
+    const newer = all(home('2026-04-10', () => {}, { coach: NEWER })).find((n) => n.id === 'coach-version');
+    assert.deepEqual(newer, { id: 'coach-version', icon: 'alert', tone: 'warn', title: 'Update Pahlavan', line: 'The coach in this vault (0.28.0) is newer than this Pahlavan’s (0.27.0). Update Pahlavan from Community plugins.', go: 'settings' });
+    // After the day's own needs, which keep their order.
+    const busy = home('2026-04-10', () => {}, { coach: NEWER });
+    assert.deepEqual(all(busy).map((n) => n.id), [...all(home('2026-04-10')).map((n) => n.id), 'coach-version']);
+    assert.equal(busy.needs.more, 2);
+    // The same version, not set up (the welcome card's step), or not known yet: nothing.
+    for (const coach of [{ direction: 'same', installed: '0.27.0', bundled: '0.27.0' } as const, { direction: 'not-set-up', installed: null, bundled: '0.27.0' } as const, null, undefined]) {
+      assert.equal(all(home('2026-04-10', () => {}, { coach })).some((n) => n.id === 'coach-version'), false, JSON.stringify(coach));
+    }
   });
 
   it('without a plan has no banner, food or progress (the view shows the welcome)', () => {
@@ -142,6 +177,13 @@ describe('Home’s words', () => {
         const bad = strings(home(d, () => {}, { due })).filter((s) => BANNED.test(s));
         assert.deepEqual(bad, [], `${d}${due ? '' : ' without the reminders'}`);
       }
+    }
+    // The coach's version in plain words: no engine, no file names.
+    for (const coach of [OLDER, NEWER]) {
+      const h = home('2026-04-10', () => {}, { coach });
+      assert.deepEqual(strings(h).filter((s) => BANNED.test(s)), [], coach.direction);
+      const need = [...h.needs.items, ...h.needs.rest].find((n) => n.id === 'coach-version')!;
+      assert.deepEqual([need.title, need.line].filter((s) => /\bengine\b|VERSION|\.cjs|SKILL/i.test(s)), [], coach.direction);
     }
   });
 });

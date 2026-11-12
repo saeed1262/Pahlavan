@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { convert, inExerciseUnit, LB_PER_KG, roundPy1, roundToStep, toKg, toLb } from '../src/core/units.ts';
+import { convert, inExerciseUnit, LB_PER_KG, roundPy1, roundToStep, toKg, toLb, weightInUnit } from '../src/core/units.ts';
 import { approx } from './helpers.ts';
 
 describe('units', () => {
@@ -55,5 +55,14 @@ describe('units', () => {
     assert.equal(same.value, 52); // same unit: kept as logged, even off the step
     assert.equal(same.reason.rule, 'units.exercise');
     assert.match(same.reason.note ?? '', /kept as logged/);
+  });
+});
+
+describe('weightInUnit on the gym\'s real weights', () => {
+  it('a set logged in the other unit lands on the nearest real weight, not the step', () => {
+    const lb = { unit: 'lb' as const, increment: 5, weights: [39.7, 44.1, 49.6, 55.1] };
+    assert.equal(weightInUnit(22.5, 'kg', lb), 49.6);
+    assert.equal(weightInUnit(22.5, 'kg', { unit: 'lb', increment: 5 }), 50, 'without weights, the step');
+    assert.equal(weightInUnit(50, 'lb', lb), 50, 'the same unit is kept as logged');
   });
 });

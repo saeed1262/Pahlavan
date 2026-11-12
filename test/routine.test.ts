@@ -4,8 +4,9 @@
 // reminder time with close times in one row, the interval and desk kinds by
 // the days they run, after training, "Did you train?", Any time last), the
 // Sundays (the check-in and the letter, the tape on the plan's schedule),
-// every four weeks (the light week, the phase end with its tests), a body
-// record on its own schedule, no plan, and every line in plain words.
+// every four weeks (the light week, the phase end with its tests, or the
+// plan's own test weeks with the tests and photos), a body record on its own
+// schedule, no plan, and every line in plain words.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -24,6 +25,12 @@ const editTracking = (f: Files, fn: (d: any) => void) => {
   f[TRK] = JSON.stringify(d);
 };
 const item = (d: any, id: string) => d.items.find((x: { id: string }) => x.id === id);
+const PLAN = 'v/3-Personal/Fitness/plan-data.json';
+const editPlan = (f: Files, fn: (d: any) => void) => {
+  const d = JSON.parse(f[PLAN]!);
+  fn(d);
+  f[PLAN] = JSON.stringify(d);
+};
 
 function routine(opts: { date?: string; edit?: (f: Files) => void; didYouTrain?: { on: boolean; at: string } } = {}) {
   const date = opts.date ?? DATE;
@@ -147,6 +154,24 @@ describe('Your routine: the rows follow the user’s own items and times', () =>
     assert.deepEqual(rows(v, 'sunday').map((x) => x.time), ['Every Sunday'], 'no tape row on Sundays');
     assert.equal(rows(v, 'weeks')[0]!.what, 'Lighter sessions; on its Sunday the check-in, then');
     assert.deepEqual([rows(v, 'weeks')[1]!.what, rows(v, 'weeks')[1]!.where], ['The review on Sunday:', 'Check-in']);
+  });
+
+  it('the plan’s own test weeks: a Test week row with the tests and the photos, the phase end with its review only', () => {
+    const tests = (f: Files) => editPlan(f, (d) => void (d.rules = { tests: { weeks: [6, 12] } }));
+    const v = routine({ edit: tests }).value;
+    assert.deepEqual(rows(v, 'weeks').map(line), [
+      `Light week · Lighter sessions; on its Sunday the photos, then ${COACH_COMMANDS.review}. Next: Mon 20 Apr to Sun 26 Apr · Plan`,
+      'Test week · The tests on Saturday, the photos on Sunday. Next: Sat 11 Apr and Sun 12 Apr · Body record',
+      `Phase end · The review on Sunday: ${COACH_COMMANDS.review}. Next: Sun 26 Apr · Check-in`,
+    ]);
+    assert.match(rows(v, 'weeks')[1]!.reason.note!, /^Your plan has the fitness tests in plan weeks 6 and 12: each on its Saturday, then a photo set on its Sunday\.$/);
+    assert.match(rows(v, 'weeks')[2]!.reason.note!, /^Plan week 8 ends phase 1: the phase review on its Sunday/);
+    // The next test week after plan week 6's Sunday, and none after the last.
+    assert.equal(rows(routine({ date: '2026-04-13', edit: tests }).value, 'weeks')[1]!.next, 'Next: Sat 23 May and Sun 24 May');
+    assert.equal(rows(routine({ date: '2026-05-25', edit: tests }).value, 'weeks').find((x) => x.time === 'Test week')!.next, 'None left in this plan');
+    // On the body record's own schedule: no Test week row, and the phase end has no tests.
+    const own = routine({ edit: (f) => { tests(f); editTracking(f, (d) => void (d.bodyRecord = { schedule: 'fixed', tapeFrom: '2026-03-24', tapeEvery: 14, testsFrom: '2026-03-21', testsEvery: 28 })); } }).value;
+    assert.deepEqual(rows(own, 'weeks').map((x) => [x.time, x.what]), [['Light week', 'Lighter sessions; on its Sunday the check-in, then'], ['Phase end', 'The review on Sunday:']]);
   });
 
   it('no plan: the day’s items and the morning, no session, Sunday or light-week rows', () => {

@@ -29,6 +29,7 @@ import {
   type InboxResult,
   type InboxTexts,
 } from '../src/report/inbox.ts';
+import { run } from '../src/cli/cli.ts';
 import { fixtureFiles, memoryIo } from './helpers.ts';
 
 type Json = Record<string, any>;
@@ -101,8 +102,11 @@ describe('the entry format (validate\'s inbox kind)', () => {
     assert.deepEqual(msg({ ...amount('water', 250), ids: ['water'] }), ['ids: unknown key']);
     assert.deepEqual(msg(session('2026-04-09', 'A', { rating: 11, lift1: { weight: 50, reps: 8.5 } })), ['session.rating: must be at most 10', 'session.lift1.reps: expected a whole number']);
     assert.deepEqual(msg({ v: 1, kind: 'session', at: at('19:00'), date: TODAY, session: {} }), ['session.type: is required']);
-    assert.deepEqual(msg(morning(TODAY, {})), ['morning: holds no field: give any of energy, soreness, sleepQ, sleepH, rhr, weight, steps, floors']);
+    assert.deepEqual(msg(morning(TODAY, {})), ['morning: holds no field: give any of energy, soreness, sleepQ, sleepH, rhr, hrv, weight, steps, floors']);
     assert.deepEqual(msg(morning(TODAY, { energy: 6, rhr: 52.5, steps: -1 })), ['morning.energy: must be at most 5', 'morning.rhr: expected a whole number', 'morning.steps: must be at least 0']);
+    assert.deepEqual(msg(morning(TODAY, { hrv: 4 })), ['morning.hrv: must be at least 5']);
+    assert.deepEqual(msg(morning(TODAY, { hrv: 48.5 })), ['morning.hrv: expected a whole number']);
+    assert.deepEqual(msg(morning(TODAY, { rhr: 55, hrv: 48 })), []);
     assert.deepEqual(msg(morning(TODAY, { weight: 600, weightUnit: 'lb' })), ['morning.weight: is between 30 and 250 kg (66 and 551 lb)']);
     assert.deepEqual(msg(morning(TODAY, { energy: 3, weightUnit: 'lb' })), ['morning.weightUnit: goes with a weight']);
     assert.deepEqual(msg(trained(TODAY, 'yes')), ['answer: expected one of: trained, rest, missed']);
@@ -159,6 +163,141 @@ describe('applyInbox: a session, as the Log panel saves it', () => {
   it('refuses a session already logged for that date and type ("already"), and an unreadable log', () => {
     no(one(files(), A('2026-04-08')), 'already', /^Full Body A is logged on Wed 8 Apr already: the log keeps that one \(open it in Pahlavan to change it\), so delete this entry$/);
     no(one(files((x) => (x[P('log')] = '{"sessions": [')), A('2026-04-09')), 'unreadable', /fitness-log-data.json is not valid JSON/);
+  });
+});
+
+describe('applyInbox: a session at Every set (the gym page\'s), as log add saves it', () => {
+  // What the gym page sends for A: every set by exercise (each part of the pair its own), a line skipped and why.
+  const GYM = {
+    lift1: { weight: 55, reps: 10 },
+    lift2: { weight: 60, reps: 6, unit: 'lb' },
+    durationMin: 52,
+    cardioMin: 8,
+    notes: 'gym page',
+    trackingLevel: 'full',
+    exerciseSets: [
+      { name: 'Goblet Squat', sets: [{ weight: 55, unit: 'lb', reps: 10, rir: 2 }, { weight: 55, unit: 'lb', reps: 10, rir: null }, { weight: 55, unit: 'lb', reps: 9 }] },
+      { name: 'Flat DB Bench Press', sets: [{ weight: 60, unit: 'lb', reps: 6, rir: 1 }, { weight: 60, unit: 'lb', reps: 6 }] },
+      { name: 'Face Pull', sets: [{ weight: 30, unit: 'lb', reps: 15 }] },
+      { name: 'Band External Rotation', sets: [{ weight: null, unit: null, reps: 15, rir: null }] },
+    ],
+    skipped: ['Zone 2 finisher'],
+    skipWhy: { 'Zone 2 finisher': 'time' },
+    _say: 'A · 7 sets',
+  };
+  const gym = (more: Json = {}, time = '19:02') => session(TODAY, 'A', { ...GYM, ...more }, time);
+  const LOG_PATH = P('log');
+  /** The same session through `engine log add --write`: its lifts named, everything else as the page sent it. */
+  const logAdd = (f: Record<string, string>, more: Json = {}) => {
+    const { _say: _s, lift1, lift2, ...rest } = { ...GYM, ...more };
+    f['v/s.json'] = JSON.stringify({ date: TODAY, type: 'A', lift1: { name: 'Goblet Squat', ...lift1 }, lift2: { name: 'Flat DB Bench Press', ...lift2 }, ...rest });
+    const io = { ...memoryIo(f, TODAY), writeLog: (_r: string, t: string) => void (f[LOG_PATH] = t), writeHabits: (_r: string, t: string) => void (f[P('habits')] = t) };
+    const r = run(['log', 'add', '--file', 'v/s.json', '--vault', 'v', '--write'], io as never);
+    assert.equal(r.code, 0, r.stdout);
+    return JSON.parse(r.stdout) as Json;
+  };
+
+  it('is a valid entry, `_say` and all', () => {
+    assert.deepEqual(validateInboxEntry(gym()), []);
+  });
+
+  it('gives the same log entry as log add, and the same log file (Today\'s ticks too)', () => {
+    const viaCli = files();
+    const out = logAdd(viaCli);
+    const p = plan(files(), [gym()]);
+    const r = ok(p.results[0]!);
+    assert.deepEqual(r.writes.session, out['session']);
+    assert.equal(p.texts.log, viaCli[LOG_PATH]);
+    const e = r.writes.session!;
+    assert.deepEqual([e['trackingLevel'], e['cardioMin'], e['checklist']], ['full', 8, { done: 4, total: 5, skipped: ['Zone 2 finisher'], why: { 'Zone 2 finisher': 'time' } }]);
+    assert.deepEqual((e['exerciseSets'] as Json[]).map((x) => [x['name'], x['sets'].length]), [['Goblet Squat', 3], ['Flat DB Bench Press', 2], ['Face Pull', 1], ['Band External Rotation', 1]]);
+    assert.deepEqual(json(p.texts.log).todayChecklist, { date: TODAY, type: 'A', express: false, checked: [true, true, true, true, false], picked: false });
+    assert.equal(r.writes.sessionTicks, true);
+    assert.equal(r.note, 'Full Body A on Fri 10 Apr: 7 sets, Goblet Squat 55 lb x 10, Flat DB Bench Press 60 lb x 6.');
+  });
+
+  it('refuses what log add refuses, with its message, and what the format does not take', () => {
+    const sets = (x: Json[]) => gym({ exerciseSets: [...GYM.exerciseSets, ...x] });
+    no(one(files(), sets([{ name: 'Back Squat', sets: [{ weight: 60, unit: 'lb', reps: 5 }] }])), 'invalid', /^Back Squat is not an item of A on Fri 10 Apr \(a swap names the plan's item as "planned"\); its items: /);
+    no(one(files(), gym({ exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: 55, reps: 2.5 }] }] })), 'invalid', /^session\.exerciseSets\[0\]\.sets\[0\]\.reps: expected a whole number$/);
+    no(one(files(), gym({ exerciseSets: [{ name: 'Goblet Squat', sets: [{ weight: 55, reps: 10, rir: 11 }] }] })), 'invalid', /^session\.exerciseSets\[0\]\.sets\[0\]\.rir: must be at most 10$/);
+    no(one(files(), gym({ skipWhy: { 'Zone 2 finisher': 'tired' } })), 'invalid', /^session\.skipWhy\.Zone 2 finisher: expected one of: time, pain, equipment, energy$/);
+    no(one(files(), gym({ skipWhy: { 'Goblet Squat': 'pain' } })), 'invalid', /^"skipWhy" gives a reason for "Goblet Squat", which is not skipped: a reason goes with a line in "skipped"$/);
+    no(one(files(), gym({ skipped: ['Burpees'], skipWhy: {} })), 'invalid', /^"Burpees" is not a line of A on Fri 10 Apr/);
+    no(one(files(), gym({ exerciseSets: GYM.exerciseSets.slice(1) })), 'invalid', /^lift1 Goblet Squat has a top set but no sets in "exerciseSets"/);
+    no(one(files(), gym({ exerciseSets: undefined })), 'invalid', /^"trackingLevel": "full" needs "exerciseSets"/);
+    no(one(files(), gym({ trackingLevel: 'standard' })), 'invalid', /^session\.trackingLevel: expected one of: full$/);
+    no(one(files(), gym({ cardioMin: 601 })), 'invalid', /^session\.cardioMin: must be at most 600$/);
+    // The Every set fields go with trackingLevel: an entry without it is the old one, which never takes them.
+    no(one(files(), session(TODAY, 'A', { lift1: GYM.lift1, lift2: GYM.lift2, skipped: ['Zone 2 finisher'] })), 'invalid', /^session\.skipped: goes with "trackingLevel": "full"/);
+    // Still the phone's own checks first: its logged lifts.
+    no(one(files(), gym({ lift2: undefined })), 'invalid', /the entry has no lift2 \(Flat DB Bench Press\)$/);
+  });
+
+  // A swap as the Log panel sends it: the lift done named, the plan's as `planned`; a superset part's in `swaps` and on its sets.
+  const SWAPPED = {
+    lift1: { name: 'Front Squat', planned: 'Goblet Squat', swapWhy: 'soreness', weight: 75, reps: 8 },
+    exerciseSets: [
+      { name: 'Front Squat', planned: 'Goblet Squat', sets: [{ weight: 75, unit: 'lb', reps: 8 }, { weight: 70, unit: 'lb', reps: 8 }] },
+      ...GYM.exerciseSets.slice(1, 3),
+      { name: 'Cable External Rotation', planned: 'Band External Rotation', sets: [{ weight: 10, unit: 'lb', reps: 15 }] },
+    ],
+    swaps: [{ from: 'Band External Rotation', to: 'Cable External Rotation', why: 'mine' }],
+  };
+
+  it('takes a swap as log add does: a lift done in the plan\'s place with its reason, and the other swaps', () => {
+    assert.deepEqual(validateInboxEntry(gym(SWAPPED)), []);
+    const viaCli = files();
+    const out = logAdd(viaCli, SWAPPED);
+    const p = plan(files(), [gym(SWAPPED)]);
+    const r = ok(p.results[0]!);
+    assert.deepEqual(r.writes.session, out['session']);
+    assert.equal(p.texts.log, viaCli[LOG_PATH]);
+    const e = r.writes.session! as Json;
+    assert.deepEqual([e['lift1']['name'], e['lift1']['planned'], e['lift1']['swapWhy']], ['Front Squat', 'Goblet Squat', 'soreness']);
+    assert.deepEqual(e['swaps'], [{ from: 'Band External Rotation', to: 'Cable External Rotation', why: 'mine' }]);
+    assert.deepEqual((e['exerciseSets'] as Json[]).map((x) => [x['name'], x['planned'] ?? null]), [['Front Squat', 'Goblet Squat'], ['Flat DB Bench Press', null], ['Face Pull', null], ['Cable External Rotation', 'Band External Rotation']]);
+  });
+
+  it('refuses a swapped lift that is not the plan\'s logged item, and the swap fields the format does not take', () => {
+    // log add's own check: the plan's logged item is the lift's `planned` (or its name, without one).
+    no(one(files(), gym({ ...SWAPPED, lift1: { ...SWAPPED.lift1, planned: 'Flat DB Bench Press' } })), 'invalid', /^lift1 of A is Goblet Squat; got 'Front Squat' planned as 'Flat DB Bench Press'$/);
+    no(one(files(), gym({ ...SWAPPED, lift1: { name: 'Front Squat', weight: 75, reps: 8 } })), 'invalid', /^lift1 of A is Goblet Squat; got 'Front Squat'$/);
+    const msg = (more: Json) => validateInboxEntry(gym(more)).map((x) => `${x.path}: ${x.message}`);
+    assert.deepEqual(msg({ lift1: { planned: 'Goblet Squat', weight: 55, reps: 10 } }), ['session.lift1.planned: goes with "name": a swap names the lift done and the plan\'s it replaces']);
+    assert.deepEqual(msg({ lift1: { ...GYM.lift1, swapWhy: 'mine' } }), ['session.lift1.swapWhy: goes with "planned": a swap\'s reason']);
+    assert.deepEqual(msg({ lift1: { ...SWAPPED.lift1, swapWhy: 'Injury limit' } }), ['session.lift1.swapWhy: expected one of: mine, ledger, soreness, hotel']);
+    assert.deepEqual(msg({ swaps: [{ from: 'Band External Rotation', why: 'equipment' }] }), ['session.swaps[0].to: is required', 'session.swaps[0].why: expected one of: mine, ledger, soreness, hotel']);
+  });
+
+  it('refuses the swap fields on an entry without trackingLevel (the old one never took them) rather than drop them', () => {
+    const old = session(TODAY, 'A', { lift1: SWAPPED.lift1, lift2: GYM.lift2, swaps: SWAPPED.swaps });
+    assert.deepEqual(validateInboxEntry(old).map((x) => `${x.path}: ${x.message}`), [
+      'session.swaps: goes with "trackingLevel": "full" (a session logged at Every set)',
+      'session.lift1.name: goes with "trackingLevel": "full" (a session logged at Every set)',
+      'session.lift1.planned: goes with "trackingLevel": "full" (a session logged at Every set)',
+      'session.lift1.swapWhy: goes with "trackingLevel": "full" (a session logged at Every set)',
+    ]);
+    no(one(files(), session(TODAY, 'A', { lift1: { name: 'Goblet Squat', weight: 55, reps: 10 }, lift2: GYM.lift2 })), 'invalid', /^session\.lift1\.name: goes with "trackingLevel": "full"/);
+  });
+
+  it('a resend (the same session sent again) is there already: the log keeps the first', () => {
+    const p = plan(files(), [gym()]);
+    const f = files((x) => (x[P('log')] = p.texts.log!));
+    no(one(f, gym({}, '19:05')), 'already', /^Full Body A is logged on Fri 10 Apr already/);
+    // In the same run too: the later copy finds the first.
+    const both = plan(files(), [gym(), gym({}, '19:05')]);
+    ok(both.results[0]!);
+    no(both.results[1]!, 'already', /^Full Body A is logged on Fri 10 Apr already/);
+  });
+
+  it('an entry without trackingLevel keeps the old path: no checklist, no Today\'s ticks', () => {
+    const p = plan(files(), [session(TODAY, 'A', { lift1: GYM.lift1, lift2: GYM.lift2, durationMin: 52 })]);
+    const r = ok(p.results[0]!);
+    assert.deepEqual(Object.keys(r.writes), ['session']);
+    assert.deepEqual([r.writes.session!['checklist'], r.writes.session!['trackingLevel'], r.writes.session!['exerciseSets']], [undefined, undefined, undefined]);
+    assert.deepEqual(json(p.texts.log).todayChecklist, json(files()[P('log')]!).todayChecklist);
+    assert.equal(r.note, 'Full Body A on Fri 10 Apr: Goblet Squat 55 lb x 10, Flat DB Bench Press 60 lb x 6.');
   });
 });
 
@@ -219,14 +358,14 @@ describe('applyInbox: the morning check-in, as its card saves it', () => {
   }));
 
   it('writes the fields on their days (steps and floors on the day before), checkedAt from the time sent, the weight in kg', () => {
-    const p = plan(fresh(), [morning(day, { energy: 4, soreness: 2, sleepQ: 3, sleepH: 7.3, rhr: 55, weight: 183.9, weightUnit: 'lb', steps: 10450, floors: 6 })], { today: day });
+    const p = plan(fresh(), [morning(day, { energy: 4, soreness: 2, sleepQ: 3, sleepH: 7.3, rhr: 55, hrv: 48, weight: 183.9, weightUnit: 'lb', steps: 10450, floors: 6 })], { today: day });
     const r = ok(p.results[0]!);
-    assert.deepEqual(r.writes.morning, { values: { energy: 4, soreness: 2, sleepQ: 3, sleepH: 7.3, rhr: 55, weight: 83.4, steps: 10450, floors: 6 }, baseline: {}, checkedAt: '2026-04-12T11:05:00.000Z' });
+    assert.deepEqual(r.writes.morning, { values: { energy: 4, soreness: 2, sleepQ: 3, sleepH: 7.3, rhr: 55, hrv: 48, weight: 83.4, steps: 10450, floors: 6 }, baseline: {}, checkedAt: '2026-04-12T11:05:00.000Z' });
     const body = json(p.texts.body);
-    assert.deepEqual(morningFrom(body, day).values, { energy: 4, soreness: 2, sleepQ: 3, sleepH: 7.3, rhr: 55, weight: 83.4, steps: 10450, floors: 6 });
+    assert.deepEqual(morningFrom(body, day).values, { energy: 4, soreness: 2, sleepQ: 3, sleepH: 7.3, rhr: 55, hrv: 48, weight: 83.4, steps: 10450, floors: 6 });
     assert.equal(body.days[day].checkedAt, '2026-04-12T11:05:00.000Z');
     assert.equal(body.days['2026-04-11'].steps, 10450);
-    assert.match(r.note, /^The morning check-in for Sun 12 Apr: Energy, Soreness, Sleep quality, Sleep, Resting HR, Weight, Steps yesterday, Floors yesterday \(Steps yesterday and Floors yesterday on Sat 11 Apr, the day they count for\)\.$/);
+    assert.match(r.note, /^The morning check-in for Sun 12 Apr: Energy, Soreness, Sleep quality, Sleep, Resting HR, HRV, Weight, Steps yesterday, Floors yesterday \(Steps yesterday and Floors yesterday on Sat 11 Apr, the day they count for\)\.$/);
   });
 
   it('the same values again move on with nothing to write; another value on record is a conflict, nothing written', () => {
@@ -388,9 +527,9 @@ describe('phone.json', () => {
     assert.deepEqual(p.next, { type: 'B', name: 'Full Body B', kind: 'lift' });
     assert.deepEqual(p.logged, ['custom']);
     assert.equal(p.morning.done, true);
-    assert.deepEqual(p.morning.fields.map((x) => [x.id, x.day, x.value]), [['energy', 'today', 2], ['soreness', 'today', 3], ['sleepQ', 'today', 2], ['sleepH', 'today', 5.5], ['rhr', 'today', 68], ['weight', 'today', 83.8], ['steps', 'yesterday', 9184], ['floors', 'yesterday', 4]]);
+    assert.deepEqual(p.morning.fields.map((x) => [x.id, x.day, x.value]), [['energy', 'today', 2], ['soreness', 'today', 3], ['sleepQ', 'today', 2], ['sleepH', 'today', 5.5], ['rhr', 'today', 68], ['hrv', 'today', null], ['weight', 'today', 83.8], ['steps', 'yesterday', 9184], ['floors', 'yesterday', 4]]);
     assert.deepEqual(p.morning.fields[0], { id: 'energy', label: 'Energy', min: 1, max: 5, whole: true, lo: 'Flat', hi: 'Great', day: 'today', value: 2 });
-    assert.deepEqual(p.morning.fields[5], { id: 'weight', label: 'Weight', min: 30, max: 250, whole: false, unit: 'kg', day: 'today', value: 83.8 });
+    assert.deepEqual(p.morning.fields[6], { id: 'weight', label: 'Weight', min: 30, max: 250, whole: false, unit: 'kg', day: 'today', value: 83.8 });
     assert.deepEqual(p.trained, { answers: ['trained', 'rest', 'missed'], logged: true, workout: true, mark: null, answer: null });
     assert.deepEqual(p.inbox, { dir: '3-Personal/Fitness/Coach/Inbox', name: '<yyyy-MM-dd>T<HH-mm-ss>-<kind>.json', v: 1, kinds: ['session', 'tick', 'amount', 'morning', 'trained'], days: 14 });
   });

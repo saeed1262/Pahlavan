@@ -508,12 +508,12 @@
         "rir": 2,
         "assumedAllSets": false,
         "loadCap": {
-          "proposed": 11.5,
+          "proposed": 11.25,
           "limit": 11.25,
           "bigJump": true,
-          "binding": "session"
+          "binding": "none"
         },
-        "why": "Every set reached 15 at RIR 2 or more: add the 1.25 kg step. The dashboard rounds base + step to 0.5 (11.5 kg, +15 %). The cap allows one increment per session; one 1.25 kg step is itself 12.5 % of 10 kg, so it is allowed once as a big jump (start at the bottom of the range), never twice within 7 days: 11.25 kg x 12."
+        "why": "Every set reached 15 at RIR 2 or more: add the 1.25 kg step, 11.25 kg (a step finer than 0.5 keeps its own rounding, so it is not pushed to 11.5). That is one increment, so the cap does not bind; one 1.25 kg step is itself 12.5 % of 10 kg, so it is flagged as a big jump (start at the bottom of the range), never twice within 7 days: 11.25 kg x 12."
       },
       {
         "exercise": "db-press",

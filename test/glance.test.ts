@@ -143,12 +143,14 @@ describe('At a glance: Progress and the Plan', () => {
     ]);
   });
 
-  it('the Plan: This mesocycle and Coming up open, the rest folded; the light week in plain words', () => {
+  it('the Plan: Why this plan, This mesocycle and Coming up open, the rest folded; the light week in plain words', () => {
     const plan = buildPlan(r, DATE, {}, 'v');
     const G = planGlance(plan, { weekTarget: { lift: 3, short: 1 }, targets: { ok: 4, total: 5, others: [{ name: 'Wall gap', status: 'Not measured yet' }] }, desk: '4 a day, every 90 min from 10:00 to 15:00, weekdays', links: 6 });
     plain(G);
-    assert.deepEqual(G.sections.map((s) => [s.id, s.start]), [['timeline', 'folded'], ['meso', 'open'], ['vol', 'folded'], ['upcoming', 'open'], ['load', 'folded'], ['targets', 'folded'], ['rules', 'folded'], ['minweek', 'folded'], ['desk', 'folded'], ['notes', 'folded']]);
+    assert.deepEqual(G.sections.map((s) => [s.id, s.start]), [['timeline', 'folded'], ['why', 'open'], ['meso', 'open'], ['vol', 'folded'], ['upcoming', 'open'], ['load', 'folded'], ['targets', 'folded'], ['rules', 'folded'], ['minweek', 'folded'], ['desk', 'folded'], ['notes', 'folded']]);
     assert.equal(G.sections[0]!.title, 'The plan, 24 weeks');
+    // Why this plan: its first reason, and the split picked over the other ten families.
+    assert.equal(words(G.sections.find((s) => s.id === 'why')!.status), 'Glutes come first · Full body, picked over 10 others');
     assert.equal(words(G.sections.find((s) => s.id === 'rules')!.status), '0 of 14 set by your coach · the rest use Pahlavan’s default');
     assert.match(words(G.sums[2]!.text), /^Next: the light week, Mon 20 Apr; phase tests Sat 25 Apr\.$/);
     // Coming up names the coach step after the first Sunday's check-in.
@@ -159,6 +161,34 @@ describe('At a glance: Progress and the Plan', () => {
     assert.equal(words(sun.sections.find((s) => s.id === 'upcoming')!.status), 'Progress photos, Tape and Sunday check-in Sun 26 Apr, tomorrow · then the phase review: /fitness-coach review', 'the phase review is named once');
     assert.equal(words(G.sections.find((s) => s.id === 'targets')!.status), '4 of 5 on track or in the band · wall gap: not measured yet');
     assert.ok(!planGlance(plan, { weekTarget: null, targets: null, desk: null, links: 0 }).sections.some((s) => ['desk', 'notes'].includes(s.id)), 'no card, no row');
+  });
+});
+
+describe('At a glance: the Why this plan line', () => {
+  const PLAN = 'v/3-Personal/Fitness/plan-data.json';
+  const line = (edit: (why: Record<string, any> | undefined, plan: Record<string, any>) => void) => {
+    const r = read(DATE, (f) => {
+      const plan = JSON.parse(f[PLAN]!);
+      edit(plan.why, plan);
+      f[PLAN] = JSON.stringify(plan);
+    });
+    const g = planGlance(buildPlan(r, DATE, {}, 'v'), { weekTarget: null, targets: null, desk: null, links: 0 });
+    return words(g.sections.find((s) => s.id === 'why')!.status);
+  };
+
+  it('counts the other families in plain words: none, one, many', () => {
+    assert.equal(line(() => {}), 'Glutes come first · Full body, picked over 10 others');
+    assert.equal(line((w) => { w!.split.compared = []; w!.split.leftOut = w!.split.leftOut.slice(0, 1); }), 'Glutes come first · Full body, picked over 1 other');
+    assert.equal(line((w) => { w!.split.compared = []; w!.split.leftOut = []; }), 'Glutes come first · Full body, picked');
+  });
+
+  it('no reason to show: the split alone, never twice', () => {
+    assert.equal(line((w) => (w!.reasons = [{ title: 'No text' }])), 'Full body, picked over 10 others');
+  });
+
+  it('none written, or one that can\'t be read: the command', () => {
+    assert.equal(line((_w, p) => delete p['why']), 'Not written yet: /fitness-coach plan why');
+    assert.equal(line((w) => (w!.lead = '')), 'Can’t be read as written: /fitness-coach plan why');
   });
 });
 

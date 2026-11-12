@@ -15,10 +15,10 @@
 
 <sub>Shown with <a href="https://community.obsidian.md/plugins/isfahan-look">Isfahan Look</a>, my free plugin for Obsidian's look: Persian tilework, palettes that follow the sun and a book-like page. Pahlavan works with any theme.</sub>
 
-**▶ [Watch the 97-second demo](https://youtu.be/X5PZv5TxVdM)**
+**▶ [Watch the 97-second demo](https://youtu.be/X5PZv5TxVdM)** · **[Try it in your browser](https://saeed1262.github.io/pahlavan/demo/)** (the real screens on a made-up athlete, nothing to install)
 
 > [!NOTE]
-> **Pahlavan is a free beta.** I use it every day, and it may still change. Bug reports and ideas are welcome in [GitHub issues](../../issues).
+> **Pahlavan is a free beta.** I use it every day, and it may still change. Bug reports and ideas are welcome in [GitHub issues](../../issues). Using it? [Say hi in the pinned issue](../../issues/1): Pahlavan counts nothing about you, so that's how I know who uses it.
 
 The name is Persian for a champion, the wrestlers and heroes of the old stories. The logo's two meels are the clubs pahlavans swing in the zurkhaneh, the traditional house of strength.
 
@@ -40,7 +40,7 @@ A body map of the sets each muscle got this week against its target (split into 
 
 Your plan as phases, each made of two **mesocycles** that end in a light week (by default 4-week blocks of three loading weeks and a light week, so 8-week phases), with tests at the end of each phase. Below it, this block's sessions with their sets, reps and effort, the plan's standing rules (how each lift progresses, when the light weeks fall, what a bad day does), what's coming up, and the reason behind every exercise.
 
-![Plan: the 24-week timeline of phases, mesocycles, light weeks and tests, this mesocycle's lifting and short days, and what's coming up](docs/images/plan.png)
+![Plan: the 24-week timeline of phases, mesocycles, light weeks and tests, then Why this plan: your coach's reasons with their evidence grades and the split it picked, and this mesocycle below](docs/images/plan.png)
 
 ### Habits: the small daily things
 
@@ -53,7 +53,7 @@ Supplements, water, protein and your own ticks, each with its reminder and its h
 The `/fitness-coach` skill in Claude Code:
 
 - **Intake:** a safety screen, a short interview and an optional body assessment from photos.
-- **Plan:** the coach designs your plan from your answers and the evidence: at least three options, each measured and checked by the engine, with the evidence and its grade for each choice, and the plan's standing rules written with it.
+- **Plan:** the coach designs your plan from your answers and the evidence (a new plan from a blank page, never an edit of the old one): at least three options, each measured and checked by the engine, with the evidence and its grade for each choice, and the plan's standing rules written with it.
 - **Sunday check-in:** reads your week and writes you a short letter with one thing to focus on.
 - **Reviews, progress reports, an eating plan and habit suggestions**, when you want them.
 - **Logging and questions:** tell it what you did, or ask how things are going.
@@ -62,9 +62,9 @@ The `/fitness-coach` skill in Claude Code:
 
 Recorded from real sessions in a demo vault, with a made-up athlete: Sam, 34, at a desk all day, three gym days a week. Everything the coach says is its own words; long answers are cut where you see "…", and the notes between rounds (⋯ ⋯) are mine.
 
-**Intake:** a safety screen, goals, priority muscles and a movement self-check, then a profile the engine has checked.
+**Intake:** a safety screen, goals and a movement self-check, then a profile the engine has checked. Your coach decides your priority muscles from that assessment, with your wishes as one input.
 
-![The coach's intake in Claude Code: the screening questions, goals and priority muscles, the movement self-check, and the profile written on a yes](docs/images/coach-intake.svg)
+![The coach's intake in Claude Code: the screening questions, goals, the movement self-check, and the profile written on a yes](docs/images/coach-intake.svg)
 
 **Plan:** the open questions first (a movement finding, which priorities come first, the start date, what could derail it), then three candidate plans the coach designed and checked with the engine, and the plan written on a yes.
 
@@ -110,7 +110,7 @@ The plugin and the coach read and write the same files in your vault, and both g
 3. Open Claude Code in your vault's folder and type `/fitness-coach intake`. Answer its questions; it writes your profile.
 4. Type `/fitness-coach plan`. The coach designs your plan and, once you say yes, writes it. Today shows your first session.
 
-Each step ticks itself once its file is there. The [user guide](docs/user-guide.md) walks through every screen, and the [exercise catalogue](docs/exercise-catalogue.md) lists the 244 movements the coach chooses from, with how to do each (the command **Pahlavan: Write the exercise catalogue** puts the same list in your vault).
+Each step ticks itself once its file is there. The [user guide](docs/user-guide.md) walks through every screen, and the [exercise catalogue](docs/exercise-catalogue.md) lists the 245 movements the coach chooses from, with how to do each (the command **Pahlavan: Write the exercise catalogue** puts the same list in your vault).
 
 ## Questions
 

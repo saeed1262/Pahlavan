@@ -6,7 +6,6 @@ import { describe, it } from 'node:test';
 import { fromVault, isoWeekDate, ladderStatus, planWeekOf, type VaultFiles } from '../src/adapters/vault/convert.ts';
 import { matchCatalogue, NAME_SYNONYMS, normalizeName } from '../src/adapters/vault/catalogue-match.ts';
 import { CATALOGUE_BY_ID } from '../src/core/data/exercises.ts';
-import { vaultMuscleMap } from '../src/adapters/vault/muscle-map.ts';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { paths } from '../src/adapters/vault/layout.ts';
 import { buildReview } from '../src/report/review.ts';
@@ -281,16 +280,13 @@ describe('vault adapter: the program', () => {
     assert.deepEqual(d.find((t) => t.id === 's3')!.slots.map((s) => s.exercise), ['easy-zone-2-bike-or-walk']);
   });
 
-  it('keeps each item, its derived values and plan-data\'s other keys for the exporter', () => {
+  it('keeps each item as read on its slot', () => {
     const s = tpl('a').slots[0] as ExerciseSlot & SlotExtras;
     assert.equal(s._item!.table, 'Goblet Squat');
-    assert.deepEqual(s._derived, { exercise: 'goblet-squat', sets: 4, repRange: [8, 10], rir: 2, until: '2026-04-19', timed: null });
-    const extras = (data.program as typeof data.program & { _planData: { top: Record<string, unknown>; liftsOrder: string[] } })._planData;
-    assert.deepEqual(extras.liftsOrder, ['Barbell Back Squat', 'Goblet Squat', 'Flat DB Bench Press', 'Romanian Deadlift', 'Seated Cable Row']);
-    assert.equal(extras.top['ladderNote'], 'Handstand levels are attempts, not sets.');
+    assert.deepEqual([s.exercise, s.sets, s.repRange, s.rir, s.until?.until], ['goblet-squat', 4, [8, 10], 2, '2026-04-19']);
   });
 
-  it('reads the items\' rir and timed fields first and keeps them in the derived values; a malformed field falls back to the note, with a warning', () => {
+  it('reads the items\' rir and timed fields first; a malformed field falls back to the note, with a warning', () => {
     const v = fromVault(files((f) => {
       const plan = f['plan'] as { sessions: Record<string, Record<string, unknown>[]> };
       plan.sessions['B']![1]!['rir'] = [1, 2];
@@ -300,11 +296,11 @@ describe('vault adapter: the program', () => {
     }), { asOf: '2026-04-12' });
     const wk = v.program.macrocycle.phases[0]!.mesocycles[1]!.weeks[1]!;
     const slots = (id: string) => wk.sessions.find((t) => t.id === id)!.slots as (ExerciseSlot & SlotExtras)[];
-    assert.deepEqual([slots('b')[1]!.rir, slots('b')[1]!._derived!.rir], [1, 1]);
+    assert.equal(slots('b')[1]!.rir, 1);
     assert.equal(slots('b')[0]!.rir, 3, 'the note\'s "RIR 3." when the field is not a RIR');
-    assert.deepEqual([slots('a')[4]!.sets, slots('a')[4]!.timed, slots('a')[4]!._derived!.timed], [1, { minutes: 8 }, { minutes: 8 }]);
+    assert.deepEqual([slots('a')[4]!.sets, slots('a')[4]!.timed], [1, { minutes: 8 }]);
     const iv = slots('s3')[0]!;
-    assert.deepEqual([iv.sets, iv.repRange, iv._derived], [4, [1, 1], { exercise: 'bike-intervals', sets: 4, repRange: [1, 1], rir: 2, until: null, timed: { minutes: 30, rounds: 4, workMin: 4, restMin: 3 } }]);
+    assert.deepEqual([iv.exercise, iv.sets, iv.repRange, iv.rir, iv.until, iv.timed], ['bike-intervals', 4, [1, 1], 2, undefined, { minutes: 30, rounds: 4, workMin: 4, restMin: 3 }]);
     assert.equal(v.program.exercises['bike-intervals']!.kind, 'timed', 'a timed field is minutes, not sets');
     const w = v.warnings.find((x) => x.code === 'plan-item-field')!;
     assert.deepEqual(w.items, ['B Romanian Deadlift: rir is "three", not a number of reps in reserve or [lo, hi]']);
@@ -440,7 +436,6 @@ describe('vault adapter: one source of muscle tags', () => {
       g['Face Pull']!.muscles = { main: ['shoulders', 'upper-back'], helps: [], regions: ['shoulders-rear'], override: 'rear delts trained as shoulders here' };
     });
     assert.deepEqual(own.program.exercises['face-pull']!.muscles, { main: ['shoulders', 'upper-back'], helps: [], regions: ['shoulders-rear'] });
-    assert.deepEqual(vaultMuscleMap({ 'Cable face pull': { muscles: { main: ['shoulders'], helps: [], regions: ['shoulders-rear'], override: 'counted my way' } } }), { 'face-pull': { guide: 'Cable face pull', muscles: { main: ['shoulders'], helps: [], regions: ['shoulders-rear'] }, override: 'counted my way' } });
   });
 
   it('drops guide regions the engine does not model, with the nearest supported option for an unsupported one', () => {
@@ -468,16 +463,6 @@ describe('vault adapter: one source of muscle tags', () => {
     const w = r.warnings.find((x) => x.code === 'region-parent-missing')!;
     assert.deepEqual(w.items, [`${OTHER}: quads-rf (no quads in main or helps)`, 'Flat DB Bench Press: calves-soleus (no calves in main or helps)']);
     assert.match(w.message, /Add the muscle, or remove the region/);
-  });
-
-  it('lets only the guide entry named like the catalogue movement override it in a new plan', () => {
-    const own = { main: ['quads', 'glutes'], helps: ['hamstrings'] };
-    assert.deepEqual(vaultMuscleMap({ 'goblet squat': { muscles: { ...own, override: 'counted my way' } } }), { 'goblet-squat': { guide: 'goblet squat', muscles: own, override: 'counted my way' } });
-    // A synonym or a variant key overrides only the items named by it, never the catalogue movement a new plan names:
-    // alone, or beside an entry of the catalogue's name without one.
-    assert.deepEqual(vaultMuscleMap({ 'Back squat': { muscles: { ...own, override: 'counted my way' } } }), {});
-    assert.deepEqual(vaultMuscleMap({ 'Barbell Back Squat': { muscles: { main: ['quads', 'glutes'], helps: ['abs'] } }, 'Back squat': { muscles: { ...own, override: 'counted my way' } } }), {});
-    assert.deepEqual(vaultMuscleMap({ 'Goblet squat (heavy)': { muscles: { ...own, override: 'counted my way' } } }), {});
   });
 });
 
@@ -531,5 +516,76 @@ describe('vault adapter: body, habits and the coach files', () => {
   it('reads the profile and the Ledger as schema v1', () => {
     assert.equal(data.profile!.goals[0]!.kind, 'recomposition');
     assert.equal(data.ledger!.constraints[0]!.until, '2026-04-19');
+  });
+});
+
+// The gym's real weights (profile.loads): each loaded exercise carries them, in its own unit.
+describe('vault adapter: the gym\'s real weights', () => {
+  const PROFILE = 'v/3-Personal/Fitness/Coach/profile.json';
+  const DATE = '2026-04-12';
+  const withLoads = (loads: unknown) => {
+    const f = fixtureFiles('v');
+    const p = JSON.parse(f[PROFILE]!);
+    p.loads = loads;
+    f[PROFILE] = JSON.stringify(p);
+    return readVault(memoryIo(f, DATE), 'v', { asOf: DATE });
+  };
+
+  it('without loads, no exercise carries weights (the plan step, as before)', () => {
+    assert.equal(data.profile!.loads, undefined);
+    assert.deepEqual(Object.values(data.program.exercises).filter((e) => e.weights), []);
+  });
+
+  it('by the catalogue\'s first equipment id, else dumbbells for a db lift, in the lift\'s unit', () => {
+    const r = withLoads({ unit: 'lb', dumbbell: { from: 5, to: 60, step: 5 }, barbell: { bar: 45, plates: [45, 25, 10, 5, 2.5] }, cable: { step: 10, to: 200 } });
+    const ex = r.data.program.exercises;
+    assert.deepEqual(ex['goblet-squat']!.weights!.slice(0, 3), [5, 10, 15], 'a dumbbell movement');
+    assert.equal(ex['goblet-squat']!.weights!.at(-1), 60);
+    assert.deepEqual(ex['seated-cable-row']!.weights!.slice(0, 2), [10, 20]);
+    // The squat is kg in this plan: the lb bar and plates converted, with a warning.
+    assert.deepEqual(ex['barbell-back-squat']!.weights!.slice(0, 3), [20.4, 22.7, 24.9]);
+    const w = r.data.warnings.find((x) => x.code === 'loads-unit-differs')!;
+    assert.deepEqual(w.items, ['Barbell Back Squat: in kg, the loads in lb', 'Romanian Deadlift: in kg, the loads in lb']);
+    assert.match(w.message, /loads are in lb/);
+    assert.equal(ex['band-external-rotation']!.weights, undefined, 'no kit for bands');
+    assert.equal(ex['hamstring-curl']!.weights, undefined, 'no machine listed');
+    assert.deepEqual(validateProgram(r.data.program), []);
+  });
+
+  it('a kind the profile has no kit for keeps its plan step', () => {
+    const r = withLoads({ unit: 'lb', dumbbell: { weights: [10, 20, 30] } });
+    assert.equal(r.data.program.exercises['seated-cable-row']!.weights, undefined);
+    assert.deepEqual(r.data.program.exercises['goblet-squat']!.weights, [10, 20, 30]);
+    assert.equal(r.data.warnings.find((x) => x.code === 'loads-unit-differs'), undefined, 'the kg lifts have no kit here');
+  });
+
+  it('review\'s next targets land on the kit', () => {
+    // The bench's two misses at 60 lb: 54 lb is not a dumbbell here, 55 is.
+    const r = withLoads({ unit: 'lb', dumbbell: { from: 5, to: 60, step: 5 } });
+    const bench = buildReview(r.data, DATE).lifts.find((l) => l.exercise === 'flat-db-bench-press')!;
+    const n = bench.next as { value: { action: string; weight: number } };
+    assert.deepEqual([n.value.action, n.value.weight], ['lighter', 55]);
+    const odd = withLoads({ unit: 'lb', dumbbell: { weights: [40, 50, 52.5, 60] } });
+    const b2 = (buildReview(odd.data, DATE).lifts.find((l) => l.exercise === 'flat-db-bench-press')!.next as { value: { weight: number } }).value.weight;
+    assert.equal(b2, 52.5);
+  });
+
+  it('an invalid kit is a profile error, with the path', () => {
+    const r = withLoads({ unit: 'kg', dumbbell: { from: 30, to: 2, step: 2 } });
+    assert.ok(r.data.errors.some((e) => e.code === 'profile' && /loads\.dumbbell: from \(30\) is above to \(2\)/.test(e.message)), JSON.stringify(r.data.errors));
+  });
+});
+
+describe('vault adapter: a lifts entry matched to its exercise by id', () => {
+  it('a lift key that differs from the guide key beyond case keeps its entry (db, inc and unit)', () => {
+    const f = fixtureFiles('v');
+    const P = 'v/3-Personal/Fitness/plan-data.json';
+    const plan = JSON.parse(f[P]!);
+    plan.lifts['flat db bench-press'] = { ...plan.lifts['Flat DB Bench Press'], inc: 2.5 };
+    delete plan.lifts['Flat DB Bench Press'];
+    f[P] = JSON.stringify(plan);
+    const ex = readVault(memoryIo(f, '2026-04-12'), 'v', { asOf: '2026-04-12' }).data.program.exercises['flat-db-bench-press']! as { increment?: number; _lift?: { db?: boolean } };
+    assert.equal(ex._lift?.db, true);
+    assert.equal(ex.increment, 2.5);
   });
 });

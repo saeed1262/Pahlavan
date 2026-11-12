@@ -673,5 +673,77 @@
       "name": "Doorway chest stretch",
       "dose": "2 × 30 s"
     }
-  ]
+  ],
+  "why": {
+    "date": "2026-03-16",
+    "lead": "This plan is built for a recomposition with your posture in mind: three full-body days and one short day, with more pulling than pushing because your shoulders round forward.",
+    "reasons": [
+      {
+        "title": "Glutes come first",
+        "text": "You named them as the muscle you care most about, so they get a direct exercise on every lifting day.",
+        "grade": "moderate"
+      },
+      {
+        "title": "More pulling than pushing",
+        "text": "Your head sits forward and your shoulders round, so the plan pulls about twice as much as it pushes.",
+        "grade": "heuristic"
+      },
+      {
+        "title": "Three lifting days and a short one",
+        "text": "The four days of about an hour you said you have, with the short day for conditioning.",
+        "grade": "strong"
+      }
+    ],
+    "split": {
+      "picked": {
+        "family": "full-body",
+        "why": "Every split builds the same muscle at the same sets. Full body trains each muscle three times a week on your three lifting days, so a missed day costs little."
+      },
+      "compared": [
+        {
+          "family": "upper-lower",
+          "why": "On three lifting days one half of the body gets only one day a week."
+        },
+        {
+          "family": "torso-limbs",
+          "why": "Its long limbs day and once-a-week torso fit four lifting days, not three."
+        }
+      ],
+      "leftOut": [
+        {
+          "family": "push-pull-legs",
+          "why": "Fits 3 days only as once a week per muscle, which gives your glutes too little practice."
+        },
+        {
+          "family": "heavy-and-light-days",
+          "why": "For strength goals; yours is a recomposition."
+        },
+        {
+          "family": "body-part",
+          "why": "Once a week per muscle and past the per-session cap; it suits five or more days."
+        },
+        {
+          "family": "upper-lower-full",
+          "why": "A split's focus with fewer days, but uneven per muscle on three days."
+        },
+        {
+          "family": "specialization",
+          "why": "A block for one lagging muscle in a trained lifter; your glutes get their priority without cutting the rest to maintenance."
+        },
+        {
+          "family": "hift",
+          "why": "Specific lifts are hard to progress, and your goals are muscle and posture."
+        },
+        {
+          "family": "circuit",
+          "why": "For 30 minutes or less; your lifting days are an hour."
+        },
+        {
+          "family": "calisthenics",
+          "why": "For no equipment or travel; you have a gym."
+        }
+      ]
+    },
+    "decision": "2026-03-16 · New plan"
+  }
 }

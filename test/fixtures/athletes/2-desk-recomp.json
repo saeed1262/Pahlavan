@@ -135,7 +135,412 @@
       }
     },
     "today": "2026-11-04",
-    "options": {}
+    "options": {},
+    "current": {
+      "_about": "The made-up desk athlete's plan as written: four full-body days (A to D) and three short cardio days, nine weeks in. What a redesign is measured against.",
+      "weekTarget": {
+        "lift": 4,
+        "short": 3
+      },
+      "liftTypes": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "shortTypes": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "titles": {
+        "A": "Full body A",
+        "B": "Full body B",
+        "C": "Full body C",
+        "D": "Full body D",
+        "S1": "Easy bike",
+        "S2": "Bike intervals",
+        "S3": "Brisk walk"
+      },
+      "shortNames": {
+        "S1": "Easy bike",
+        "S2": "Bike intervals",
+        "S3": "Brisk walk"
+      },
+      "focus": {
+        "A": "Squat and press",
+        "B": "Hinge and pulldown",
+        "C": "Leg press and pull-ups",
+        "D": "Hip thrust and rows"
+      },
+      "warmups": {
+        "lift": "5 min easy bike · Thoracic extension over a bench · Doorway chest stretch · Two lighter sets before the first lift",
+        "short": "3 min easy, building up"
+      },
+      "sessions": {
+        "A": [
+          {
+            "name": "Barbell back squat",
+            "sr": "3 × 6–8",
+            "rest": "2–3 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: the main squat, for the quads priority."
+          },
+          {
+            "name": "Flat dumbbell bench press",
+            "sr": "3 × 8–10",
+            "rest": "2 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: the week’s heavier press, kept at three sets so the pulling stays about twice the pressing."
+          },
+          {
+            "name": "Chest-supported dumbbell row",
+            "sr": "3 × 10–12",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: an upper-back row with the low back supported."
+          },
+          {
+            "name": "Cable face pull",
+            "sr": "2 × 12–15",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: rear delts and upper back, for the rounded shoulders."
+          },
+          {
+            "name": "Dead bug",
+            "sr": "2 × 8–10",
+            "rest": "90 s",
+            "rir": 3,
+            "note": "Why: ribs down and the low back flat, for the low-back curve."
+          }
+        ],
+        "B": [
+          {
+            "name": "Barbell Romanian deadlift",
+            "sr": "3 × 8–10",
+            "rest": "2–3 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: the main hinge; the self-check showed a flat back."
+          },
+          {
+            "name": "Lat pulldown",
+            "sr": "4 × 10–12",
+            "rest": "90 s",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: lats, a posture priority, at a load that can progress."
+          },
+          {
+            "name": "Half-kneeling landmine press",
+            "sr": "3 × 8–12",
+            "rest": "2 min",
+            "rir": 2,
+            "note": "Why: pressing up without the full overhead reach the self-check lacked."
+          },
+          {
+            "name": "Dumbbell reverse lunge",
+            "sr": "2 × 10–12",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: one leg at a time, more quads work."
+          },
+          {
+            "name": "Seated leg curl",
+            "sr": "2 × 10–12",
+            "rest": "90 s",
+            "rir": 1,
+            "note": "Why: hamstrings the hinge leaves short."
+          }
+        ],
+        "C": [
+          {
+            "name": "Leg press",
+            "sr": "3 × 10–12",
+            "rest": "2 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: quads volume with the back out of it."
+          },
+          {
+            "name": "Pull-up (your level)",
+            "sr": "3 × 3–5",
+            "rest": "2–3 min",
+            "rir": 2,
+            "ladder": "pullup",
+            "note": "Why: five strict pull-ups in the self-check; the ladder takes them on."
+          },
+          {
+            "name": "Incline dumbbell press",
+            "sr": "3 × 8–12",
+            "rest": "2 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: the upper chest, on an incline the shoulders take well."
+          },
+          {
+            "name": "Seated cable row",
+            "sr": "3 × 10–12",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: a second row, for pulling at about twice the pressing."
+          },
+          {
+            "name": "Cable Pallof press",
+            "sr": "3 × 10–12",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: the trunk resisting rotation."
+          }
+        ],
+        "D": [
+          {
+            "name": "Goblet squat",
+            "sr": "3 × 10–12",
+            "rest": "2 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: a lighter, upright squat for the second quads day."
+          },
+          {
+            "name": "Barbell hip thrust",
+            "sr": "3 × 8–12",
+            "rest": "2 min",
+            "rir": 2,
+            "logged": true,
+            "note": "Why: glutes, for the low-back curve."
+          },
+          {
+            "name": "One-arm dumbbell row",
+            "sr": "3 × 10–12",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: lats and upper back, one side at a time."
+          },
+          {
+            "name": "Push-up",
+            "sr": "2 × 10–15",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: the week’s last press, light."
+          },
+          {
+            "name": "Reverse pec deck (rear-delt machine)",
+            "sr": "2 × 12–15",
+            "rest": "90 s",
+            "rir": 1,
+            "note": "Why: rear delts, for the rounded shoulders."
+          },
+          {
+            "name": "45-degree back extension",
+            "sr": "2 × 12–15",
+            "rest": "90 s",
+            "rir": 2,
+            "note": "Why: the low back and glutes, through a range they control."
+          },
+          {
+            "name": "Side plank",
+            "sr": "2 × 20–30 s/side",
+            "rest": "90 s",
+            "note": "Why: the obliques, one side at a time."
+          }
+        ],
+        "S1": [
+          {
+            "name": "Easy bike (zone 2)",
+            "sr": "25 min",
+            "rest": "—",
+            "note": "Why: easy aerobic work on a short day; you can talk in full sentences."
+          }
+        ],
+        "S2": [
+          {
+            "name": "Bike intervals, 4 x 4 min",
+            "sr": "25 min",
+            "rest": "—",
+            "timed": {
+              "minutes": 25,
+              "rounds": 4,
+              "workMin": 4,
+              "restMin": 3
+            },
+            "note": "Why: the week's hard cardio, 4 minutes hard and 3 easy, four times."
+          }
+        ],
+        "S3": [
+          {
+            "name": "Brisk walk",
+            "sr": "25 min",
+            "rest": "—",
+            "note": "Why: easy, outdoors, a break from the desk."
+          }
+        ]
+      },
+      "liftUnit": "lb",
+      "lifts": {
+        "Barbell back squat": {
+          "short": "Squat",
+          "lo": 6,
+          "hi": 8,
+          "inc": 10,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Flat dumbbell bench press": {
+          "short": "DB bench",
+          "lo": 8,
+          "hi": 10,
+          "inc": 5,
+          "db": true,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Barbell Romanian deadlift": {
+          "short": "RDL",
+          "lo": 8,
+          "hi": 10,
+          "inc": 10,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Lat pulldown": {
+          "short": "Pulldown",
+          "lo": 10,
+          "hi": 12,
+          "inc": 10,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Leg press": {
+          "short": "Leg press",
+          "lo": 10,
+          "hi": 12,
+          "inc": 20,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Incline dumbbell press": {
+          "short": "Incline DB press",
+          "lo": 8,
+          "hi": 12,
+          "inc": 5,
+          "db": true,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Goblet squat": {
+          "short": "Goblet squat",
+          "lo": 10,
+          "hi": 12,
+          "inc": 5,
+          "db": true,
+          "progression": {
+            "rule": "double"
+          }
+        },
+        "Barbell hip thrust": {
+          "short": "Hip thrust",
+          "lo": 8,
+          "hi": 12,
+          "inc": 10,
+          "progression": {
+            "rule": "double"
+          }
+        }
+      },
+      "ladders": [
+        {
+          "id": "pullup",
+          "name": "Pull-up",
+          "levels": [
+            {
+              "name": "Dead hang",
+              "detail": "3 × 20–30 s"
+            },
+            {
+              "name": "Scapular pull-up",
+              "detail": "3 × 8–10"
+            },
+            {
+              "name": "Inverted row",
+              "detail": "bar racked at hip height, 4 × 8–12"
+            },
+            {
+              "name": "Negative pull-up",
+              "detail": "5-s lowering, 4 × 3–5"
+            },
+            {
+              "name": "Band-assisted pull-up",
+              "detail": "4 × 5–8"
+            },
+            {
+              "name": "Pull-up",
+              "detail": "4 × 3–8"
+            },
+            {
+              "name": "Weighted pull-up",
+              "detail": "+10 lb, dumbbell between the feet, 4 × 3–6"
+            }
+          ],
+          "startLevel": 6
+        }
+      ],
+      "guide": {},
+      "start": "2026-09-07",
+      "weeks": 12,
+      "rules": {
+        "calibration": {
+          "weeks": [
+            1
+          ],
+          "rir": 3,
+          "cardio": "easy",
+          "afterRestart": true
+        },
+        "lightWeeks": {
+          "every": 4,
+          "sets": "half",
+          "load": 0.9,
+          "rirAdd": 3,
+          "early": "offer"
+        },
+        "tests": {
+          "weeks": "phase-ends"
+        },
+        "readiness": {
+          "low": {
+            "sets": -1,
+            "rir": 1
+          }
+        },
+        "soreness": "none",
+        "missed": {
+          "easeBackAfterWeeks": 1,
+          "restartAfterWeeks": 3,
+          "easeBackDrop": 0.1,
+          "easeBackRir": 1
+        },
+        "stall": {
+          "response": "report"
+        },
+        "hotel": {
+          "swaps": "catalogue",
+          "longTripSets": "third"
+        }
+      },
+      "express": {
+        "short": "half"
+      }
+    }
   },
   "expected": {
     "templateId": "full-body-abcd",

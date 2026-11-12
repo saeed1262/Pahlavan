@@ -1,14 +1,14 @@
 // The plan's start: plan-data's optional `start` (a date) makes the
 // Monday-to-Sunday week holding it plan week 1, before and over the log's
 // first plan session and the baseline note. Without it, week 1 comes from the
-// log as before. `plan --start D` writes it; the check holds a bad one as a
-// hard error.
+// log as before. The coach writes it with a fresh start or a reset, and
+// `engine draft` carries it over; the check holds a bad one as a hard error.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { isDeloadDate } from '../src/adapters/vault/log-write.ts';
-import { planStartOf, toPlanData, PLAN_DATA_KEYS } from '../src/core/plan-data.ts';
+import { planStartOf, PLAN_DATA_KEYS } from '../src/core/plan-data.ts';
 import { buildCheck } from '../src/report/check.ts';
 import { buildReview } from '../src/report/index.ts';
 import { buildSession } from '../src/report/session.ts';
@@ -86,41 +86,6 @@ describe('the plan’s start', () => {
     assert.equal(f.level, 'error');
     assert.ok(f.items.some((x) => /start is "soon"/.test(x)));
     assert.equal(check.summary.ok, false);
-  });
-
-  it('is kept by the export of a plan read from the vault, in its place among the keys', () => {
-    const { read } = vault('2026-04-08', '2026-04-12');
-    const pd = toPlanData(read.data.program).value.planData as unknown as Json;
-    assert.equal(pd['start'], '2026-04-08');
-    const keys = Object.keys(pd);
-    assert.ok(keys.indexOf('start') < keys.indexOf('rules') || !keys.includes('rules'));
-  });
-
-  it('plan --start D writes the generator’s week 1: the Monday-based week holding D, as plan-data’s start reads it', () => {
-    const io = memoryIo(fixtureFiles('v'));
-    const profile = 'v/3-Personal/Fitness/Coach/profile.json';
-    // A Wednesday: week 1 is the week holding it, from Monday 13 Apr, for the generator and for Pahlavan alike.
-    const withStart = JSON.parse(run(['plan', '--profile', profile, '--format', 'plan-data', '--start', '2026-04-15'], io).stdout);
-    assert.equal(withStart.planData.start, '2026-04-13');
-    assert.equal(planStartOf(withStart.planData).monday, '2026-04-13');
-    const engine = JSON.parse(run(['plan', '--profile', profile, '--start', '2026-04-15'], io).stdout);
-    assert.equal(engine.program.macrocycle.start, '2026-04-13');
-    assert.equal(JSON.parse(run(['plan', '--profile', profile, '--format', 'plan-data', '--start', '2026-04-13'], io).stdout).planData.start, '2026-04-13');
-    // Without a vault and without --start, none.
-    const without = JSON.parse(run(['plan', '--profile', profile, '--format', 'plan-data'], io).stdout);
-    assert.equal(without.planData.start, undefined);
-  });
-
-  it('an export over the vault’s plan carries its start (a new block never restarts week 1), unless --start is given', () => {
-    const profile = 'v/3-Personal/Fitness/Coach/profile.json';
-    const files = vault('2026-01-07', '2026-04-12').files;
-    const over = JSON.parse(run(['plan', '--profile', profile, '--format', 'plan-data', '--vault', 'v'], memoryIo(files)).stdout);
-    assert.equal(over.planData.start, '2026-01-07');
-    const reset = JSON.parse(run(['plan', '--profile', profile, '--format', 'plan-data', '--vault', 'v', '--start', '2026-04-20'], memoryIo(files)).stdout);
-    assert.equal(reset.planData.start, '2026-04-20');
-    // A plan without a start exports without one.
-    const none = JSON.parse(run(['plan', '--profile', profile, '--format', 'plan-data', '--vault', 'v'], memoryIo(vault(undefined, '2026-04-12').files)).stdout);
-    assert.equal(none.planData.start, undefined);
   });
 
   it('start-changed: a draft that drops or changes the written plan’s start (overridable for a reset)', () => {

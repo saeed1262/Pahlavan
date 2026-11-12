@@ -74,7 +74,11 @@ describe('frozenList: the exercise list a log entry gets, as the Log panel saves
     const full = frozenList(at(TODAY), { date: TODAY, type: 'S1', mode: 'full' }, TODAY);
     assert.ok(f.ok && full.ok);
     assert.equal(f.list.value.express, false);
-    assert.deepEqual(f.list.value.exercises, full.list.value.exercises);
+    const plan = (xs: { name: string; sets: number; daySets?: number }[]) => xs.map((x) => ({ name: x.name, sets: x.sets }));
+    assert.deepEqual(plan(f.list.value.exercises), plan(full.list.value.exercises));
+    // The day's working sets are the Express day's own (half the sets); the timed handstand has none.
+    assert.deepEqual(f.list.value.exercises.map((x) => x.daySets), [undefined, 2, 2]);
+    assert.deepEqual(full.list.value.exercises.map((x) => x.daySets), [undefined, 4, 3]);
   });
 });
 

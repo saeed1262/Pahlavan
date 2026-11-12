@@ -1,0 +1,423 @@
+{
+  "_about": "A sample redesign for the made-up desk athlete (test/fixtures/athletes/2-desk-recomp.json), designed from a blank draft: upper/lower twice, with a different exercise selection from the plan as written. tools/eval-plans.mjs scores it as a fresh design.",
+  "weekTarget": {
+    "lift": 4,
+    "short": 3
+  },
+  "liftTypes": [
+    "U1",
+    "L1",
+    "U2",
+    "L2"
+  ],
+  "shortTypes": [
+    "S1",
+    "S2",
+    "S3"
+  ],
+  "titles": {
+    "U1": "Upper 1",
+    "L1": "Lower 1",
+    "U2": "Upper 2",
+    "L2": "Lower 2",
+    "S1": "Brisk walk",
+    "S2": "Hill intervals",
+    "S3": "Easy bike"
+  },
+  "shortNames": {
+    "S1": "Brisk walk",
+    "S2": "Hill intervals",
+    "S3": "Easy bike"
+  },
+  "focus": {
+    "U1": "Pull-ups and machine press",
+    "L1": "Hack squat and hinge",
+    "U2": "Rows and landmine press",
+    "L2": "Hip thrust and step-ups"
+  },
+  "warmups": {
+    "lift": "5 min easy bike · Open book · Kneeling lat stretch · Half-kneeling hip-flexor stretch · Two lighter sets before the first lift",
+    "short": "3 min easy, building up"
+  },
+  "sessions": {
+    "U1": [
+      {
+        "name": "Pull-up (your level)",
+        "sr": "4 × 3–5",
+        "rest": "2–3 min",
+        "rir": 2,
+        "ladder": "pullup",
+        "note": "Why: five strict pull-ups in the self-check; the ladder takes them on as the main vertical pull."
+      },
+      {
+        "name": "Machine chest press",
+        "sr": "3 × 8–12",
+        "rest": "2 min",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: a press to load and progress, with no balancing."
+      },
+      {
+        "name": "Machine row",
+        "sr": "3 × 10–12",
+        "rest": "90 s",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: an upper-back row with the chest supported."
+      },
+      {
+        "name": "Bent-over reverse dumbbell fly",
+        "sr": "3 × 12–15",
+        "rest": "90 s",
+        "rir": 1,
+        "note": "Why: rear delts, for the rounded shoulders."
+      },
+      {
+        "name": "Hammer curl",
+        "sr": "2 × 10–12",
+        "rest": "90 s",
+        "rir": 1,
+        "note": "Why: arms, a little, for the recomposition."
+      }
+    ],
+    "L1": [
+      {
+        "name": "Hack squat (machine)",
+        "sr": "3 × 8–10",
+        "rest": "2–3 min",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: the main squat, the quads loaded with the back supported."
+      },
+      {
+        "name": "Kickstand Romanian deadlift",
+        "sr": "3 × 8–10",
+        "rest": "2 min",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: the hinge, mostly one leg, kept light on the low back."
+      },
+      {
+        "name": "Rear-foot-elevated split squat",
+        "sr": "2 × 8–10",
+        "rest": "2 min",
+        "rir": 2,
+        "note": "Why: 30 s balance each side in the self-check, so the rear foot can go up."
+      },
+      {
+        "name": "Lying leg curl",
+        "sr": "2 × 10–12",
+        "rest": "90 s",
+        "rir": 1,
+        "note": "Why: the hamstrings, at the knee."
+      },
+      {
+        "name": "Core (abs) (your level)",
+        "sr": "3 × hold",
+        "rest": "90 s",
+        "ladder": "hollow",
+        "note": "Why: a 60 s plank starts the core ladder at hollow holds, for the low-back curve."
+      }
+    ],
+    "U2": [
+      {
+        "name": "Half-kneeling landmine press",
+        "sr": "3 × 8–12",
+        "rest": "2 min",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: pressing up without the full overhead reach the self-check lacked."
+      },
+      {
+        "name": "Straight-arm pulldown",
+        "sr": "3 × 12–15",
+        "rest": "90 s",
+        "rir": 2,
+        "note": "Why: the lats with the arms straight, ribs down."
+      },
+      {
+        "name": "Inverted row",
+        "sr": "3 × 8–12",
+        "rest": "90 s",
+        "rir": 2,
+        "note": "Why: a bodyweight row under a racked bar, the upper back squeezed."
+      },
+      {
+        "name": "Cable chest fly",
+        "sr": "2 × 12–15",
+        "rest": "90 s",
+        "rir": 1,
+        "note": "Why: chest work that does not tire the shoulders."
+      },
+      {
+        "name": "Band external rotation (elbow at the side)",
+        "sr": "2 × 12–15",
+        "rest": "90 s",
+        "rir": 2,
+        "note": "Why: the rotator cuff, for the shoulders rolled forward."
+      },
+      {
+        "name": "Cable triceps pushdown",
+        "sr": "2 × 10–12",
+        "rest": "90 s",
+        "rir": 1,
+        "note": "Why: the triceps, the presses being few."
+      }
+    ],
+    "L2": [
+      {
+        "name": "Dumbbell hip thrust (shoulders on a bench)",
+        "sr": "3 × 10–12",
+        "rest": "2 min",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: glutes, for the low-back curve."
+      },
+      {
+        "name": "Dumbbell step-up",
+        "sr": "3 × 8–10",
+        "rest": "2 min",
+        "rir": 2,
+        "logged": true,
+        "note": "Why: the second quads lift, one leg at a time."
+      },
+      {
+        "name": "Leg extension",
+        "sr": "2 × 12–15",
+        "rest": "90 s",
+        "rir": 1,
+        "note": "Why: more quads sets at little cost."
+      },
+      {
+        "name": "Cable woodchop (high to low)",
+        "sr": "3 × 10–12",
+        "rest": "90 s",
+        "rir": 2,
+        "note": "Why: the obliques, the trunk turning under control."
+      },
+      {
+        "name": "Suitcase carry (one hand)",
+        "sr": "2 × 30–40 s/side",
+        "rest": "90 s",
+        "note": "Why: the obliques holding the trunk straight, as a bag carried to the car does."
+      },
+      {
+        "name": "Bird dog",
+        "sr": "3 × 8/side",
+        "rest": "90 s",
+        "rir": 3,
+        "note": "Why: the low back and trunk still while the limbs move, for the low-back curve."
+      },
+      {
+        "name": "Core (abs) (your level)",
+        "sr": "2 × hold",
+        "rest": "90 s",
+        "ladder": "hollow",
+        "note": "Why: the core ladder's second day."
+      }
+    ],
+    "S1": [
+      {
+        "name": "Brisk walk",
+        "sr": "25 min",
+        "rest": "—",
+        "note": "Why: easy aerobic work, outdoors, a break from the desk."
+      }
+    ],
+    "S2": [
+      {
+        "name": "Uphill walk or run intervals, 4 x 4 min",
+        "sr": "25 min",
+        "rest": "—",
+        "timed": {
+          "minutes": 25,
+          "rounds": 4,
+          "workMin": 4,
+          "restMin": 3
+        },
+        "note": "Why: the week's hard cardio, 4 minutes hard uphill and 3 easy, four times."
+      }
+    ],
+    "S3": [
+      {
+        "name": "Easy bike (zone 2)",
+        "sr": "25 min",
+        "rest": "—",
+        "note": "Why: easy aerobic work; you can talk in full sentences."
+      }
+    ]
+  },
+  "liftUnit": "lb",
+  "lifts": {
+    "Machine chest press": {
+      "short": "Chest press",
+      "lo": 8,
+      "hi": 12,
+      "inc": 10,
+      "progression": {
+        "rule": "double"
+      }
+    },
+    "Machine row": {
+      "short": "Machine row",
+      "lo": 10,
+      "hi": 12,
+      "inc": 10,
+      "progression": {
+        "rule": "double"
+      }
+    },
+    "Hack squat (machine)": {
+      "short": "Hack squat",
+      "lo": 8,
+      "hi": 10,
+      "inc": 10,
+      "progression": {
+        "rule": "double"
+      }
+    },
+    "Kickstand Romanian deadlift": {
+      "short": "Kickstand RDL",
+      "lo": 8,
+      "hi": 10,
+      "inc": 5,
+      "db": true,
+      "progression": {
+        "rule": "double"
+      }
+    },
+    "Half-kneeling landmine press": {
+      "short": "Landmine press",
+      "lo": 8,
+      "hi": 12,
+      "inc": 5,
+      "progression": {
+        "rule": "double"
+      }
+    },
+    "Dumbbell hip thrust (shoulders on a bench)": {
+      "short": "DB hip thrust",
+      "lo": 10,
+      "hi": 12,
+      "inc": 5,
+      "progression": {
+        "rule": "double"
+      }
+    },
+    "Dumbbell step-up": {
+      "short": "Step-up",
+      "lo": 8,
+      "hi": 10,
+      "inc": 5,
+      "db": true,
+      "progression": {
+        "rule": "double"
+      }
+    }
+  },
+  "ladders": [
+    {
+      "id": "pullup",
+      "name": "Pull-up",
+      "levels": [
+        {
+          "name": "Dead hang",
+          "detail": "3 × 20–30 s"
+        },
+        {
+          "name": "Scapular pull-up",
+          "detail": "3 × 8–10"
+        },
+        {
+          "name": "Inverted row",
+          "detail": "bar racked at hip height, 4 × 8–12"
+        },
+        {
+          "name": "Negative pull-up",
+          "detail": "5-s lowering, 4 × 3–5"
+        },
+        {
+          "name": "Band-assisted pull-up",
+          "detail": "4 × 5–8"
+        },
+        {
+          "name": "Pull-up",
+          "detail": "4 × 3–8"
+        },
+        {
+          "name": "Weighted pull-up",
+          "detail": "+10 lb, dumbbell between the feet, 4 × 3–6"
+        }
+      ],
+      "startLevel": 6
+    },
+    {
+      "id": "hollow",
+      "name": "Core (abs)",
+      "levels": [
+        {
+          "name": "Dead bug"
+        },
+        {
+          "name": "Tuck hollow hold"
+        },
+        {
+          "name": "Hollow hold, arms by sides"
+        },
+        {
+          "name": "Hollow hold, arms overhead"
+        },
+        {
+          "name": "Hollow rocks"
+        }
+      ],
+      "startLevel": 3
+    }
+  ],
+  "guide": {},
+  "start": "2026-09-07",
+  "weeks": 12,
+  "rules": {
+    "calibration": {
+      "weeks": [
+        1
+      ],
+      "rir": 3,
+      "cardio": "easy",
+      "afterRestart": true
+    },
+    "lightWeeks": {
+      "every": 4,
+      "sets": "half",
+      "load": 0.9,
+      "rirAdd": 3,
+      "early": "offer"
+    },
+    "tests": {
+      "weeks": "phase-ends"
+    },
+    "readiness": {
+      "low": {
+        "sets": -1,
+        "rir": 1
+      }
+    },
+    "soreness": "none",
+    "missed": {
+      "easeBackAfterWeeks": 1,
+      "restartAfterWeeks": 3,
+      "easeBackDrop": 0.1,
+      "easeBackRir": 1
+    },
+    "stall": {
+      "response": "report"
+    },
+    "hotel": {
+      "swaps": "catalogue",
+      "longTripSets": "third"
+    }
+  },
+  "express": {
+    "short": "half"
+  }
+}

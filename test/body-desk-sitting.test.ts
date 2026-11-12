@@ -1,8 +1,8 @@
 // The body record's schedule (from the plan, or every N days with Habit
 // Nudges' baseline rule), desk breaks (the times, the plan's routine and its
-// times from plan-data.json, the generator's rule, the exporter), sitting
-// time per day (every Mac, the running stretch, desk time's history) and the
-// stand-up helpers around the ported step.
+// times from plan-data.json), sitting time per day (every Mac, the running
+// stretch, desk time's history) and the stand-up helpers around the ported
+// step.
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -12,10 +12,8 @@ import { readVault } from '../src/adapters/vault/read.ts';
 import { readTracking } from '../src/adapters/vault/tracking-read.ts';
 import { bodyRecordView, bodySchedule, partStatus, planOccurrences, resolveSchedule } from '../src/core/body-schedule.ts';
 import { fixedOffsetClock, momentAt } from '../src/core/clock.ts';
-import { deskBreaksFor, deskBreaksFromPlanData, deskRoutine, deskTimes, deskTimingFromPlanData, NUDGES_DESK_TIMING, planDeskBreaks } from '../src/core/desk-breaks.ts';
-import { generatePlan } from '../src/core/plan/generate.ts';
-import { toPlanData, type PlanData } from '../src/core/plan-data.ts';
-import type { Profile, SittingLog } from '../src/core/schema.ts';
+import { deskBreaksFromPlanData, deskRoutine, deskTimes, deskTimingFromPlanData, NUDGES_DESK_TIMING, planDeskBreaks } from '../src/core/desk-breaks.ts';
+import type { SittingLog } from '../src/core/schema.ts';
 import { deskTimeHistory, sittingDays, sittingVerdict, stretchesOn, summarizeDay, unionStretches } from '../src/core/sitting.ts';
 import { inStandHours, STAND_FRESH, standAnswer, standAskNow, standConfig, standMeeting, standProgress } from '../src/core/standup.ts';
 import { validateProgram } from '../src/core/validate.ts';
@@ -34,13 +32,6 @@ describe('the body record from the plan', () => {
     assert.deepEqual(occ.tape.slice(0, 4), ['2026-03-15', '2026-03-29', '2026-04-12', '2026-04-26']);
     assert.deepEqual(occ.photos.slice(0, 3), ['2026-03-29', '2026-04-26', '2026-05-24']);
     assert.deepEqual(occ.tests.slice(0, 2), ['2026-04-25', '2026-06-20']);
-  });
-
-  it('a generated plan\'s test weeks (Week.tests) set the test dates', () => {
-    const profile = JSON.parse(readFileSync(join(VAULT, '3-Personal/Fitness/Coach/profile.json'), 'utf8')) as Profile;
-    const g = generatePlan({ profile, today: '2026-04-06', options: { start: '2026-04-06', weeks: 12 } }).value.program!;
-    const flagged = g.macrocycle.phases.flatMap((p) => p.mesocycles.flatMap((m) => m.weeks)).filter((w) => w.tests).map((w) => w.start);
-    assert.deepEqual(planOccurrences(g).tests, flagged.map((d) => new Date(Date.parse(d) + 5 * 86400000).toISOString().slice(0, 10)));
   });
 
   it('each part on a date: due until done or skipped, with what comes next', () => {
@@ -97,7 +88,7 @@ describe('desk breaks', () => {
   it('this vault\'s plan: plan-data\'s deskRoutine on Habit Nudges\' timing, the how-to from the guide', () => {
     const d = program.deskBreaks!;
     assert.deepEqual(d, { steps: [{ name: 'Doorway chest stretch', dose: '2 × 30 s', how: d.steps[0]!.how }], every: 90, from: '10:00', to: '15:00', minutes: 5, days: ['mon', 'tue', 'wed', 'thu', 'fri'] });
-    assert.deepEqual(validateProgram({ ...program, _planData: undefined }), []);
+    assert.deepEqual(validateProgram(program), []);
     assert.equal(deskBreaksFromPlanData([], {}), null);
     assert.equal(deskBreaksFromPlanData([{ name: 'chin tuck', dose: '×10' }], { 'Chin Tuck': { do: 'Glide back.' } })!.steps[0]!.how, 'Glide back.');
   });
@@ -114,24 +105,6 @@ describe('desk breaks', () => {
     assert.match(planDeskBreaks(null).reason.note!, /No desk breaks in this plan/);
   });
 
-  it('the generator proposes them for desk work only, and the exporter writes the routine', () => {
-    const profile = JSON.parse(readFileSync(join(VAULT, '3-Personal/Fitness/Coach/profile.json'), 'utf8')) as Profile;
-    assert.equal(deskBreaksFor(profile).value, null);
-    const desk: Profile = { ...profile, work: { desk: true, sittingHours: 8 }, emphasis: [{ area: 'Posture', seen: 'Forward head and rounded shoulders', confidence: 'medium', emphasis: 'Upper back', kind: 'forward-head-rounded-shoulders' }] };
-    const d = deskBreaksFor(desk);
-    assert.deepEqual(d.value!.why, [{ what: 'Desk job, about 8 hours seated', from: 'intake' }, { what: 'Forward head and rounded shoulders', from: 'the body assessment' }]);
-    assert.equal(d.value!.steps[2]!.name, profile.equipment.some((e) => /band/i.test(e)) ? 'Band Pull-Apart' : 'Wall slides');
-    const g = generatePlan({ profile: desk, today: '2026-04-06', options: { start: '2026-04-06', weeks: 12 } }).value.program!;
-    assert.deepEqual(g.deskBreaks, d.value);
-    assert.deepEqual(validateProgram(g), []);
-    const pd = toPlanData(g, { date: '2026-04-13' }).value;
-    assert.deepEqual(pd.planData.deskRoutine, d.value!.steps.map((s) => ({ name: s.name, dose: s.dose })));
-    assert.deepEqual(pd.planData.deskTiming, { every: 90, from: '10:00', to: '15:00', minutes: 5, days: ['mon', 'tue', 'wed', 'thu', 'fri'] });
-    assert.deepEqual(Object.keys(pd.planData).slice(Object.keys(pd.planData).indexOf('deskRoutine'), Object.keys(pd.planData).indexOf('deskRoutine') + 2), ['deskRoutine', 'deskTiming']);
-    assert.ok(!pd.unexpressible.some((u) => u.what === 'desk-break times'), 'the times have a field now');
-    assert.ok(pd.unexpressible.some((u) => u.what === 'desk-break reasons'));
-    assert.equal(generatePlan({ profile, today: '2026-04-06', options: { start: '2026-04-06', weeks: 12 } }).value.program!.deskBreaks, undefined);
-  });
 });
 
 describe('desk breaks on the plan\'s times (plan-data\'s deskTiming)', () => {
@@ -175,7 +148,7 @@ describe('desk breaks on the plan\'s times (plan-data\'s deskTiming)', () => {
     const own = deskRoutine({ ...item, desk: { ...item.desk, followPlan: false } }, read.data.program);
     assert.deepEqual(own.value.times, ['10:00', '11:30', '13:00', '14:30'], 'an item with its own times keeps them');
     assert.deepEqual(planDeskBreaks(read.data.program).reason.note, '7 steps, about 5 min, every 90 min from 09:00 to 17:00 on weekdays; 6 a day.'.replace('7 steps', `${d.steps.length} steps`));
-    assert.deepEqual(validateProgram({ ...read.data.program, _planData: undefined }), []);
+    assert.deepEqual(validateProgram(read.data.program), []);
   });
 
   it('the plan\'s days and break length; a bad deskTiming is a data note and the usual times', () => {
@@ -249,22 +222,6 @@ describe('desk breaks on the plan\'s times (plan-data\'s deskTiming)', () => {
     assert.doesNotMatch(`${ownRow.what} ${ownRow.reason.note}`, /from your plan/);
   });
 
-  it('the exporter keeps a vault plan\'s deskTiming where it was; a generated plan\'s reads back the same', () => {
-    const f = files({ ...NINE_TO_FIVE, days: ['mon', 'tue', 'wed', 'thu'] });
-    const read = vault(f);
-    const out = toPlanData(read.data.program, { date: '2026-04-10' }).value.planData;
-    assert.deepEqual(out.deskTiming, { ...NINE_TO_FIVE, days: ['mon', 'tue', 'wed', 'thu'] });
-    assert.deepEqual(Object.keys(out), Object.keys(JSON.parse(f[PLAN]!)));
-    const profile = JSON.parse(readFileSync(join(VAULT, '3-Personal/Fitness/Coach/profile.json'), 'utf8')) as Profile;
-    const g = generatePlan({ profile: { ...profile, work: { desk: true, sittingHours: 8 } }, today: '2026-04-06', options: { start: '2026-04-06', weeks: 12 } }).value.program!;
-    const gen = toPlanData(g, { date: '2026-04-13' }).value.planData;
-    const back = vault(files(undefined, (p) => Object.assign(p, { deskRoutine: gen.deskRoutine, deskTiming: gen.deskTiming })));
-    const { why: _why, ...timed } = g.deskBreaks!;
-    assert.deepEqual({ ...back.data.program.deskBreaks!, steps: timed.steps }, timed);
-    // A generated plan without desk breaks carries the base file's, as it does its routine.
-    const base = { ...(JSON.parse(f[PLAN]!) as PlanData) };
-    assert.deepEqual(toPlanData(generatePlan({ profile, today: '2026-04-06', options: { start: '2026-04-06', weeks: 12 } }).value.program!, { base }).value.planData.deskTiming, base.deskTiming);
-  });
 });
 
 describe('sitting time per day', () => {

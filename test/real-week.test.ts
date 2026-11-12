@@ -3,18 +3,14 @@
 // to 4 complete weeks of the cycle (a tie going to the latest), else on the
 // days the profile says the user trains, else on the default layout; a
 // session never logged falls back on its own, and the reasons name the
-// source. `review` lays the written plan on it, `plan` (the generator) its
-// draft, from the history.
+// source. `review` lays the written plan (or a draft) on it.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { checkConcurrent, loggedWeekdays, weekLayout, type LoggedSession, type PlannedSession } from '../src/core/concurrent.ts';
 import { addDays } from '../src/core/dates.ts';
-import { userLayoutDays } from '../src/core/plan/conditioning.ts';
-import { buildContext } from '../src/core/plan/context.ts';
-import { generatePlan } from '../src/core/plan/generate.ts';
-import type { Exercise, Profile, Session, Weekday } from '../src/core/schema.ts';
+import type { Exercise, Weekday } from '../src/core/schema.ts';
 import { buildReview, CALENDAR } from '../src/report/review.ts';
 import { fixtureFiles, memoryIo } from './helpers.ts';
 
@@ -187,63 +183,5 @@ describe('review: the written plan on the user’s week', () => {
       { session: 'S3', day: 'sat', hour: 10, source: 'default' },
     ]);
     assert.match(c.week.reason.note ?? '', /\(the default layout\)/);
-  });
-});
-
-describe('plan: the generator lays its draft on the history’s days', () => {
-  const profile = (p: Partial<Profile> = {}): Profile => ({
-    schemaVersion: 1,
-    units: { load: 'kg', body: 'kg' },
-    goals: [{ id: 'g', kind: 'recomposition', label: 'Recomposition', importance: 8, confidence: 7 }],
-    availability: { daysPerWeek: 4, minutesPerSession: 60 },
-    equipment: ['dumbbells', 'barbell', 'bench', 'cable', 'machine'],
-    trackingLevel: 'standard',
-    screening: { outcome: 'go', date: '2026-03-01' },
-    emphasis: [],
-    experience: 'intermediate',
-    useHistory: true,
-    ...p,
-  });
-  const sessions = (log: LoggedSession[], kind: 'lift' | 'short' = 'lift'): Session[] => log.map((s) => ({ id: `${s.date}-${s.id}`, date: s.date, trackingLevel: 'light', exercises: [], template: s.id, plan: { weekKind: 'loading', template: s.id, kind, slots: [] } }));
-  const TODAY = '2026-04-12';
-  const lifting = sessions(weeksOf(MONDAYS, { a: 0, b: 2, c: 4, d: 5 }));
-
-  it('takes the logged lifting days, by kind, with their source', () => {
-    const ctx = buildContext({ profile: profile(), today: TODAY, options: { history: { sessions: lifting } } });
-    const r = userLayoutDays(ctx, 4, 1);
-    assert.deepEqual([r.value.lifting, r.value.sources.lifting], [[0, 2, 4, 5], ['log', 'log', 'log', 'log']]);
-    assert.deepEqual([r.value.extra, r.value.sources.extra], [[6], ['default']], 'the first free day of the usual order (Sat is taken)');
-    assert.match(r.reason.note ?? '', /Lifting on Mon, Wed, Fri, Sat \(your logged weeks\); conditioning on Sun \(the default layout\)\./);
-    const short = sessions(weeksOf(MONDAYS, { s: 1 }), 'short');
-    assert.deepEqual(userLayoutDays(buildContext({ profile: profile(), today: TODAY, options: { history: { sessions: [...lifting, ...short] } } }), 4, 1).value.extra, [1], 'a logged short day carries the conditioning');
-  });
-
-  it('more logged days than the plan lifts: the most evenly spread; fewer: the rest keeps the spread', () => {
-    const ctx = buildContext({ profile: profile({ availability: { daysPerWeek: 3, minutesPerSession: 60 } }), today: TODAY, options: { history: { sessions: lifting } } });
-    assert.deepEqual(userLayoutDays(ctx, 3, 0).value.lifting, [0, 2, 4]);
-    const two = buildContext({ profile: profile(), today: TODAY, options: { history: { sessions: sessions(weeksOf(MONDAYS, { a: 0, b: 3 })) } } });
-    const r = userLayoutDays(two, 4, 0).value;
-    assert.deepEqual(r.lifting.filter((_, i) => r.sources.lifting[i] === 'log'), [0, 3]);
-    assert.equal(r.lifting.length, 4);
-  });
-
-  it('without the history, or without opting in: the days as before', () => {
-    for (const ctx of [buildContext({ profile: profile(), today: TODAY, options: {} }), buildContext({ profile: profile({ useHistory: false }), today: TODAY, options: { history: { sessions: lifting } } })]) {
-      const r = userLayoutDays(ctx, 4, 2).value;
-      assert.deepEqual([r.lifting, r.extra], [[0, 1, 3, 4], [5, 2]]);
-      assert.deepEqual(r.sources, { lifting: ['default', 'default', 'default', 'default'], extra: ['default', 'default'] });
-    }
-    const fixed = userLayoutDays(buildContext({ profile: profile({ availability: { daysPerWeek: 4, minutesPerSession: 60, fixedDays: ['mon', 'tue', 'thu', 'sat'] } }), today: TODAY, options: {} }), 4, 0).value;
-    assert.deepEqual([fixed.lifting, fixed.sources.lifting], [[0, 1, 3, 5], ['available', 'available', 'available', 'available']]);
-  });
-
-  it('the whole plan: its week on the logged days, the concurrent check said on them', () => {
-    const plan = generatePlan({ profile: profile(), today: TODAY, options: { history: { sessions: lifting, previousTarget: { lift: 4, short: 0 } } } }).value;
-    const week = plan.proposal.week!;
-    assert.deepEqual(week.days.filter((d) => d.kind === 'lift').map((d) => [d.weekday, d.source]), [['mon', 'log'], ['wed', 'log'], ['fri', 'log'], ['sat', 'log']]);
-    assert.equal(week.layout.rule, 'plan.week-days');
-    const check = plan.proposal.checks.find((c) => c.id === 'concurrent')!;
-    assert.match(check.detail, check.passed ? /passes the concurrent-training checks, on your logged weeks/ : /Days: .*\(your logged weeks\)/);
-    assert.ok(plan.proposal.personalization.find((u) => u.input === 'useHistory')!.effect.includes('mon, wed, fri, sat from your logged weeks'));
   });
 });

@@ -1,40 +1,18 @@
 // Builds the plugin's static preview: plugin/preview/dist/preview.js, the real
 // view bundled with a stubbed `obsidian` module and the synthetic vault's
 // files inlined. Open plugin/preview/index.html (file:// works).
+// tools/build-demo.mjs builds the public Try it page from the same harness.
 
 import { build } from 'esbuild';
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PREVIEW_BUILD, fixtureScript, previewFiles } from './preview-files.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const vault = join(root, 'test/fixtures/vault');
-const files = {};
-const walk = (dir) => {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p);
-    else if (name !== 'expected.json') files[relative(vault, p)] = readFileSync(p, 'utf8');
-  }
-};
-walk(vault);
-// Made-up samples the preview's &rich=1 mode copies into the Coach folder in memory (the fixture has none).
-const samples = { decisions: readFileSync(join(root, 'test/fixtures/decisions-sample.md'), 'utf8'), letter: readFileSync(join(root, 'test/fixtures/letter-sample.md'), 'utf8') };
+const data = previewFiles(root);
 mkdirSync(join(root, 'plugin/preview/dist'), { recursive: true });
-writeFileSync(join(root, 'plugin/preview/dist/fixture-files.js'), `window.PAHLAVAN_FIXTURE = ${JSON.stringify(files)};\nwindow.PAHLAVAN_SAMPLES = ${JSON.stringify(samples)};\n`);
+writeFileSync(join(root, 'plugin/preview/dist/fixture-files.js'), fixtureScript(data));
 
-await build({
-  absWorkingDir: root,
-  entryPoints: ['plugin/preview/preview.ts'],
-  outfile: 'plugin/preview/dist/preview.js',
-  bundle: true,
-  format: 'iife',
-  platform: 'browser',
-  target: 'es2020',
-  alias: { obsidian: './plugin/preview/obsidian-stub.ts' },
-  legalComments: 'none',
-  // Obsidian's globals for the page: the view's DOM builders draw on activeDocument.
-  banner: { js: 'window.activeDocument = document; window.activeWindow = window;' },
-  logLevel: 'warning',
-});
-console.log(`built plugin/preview/dist (${Object.keys(files).length} fixture files)`);
+await build({ ...PREVIEW_BUILD, absWorkingDir: root, outfile: 'plugin/preview/dist/preview.js' });
+console.log(`built plugin/preview/dist (${Object.keys(data.files).length} fixture files)`);

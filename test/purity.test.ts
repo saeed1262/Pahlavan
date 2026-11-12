@@ -66,3 +66,35 @@ describe('no vault-local script names', () => {
     }
   });
 });
+
+// The plugin promises no network requests (README, the user guide): nothing
+// it bundles may call one. The core and the reports are held to `fetch(`
+// above and in report.test.ts; this covers the plugin's own code and the
+// vault adapter, with every network API the browser and Obsidian offer. A
+// video link the user clicks opens their browser, which is not a request
+// from the plugin. The preview harness (the Try it demo's source) and the
+// gym page are held to the same rule: both are published as web pages.
+describe('no network requests from the plugin', () => {
+  // The gym page's Screen Wake Lock (`wakeLock.request('screen')`, the phone's screen kept on) is
+  // the one `request(` that isn't a network call: that call alone is left out of the scan.
+  const WAKE_LOCK = /\brequest\s*\(\s*(type: )?'screen'\s*\)/g;
+  const sources = [join('plugin', 'src'), join('src', 'adapters'), join('plugin', 'preview'), 'web'].flatMap((dir) =>
+    readdirSync(join(ROOT, dir), { recursive: true })
+      .filter((f) => f.endsWith('.ts'))
+      .map((f) => ({ name: join(dir, f), text: readFileSync(join(ROOT, dir, f), 'utf8').replace(WAKE_LOCK, 'wakeLock(screen)') })),
+  );
+  const NETWORK = [/\bfetch\s*\(/, /\brequestUrl\b/, /\brequest\s*\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/, /\bsendBeacon\b/, /\bEventSource\b/];
+
+  it('finds the plugin, adapter, preview and web page sources', () => {
+    assert.ok(sources.filter((f) => f.name.startsWith(join('plugin', 'src'))).length >= 30);
+    assert.ok(sources.some((f) => f.name.startsWith(join('src', 'adapters'))));
+    assert.ok(sources.some((f) => f.name === join('plugin', 'preview', 'preview.ts')));
+    assert.ok(sources.some((f) => f.name === join('web', 'gym', 'page.ts')));
+  });
+
+  it('calls no network API anywhere in them', () => {
+    for (const { name, text } of sources) {
+      for (const re of NETWORK) assert.doesNotMatch(text, re, `${name} matches ${re}`);
+    }
+  });
+});

@@ -3,17 +3,13 @@
 // wrote, a hold against the user's test, a ladder level under the user's),
 // and a priority muscle's minimum met only by direct sets near failure
 // (rules.md, "Volume"). The plan's ab work, old and new, on the synthetic
-// vault; the generator's fit on hand-built templates.
+// vault.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
-import { CATALOGUE_BY_ID, type CatalogueEntry } from '../src/core/data/exercises.ts';
 import { LADDER_BY_ID } from '../src/core/data/ladders.ts';
 import { noteRir } from '../src/core/plan-data.ts';
-import type { BuiltSlot, BuiltTemplate } from '../src/core/plan/dose.ts';
-import type { Blueprint } from '../src/core/plan/template.ts';
-import { fitVolume, hardDirectVolume } from '../src/core/plan/volume-fit.ts';
 import type { Exercise, SessionTemplate } from '../src/core/schema.ts';
 import { checkVolume, holdBests, holdKindOf, plannedSetsPerMuscle, setEffort, setsPerMuscle, VOLUME, type EffortContext } from '../src/core/volume.ts';
 import { planGlance } from '../src/report/glance.ts';
@@ -269,48 +265,5 @@ describe('the plan’s ab work on the vault', () => {
       if (under) assert.match(words, /Abs short of direct sets near failure/);
       else assert.doesNotMatch(words, /near failure/);
     }
-  });
-});
-
-describe('the generator’s fit holds a priority minimum on direct sets near failure', () => {
-  const entry = (id: string, muscles: { main: string[]; helps: string[] }): CatalogueEntry => ({ ...CATALOGUE_BY_ID.get(id)!, muscles });
-  const BUG = entry('dead-bug', { main: ['abs'], helps: [] });
-  const HOLLOW = entry('hollow-hold', { main: ['abs'], helps: [] });
-  const s = (e: CatalogueEntry, role: 'main' | 'accessory', sets: number, slotIndex: number): BuiltSlot => ({ entry: e, role, fixed: false, pinned: false, slotIndex, sets, repRange: [8, 12], rir: 2, note: '' });
-  /** A session: a squat (abs helping or not), a dead bug and a hollow hold, 2 sets each. */
-  const built = (id: string, squatHelpsAbs: boolean): BuiltTemplate => {
-    const blueprint: Blueprint = { id, name: id, kind: 'lift', day: null, slots: [] };
-    const squat = entry('back-squat', { main: ['quads', 'glutes'], helps: squatHelpsAbs ? ['abs'] : [] });
-    return { blueprint, minimumDose: false, finisher: null, capacity: 60, slots: [s(squat, 'main', 3, 0), s(BUG, 'accessory', 2, 1), s(HOLLOW, 'accessory', 2, 2)] };
-  };
-  const ids = ['a', 'b', 'c'];
-  const input = { layouts: [ids], priority: ['abs'], pullPush: null, minimumDose: false };
-  // The core ladder at level 3: the dead bug (level 1) is below it.
-  const ladders: EffortContext = { holds: {}, ladders: [{ id: 'hollow', name: 'Core (abs)', levels: LADDER_BY_ID.get('hollow')!.levels.map((l) => l.exercise), level: 3 }] };
-  const hard = (x: BuiltSlot) => setEffort({ exercise: x.entry.id, rir: x.rir }, ladders).value.effort !== 'easy';
-  const sets = (ts: BuiltTemplate[], id: string) => ts.map((t) => t.slots.find((x) => x.entry.id === id)?.sets ?? 0);
-
-  it('raises the direct sets near failure, not the dead bug below the user’s level', () => {
-    // Abs: 12 sets in all, 6 of them near failure.
-    const r = fitVolume({ ...input, templates: ids.map((id) => built(id, false)), hard }).value.templates;
-    assert.equal(hardDirectVolume(r, ids, hard)['abs'], 10);
-    assert.deepEqual(sets(r, 'dead-bug'), [2, 2, 2]);
-    assert.equal(sets(r, 'hollow-hold').reduce((a, n) => a + n, 0), 10);
-  });
-
-  it('without the effort rule the total stands, the dead bug counted, as before', () => {
-    const r = fitVolume({ ...input, templates: ids.map((id) => built(id, false)) }).value.templates;
-    assert.deepEqual([sets(r, 'dead-bug'), sets(r, 'hollow-hold')], [[2, 2, 2], [2, 2, 2]]);
-    assert.equal(hardDirectVolume(r, ids, hard)['abs'], 6);
-  });
-
-  it('over the top, drops an easy slot before one near failure', () => {
-    // Abs: 16.5 sets in all with the squats' half credit, over the priority top of 16.
-    const r = fitVolume({ ...input, templates: ids.map((id) => built(id, true)), hard });
-    assert.match(r.reason.note!, /Dropped to keep 8 direct sets per muscle per session: c\/dead-bug\./);
-    assert.deepEqual(sets(r.value.templates, 'dead-bug'), [2, 2, 0]);
-    assert.ok(sets(r.value.templates, 'hollow-hold').every((n) => n >= 2));
-    const before = fitVolume({ ...input, templates: ids.map((id) => built(id, true)) });
-    assert.match(before.reason.note!, /c\/hollow-hold/, 'without the rule the latest slot goes');
   });
 });

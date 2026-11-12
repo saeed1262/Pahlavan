@@ -1,22 +1,16 @@
 // The muscle regions (data/regions.ts): what is modelled, with what evidence,
 // which catalogue movements bias each one, how a person's own words for a
-// region are explained, and how review and the plan proposal report their
-// sets.
+// region are explained, and how review reports their sets.
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { CATALOGUE } from '../src/core/data/exercises.ts';
 import { MUSCLE_IDS } from '../src/core/data/muscles.ts';
 import { explainRegion, nearestText, parentMissingText, REGION_IDS, regionProblems, REGIONS, REGIONS_BY_ID, regionsOf, regionsWithoutParent, UNSUPPORTED_REGIONS } from '../src/core/data/regions.ts';
 import { PLAN_DATA_MUSCLES } from '../src/core/plan-data.ts';
 import { validateProfile, validateProgram } from '../src/core/validate.ts';
-import { generatePlan } from '../src/core/plan/generate.ts';
-import type { Profile } from '../src/core/schema.ts';
-import { plannedSetsPerMuscle } from '../src/core/volume.ts';
 import { run } from '../src/cli/cli.ts';
-import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
+import { fixtureFiles, memoryIo } from './helpers.ts';
 
 const DOI = /^10\.\d{4,}\/\S+$/;
 
@@ -236,22 +230,5 @@ describe('muscle regions: review counts them', () => {
   it('declares nothing and holds nothing without priority muscles that have regions', () => {
     const j = JSON.parse(run(['review', '--vault', 'v', '--date', '2026-04-12'], memoryIo(fixtureFiles('v'))).stdout) as Json;
     assert.ok((j.volume.regions as { value: Json }[]).every((r) => r.value.rule === null && r.value.status === 'reported' && !r.value.declared));
-  });
-});
-
-describe('muscle regions: the plan proposal reports them', () => {
-  it('gives each loading week its region sets, the same count review makes, without planning by region', () => {
-    const fixture = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'plans', 'a-novice-dumbbells.json'), 'utf8')) as { input: { profile: Profile; today: string; options?: Record<string, unknown> } };
-    const r = generatePlan({ profile: fixture.input.profile, today: fixture.input.today, options: (fixture.input.options ?? {}) as never }).value;
-    const p = r.proposal;
-    assert.ok(p.volume.length > 0);
-    const weeks = r.program!.macrocycle.phases.flatMap((ph) => ph.mesocycles.flatMap((m) => m.weeks));
-    for (const v of p.volume) {
-      const week = weeks[v.week - 1]!;
-      const counted = plannedSetsPerMuscle(week.sessions.filter((t) => t.kind === 'lift'), r.program!.exercises).value.regions;
-      assert.deepEqual(Object.keys(v.regions ?? {}).sort(), Object.keys(counted ?? {}).sort(), `week ${v.week}`);
-      for (const [id, s] of Object.entries(v.regions ?? {})) assert.equal(s.direct, counted![id]!.direct, `week ${v.week} ${id}`);
-    }
-    assert.ok(p.volume.some((v) => Object.keys(v.regions ?? {}).length > 0), 'a dumbbell plan biases some region');
   });
 });

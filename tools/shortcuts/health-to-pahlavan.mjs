@@ -1,8 +1,8 @@
-// Health to Pahlavan: yesterday's steps and floors and the resting heart rate first, then last night's sleep.
+// Health to Pahlavan: yesterday's steps and floors, the resting heart rate and HRV first, then last night's sleep.
 //
-// Run each morning by an automation. Fill Missing keeps the first three from ever being empty (a 0 is
+// Run each morning by an automation. Fill Missing keeps the first four from ever being empty (a 0 is
 // left out); sleep comes last and alone, because with no watch overnight Health has none and the step
-// stops the shortcut.
+// stops the shortcut. HRV is Apple's SDNN, in ms.
 
 import { action, dictField, Flow, HAS, HAS_NOT, out, ref, REPEAT_ITEM, runShortcut, text, variable as V } from './shortcut.mjs';
 
@@ -50,7 +50,7 @@ export function build(repoUrl) {
   };
 
   const send = (entryVar, what) => {
-    const NUM = 'sleepH|rhr|steps|floors';
+    const NUM = 'sleepH|rhr|hrv|steps|floors';
     const r1 = f.add(action('text.replace', { WFReplaceTextRegularExpression: true, WFInput: text(V(entryVar)),
       WFReplaceTextFind: String.raw`"(${NUM})"\s*:\s*"(-?\d+)[.,](\d+)"`, WFReplaceTextReplace: '"$1":$2.$3' }));
     const r2 = f.add(action('text.replace', { WFReplaceTextRegularExpression: true, WFInput: text(out(r1, 'Updated Text')),
@@ -101,16 +101,24 @@ export function build(repoUrl) {
   f.end();
   f.if(HAS, V('RHR')); const p = f.text('"rhr":"', V('RHR'), '"'); f.append('Parts', out(p, 'Text')); f.end();
 
-  // 3. Send those (nothing to send: say so and carry on to sleep)
+  // 3. HRV (Apple's SDNN, ms), as the resting heart rate: yesterday's and today's day groups; the latest that isn't 0 wins
+  const hrv = find('Heart Rate Variability', between('YdayStart', 'Now'), 'ms');
+  f.repeat(out(hrv, 'Health Samples'));
+  const hn = whole(REPEAT_ITEM);
+  f.ifNotMatch(hn, '^0$'); f.set('HRV', hn); f.end();
+  f.end();
+  f.if(HAS, V('HRV')); const hp = f.text('"hrv":"', V('HRV'), '"'); f.append('Parts', out(hp, 'Text')); f.end();
+
+  // 4. Send those (nothing to send: say so and carry on to sleep)
   f.if(HAS, V('Parts'));
   const pc = f.add(action('text.combine', { text: ref(V('Parts')), WFTextSeparator: 'Custom', WFTextCustomSeparator: ',' }));
   f.textAs('Entry', '{"v":1,"at":"', V('At'), '","date":"', V('TodayText'), '","kind":"morning","morning":{', out(pc, 'Combined Text'), '}}');
-  send('Entry', 'steps, floors, heart rate');
+  send('Entry', 'steps, floors, heart rate, HRV');
   f.otherwise();
-  f.notify('Health to Pahlavan', 'No steps, floors or resting heart rate in Health yet.');
+  f.notify('Health to Pahlavan', 'No steps, floors, resting heart rate or HRV in Health yet.');
   f.end();
 
-  // 4. Sleep, last and on its own: with no watch overnight, Health has none and the shortcut stops here.
+  // 5. Sleep, last and on its own: with no watch overnight, Health has none and the shortcut stops here.
   // A sleep step finds nothing with "is between" two dates (or with no date filter), only with "is in the last",
   // so it takes the last day and skips any stretch that started before 18:00 yesterday (the night before's end).
   const slp = find('Sleep', lastDays(1), null, { group: false });

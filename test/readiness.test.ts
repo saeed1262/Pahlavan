@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { addDays } from '../src/core/dates.ts';
-import { readinessActions, readinessBand, readinessBaseline, readinessInputs, readinessKey, readinessOn, readinessSeries } from '../src/core/readiness.ts';
+import { readVault } from '../src/adapters/vault/read.ts';
+import { READINESS, readinessActions, readinessBand, readinessBaseline, readinessHrv, readinessInputs, readinessKey, readinessOn, readinessSeries } from '../src/core/readiness.ts';
 import type { DailyCheckin } from '../src/core/schema.ts';
-import { approx, days } from './helpers.ts';
+import { buildReview } from '../src/report/review.ts';
+import { approx, days, fixtureFiles, memoryIo } from './helpers.ts';
 
 /** n alternating days: sleep 7/8, quality and energy 3/4, RHR 55/57, soreness 2/3. */
 const alternating = (start: string, n: number): DailyCheckin[] =>
@@ -253,5 +255,148 @@ describe('readiness from the cycle’s mornings only', () => {
     const inputs = readinessInputs(daily, '2026-04-16', { since });
     assert.equal(inputs.find((x) => x.signal === 'sleepH')!.days, 15);
     assert.equal(readinessInputs(daily, '2026-04-16').find((x) => x.signal === 'sleepH')!.days, 28);
+  });
+});
+
+describe('HRV: scored on its log, and a note when it is low two mornings running', () => {
+  // 30 steady mornings with HRV 60 ms (through 2 March): its ln-sd is 0, so the 0.1 floor applies.
+  const withHrv = steady('2026-02-01', 30, { sleepH: 7, sleepQ: 3, energy: 3, rhr: 56, soreness: 2, hrv: 60 });
+  const flag = (d: DailyCheckin[], date: string) => readinessSeries(d, date).at(-1)!.hrvFlag;
+  const noHard = (d: DailyCheckin[], date: string) => action(readinessActions(d, date), 'no-hard-training');
+  const normal = { sleepH: 7, sleepQ: 3, energy: 3, rhr: 56, soreness: 2 };
+
+  it('scores ln(HRV) against the ln baseline, with an sd floor of 0.1 on that scale', () => {
+    const row = readinessSeries([...withHrv, { date: '2026-03-03', ...normal, hrv: 66 }], '2026-03-03').at(-1)!;
+    approx(row.z.hrv, Math.log(66 / 60) / READINESS.hrvFloorLn);
+    assert.equal(row.signals, 6);
+    const low = readinessSeries([...withHrv, { date: '2026-03-03', ...normal, hrv: 30 }], '2026-03-03').at(-1)!;
+    approx(low.z.hrv, -READINESS.clip); // ln(0.5) / 0.1 is about -6.9, clipped
+    // The inputs give HRV in ms: the geometric mean, and the usual range as the mean times or divided by e^sd.
+    const x = readinessInputs([...withHrv, { date: '2026-03-03', ...normal, hrv: 66 }], '2026-03-03').find((i) => i.signal === 'hrv')!;
+    approx(x.mean, 60);
+    approx(x.sd, 0.1);
+    approx(x.range![0], 60 * Math.exp(-0.1));
+    approx(x.range![1], 60 * Math.exp(0.1));
+    assert.equal(x.value, 66);
+  });
+
+  it('leaves HRV out of the inputs for someone who never sends it', () => {
+    const inputs = readinessInputs(steady('2026-03-01', 20), '2026-03-20');
+    assert.deepEqual(inputs.map((x) => x.signal), ['sleepH', 'sleepQ', 'energy', 'rhr', 'soreness']);
+  });
+
+  it('two mornings 20% or more under the baseline: a note only, no hard-training stop', () => {
+    // Yesterday's HRV is part of today's baseline (as the RHR flag has it): 46 and 45 against about 59 ms.
+    const d = [...withHrv, { date: '2026-03-03', ...normal, hrv: 46 }, { date: '2026-03-04', ...normal, hrv: 45 }];
+    assert.equal(flag(d, '2026-03-04'), true);
+    // Exactly 20% under the geometric mean counts.
+    const edge = 0.8 * Math.exp((27 * Math.log(60) + Math.log(40)) / 28);
+    assert.equal(flag([...withHrv, { date: '2026-03-03', ...normal, hrv: 40 }, { date: '2026-03-04', ...normal, hrv: edge }], '2026-03-04'), true);
+    assert.equal(flag([...withHrv, { date: '2026-03-03', ...normal, hrv: 40 }, { date: '2026-03-04', ...normal, hrv: edge + 0.01 }], '2026-03-04'), false);
+    const a = noHard(d, '2026-03-04');
+    assert.equal(a.value.active, false);
+    assert.equal(a.reason.inputs['hrvFlag'], true);
+    assert.match(a.reason.note ?? '', /HRV 20% or more under its 28-day baseline two mornings running: a note only/);
+    const h = readinessHrv(d, '2026-03-04');
+    assert.deepEqual([h.value.flag, h.value.value, h.value.dayBefore, h.value.days, h.value.building], [true, 45, 46, 28, false]);
+    approx(h.value.usual, Math.exp((27 * Math.log(60) + Math.log(46)) / 28));
+    approx(h.value.limit, 0.8 * h.value.usual!);
+    assert.equal(h.reason.rule, 'readiness.hrv-flag');
+    assert.match(h.reason.note ?? '', /^HRV 46 ms and 45 ms, 20% or more under your usual 59 ms two mornings running: a note only\./);
+    assert.match(readinessOn(d, '2026-03-04').reason.note ?? '', /HRV 20% or more under your usual two mornings running: a note on its own\./);
+    assert.ok(!JSON.stringify([a, h]).includes('\u2014'), 'no em-dash');
+  });
+
+  it('needs both mornings: one low morning, or one only 19% under, gives no note', () => {
+    assert.equal(flag([...withHrv, { date: '2026-03-03', ...normal, hrv: 60 }, { date: '2026-03-04', ...normal, hrv: 40 }], '2026-03-04'), false);
+    assert.equal(flag([...withHrv, { date: '2026-03-04', ...normal, hrv: 40 }], '2026-03-04'), false, 'no HRV the day before');
+    assert.equal(flag([...withHrv, { date: '2026-03-03', ...normal, hrv: 49 }, { date: '2026-03-04', ...normal, hrv: 40 }], '2026-03-04'), false, 'the day before is 18% under');
+  });
+
+  it('with the resting-HR flag as well: no hard training, and the note names both', () => {
+    const d = [...withHrv, { date: '2026-03-03', ...normal, rhr: 64, hrv: 45 }, { date: '2026-03-04', ...normal, rhr: 64, hrv: 45 }];
+    const a = noHard(d, '2026-03-04');
+    assert.equal(a.value.active, true);
+    assert.deepEqual([a.reason.inputs['rhrFlag'], a.reason.inputs['hrvFlag']], [true, true]);
+    assert.match(a.reason.note ?? '', /^Resting HR 7\+ bpm .* HRV 20% or more under its baseline two mornings running too\./);
+    assert.match(readinessHrv(d, '2026-03-04').reason.note ?? '', /with the resting-HR flag as well: no hard training\.$/);
+  });
+
+  it('with a low score as well: no hard training, the reason says HRV and the score', () => {
+    const awful = { sleepH: 4, sleepQ: 1, energy: 1, rhr: 56, soreness: 5, hrv: 40 };
+    const d = [...withHrv, { date: '2026-03-03', ...awful }, { date: '2026-03-04', ...awful }];
+    const row = readinessSeries(d, '2026-03-04').at(-1)!;
+    assert.deepEqual([row.band, row.rhrFlag, row.hrvFlag], ['low', false, true]);
+    const a = noHard(d, '2026-03-04');
+    assert.equal(a.value.active, true);
+    assert.equal(a.reason.inputs['band'], 'low');
+    assert.match(a.reason.note ?? '', /HRV 20% or more under its 28-day baseline two mornings running, with a low score: no hard training/);
+    // The same low score without the HRV note trims, but does not stop hard training.
+    const noHrv = [...withHrv, { date: '2026-03-03', ...awful, hrv: 60 }, { date: '2026-03-04', ...awful, hrv: 60 }];
+    assert.equal(readinessSeries(noHrv, '2026-03-04').at(-1)!.band, 'low');
+    assert.equal(noHard(noHrv, '2026-03-04').value.active, false);
+  });
+
+  it('under 14 HRV mornings in the baseline: no note, "building"', () => {
+    // 30 mornings, HRV only on the last 13 of them.
+    const d = [...steady('2026-02-01', 17), ...steady('2026-02-18', 13, { ...normal, hrv: 60 }), { date: '2026-03-03', ...normal, hrv: 40 }, { date: '2026-03-04', ...normal, hrv: 40 }];
+    const h = readinessHrv(d, '2026-03-03');
+    assert.deepEqual([h.value.flag, h.value.days, h.value.building, h.value.usual], [false, 13, true, null]);
+    assert.match(h.reason.note ?? '', /^HRV baseline building: 13 of 14 mornings with HRV in the previous 28 days; no HRV note until then\.$/);
+    assert.equal(flag(d, '2026-03-03'), false);
+    // The next morning has 14 (the 3rd's own 40 among them) and both mornings are under the line.
+    assert.equal(readinessHrv(d, '2026-03-04').value.building, false);
+    assert.equal(flag(d, '2026-03-04'), true);
+  });
+
+  it('no HRV that morning: no note, and nothing for someone who never sends it', () => {
+    const h = readinessHrv([...withHrv, { date: '2026-03-03', ...normal }], '2026-03-03');
+    assert.equal(h.value.flag, false);
+    assert.match(h.reason.note ?? '', /^No HRV on the latest check-in/);
+    assert.equal(readinessHrv(steady('2026-03-01', 20), '2026-03-20').value.value, null);
+  });
+
+  it('a watch-only morning (sleep hours, resting HR, HRV, no card answer) is not scored', () => {
+    const d = [...withHrv, { date: '2026-03-03', sleepH: 7.5, rhr: 55, hrv: 62 }];
+    const row = readinessSeries(d, '2026-03-03').at(-1)!;
+    assert.equal(row.signals, 3);
+    assert.equal(row.r, null);
+    assert.equal(row.band, 'unscored');
+    assert.match(readinessOn(d, '2026-03-03').reason.note ?? '', /^Not scored: watch numbers alone never score a morning/);
+    // One card answer is enough.
+    const one = readinessSeries([...withHrv, { date: '2026-03-03', sleepH: 7.5, rhr: 55, hrv: 62, energy: 4 }], '2026-03-03').at(-1)!;
+    assert.equal(one.signals, 4);
+    assert.notEqual(one.r, null);
+  });
+});
+
+describe('illness from body-data.json', () => {
+  const BODY = 'v/3-Personal/Fitness/body-data.json';
+  const DATE = '2026-04-10';
+  const withIll = (v: unknown) => {
+    const files = fixtureFiles('v');
+    const body = JSON.parse(files[BODY]!);
+    body.days[DATE] = { ...body.days[DATE], illness: v };
+    files[BODY] = JSON.stringify(body);
+    return readVault(memoryIo(files, DATE), 'v', { asOf: DATE });
+  };
+
+  it('a sick day in the file is read, and stops hard training', () => {
+    const read = withIll(true);
+    assert.equal(read.data.checkins.daily.find((d) => d.date === DATE)!.illness, true);
+    const a = action(readinessActions(read.data.checkins.daily, DATE), 'no-hard-training');
+    assert.equal(a.value.active, true);
+    assert.match(a.reason.note ?? '', /Illness reported: no hard training\./);
+    // The review, as Today reads it.
+    const review = buildReview(read.data, DATE);
+    assert.equal(review.readiness.actions.find((x) => x.value.action === 'no-hard-training')!.value.active, true);
+    assert.ok(review.readiness.last14.at(-1)!.flags.includes('illness'));
+    assert.ok(!read.data.warnings.some((w) => /illness/.test(JSON.stringify(w))), 'no unknown-field note for illness');
+  });
+
+  it('a value that is not a yes or a no is left out with a note', () => {
+    const read = withIll('yes');
+    assert.equal(read.data.checkins.daily.find((d) => d.date === DATE)!.illness, undefined);
+    assert.ok(read.data.warnings.some((w) => JSON.stringify(w).includes(`${DATE} illness: \\"yes\\"`)), JSON.stringify(read.data.warnings));
   });
 });

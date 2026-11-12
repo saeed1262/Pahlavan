@@ -8,8 +8,9 @@ import { describe, it } from 'node:test';
 import { buildLogEntry, mergeLog } from '../src/adapters/vault/log-write.ts';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { CALIBRATION } from '../src/core/calibration.ts';
-import { buildSession, customLogForm, inputFromForm, logFormFor, logFormFromEntry, soreChanges, topOf } from '../src/report/index.ts';
-import { ROOT } from './helpers.ts';
+import { lastSets } from '../src/core/history.ts';
+import { buildSession, customLogForm, inputFromForm, logFormFor, logFormFromEntry, soreChanges, topOf, withSwaps } from '../src/report/index.ts';
+import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
 
 const VAULT = join(ROOT, 'test', 'fixtures', 'vault');
 const fsIo = {
@@ -67,7 +68,8 @@ describe('a new log from today’s session', () => {
     f.rpe = 7;
     const r = buildLogEntry(inputFromForm(f), ctx);
     assert.ok(r.ok, !r.ok ? r.error : '');
-    assert.deepEqual(r.entry['lift1'], { name: 'Single-leg dumbbell RDL', planned: 'Romanian Deadlift', weight: 25, reps: 10, unit: 'lb' });
+    // The Ledger's swap saves its reason with it.
+    assert.deepEqual(r.entry['lift1'], { name: 'Single-leg dumbbell RDL', planned: 'Romanian Deadlift', swapWhy: 'ledger', weight: 25, reps: 10, unit: 'lb' });
     assert.deepEqual(r.entry['lift2'], { name: 'Seated Cable Row', weight: 115, reps: 11, unit: 'lb' });
     assert.equal(r.entry['swaps'], undefined);
     assert.deepEqual(r.entry['checklist'], { done: 6, total: 6, skipped: [] });
@@ -92,8 +94,8 @@ describe('a new log from today’s session', () => {
   it('takes the heaviest set as the top set at full tracking, and writes every set', () => {
     const f = formB();
     f.tracking = 'full';
-    f.rows[2]!.rows = [{ weight: 115, reps: 11, rir: 3 }, { weight: 120, reps: 8, rir: 1 }, { weight: 115, reps: 12, rir: null }];
-    assert.deepEqual(topOf(f.rows[2]!, 'full'), { weight: 120, reps: 8, rir: 1 });
+    f.rows[2]!.rows = [{ weight: 115, reps: 11, rir: 3, done: true }, { weight: 120, reps: 8, rir: 1, done: true }, { weight: 115, reps: 12, rir: null, done: true }];
+    assert.deepEqual(topOf(f.rows[2]!, 'full'), { weight: 120, reps: 8, rir: 1, done: true });
     const r = buildLogEntry(inputFromForm(f), ctx);
     assert.ok(r.ok);
     assert.deepEqual(r.entry['lift2'], { name: 'Seated Cable Row', weight: 120, reps: 8, unit: 'lb' });
@@ -109,6 +111,25 @@ describe('a new log from today’s session', () => {
     assert.equal(s3.rows.find((r) => r.line === 'Circuit: squat jump · burpee')!.sr, '2 rounds, 40/20');
     assert.equal(inputFromForm(s3).express, undefined);
     assert.ok(buildLogEntry(inputFromForm(s3), ctx).ok);
+  });
+  it("logs Express's finish by its sets when it is an exercise, not cardio (Face Pull 2 × 15)", () => {
+    const a = logFormFor(read, buildSession(read.data, DATE, 'express', { type: 'A' }), DATE, { tracking: 'full' })!;
+    const fin = a.rows.at(-1)!;
+    assert.equal(fin.name, 'Face Pull');
+    assert.equal(fin.finisher, true, 'still tagged as the finish');
+    assert.notEqual(fin.kind, 'cardio');
+    assert.equal(fin.sets, 2);
+    assert.deepEqual(fin.repRange, [15, 15]);
+    assert.equal(fin.rows.length, 2, 'a row per set to tick');
+    assert.equal(a.cardio, 0, 'no cardio minutes on a day with no cardio');
+    for (const s of fin.rows) Object.assign(s, { reps: 15, done: true });
+    const input = inputFromForm(a);
+    assert.deepEqual((input.exerciseSets ?? []).find((x) => x.name === 'Face Pull')?.sets.map((s) => s.reps), [15, 15]);
+    assert.ok(buildLogEntry(input, ctx).ok);
+  });
+  it("keeps a lifting day's cardio finisher a cardio row", () => {
+    const fins = formB().rows.filter((r) => r.finisher);
+    for (const f of fins) assert.equal(f.kind, 'cardio');
   });
   it('writes a hotel session with its swaps and the hotel flag', () => {
     const h = logFormFor(read, buildSession(read.data, DATE, 'hotel'), DATE)!;
@@ -202,5 +223,93 @@ describe('a new log with today’s swaps from Today’s chips', () => {
     assert.deepEqual(row, f.rows[2], 'a row without a swap is as it was');
     assert.equal(withSwaps(f, {}), f);
     assert.equal(withSwaps({ ...f, edit: true }, { 'Romanian Deadlift': 'Hamstring Curl' }).rows[1]!.name, f.rows[1]!.name, 'an edit keeps the logged session');
+  });
+});
+
+// Every set: the rows start from the target, else last time's sets (every
+// set, or the top set alone at Standard), none ticked; the profile's
+// tracking, else the panel's last choice, picks the level a new log starts at.
+describe('every set: where the rows start, and the tracking a new log starts at', () => {
+  const LOG = 'v/3-Personal/Fitness/fitness-log-data.json';
+  const PROFILE = 'v/3-Personal/Fitness/Coach/profile.json';
+  const zero = (name: string) => ({ name, weight: 0, reps: 0, unit: 'lb' });
+  // 9 Apr: an A at Every set (the pair's sets, the lifts not logged) and a B at Standard (the swapped RDL's top set).
+  const extra = [
+    { date: '2026-04-09', type: 'A', lift1: zero('Goblet Squat'), lift2: zero('Flat DB Bench Press'), trackingLevel: 'full', exerciseSets: [{ name: 'Face Pull', sets: [{ weight: 30, unit: 'lb', reps: 15 }, { weight: 30, unit: 'lb', reps: 15 }, { weight: 32.5, unit: 'lb', reps: 12, rir: 1 }] }, { name: 'Band External Rotation', sets: [{ reps: 15 }, { reps: 14 }] }], exercises: [{ name: 'Goblet Squat', sets: 4 }, { name: 'Flat DB Bench Press', sets: 3 }, { name: 'Face Pull', sets: 3 }, { name: 'Band External Rotation', sets: 2 }, { name: 'Zone 2 finisher', sets: 4 }] },
+    { date: '2026-04-09', type: 'B', lift1: { name: 'Single-leg dumbbell RDL', planned: 'Romanian Deadlift', weight: 25, reps: 10, unit: 'lb' }, lift2: zero('Seated Cable Row'), exercises: [{ name: 'Romanian Deadlift', sets: 3 }, { name: 'Seated Cable Row', sets: 3 }, { name: 'Bulgarian Split Squat', sets: 3 }, { name: 'Side Plank', sets: 3 }, { name: 'Zone 2 finisher', sets: 4 }] },
+  ];
+  const withFiles = (edit: (f: Record<string, string>) => void = () => {}) => {
+    const f = fixtureFiles('v');
+    const log = JSON.parse(f[LOG]!);
+    log.sessions.push(...extra);
+    f[LOG] = JSON.stringify(log);
+    edit(f);
+    return readVault(memoryIo(f, DATE), 'v', { asOf: DATE });
+  };
+  const formOf = (r: ReturnType<typeof readVault>, type: string, opts = {}) => logFormFor(r, buildSession(r.data, DATE, 'full', { type }), DATE, opts)!;
+
+  it('lastSets: the newest session that logged the exercise, every set at Full, else its top set', () => {
+    const r = withFiles();
+    assert.deepEqual(lastSets(r.data.sessions, 'face-pull'), { date: '2026-04-09', every: true, sets: [{ weight: 30, unit: 'lb', reps: 15 }, { weight: 30, unit: 'lb', reps: 15 }, { weight: 32.5, unit: 'lb', reps: 12, rir: 1 }] });
+    assert.deepEqual(lastSets(r.data.sessions, 'goblet-squat'), { date: '2026-04-08', every: false, sets: [{ weight: 55, unit: 'lb', reps: 9 }] }, 'not logged on 9 Apr: the session before, its top set');
+    assert.equal(lastSets(r.data.sessions, 'no-such-exercise'), null);
+  });
+
+  it('a superset\'s parts start from last time\'s sets, set by set, none ticked, with the Last line', () => {
+    const pair = formOf(withFiles(), 'A').rows.find((x) => x.split)!;
+    const [face, band] = pair.split!;
+    assert.deepEqual(face!.rows, [{ weight: 30, reps: 15, rir: null, done: false }, { weight: 30, reps: 15, rir: null, done: false }, { weight: 32.5, reps: 12, rir: null, done: false }]);
+    assert.deepEqual(face!.last, { weight: 32.5, unit: 'lb', reps: 12, date: '2026-04-09' });
+    assert.deepEqual(band!.rows.map((x) => [x.weight, x.reps, x.done]), [[null, 15, false], [null, 14, false]]);
+    // Nothing ticked: Save writes no sets for them.
+    const f = formOf(withFiles(), 'A');
+    f.tracking = 'full';
+    assert.deepEqual(inputFromForm(f).exerciseSets, []);
+  });
+
+  it('a lift with no target starts from last time\'s top set on every set; the targets still win', () => {
+    const b = formOf(withFiles(), 'B');
+    const rdl = b.rows.find((x) => x.name === 'Single-leg dumbbell RDL')!;
+    assert.deepEqual([rdl.target, rdl.last], [null, { weight: 25, unit: 'lb', reps: 10, date: '2026-04-09' }]);
+    assert.ok(rdl.rows.length > 0 && rdl.rows.every((x) => x.weight === 25 && x.reps === 10 && !x.done));
+    const row = b.rows.find((x) => x.name === 'Seated Cable Row')!;
+    assert.ok(row.rows.every((x) => x.weight === 115 && x.reps === 11), 'the target');
+  });
+
+  it('none from before the cycle start', () => {
+    const r = withFiles();
+    const fresh = { ...r, data: { ...r.data, plan: { ...r.data.plan, baselines: [...(r.data.plan.baselines ?? []), '2026-04-10'] } } };
+    const pair = formOf(fresh, 'A').rows.find((x) => x.split)!;
+    assert.ok(pair.split!.every((p) => p.last === null && p.rows.every((x) => x.weight === null && x.reps === null)));
+  });
+
+  it('a swap starts its sets blank: the planned exercise\'s numbers don\'t carry over', () => {
+    const f = withSwaps(formOf(withFiles(), 'B'), { 'Seated Cable Row': 'One-Arm DB Row' });
+    const row = f.rows.find((x) => x.name === 'One-Arm DB Row')!;
+    assert.ok(row.rows.every((x) => x.weight === null && x.reps === null && !x.done));
+  });
+
+  it('starts at Every set when the profile asks for it, else at the panel\'s last choice, else Standard', () => {
+    assert.equal(formOf(withFiles(), 'A').tracking, 'standard');
+    assert.equal(formOf(withFiles(), 'A', { tracking: 'full' }).tracking, 'full');
+    const full = withFiles((f) => {
+      const p = JSON.parse(f[PROFILE]!);
+      p.trackingLevel = 'full';
+      f[PROFILE] = JSON.stringify(p);
+    });
+    assert.equal(formOf(full, 'A').tracking, 'full');
+    assert.equal(formOf(full, 'A', { tracking: 'standard' }).tracking, 'full', 'the profile wins');
+  });
+
+  it('an edit reads its logged sets back ticked, and saves them as they were', () => {
+    const r = withFiles();
+    const entry = (r.raw!.log as { sessions: Record<string, unknown>[] }).sessions.find((s) => s['date'] === '2026-04-09' && s['type'] === 'A')!;
+    const f = logFormFromEntry(r, entry);
+    assert.equal(f.tracking, 'full');
+    const face = f.rows.find((x) => x.name === 'Face Pull')!;
+    assert.ok(face.rows.length === 3 && face.rows.every((x) => x.done));
+    const out = buildLogEntry(inputFromForm(f), { plan: r.raw!.plan, log: r.raw!.log, today: DATE, original: entry });
+    assert.ok(out.ok);
+    assert.deepEqual(out.entry['exerciseSets'], entry['exerciseSets']);
   });
 });

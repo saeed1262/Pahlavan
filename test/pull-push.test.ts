@@ -1,11 +1,10 @@
 // Pull to push (core/volume.ts): weekly pulling against pushing sets, held
-// against the posture emphasis's ratio. `plan` checks its draft with it and
+// against the posture emphasis's ratio. `check` holds a plan to it and
 // `review` reports the written plan with it, on the vault's muscle map.
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
-import { generatePlan } from '../src/core/plan/generate.ts';
 import type { Exercise, Profile, SessionTemplate } from '../src/core/schema.ts';
 import { postureEmphasis, PULL_PUSH, pullPushAim, pullPushSets } from '../src/core/volume.ts';
 import { buildPlan } from '../src/report/plan-screen.ts';
@@ -113,31 +112,5 @@ describe('review: pull to push of the written plan', () => {
     const p = buildPlan(read, DATE);
     assert.ok('volume' in p);
     assert.deepEqual(p.volume?.pullPush, { pull: review.volume.pullPush.value.pull, push: review.volume.pullPush.value.push, ratio: review.volume.pullPush.value.ratio, target: 2, floor: 1.8, status: review.volume.pullPush.value.status, note: review.volume.pullPush.reason.note, rule: 'volume.pull-push' });
-  });
-});
-
-describe('plan: the draft\'s pull-push check counts the same way', () => {
-  it('every loading week\'s ratio is pullPushSets on its lifting sessions, and the check holds the 1.8 floor', () => {
-    const profile: Profile = {
-      schemaVersion: 1,
-      units: { load: 'kg', body: 'kg' },
-      goals: [{ id: 'g', kind: 'recomposition', label: 'Recomposition', importance: 8, confidence: 7 }],
-      availability: { daysPerWeek: 4, minutesPerSession: 60 },
-      equipment: ['dumbbells', 'barbell', 'bench', 'cable', 'machine'],
-      trackingLevel: 'standard',
-      screening: { outcome: 'go', date: '2026-03-01' },
-      emphasis: [{ area: 'Posture', seen: 'x', confidence: 'medium', emphasis: 'x', kind: 'forward-head-rounded-shoulders' }],
-      experience: 'intermediate',
-    };
-    const r = generatePlan({ profile, today: '2026-04-01' }).value;
-    const weeks = r.program!.macrocycle.phases[0]!.mesocycles[0]!.weeks;
-    for (const v of r.proposal.volume) {
-      const w = weeks.find((x) => x.start === r.proposal.phases[0]!.weeks.find((y) => y.index === v.week)!.start)!;
-      const pp = pullPushSets(w.sessions.filter((t) => t.kind === 'lift'), r.program!.exercises, { aim: pullPushAim(profile) }).value;
-      assert.deepEqual(v.pullPush, { pull: pp.pull, push: pp.push }, `week ${v.week}`);
-    }
-    const check = r.proposal.checks.find((c) => c.id === 'pull-push')!;
-    assert.equal(check.passed, r.proposal.volume.every((v) => v.pullPush.pull >= PULL_PUSH.floor * v.pullPush.push));
-    assert.match(check.detail, /1\.8/);
   });
 });

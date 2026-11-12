@@ -1,16 +1,13 @@
 // The calibration week: one rule (calibration.ts) for plan week 1 and the
 // first week back after a restart. Its items carry the calibration RIR, every
 // target holds the weight there and nothing proposes an increase or calls a
-// stall until the week after; an export dated inside it writes the ordinary
-// loading week. On the synthetic vault, whose plan week 1 is 2 to 8 March.
+// stall until the week after. On the synthetic vault, whose plan week 1 is 2
+// to 8 March.
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
 import { CALIBRATION, calibrateSlot, calibrateTarget, calibrationNote, calibrationStall } from '../src/core/calibration.ts';
-import { toPlanData, type PlanData } from '../src/core/plan-data.ts';
 import { planText } from '../src/report/dashboard.ts';
 import type { ProgressionTarget } from '../src/core/progression.ts';
 import type { Stall } from '../src/core/stall.ts';
@@ -22,7 +19,6 @@ import { fixtureFiles, fsIo, memoryIo, VAULT } from './helpers.ts';
 const WEEK1 = '2026-03-05';
 const WEEK2 = '2026-03-10';
 const at = (date: string) => readVault(fsIo, VAULT, { asOf: date });
-const plan = JSON.parse(readFileSync(join(VAULT, '3-Personal', 'Fitness', 'plan-data.json'), 'utf8')) as PlanData;
 const increase: ProgressionTarget = { action: 'increase', weight: 45, unit: 'lb', reps: 8, rir: 2, assumedAllSets: true };
 type Lift = ReturnType<typeof buildReview>['lifts'][number] & { heldProgression?: Result<ProgressionTarget> };
 
@@ -124,13 +120,6 @@ describe('plan week 1 on the vault', () => {
     assert.equal(lines[1], `Calibration week: ${calibrationNote()}.`);
     assert.ok(lines.includes(`   start at 50 lb × 6 @ RIR ${CALIBRATION.rir}`), 'the bench press held at 50 lb');
     assert.doesNotMatch(copy, /next \d|RIR 2\b/);
-  });
-
-  it('exports week 2 when asked for a date in the calibration week, and says so', () => {
-    const r = toPlanData(week1.data.program, { date: WEEK1 });
-    assert.equal(r.value.week.start, '2026-03-09');
-    assert.deepEqual(r.value.planData.sessions, plan.sessions);
-    assert.ok(r.value.unexpressible.some((u) => u.what === 'calibration week' && u.detail.includes(calibrationNote())));
   });
 });
 

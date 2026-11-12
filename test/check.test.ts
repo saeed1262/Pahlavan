@@ -245,6 +245,144 @@ describe('check: evidence warnings', () => {
     assert.equal(find(check(swap, '2026-04-14'), 'exercise-change'), undefined, 'no plan as written to compare with');
   });
 
+  it('redesign: the same changes are information (redesign-changes), never the exercise-change warning', () => {
+    const previous = fixturePlan();
+    const swap = (p: Json) => {
+      itemOf(p, 'A', 'Face Pull').name = 'Reverse Fly';
+      itemOf(p, 'B', 'Seated Cable Row').name = 'Chest-Supported Row';
+    };
+    const r = check(swap, '2026-04-14', { previous, redesign: true });
+    assert.equal(find(r, 'exercise-change'), undefined);
+    const info = find(r, 'redesign-changes', 'info')!;
+    assert.deepEqual(info.items, ['A: out Face Pull; in Reverse Fly (plan week 7, week 3 of mesocycle 2)', 'B: out Seated Cable Row; in Chest-Supported Row (plan week 7, week 3 of mesocycle 2)']);
+    assert.equal(info.message, 'A redesign: the exercises that change, against the plan as written.');
+    assert.deepEqual([info.rule, info.grade], ['plan.exercise-changes', undefined]);
+    // At a mesocycle boundary the changes are allowed, so neither is said; with no plan as written there is nothing to compare.
+    assert.equal(find(check(swap, CLEAN, { previous, redesign: true }), 'redesign-changes'), undefined);
+    assert.equal(find(check(swap, '2026-04-14', { redesign: true }), 'redesign-changes'), undefined);
+  });
+
+  describe('similar-to-current: a redesign that keeps most of the plan as written', () => {
+    const previous = fixturePlan();
+    /** A redesign with only these lifting sessions. */
+    const redesign = (sessions: Record<string, string[]>) => (p: Json) => {
+      p.sessions = Object.fromEntries(Object.entries(sessions).map(([t, names]) => [t, names.map((name) => ({ name, sr: '3 × 8–10', note: 'Why: the redesign.' }))]));
+      p.liftTypes = Object.keys(sessions);
+      p.shortTypes = [];
+    };
+    const kept = ['Goblet Squat', 'Face Pull', 'Romanian Deadlift', 'Seated Cable Row'];
+    const fresh = ['Back Squat', 'Bench Press', 'Lat Pulldown', 'Deadlift', 'Overhead Press', 'Barbell Row'];
+
+    it('a copy of the plan as written: every movement shared, a heuristic warning listing them', () => {
+      const r = check(() => {}, CLEAN, { previous, redesign: true });
+      const w = find(r, 'similar-to-current', 'warning')!;
+      assert.equal(w.message, '100% of the draft\'s movements (11 of 11) are in the plan as written (over half).');
+      assert.deepEqual(w.items, ['Goblet Squat', 'Flat DB Bench Press', 'Face Pull', 'Band External Rotation', 'Romanian Deadlift', 'Seated Cable Row', 'Bulgarian Split Squat', 'Side Plank', 'Push-up (your level)', 'Dead Bug', 'Circuit: squat jump · burpee']);
+      assert.deepEqual([w.rule, w.grade], ['plan.redesign', 'heuristic']);
+      assert.match(w.reason!, /blank draft/);
+      // Only a redesign is measured: the same draft as a change inside the plan is not.
+      assert.equal(find(check(() => {}, CLEAN, { previous }), 'similar-to-current'), undefined);
+      assert.equal(find(check(() => {}, CLEAN, { redesign: true }), 'similar-to-current'), undefined, 'no plan as written');
+    });
+
+    it('names a movement as the draft writes it, with the written plan\'s name when it differs', () => {
+      const r = check(redesign({ A: ['Dumbbell bench press', ...kept], B: ['Back Squat'] }), CLEAN, { previous, redesign: true });
+      const w = find(r, 'similar-to-current', 'warning')!;
+      assert.equal(w.message, '83% of the draft\'s movements (5 of 6) are in the plan as written (over half).');
+      assert.deepEqual(w.items, ['Dumbbell bench press (Flat DB Bench Press in the plan as written)', ...kept]);
+    });
+
+    it('half or less shared is no warning', () => {
+      assert.equal(find(check(redesign({ A: kept.slice(0, 3), B: fresh.slice(0, 3) }), CLEAN, { previous, redesign: true }), 'similar-to-current'), undefined, '3 of 6: half');
+      assert.equal(find(check(redesign({ A: fresh.slice(0, 3), B: fresh.slice(3) }), CLEAN, { previous, redesign: true }), 'similar-to-current'), undefined, 'nothing shared');
+    });
+
+    it('an override answers one shared movement (by its name or id), or with no item all of them', () => {
+      const draft = redesign({ A: kept, B: fresh.slice(0, 2) });
+      const one = check((p) => {
+        draft(p);
+        p.overrides = [{ code: 'similar-to-current', item: 'rdl', reason: 'The hinge is still progressing: kept for its trend.' }];
+      }, CLEAN, { previous, redesign: true });
+      assert.deepEqual(find(one, 'similar-to-current', 'warning')!.items, ['Goblet Squat', 'Face Pull', 'Seated Cable Row']);
+      assert.deepEqual(find(one, 'similar-to-current', 'info')!.items, ['Romanian Deadlift']);
+      const all = check((p) => {
+        draft(p);
+        p.overrides = [{ code: 'similar-to-current', reason: 'A new block on the same equipment: the person asked to keep the main movements.' }];
+      }, CLEAN, { previous, redesign: true });
+      assert.equal(find(all, 'similar-to-current', 'warning'), undefined);
+      assert.equal(find(all, 'similar-to-current', 'info')!.items.length, 4);
+      assert.equal(all.summary.overridden, 1);
+    });
+  });
+
+  it('equipment-missing: a catalogue movement the profile\'s equipment does not cover, a tool that stands in counting', () => {
+    assert.equal(find(check(), 'equipment-missing'), undefined, 'the fixture has what its plan needs');
+    const some = check((_p, pr) => (pr.equipment = ['dumbbells', 'bench']));
+    const w = find(some, 'equipment-missing', 'warning')!;
+    assert.deepEqual(w.items, ['A Face Pull: needs cable or band', 'A Band External Rotation: needs band or cable', 'B Romanian Deadlift: needs barbell', 'B Seated Cable Row: needs cable']);
+    assert.deepEqual([w.rule, w.grade], ['profile.equipment', undefined]);
+    // A kettlebell stands in for the dumbbell of the goblet squat, the bench press and the split squat.
+    assert.equal(find(check((_p, pr) => (pr.equipment = ['kettlebell', 'bench', 'cable', 'barbell'])), 'equipment-missing'), undefined);
+    // An empty list is bodyweight only; cardio (the zone 2 bike) is never judged.
+    const none = find(check((_p, pr) => (pr.equipment = [])), 'equipment-missing')!.items;
+    assert.ok(none.includes('A Goblet Squat: needs dumbbell or kettlebell') && none.includes('A Flat DB Bench Press: needs dumbbell or kettlebell and bench'), none.join('\n'));
+    assert.ok(!none.some((x) => /Zone 2|Push-up|Dead Bug|Side Plank/.test(x)), none.join('\n'));
+    // No profile: nothing to judge by.
+    const files = fixtureFiles('v');
+    delete files[PROFILE];
+    assert.equal(find(buildCheck(readVault(memoryIo(files), 'v', { asOf: CLEAN }), CLEAN), 'equipment-missing'), undefined);
+    // An override answers it.
+    const answered = check((p, pr) => {
+      pr.equipment = ['dumbbells', 'bench'];
+      p.overrides = [{ code: 'equipment-missing', reason: 'The new gym has cables and a barbell; the profile is updated at the check-in.' }];
+    });
+    assert.equal(find(answered, 'equipment-missing', 'warning'), undefined);
+    assert.equal(find(answered, 'equipment-missing', 'info')!.items.length, 4);
+  });
+
+  it('disliked-movement: a movement whose catalogue id the profile dislikes, cardio included', () => {
+    assert.equal(find(check(), 'disliked-movement'), undefined, 'the fixture dislikes nothing it plans');
+    const r = check((_p, pr) => {
+      pr.preferences.likes = [];
+      pr.preferences.dislikes = ['goblet-squat', 'zone2-bike'];
+    });
+    const w = find(r, 'disliked-movement', 'warning')!;
+    assert.deepEqual(w.items, ['A Goblet Squat: Goblet squat is on the profile\'s dislikes', 'A Zone 2 finisher: Easy bike (zone 2) is on the profile\'s dislikes', 'B Zone 2 finisher: Easy bike (zone 2) is on the profile\'s dislikes']);
+    assert.deepEqual([w.rule, w.grade], ['profile.dislikes', undefined]);
+    const answered = check((p, pr) => {
+      pr.preferences.dislikes = ['goblet-squat'];
+      p.overrides = [{ code: 'disliked-movement', item: 'goblet-squat', reason: 'The person agreed to keep it while the knee settles.' }];
+    });
+    assert.equal(find(answered, 'disliked-movement', 'warning'), undefined);
+    assert.equal(find(answered, 'disliked-movement', 'info')!.override!.item, 'goblet-squat');
+  });
+
+  it('step-not-in-gym: a lift\'s inc the gym\'s weights cannot make, with the step to set', () => {
+    assert.equal(find(check(), 'step-not-in-gym'), undefined, 'no loads in the profile: nothing to judge by');
+    // The plan's lb lifts: dumbbells in 4 lb steps make no 5 lb step; the cable's 10 is two 5 lb plates.
+    const r = check((_p, pr) => (pr.loads = { unit: 'lb', dumbbell: { from: 4, to: 80, step: 4 }, cable: { step: 5, to: 200 } }));
+    const w = find(r, 'step-not-in-gym', 'warning')!;
+    assert.deepEqual(w.items, [
+      'Goblet Squat: inc 5 lb, but no dumbbell here is 5 lb from another (the finest step is 4 lb): set inc to 4',
+      'Flat DB Bench Press: inc 5 lb, but no dumbbell here is 5 lb from another (the finest step is 4 lb): set inc to 4',
+    ]);
+    assert.deepEqual([w.rule, w.grade], ['profile.loads', undefined]);
+    assert.ok(w.reason);
+    // A step the kit makes is fine: 5 lb dumbbells, and the squat's 5 kg on a bar with 1.25 kg plates (in kg).
+    assert.equal(find(check((_p, pr) => (pr.loads = { unit: 'lb', dumbbell: { from: 5, to: 80, step: 5 } })), 'step-not-in-gym'), undefined);
+    const bar = check((p, pr) => {
+      p.lifts['Barbell Back Squat'].inc = 1.25;
+      pr.loads = { unit: 'kg', barbell: { bar: 20, plates: [20, 10, 5, 2.5, 1.25] } };
+    });
+    assert.deepEqual(find(bar, 'step-not-in-gym', 'warning')!.items, ['Barbell Back Squat: inc 1.25 kg, but no barbell load here is 1.25 kg from another (the finest step is 2.5 kg): set inc to 2.5']);
+    const answered = check((p, pr) => {
+      pr.loads = { unit: 'lb', dumbbell: { from: 4, to: 80, step: 4 } };
+      p.overrides = [{ code: 'step-not-in-gym', reason: 'Fractional plates for the dumbbells arrive next week; the loads are updated then.' }];
+    });
+    assert.equal(find(answered, 'step-not-in-gym', 'warning'), undefined);
+    assert.equal(find(answered, 'step-not-in-gym', 'info')!.items.length, 2);
+  });
+
   it('rir-differs and timed-differs: a field the note or the sets contradict is a warning an override answers', () => {
     const edit = (p: Json) => {
       Object.assign(itemOf(p, 'A', 'Goblet Squat'), { rir: 1 });

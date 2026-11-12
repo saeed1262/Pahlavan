@@ -47,7 +47,7 @@ describe('each plan Sunday’s coach step', () => {
 
   it('each step’s command comes from the one constant: the letter after the check-in, a review otherwise', () => {
     for (const s of steps) assert.equal(s.command, s.kind === 'letter' ? COACH_COMMANDS.checkin : COACH_COMMANDS.review);
-    assert.deepEqual(COACH_COMMANDS, { ask: '/fitness-coach', intake: '/fitness-coach intake', plan: '/fitness-coach plan', checkin: '/fitness-coach checkin', review: '/fitness-coach review' });
+    assert.deepEqual(COACH_COMMANDS, { ask: '/fitness-coach', intake: '/fitness-coach intake', plan: '/fitness-coach plan', planWhy: '/fitness-coach plan why', checkin: '/fitness-coach checkin', review: '/fitness-coach review' });
   });
 
   it('the mesocycle review writes next month’s plan; the plan’s last week also plans the next cycle', () => {

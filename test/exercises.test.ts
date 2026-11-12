@@ -3,13 +3,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { NAME_SYNONYMS, ownNames } from '../src/adapters/vault/catalogue-match.ts';
-import { CATALOGUE, CATALOGUE_BY_ID, EQUIPMENT, LEVELS, MOVEMENT_TAGS, MOVEMENT_USES, PATTERNS, STARTER_IDS, usableWith, type Equipment } from '../src/core/data/exercises.ts';
+import { CATALOGUE, CATALOGUE_BY_ID, EQUIPMENT, LEVELS, MOVEMENT_TAGS, MOVEMENT_USES, PATTERNS, STARTER_CATALOGUE, STARTER_IDS, usableWith, type Equipment } from '../src/core/data/exercises.ts';
 import { CATALOGUE_LADDERS } from '../src/core/data/ladders.ts';
 import { MUSCLE_IDS } from '../src/core/data/muscles.ts';
 import { REGIONS_BY_ID } from '../src/core/data/regions.ts';
-import { buildContext } from '../src/core/plan/context.ts';
-import type { Profile } from '../src/core/schema.ts';
-import { VARIANT } from '../src/core/variant.ts';
+import type { Exercise, LedgerConstraint, SessionTemplate } from '../src/core/schema.ts';
+import { hotelVariant, VARIANT } from '../src/core/variant.ts';
 import { ROOT } from './helpers.ts';
 
 describe('exercise catalogue', () => {
@@ -268,12 +267,14 @@ describe('exercise catalogue: every entry complete, and linked both ways', () =>
     }
   });
 
-  it('keeps the plan generator and the Hotel version\'s swaps on the starter movements', () => {
+  it('keeps the Hotel version\'s swaps on the starter movements', () => {
     assert.equal(STARTER_IDS.size, 100);
     for (const id of STARTER_IDS) assert.ok(CATALOGUE_BY_ID.has(id), id);
-    const fixture = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'plans', 'b-intermediate-posture.json'), 'utf8')) as { input: { profile: Profile; today: string } };
-    const ctx = buildContext({ profile: fixture.input.profile, today: fixture.input.today });
-    assert.ok(ctx.catalogue.length === 100 && ctx.catalogue.every((e) => STARTER_IDS.has(e.id)));
-    assert.ok([...ctx.exclude.keys()].every((id) => STARTER_IDS.has(id)), 'what a finding rules out, among its candidates');
+    assert.deepEqual(STARTER_CATALOGUE.map((e) => e.id), CATALOGUE.filter((e) => STARTER_IDS.has(e.id)).map((e) => e.id));
+    const f = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'rules', 'variants.json'), 'utf8')) as { template: SessionTemplate; exercises: Record<string, Exercise>; ledger: LedgerConstraint[]; date: string };
+    const r = hotelVariant({ template: f.template, exercises: f.exercises, catalogueOf: (id) => CATALOGUE_BY_ID.get(id) ?? null, ledger: f.ledger, date: f.date, unit: 'kg' });
+    const swapped = r.value.slots.filter((s, i) => s.exercise !== f.template.slots[i]!.exercise);
+    assert.ok(swapped.length > 0, 'the fixture\'s gym session needs swaps');
+    for (const s of swapped) assert.ok(STARTER_IDS.has(s.exercise), s.exercise);
   });
 });

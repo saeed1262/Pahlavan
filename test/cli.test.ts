@@ -13,7 +13,7 @@ import { readVault } from '../src/adapters/vault/read.ts';
 import { engineFacts, HELP, run, VERSION_LINE } from '../src/cli/cli.ts';
 import { CALIBRATION } from '../src/core/calibration.ts';
 import { DELOAD } from '../src/core/deload.ts';
-import { ITEM_KEYS, PLAN_DATA_MUSCLES, UNEXPRESSIBLE } from '../src/core/plan-data.ts';
+import { ITEM_KEYS, PLAN_DATA_KEYS, UNEXPRESSIBLE } from '../src/core/plan-data.ts';
 import { REGION_RULES, VOLUME } from '../src/core/volume.ts';
 import { readinessSeries } from '../src/core/readiness.ts';
 import { SCHEMA_VERSION } from '../src/core/schema.ts';
@@ -35,10 +35,13 @@ const mem = (edit: (f: Record<string, string>) => void = () => {}) => {
 };
 
 describe('cli: version and help', () => {
-  it('keeps the engine version equal to package.json', () => {
+  it('keeps the engine version equal to package.json, and the plugin\'s manifest.json with them', () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { version: string };
     assert.equal(ENGINE_VERSION, pkg.version);
     assert.equal(SCHEMA_VERSION, 1);
+    // The plugin's banner names both ("Pahlavan <manifest> (engine <package>)"): one release carries one version.
+    const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8')) as { version: string };
+    assert.equal(manifest.version, pkg.version);
   });
 
   it('prints the engine and schema versions, as text or JSON', () => {
@@ -67,7 +70,8 @@ describe('cli: version and help', () => {
     assert.equal(run([]).stdout, HELP);
     assert.equal(run(['--help']).code, 0);
     assert.equal(run(['review', '--help']).stdout, HELP);
-    for (const c of ['review', 'readiness', 'next', 'plan', 'validate', '--pretty', 'Exit codes']) assert.ok(HELP.includes(c), c);
+    for (const c of ['review', 'readiness', 'next', 'draft', 'plan-write', 'validate', '--pretty', 'Exit codes']) assert.ok(HELP.includes(c), c);
+    assert.doesNotMatch(HELP, /^  plan  /m, 'plan was removed: no entry of its own');
   });
 });
 
@@ -83,14 +87,20 @@ describe('cli: usage errors exit 2, with JSON on stdout', () => {
     [['readiness', '--vault', 'v', 'extra'], /takes no positional arguments/],
     [['next', '--vault', 'v'], /next needs --lift/],
     [['next', '--vault', 'v', '--lift', 'Curl'], /no lift named "Curl"; known lifts: Barbell Back Squat, Goblet Squat/],
-    [['plan'], /plan needs --profile/],
-    [['plan', '--profile', 'p.json', '--weeks', '10'], /--weeks must be 12, 16 or 24/],
-    [['plan', '--profile', 'p.json', '--format', 'csv'], /--format must be engine or plan-data/],
-    [['plan', '--profile', 'p.json', '--history'], /--history needs --vault/],
-    [['plan', '--profile', 'missing.json'], /profile not found: missing\.json/],
+    [['plan'], /unknown command: plan \(`plan` was removed in 0\.28\.1: a new plan starts from `engine draft`\)/],
+    [['plan', '--profile', 'p.json', '--format', 'plan-data'], /unknown command: plan \(`plan` was removed in 0\.28\.1: a new plan starts from `engine draft`\)/],
     [['validate'], /validate takes one file/],
     [['validate', 'v/x.json', '--kind', 'diary'], /--kind must be one of/],
     [['--bogus'], /unknown arguments/],
+    [['check', '--vault', 'v', '--redesign'], /--redesign goes with --plan <draft\.json>/],
+    [['draft'], /--vault <path> is required/],
+    [['draft', '--vault', 'v', '--plan', 'v/x.json'], /draft does not take --plan/],
+    [['overlap'], /overlap needs --plans <a\.json,b\.json,\.\.\.>/],
+    [['overlap', '--plans', ','], /overlap needs --plans/],
+    [['overlap', '--plans', 'v/3-Personal/Fitness/plan-data.json,v/nowhere.json'], /--plans: file not found: v\/nowhere\.json/],
+    [['overlap', '--plans', 'v/3-Personal/Fitness/Baseline - 2025-10-01.md'], /--plans: v\/3-Personal\/Fitness\/Baseline - 2025-10-01\.md is not valid JSON/],
+    [['overlap', '--plans', 'v/3-Personal/Fitness/body-data.json'], /is not a plan \(no "sessions" object\)/],
+    [['overlap', '--plans', 'v/3-Personal/Fitness/plan-data.json', '--vault', 'nowhere'], /no such folder: nowhere/],
   ];
   for (const [argv, re] of cases) {
     it(argv.join(' ') || '(none)', () => {
@@ -106,6 +116,17 @@ describe('cli: usage errors exit 2, with JSON on stdout', () => {
   it('needs file access for the commands', () => {
     assert.equal(run(['review', '--vault', 'v']).code, 2);
   });
+
+  it('plan: removed, an unknown command that names engine draft, with or without file access', () => {
+    for (const r of [run(['plan', '--profile', PROFILE_V, '--vault', 'v'], io), run(['plan'])]) {
+      assert.equal(r.code, 2);
+      const j = parse(r);
+      assert.deepEqual([j.command, j.ok, j.errors[0].code], ['plan', false, 'usage']);
+      assert.equal(j.errors[0].message, 'unknown command: plan (`plan` was removed in 0.28.1: a new plan starts from `engine draft`)');
+      assert.match(r.stderr, /^engine: unknown command: plan \(`plan` was removed in 0\.28\.1: a new plan starts from `engine draft`\)\nRun "engine --help" for the commands\.\n$/);
+    }
+    assert.match(run(['frobnicate'], io).stderr, /^engine: unknown command: frobnicate\n/, 'other unknown commands as before');
+  });
 });
 
 describe('cli: a vault with no plan yet (a new user after the intake)', () => {
@@ -120,17 +141,6 @@ describe('cli: a vault with no plan yet (a new user after the intake)', () => {
       f['v/session.json'] = JSON.stringify({ date: '2026-04-12', type: 'custom', label: 'Easy run', durationMin: 30 });
     });
   const noPlan = (j: Json): Json | undefined => (j.warnings as Json[]).find((w) => w.code === 'no-plan');
-
-  it('exports a fresh plan with plan --format plan-data --vault, exit 0, and says there was no plan', () => {
-    const r = run(['plan', '--profile', PROFILE_V, '--vault', 'v', '--format', 'plan-data', '--start', '2026-04-15'], fresh());
-    assert.equal(r.code, 0, r.stdout);
-    const j = parse(r);
-    assert.equal(j.ok, true);
-    assert.match(noPlan(j)!.message, /^There is no plan yet \(3-Personal\/Fitness\/plan-data\.json\): the export is a fresh one/);
-    assert.ok(j.planData.sessions && j.planData.liftTypes.length);
-    // --start writes the program's week 1: the Monday-based week holding the date.
-    assert.equal(j.planData.start, '2026-04-13');
-  });
 
   it('review, readiness, session, the tracked items, food, the check-in template and the day still answer, with a no-plan warning', () => {
     const io = fresh();
@@ -151,6 +161,23 @@ describe('cli: a vault with no plan yet (a new user after the intake)', () => {
     const next = parse(run(['next', '--vault', 'v', '--lift', 'Goblet Squat', '--date', '2026-04-12'], io));
     assert.equal(next.ok, true);
     assert.ok(noPlan(next));
+  });
+
+  it('draft: the same blank plan, with a no-plan warning; the unit and the week from the profile', () => {
+    const r = run(['draft', '--vault', 'v'], fresh());
+    assert.equal(r.code, 0, r.stdout);
+    const j = parse(r);
+    assert.equal(j.ok, true);
+    assert.match(noPlan(j)!.message, /^There is no plan yet \(3-Personal\/Fitness\/plan-data\.json\): the draft starts blank either way/);
+    assert.deepEqual(j.planData, { weekTarget: { lift: 4, short: 0 }, liftTypes: [], shortTypes: [], sessions: {}, liftUnit: 'lb', lifts: {}, guide: {}, rules: {} });
+    assert.deepEqual(j.from, { liftUnit: 'profile', weekTarget: 'profile', carried: [] });
+    // A profile's shorter days are the short sessions; days that make no sense are no week target.
+    const shorter = fresh();
+    const withShort = { ...shorter, readText: (p: string) => (p === PROFILE_V ? JSON.stringify({ ...JSON.parse(shorter.readText(p)!), availability: { daysPerWeek: 5, minutesPerSession: 60, shortSessions: { days: 2, minutes: 30 } } }) : shorter.readText(p)) };
+    assert.deepEqual(parse(run(['draft', '--vault', 'v'], withShort)).planData.weekTarget, { lift: 3, short: 2 });
+    const odd = { ...shorter, readText: (p: string) => (p === PROFILE_V ? JSON.stringify({ ...JSON.parse(shorter.readText(p)!), availability: { daysPerWeek: 3, minutesPerSession: 60, shortSessions: { days: 4, minutes: 30 } } }) : shorter.readText(p)) };
+    const oddDraft = parse(run(['draft', '--vault', 'v'], odd));
+    assert.deepEqual([oddDraft.planData.weekTarget, oddDraft.from.weekTarget], [{ lift: 0, short: 0 }, 'default']);
   });
 
   it('check without a draft has nothing to check: a no-plan note, exit 0', () => {
@@ -213,14 +240,6 @@ describe('cli: data problems exit 1', () => {
     assert.equal(r.code, 1);
     assert.equal(parse(r).errors[0].code, 'json');
   });
-
-  it('an invalid profile for plan', () => {
-    const r = run(['plan', '--profile', 'v/p.json'], mem((f) => (f['v/p.json'] = '{"schemaVersion": 1}')));
-    assert.equal(r.code, 1);
-    assert.ok(parse(r).errors.every((e: Json) => e.code === 'profile'));
-    // Every plan output says the generator is an optional baseline: the coach designs the plan.
-    assert.match(parse(r).warnings.find((w: Json) => w.code === 'generator-baseline').message, /optional baseline\. The coach designs the plan/);
-  });
 });
 
 describe('cli: missing coach files', () => {
@@ -239,11 +258,88 @@ describe('cli: missing coach files', () => {
     assert.deepEqual(j.weight.band.value.band, { unit: 'kg', lo: -0.5, hi: -0.25 });
     assert.equal(j.ledger, null);
   });
+});
 
-  it('plan reports the missing profile', () => {
-    const r = run(['plan', '--profile', 'v/3-Personal/Fitness/Coach/profile.json'], io);
-    assert.equal(r.code, 2);
-    assert.match(parse(r).errors[0].message, /profile not found/);
+describe('cli: Pahlavan in the vault on another version than this coach (version-differs)', () => {
+  const PLUGIN = 'v/.obsidian/plugins/pahlavan';
+  const banner = (plugin: string, eng: string) => `// Pahlavan ${plugin} (engine ${eng}) | Elastic License 2.0 | Saeed Ghorbani\n"use strict";\n`;
+  /** The fixture with the coach skill set up, and Pahlavan's main.js (and manifest) when given. */
+  const vault = (main: string | null, manifest: string | null = null, coach = true) => mem((f) => {
+    if (coach) f['v/.claude/skills/fitness-coach/SKILL.md'] = '# coach';
+    if (main !== null) f[`${PLUGIN}/main.js`] = main;
+    if (manifest !== null) f[`${PLUGIN}/manifest.json`] = manifest;
+  });
+  /** A version older, and one newer, than this engine's. */
+  const OLDER = '0.0.0';
+  const NEWER = `${Number(ENGINE_VERSION.split('.')[0]) + 1}.0.0`;
+  const reviewOf = (io: ReturnType<typeof mem>) => parse(run(['review', '--vault', 'v', '--date', '2026-04-12'], io));
+  const checkOf = (io: ReturnType<typeof mem>) => run(['check', '--vault', 'v', '--date', '2026-04-12'], io);
+  const differs = (j: Json) => (j.warnings as Json[]).filter((w) => w.code === 'version-differs');
+
+  it('a newer Pahlavan: review and check say both versions, that Pahlavan\'s is newer, and to update the coach', () => {
+    const io = vault(banner(NEWER, NEWER));
+    const r = run(['review', '--vault', 'v', '--date', '2026-04-12'], io);
+    assert.equal(r.code, run(['review', '--vault', 'v', '--date', '2026-04-12'], mem()).code, 'the exit code is the data\'s, as without it');
+    const w = differs(parse(r));
+    assert.equal(w.length, 1);
+    assert.equal(w[0]!.message, `Pahlavan ${NEWER} in this vault carries engine ${NEWER}; this coach runs engine ${ENGINE_VERSION}. Pahlavan's is newer: press Update the coach in Pahlavan's settings, Coach (or run the command "Set up the coach"), then start the coach again.`);
+    assert.doesNotMatch(w[0]!.message, /—/);
+    const c = checkOf(io);
+    assert.equal(c.code, checkOf(mem()).code, 'never blocks: the exit code is the plan\'s');
+    const j = parse(c);
+    const f = (j.findings as Json[]).find((x) => x.code === 'version-differs');
+    assert.deepEqual([f?.level, f?.grade, f?.items], ['warning', undefined, [w[0]!.message]], 'a fact, not evidence: no grade');
+    assert.match(f!.message, /not the plan: it does not block a plan write/);
+    assert.equal(differs(j).length, 1, 'in the envelope\'s warnings too');
+    assert.equal(j.summary.warnings, parse(checkOf(mem())).summary.warnings + 1);
+  });
+
+  it('a newer coach: update Pahlavan from Community plugins; without a banner, the manifest\'s version', () => {
+    const w = differs(reviewOf(vault(banner(OLDER, OLDER))));
+    assert.equal(w.length, 1);
+    assert.equal(w[0]!.message, `Pahlavan ${OLDER} in this vault carries engine ${OLDER}; this coach runs engine ${ENGINE_VERSION}. This coach is newer: update Pahlavan from Community plugins (Pahlavan never writes its older copy over a newer coach).`);
+    const fromManifest = differs(reviewOf(vault('"use strict";\n', JSON.stringify({ id: 'pahlavan', version: OLDER }))));
+    assert.equal(fromManifest.length, 1);
+    assert.ok(fromManifest[0]!.message.startsWith(`Pahlavan in this vault is version ${OLDER} (its manifest.json; main.js names no engine); this coach runs engine ${ENGINE_VERSION}. This coach is newer`), fromManifest[0]!.message);
+    // The banner wins over the manifest.
+    assert.equal(differs(reviewOf(vault(banner(ENGINE_VERSION, ENGINE_VERSION), JSON.stringify({ version: OLDER })))).length, 0);
+  });
+
+  it('silent at the same version, with no Pahlavan folder, with no coach in the vault, or with nothing to read', () => {
+    const silent: [string, ReturnType<typeof mem>][] = [
+      ['the same version', vault(banner(ENGINE_VERSION, ENGINE_VERSION))],
+      ['no plugin folder', vault(null)],
+      ['no coach in the vault', vault(banner(NEWER, NEWER), null, false)],
+      ['no banner, no manifest', vault('"use strict";\n')],
+      ['a manifest that is not JSON', vault(null, '{')],
+      ['the fixture as it is', mem()],
+    ];
+    for (const [what, io] of silent) {
+      assert.equal(differs(reviewOf(io)).length, 0, `review: ${what}`);
+      assert.equal(differs(parse(checkOf(io))).length, 0, `check: ${what}`);
+    }
+  });
+
+  it('the built engine reads them from disk, on a temp copy of the synthetic vault', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'pahlavan-version-'));
+    try {
+      cpSync(VAULT, tmp, { recursive: true });
+      mkdirSync(join(tmp, '.claude', 'skills', 'fitness-coach'), { recursive: true });
+      writeFileSync(join(tmp, '.claude', 'skills', 'fitness-coach', 'SKILL.md'), '# coach\n');
+      mkdirSync(join(tmp, '.obsidian', 'plugins', 'pahlavan'), { recursive: true });
+      writeFileSync(join(tmp, '.obsidian', 'plugins', 'pahlavan', 'main.js'), banner(NEWER, NEWER));
+      for (const cmd of ['review', 'check']) {
+        const j = parse(engine([cmd, '--vault', tmp, '--date', '2026-04-12']));
+        assert.equal(differs(j).length, 1, cmd);
+        // check frames it as a fact beside the plan, the detail its item; review gives the detail as the message.
+        const w = differs(j)[0]!;
+        assert.match(cmd === 'check' ? w.items[0] : w.message, /Pahlavan's is newer/, cmd);
+      }
+      writeFileSync(join(tmp, '.obsidian', 'plugins', 'pahlavan', 'main.js'), banner(ENGINE_VERSION, ENGINE_VERSION));
+      for (const cmd of ['review', 'check']) assert.equal(differs(parse(engine([cmd, '--vault', tmp, '--date', '2026-04-12']))).length, 0, cmd);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
 
@@ -581,77 +677,6 @@ describe('cli: the built engine on the synthetic vault', () => {
     assert.equal(engine(['next', '--vault', 'test/fixtures/vault', '--lift', 'Curl']).code, 2);
   });
 
-  it('plans from the profile, as the engine program or as plan-data', () => {
-    const e = engine(['plan', '--profile', PROFILE, '--ledger', LEDGER, '--start', '2026-04-13', '--weeks', '12']);
-    assert.equal(e.code, 0, e.stderr);
-    const j = parse(e);
-    assert.equal(j.program.macrocycle.start, '2026-04-13');
-    assert.equal(j.program.macrocycle.phases.length, 2);
-    assert.ok(Array.isArray(j.proposal.checks));
-    const p = engine(['plan', '--profile', PROFILE, '--start', '2026-04-13', '--history', '--vault', 'test/fixtures/vault', '--format', 'plan-data']);
-    assert.equal(p.code, 0, p.stderr);
-    const pd = parse(p);
-    assert.deepEqual(Object.keys(pd.planData).slice(0, 4), ['_about', 'weekTarget', 'liftTypes', 'shortTypes']);
-    assert.deepEqual(pd.planData.ladders, JSON.parse(readFileSync(join(VAULT, '3-Personal', 'Fitness', 'plan-data.json'), 'utf8')).ladders);
-    // The RIR has a field on plan items now: written there, never listed as something plan-data cannot hold.
-    assert.ok(!pd.unexpressible.some((u: Json) => u.what === 'RIR targets'));
-    const lifted = Object.values(pd.planData.sessions as Record<string, Json[]>).flat().filter((i) => i.logged);
-    assert.ok(lifted.length > 0 && lifted.every((i) => typeof i.rir === 'number' && !/\bRIR \d/.test(i.note ?? '')));
-  });
-
-  it('plan and review count the same sets: the plan\'s vault count is what review counts once the plan is written', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'pahlavan-vaultmap-'));
-    try {
-      cpSync(VAULT, tmp, { recursive: true });
-      const planFile = join(tmp, '3-Personal', 'Fitness', 'plan-data.json');
-      const written = (vault: string) => {
-        const args = ['plan', '--profile', PROFILE, '--start', '2026-04-13', '--weeks', '12', '--vault', vault];
-        const e = parse(engine(args));
-        const pd = parse(engine([...args, '--format', 'plan-data']));
-        writeFileSync(planFile, JSON.stringify(pd.planData, null, 2));
-        const review = parse(engine(['review', '--vault', tmp, '--date', '2026-04-14']));
-        assert.equal(review.volume.weekKind, 'loading');
-        const row = e.proposal.volume.find((v: Json) => v.week === pd.week.index);
-        const counted = review.volume.planned.value.perWeek as Record<string, number>;
-        for (const m of new Set([...Object.keys(row.perWeekVault), ...Object.keys(counted)])) approx(counted[m] ?? 0, row.perWeekVault[m] ?? 0, 1e-9, m);
-        // With --vault the plan is fitted and checked on plan-data's 14 groups: its own count is the vault's.
-        for (const m of Object.keys(row.perWeekVault)) assert.ok(m in PLAN_DATA_MUSCLES, m);
-        assert.deepEqual(row.perWeekVault, row.perWeek);
-        return { e, pd, review };
-      };
-      // The catalogue's tags, no overrides in the guide.
-      const first = written('test/fixtures/vault');
-      assert.deepEqual(first.e.proposal.volumeMap, { source: 'catalogue', overrides: [] });
-      assert.ok(first.e.proposal.volume.every((v: Json) => v.perWeekVault), 'every loading week has its vault count');
-      assert.equal(first.review.warnings.find((w: Json) => w.code === 'muscle-tags-differ'), undefined, 'the export brought every guide copy in step');
-      // An override: the guide's goblet squat keeps its hamstrings, in the plan, in the written guide and in review.
-      const doc = JSON.parse(readFileSync(join(VAULT, '3-Personal', 'Fitness', 'plan-data.json'), 'utf8'));
-      doc.guide['Goblet Squat'].muscles.override = 'counted as the old sheet did';
-      writeFileSync(planFile, JSON.stringify(doc, null, 2));
-      const second = written(tmp);
-      assert.deepEqual(second.e.proposal.volumeMap.overrides, [{ exercise: 'goblet-squat', guide: 'Goblet Squat', reason: 'counted as the old sheet did' }]);
-      assert.deepEqual(second.pd.planData.guide['Goblet Squat'].muscles, doc.guide['Goblet Squat'].muscles);
-      assert.deepEqual(second.review.warnings.find((w: Json) => w.code === 'muscle-tags-overridden').items, ['Goblet Squat: counted as the old sheet did']);
-      // An override on a variant key belongs to that entry: the plan's goblet squat (written under "Goblet Squat") keeps
-      // the catalogue's tags, the variant entry keeps its override, and nothing is left differing after the export.
-      const variant = JSON.parse(readFileSync(join(VAULT, '3-Personal', 'Fitness', 'plan-data.json'), 'utf8'));
-      variant.guide['Goblet squat (heavy)'] = { muscles: { main: ['quads', 'glutes'], helps: ['hamstrings'], override: 'counted my way' } };
-      writeFileSync(planFile, JSON.stringify(variant, null, 2));
-      const third = written(tmp);
-      assert.deepEqual(third.e.proposal.volumeMap.overrides, []);
-      // The catalogue's regions come with its muscles.
-      assert.deepEqual(third.pd.planData.guide['Goblet Squat'].muscles, { main: ['quads', 'glutes'], helps: ['abs', 'upper-back'], regions: ['quads-vasti'] });
-      assert.deepEqual(third.pd.planData.guide['Goblet squat (heavy)'], variant.guide['Goblet squat (heavy)']);
-      assert.equal(third.review.warnings.find((w: Json) => w.code === 'muscle-tags-differ'), undefined);
-      assert.deepEqual(third.review.warnings.find((w: Json) => w.code === 'muscle-tags-overridden').items, ['Goblet squat (heavy): counted my way']);
-      // Without --vault there is no vault count.
-      const bare = parse(engine(['plan', '--profile', PROFILE, '--start', '2026-04-13', '--weeks', '12']));
-      assert.ok(bare.proposal.volume.every((v: Json) => v.perWeekVault === undefined));
-    } finally {
-      rmSync(tmp, { recursive: true, force: true });
-    }
-  });
-
   it('validates the vault\'s own files', () => {
     assert.equal(engine(['validate', PROFILE]).code, 0);
     assert.equal(engine(['validate', LEDGER]).code, 0);
@@ -681,6 +706,9 @@ describe('the skill\'s selfcheck: the docs against the engine\'s facts', () => {
       const clean = selfcheck();
       assert.equal(clean.code, 0, JSON.stringify(clean.out.results.filter((x) => x.status === 'fail')));
       assert.ok(clean.out.results.some((x) => x.check === 6 && x.status === 'pass' && x.what === 'engine output'));
+      // energy runs on the made-up vault, and the one Python block left is tracking.md's water snippet.
+      assert.ok(clean.out.results.some((x) => x.check === 1 && x.status === 'pass' && /^engine\.cjs energy /.test(x.what)));
+      assert.deepEqual(clean.out.results.filter((x) => x.check === 6 && /the allowlisted/.test(x.reason)).map((x) => x.reason), ['the allowlisted "Amounts: water" snippet']);
 
       const planning = join(skill, 'references', 'planning.md');
       const text = readFileSync(planning, 'utf8');
@@ -707,9 +735,14 @@ print("a weekly sets count")
 \`\`\`
 `,
       );
+      // The eating plan's floor and recomposition's goal energy, said otherwise in diet.md.
+      const diet = join(skill, 'references', 'diet.md');
+      writeFileSync(diet, readFileSync(diet, 'utf8').replace('1,500 kcal a day for men, 1,200 for women', '1,500 kcal a day for men, 1,000 for women').replace('recomposition: maintenance to −250 kcal', 'recomposition: maintenance to −300 kcal'));
       const bad = selfcheck();
       assert.equal(bad.code, 1);
       const fails = bad.out.results.filter((x) => x.check === 6 && x.status === 'fail').map((x) => x.reason);
+      assert.ok(fails.some((f) => /the energy floors is \[1500,1200\] in the engine, the text says \[1500,1000\]/.test(f)), fails.join('\n'));
+      assert.ok(fails.some((f) => /recomposition's goal energy is 250 in the engine, the text says 300/.test(f)), fails.join('\n'));
       assert.ok(fails.some((f) => /the priority tier is \[10,16\] in the engine, the text says \[10,15\]/.test(f)), fails.join('\n'));
       assert.ok(fails.some((f) => /the calibration RIR is 3 in the engine, the text says 2/.test(f)));
       assert.ok(fails.some((f) => /says there is no field, but the engine has `rir`/.test(f)));
@@ -722,6 +755,37 @@ print("a weekly sets count")
       assert.equal(at(/the default light-week timing is 4 in the engine, the text says 5/), lineOf('its default (every 5th week'));
       // An example of a coach's own rule isn't held to the default.
       assert.ok(!fails.some((f) => /\(JSON\)/.test(f)), fails.join('\n'));
+    } finally {
+      rmSync(vault, { recursive: true, force: true });
+    }
+  });
+
+  it('on a vault with no plan yet, runs the draft commands on the made-up sample plan the skill ships', () => {
+    const vault = mkdtempSync(join(tmpdir(), 'pahlavan-fresh-'));
+    try {
+      cpSync(VAULT, vault, { recursive: true });
+      rmSync(join(vault, '3-Personal', 'Fitness', 'plan-data.json'));
+      // Without a plan the folder search has nothing to find: Pahlavan's setting names the folders, as a real vault's does.
+      mkdirSync(join(vault, '.obsidian', 'plugins', 'pahlavan'), { recursive: true });
+      writeFileSync(join(vault, '.obsidian', 'plugins', 'pahlavan', 'data.json'), JSON.stringify({ folders: FIXTURE_FOLDERS }));
+      const skill = join(vault, '.claude', 'skills', 'fitness-coach');
+      cpSync(join(ROOT, 'skill'), skill, { recursive: true });
+      cpSync(builtEngine(), join(skill, 'scripts', 'engine.cjs'));
+      writeFileSync(join(skill, 'scripts', 'VERSION'), `engine ${ENGINE_VERSION}\nschema ${SCHEMA_VERSION}\n`);
+      const r = spawnSync(process.execPath, [join(skill, 'scripts', 'selfcheck.mjs'), '--vault', vault, '--repo', ROOT, '--json'], { encoding: 'utf8', cwd: vault });
+      const out = JSON.parse(r.stdout) as { fresh: boolean; results: { check: number; status: string; what: string; reason: string }[] };
+      assert.equal(r.status, 0, JSON.stringify(out.results.filter((x) => x.status === 'fail')));
+      assert.equal(out.fresh, true);
+      assert.ok(out.results.some((x) => x.check === 1 && x.status === 'pass' && x.what === 'scripts/sample-plan.json (no plan yet)'));
+      const ran = (re: RegExp) => out.results.some((x) => x.check === 1 && x.status === 'pass' && re.test(x.what));
+      for (const re of [/^engine\.cjs check .*--plan <tmp>\/draft\.json/, /^engine\.cjs review .*--plan <tmp>\/draft\.json/, /^engine\.cjs plan-write .*--file <tmp>\/draft\.json/, /^engine\.cjs session .*--type A --plan <tmp>\/draft\.json/]) assert.ok(ran(re), String(re));
+      assert.ok(!out.results.some((x) => / plan --/.test(x.what)), 'nothing runs the removed plan command');
+      // The sample is a whole plan: two lifting sessions and a short one, checked with no hard error.
+      const sample = JSON.parse(readFileSync(join(ROOT, 'skill', 'scripts', 'sample-plan.json'), 'utf8')) as Json;
+      assert.deepEqual([sample.liftTypes, sample.shortTypes], [['A', 'B'], ['S1']]);
+      const c = engine(['check', '--vault', vault, '--plan', join(ROOT, 'skill', 'scripts', 'sample-plan.json'), '--json']);
+      assert.equal(c.code, 0, c.stdout.slice(0, 400));
+      assert.deepEqual(parse(c).findings.filter((f: Json) => f.level === 'error'), []);
     } finally {
       rmSync(vault, { recursive: true, force: true });
     }
@@ -1094,6 +1158,106 @@ describe('cli: check, drafts and plan-write (the built engine)', () => {
     assert.deepEqual([again.result, again.written, again.diff], ['unchanged', false, []]);
   });
 
+  it('draft: a blank plan in plan-data\'s key order, carrying only the unit, the desk breaks and the start; check --plan reads it', () => {
+    const r = engine(['draft', '--vault', 'test/fixtures/vault', '--json']);
+    assert.equal(r.code, 0, r.stderr);
+    const j = parse(r);
+    const written = JSON.parse(readFileSync(planFile, 'utf8')) as Json;
+    assert.deepEqual(j.planData, { weekTarget: { lift: 4, short: 0 }, liftTypes: [], shortTypes: [], sessions: {}, liftUnit: 'lb', lifts: {}, guide: {}, deskRoutine: written.deskRoutine, rules: {} });
+    assert.deepEqual(Object.keys(j.planData), PLAN_DATA_KEYS.filter((k) => k in j.planData), 'plan-data\'s key order');
+    assert.deepEqual(j.from, { liftUnit: 'plan', weekTarget: 'profile', carried: ['liftUnit', 'deskRoutine'] });
+    assert.deepEqual([j.warnings, j.errors], [[], []]);
+    // The plan's start, when it has one, is carried (so the plan weeks keep counting); nothing else of the training is.
+    const started = mkdtempSync(join(tmpdir(), 'pahlavan-draft-'));
+    try {
+      cpSync(VAULT, started, { recursive: true });
+      writeFileSync(join(started, '3-Personal', 'Fitness', 'plan-data.json'), JSON.stringify({ ...written, start: '2026-03-02', deskTiming: { everyMin: 60 }, weeks: 16 }));
+      const s = parse(engine(['draft', '--vault', started, '--json']));
+      assert.deepEqual([s.planData.start, s.planData.deskTiming, s.planData.weeks, s.from.carried], ['2026-03-02', { everyMin: 60 }, undefined, ['liftUnit', 'deskRoutine', 'deskTiming', 'start']]);
+      assert.deepEqual(Object.keys(s.planData).slice(-4), ['deskRoutine', 'deskTiming', 'start', 'rules']);
+    } finally {
+      rmSync(started, { recursive: true, force: true });
+    }
+    // The plan check reads the draft as plan-data.json: no plan-data error, no hard error.
+    const file = join(tmp, 'blank.json');
+    writeFileSync(file, `${JSON.stringify(j.planData, null, 2)}\n`);
+    const c = engine(['check', '--vault', 'test/fixtures/vault', '--plan', file, '--date', DATE, '--json']);
+    assert.equal(c.code, 0, c.stdout.slice(0, 400));
+    const checked = parse(c);
+    assert.deepEqual(checked.errors, []);
+    assert.ok(!checked.findings.some((f: Json) => f.code === 'plan-data' || f.code === 'invalid-data'), checked.findings.map((f: Json) => f.code).join(', '));
+    assert.ok(checked.findings.some((f: Json) => f.code === 'draft-plan'));
+  });
+
+  it('overlap: each plan\'s movements and shape, the shares both ways, each against the plan as written, and what is over half', () => {
+    const swapped = draftOf((doc) => {
+      doc.sessions.A.find((i: Json) => i.name === 'Face Pull').name = 'Reverse Fly';
+      doc.sessions.B.find((i: Json) => i.name === 'Seated Cable Row').name = 'Chest-Supported Row';
+    }, 'swapped.json');
+    const other = draftOf((doc) => {
+      doc.sessions = { A: [{ name: 'Back Squat', sr: '3 × 5' }, { name: 'Dumbbell bench press', sr: '3 × 8' }], B: [{ name: 'Deadlift', sr: '3 × 5' }, { name: 'Lat Pulldown', sr: '3 × 10' }] };
+      doc.shortTypes = [];
+    }, 'other.json');
+    const blank = draftOf((doc) => {
+      doc.sessions = {};
+      doc.liftTypes = [];
+      doc.shortTypes = [];
+    }, 'blank-overlap.json');
+    const r = engine(['overlap', '--plans', [swapped.file, other.file, blank.file].join(','), '--vault', 'test/fixtures/vault', '--json']);
+    assert.equal(r.code, 0, r.stderr);
+    const j = parse(r);
+    assert.deepEqual([j.command, j.ok, j.limit], ['overlap', true, 0.5]);
+    assert.deepEqual(j.drafts.map((d: Json) => [d.file, d.movements.length]), [[swapped.file, 11], [other.file, 4], [blank.file, 0]]);
+    assert.deepEqual(j.drafts[1].movements.map((m: Json) => [m.id, m.name, m.source, m.sessions]), [['back-squat', 'Back Squat', 'catalogue', ['A']], ['db-bench', 'Dumbbell bench press', 'catalogue', ['A']], ['deadlift', 'Deadlift', 'catalogue', ['B']], ['lat-pulldown', 'Lat Pulldown', 'catalogue', ['B']]]);
+    assert.deepEqual(j.drafts[1].shape, { liftDays: 3, liftSessions: 2, sessions: [{ type: 'A', kind: 'lift', patterns: ['squat', 'horizontal-push'] }, { type: 'B', kind: 'lift', patterns: ['hinge', 'vertical-pull'] }] });
+    // matrix[i][j]: the share of plan i's movements plan j also holds (rounded to 3 places); a plan with none has no share.
+    assert.deepEqual(j.matrix, [[1, 0.091, 0], [0.25, 1, 0], [null, null, null]]);
+    assert.deepEqual(j.pairs.map((p: Json) => [p.aInB, p.bInA, p.shared]), [[0.091, 0.25, ['db-bench']], [0, null, []], [0, null, []]]);
+    assert.equal(j.current.file, '3-Personal/Fitness/plan-data.json');
+    assert.deepEqual(j.againstCurrent.map((x: Json) => [x.draft, x.draftInCurrent, x.currentInDraft, x.shared.length]), [[swapped.file, 0.818, 0.818, 9], [other.file, 0.25, 0.091, 1], [blank.file, null, 0, 0]]);
+    // Over half, one direction each: the swapped draft keeps 9 of the plan's 11 movements.
+    assert.deepEqual(j.similar, [{ a: swapped.file, b: '3-Personal/Fitness/plan-data.json', share: 0.818, current: true }]);
+    // Without --vault: the drafts against each other only.
+    const bare = parse(engine(['overlap', '--plans', `${swapped.file},${planFile}`, '--json']));
+    assert.deepEqual([bare.current, bare.againstCurrent, bare.vault], [null, null, undefined]);
+    assert.deepEqual(bare.similar.map((x: Json) => [x.share, x.current]), [[0.818, false], [0.818, false]]);
+  });
+
+  it('check --plan --redesign: the changes are information, a draft much like the plan as written warns; plan-write --redesign checks the same', () => {
+    // Two accessories swapped (a logged lift renamed would need its lifts entry).
+    const { file } = draftOf((doc) => {
+      doc.sessions.A.find((i: Json) => i.name === 'Face Pull').name = 'Reverse Fly';
+      doc.sessions.B.find((i: Json) => i.name === 'Bulgarian Split Squat').name = 'Reverse Lunge';
+    }, 'redesign.json');
+    // Plan week 10: week 2 of mesocycle 3, where an accessory change is an exercise-change warning.
+    const at = '2026-05-04';
+    const plain = parse(engine(['check', '--vault', 'test/fixtures/vault', '--plan', file, '--date', at, '--json']));
+    assert.ok(plain.findings.some((f: Json) => f.code === 'exercise-change' && f.level === 'warning'));
+    assert.ok(!plain.findings.some((f: Json) => f.code === 'similar-to-current' || f.code === 'redesign-changes'));
+    assert.equal(plain.redesign, undefined);
+    const r = engine(['check', '--vault', 'test/fixtures/vault', '--plan', file, '--redesign', '--date', at, '--json']);
+    assert.equal(r.code, 0, r.stdout.slice(0, 400));
+    const j = parse(r);
+    assert.equal(j.redesign, true);
+    const of = (code: string) => j.findings.find((f: Json) => f.code === code);
+    assert.equal(of('exercise-change'), undefined);
+    assert.equal(of('redesign-changes').level, 'info');
+    assert.deepEqual([of('similar-to-current').level, of('similar-to-current').grade, of('similar-to-current').message], ['warning', 'heuristic', '82% of the draft\'s movements (9 of 11) are in the plan as written (over half).']);
+    assert.ok(j.warnings.some((w: Json) => w.code === 'similar-to-current'));
+    // plan-write --redesign: the same check, a dry run, nothing persisted in the draft.
+    const before = readFileSync(planFile, 'utf8');
+    const w = engine(['plan-write', '--vault', vault, '--file', file, '--redesign', '--date', at]);
+    assert.equal(w.code, 0, w.stdout.slice(0, 400));
+    const pw = parse(w);
+    assert.deepEqual([pw.redesign, pw.dryRun, pw.written, pw.result], [true, true, false, 'changed']);
+    assert.ok(pw.findings.some((f: Json) => f.code === 'similar-to-current') && pw.findings.some((f: Json) => f.code === 'redesign-changes'));
+    assert.ok(!pw.diff.some((d: Json) => /redesign/.test(d.path)));
+    assert.equal(readFileSync(planFile, 'utf8'), before);
+    const plainWrite = parse(engine(['plan-write', '--vault', vault, '--file', file, '--date', at]));
+    assert.equal(plainWrite.redesign, undefined);
+    assert.ok(plainWrite.findings.some((f: Json) => f.code === 'exercise-change'));
+  });
+
   it('plan-write refuses a draft with a hard error, --write or not, and writes nothing', () => {
     const { file } = draftOf((doc) => {
       doc.sessions.B.find((i: Json) => i.name === 'Bulgarian Split Squat').logged = true;
@@ -1235,7 +1399,7 @@ describe('cli: engine 0.4.0 outputs (in memory, on the synthetic vault)', () => 
   it('session --mode express and hotel', () => {
     const e = j(['session', '--vault', 'v', '--date', '2026-04-10', '--mode', 'express']);
     assert.deepEqual(e.items.map((i: Json) => [i.name, i.sets]), [['Single-leg dumbbell RDL', 1], ['Seated Cable Row', 2]]); // glutes sore on 10 Apr: one set fewer
-    assert.deepEqual(e.finisher, { exercise: 'face-pull', name: 'Face Pull', sr: '2 × 15' });
+    assert.deepEqual(e.finisher, { exercise: 'face-pull', name: 'Face Pull', sets: 2, repRange: [15, 15], sr: '2 × 15' });
     assert.equal(e.warmup, 'band external rotation + dislocates');
     const h = j(['session', '--vault', 'v', '--date', '2026-04-10', '--mode', 'hotel']);
     assert.deepEqual(h.items.map((i: Json) => i.name), ['Dumbbell Romanian deadlift', 'Band row', 'Dumbbell split squat', 'Side Plank']);

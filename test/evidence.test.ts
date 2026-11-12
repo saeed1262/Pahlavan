@@ -25,6 +25,7 @@ import { LOAD_CAP, screeningCaps } from '../src/core/safety.ts';
 import { PRIORITY_ROOM, PULL_PUSH, PULL_PUSH_GOAL, REGION_RULES, VOLUME } from '../src/core/volume.ts';
 import { buildCheck, type CheckReport } from '../src/report/check.ts';
 import { buildEvidence, checkGrade, evidenceRules, TOPIC_IDS } from '../src/report/evidence.ts';
+import { OVERLAP_WARN_ABOVE } from '../src/report/overlap.ts';
 import { fixtureFiles, memoryIo, ROOT } from './helpers.ts';
 
 type Json = Record<string, any>;
@@ -83,6 +84,11 @@ describe('evidence: the library is the engine\'s own numbers', () => {
       ['light-weeks.timing', { every: DELOAD.every, maxLoadingRun: MAX_LOADING_RUN }],
       ['light-weeks.shape', { sets: 'half', rirAdd: DELOAD.rirAdd }],
       ['light-weeks.early', { lowReadinessDays: READINESS.lowRunDays, stalledMainLifts: DELOAD.stalledMainLifts }],
+      ['readiness.score', { baselineDays: READINESS.baselineDays, minBaseline: READINESS.minBaseline, clip: READINESS.clip, minSignals: READINESS.minSignals, alpha: READINESS.alpha, reseedAfterDays: READINESS.reseedAfterDays, hrvFloorLn: READINESS.hrvFloorLn }],
+      ['readiness.bands', { good: READINESS.bands.good, normal: [READINESS.bands.normal, READINESS.bands.good], watch: [READINESS.bands.watch, READINESS.bands.normal], low: READINESS.bands.watch }],
+      ['readiness.rhr-flag', READINESS.rhrFlagBpm],
+      ['readiness.short-sleep', READINESS.shortSleepH],
+      ['readiness.hrv-flag', READINESS.hrvFlagPct],
       ['calibration.rir', CALIBRATION.rir],
       ['calibration.cardio', CALIBRATION.cardio],
       ['calibration.missed-time', { easeBackDrop: r6(1 - MISSED.easeBackLoadFactor), easeBackRirAdd: MISSED.easeBackRirAdd, restartAfterWeeks: MISSED.restartAfterWeeks }],
@@ -97,6 +103,7 @@ describe('evidence: the library is the engine\'s own numbers', () => {
       ['regions.coverage', REGION_RULES.coverage],
       ['regions.declared', REGION_RULES.declared],
       ['rom.two-joint-long', CATALOGUE.filter((e) => e.longLength?.length).map((e) => e.id)],
+      ['choice.redesign-overlap', OVERLAP_WARN_ABOVE],
     ];
     for (const [id, expected] of cases) assert.deepEqual(rule(id).value, expected, id);
     // Every rule with a number is in the list above, and names the constant it is read from.
@@ -117,6 +124,22 @@ describe('evidence: the library is the engine\'s own numbers', () => {
     assert.equal(REST.heavy.minutes, REST.heavy.range[0]);
     assert.equal(legacyRules().calibration.rir, CALIBRATION.rir);
     assert.equal(legacyRules().missed.restartAfterWeeks, MISSED.restartAfterWeeks);
+  });
+
+  it('readiness: each rule a heuristic, the HRV note honest about its studies', () => {
+    const rd = evidenceRules().filter((r) => r.topic === 'readiness');
+    assert.deepEqual(rd.map((r) => r.id), ['readiness.score', 'readiness.bands', 'readiness.rhr-flag', 'readiness.short-sleep', 'readiness.hrv-flag']);
+    assert.ok(rd.every((r) => r.grade === 'heuristic'));
+    const hrv = rule('readiness.hrv-flag');
+    assert.deepEqual(hrv.sources.map((x) => x.label), ['Plews 2013', 'Buchheit 2014', 'Manresa-Rocamora 2021']);
+    assert.match(hrv.note, /endurance studies with rMSSD, Apple reports SDNN, and for lifting the threshold is a rough guide/);
+    assert.match(hrv.note, /not a number from these papers/);
+    assert.deepEqual(rule('readiness.score').sources.map((x) => x.label), ['Saw 2016', 'Buchheit 2014']);
+    assert.deepEqual(rule('readiness.rhr-flag').sources.map((x) => x.label), ['Buchheit 2014']);
+    assert.match(rule('readiness.rhr-flag').note, /The 7 bpm line is the coach's own rough guide, not a number from that study\./);
+    assert.match(rule('readiness.score').note, /The recipe and its numbers are Pahlavan's own\./);
+    assert.deepEqual(rule('readiness.short-sleep').sources.map((x) => x.label), ['Craven 2022']);
+    for (const r of rd) assert.ok(!r.note.includes('\u2014'), `${r.id}: no em-dash`);
   });
 
   it('gives each plan-check warning the grade of the one rule that lists it', () => {

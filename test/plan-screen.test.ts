@@ -7,6 +7,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { readVault } from '../src/adapters/vault/read.ts';
+import { planOccurrences } from '../src/core/body-schedule.ts';
 import { buildPlan, parseDecisions, planCalendar } from '../src/report/index.ts';
 import { ROOT } from './helpers.ts';
 
@@ -51,7 +52,21 @@ describe('buildPlan', () => {
     assert.deepEqual(r.weeks.filter((w) => w.calibration).map((w) => w.index), [1]);
     assert.deepEqual(r.weeks.filter((w) => w.kind === 'deload').map((w) => w.index), [4, 8, 12, 16, 20, 24]);
     assert.deepEqual(r.weeks.filter((w) => w.tests).map((w) => w.index), [8, 16, 24]);
+    assert.deepEqual(r.weeks.filter((w) => w.photos).map((w) => w.index), [4, 8, 12, 16, 20, 24], 'photos on each light week’s Sunday');
     assert.deepEqual([r.phases.length, r.mesocycles.length], [3, 6]);
+  });
+  it('with the plan’s own test weeks: the tests on their Saturdays, and the photos on their Sundays too, once on a light week', () => {
+    const base = io();
+    const listed = { ...base, readText: (p: string) => { const t = base.readText(p); return t && p.endsWith('plan-data.json') ? JSON.stringify({ ...JSON.parse(t), rules: { tests: { weeks: [6, 12] } } }) : t; } };
+    const read = readVault(listed, VAULT, { asOf: DATE });
+    const t = buildPlan(read, DATE, { decisions: null }) as Built;
+    assert.deepEqual(t.weeks.filter((w) => w.tests).map((w) => w.index), [6, 12]);
+    assert.deepEqual(t.weeks.filter((w) => w.photos).map((w) => w.index), [4, 6, 8, 12, 16, 20, 24]);
+    const cal = planCalendar(t.weeks, t.phases, null);
+    // The calendar's photo days are the body record's.
+    assert.deepEqual(cal.filter((e) => e.kind === 'photos').map((e) => e.date), planOccurrences(read.data.program).photos);
+    assert.deepEqual(cal.filter((e) => e.week === 6 && e.kind !== 'checkin').map((e) => `${e.date} ${e.kind}`), ['2026-04-11 tests', '2026-04-12 photos', '2026-04-12 tape']);
+    assert.ok(t.upcoming.some((e) => e.kind === 'photos' && e.date === '2026-04-12'), 'coming up: plan week 6’s photos');
   });
   it('carries the decisions, the Ledger, the temporary changes and this week’s templates', () => {
     assert.equal(r.decisions.length, 4);

@@ -234,4 +234,33 @@ describe('load-jump cap (rules.md)', () => {
     const later = capLoadJump({ proposed: 25, date: '2026-03-12', history: h(['2026-03-02', 15], ['2026-03-05', 20]), exercise: LB });
     assert.deepEqual([later.value.weight, later.value.bigJump], [25, true]);
   });
+
+  describe('on the gym\'s real weights', () => {
+    const DB = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30];
+    const dumbbells = (increment: number) => ({ unit: 'kg' as const, increment, weights: DB });
+
+    it('one step is the next real weight up when the increment is finer', () => {
+      const r = capLoadJump({ proposed: 22, date: '2026-03-05', history: h(['2026-03-02', 20]), exercise: dumbbells(1) });
+      assert.deepEqual(r.value, { weight: 22, capped: false, limit: 22, bigJump: false, binding: 'none' });
+      assert.equal(r.reason.inputs['nextWeight'], 22);
+    });
+
+    it('a capped weight is the heaviest real one within the cap, never under the last', () => {
+      // 21 kg logged elsewhere: 10 % over it is 23.1, and the heaviest dumbbell within that is 22.
+      const r = capLoadJump({ proposed: 26, date: '2026-03-05', history: h(['2026-03-02', 21]), exercise: dumbbells(5) });
+      assert.deepEqual(r.value, { weight: 22, capped: true, limit: 23.1, bigJump: false, binding: 'week' });
+    });
+
+    it('when even the next real weight is over the cap, the weight holds and reps carry it', () => {
+      const week = h(['2026-03-02', 20], ['2026-03-04', 22]);
+      const r = capLoadJump({ proposed: 24, date: '2026-03-06', history: week, exercise: dumbbells(2) });
+      assert.deepEqual(r.value, { weight: 22, capped: true, limit: 22, bigJump: false, binding: 'week' });
+      assert.match(r.reason.note ?? '', /24 kg would be more than 10 % over 20 within 7 days: it is the next weight here, so hold 22 kg and let reps carry it\./);
+    });
+
+    it('a big real step is allowed once, as one step', () => {
+      const r = capLoadJump({ proposed: 14, date: '2026-03-05', history: h(['2026-03-02', 10]), exercise: dumbbells(5) });
+      assert.deepEqual(r.value, { weight: 12, capped: true, limit: 12, bigJump: true, binding: 'session' });
+    });
+  });
 });

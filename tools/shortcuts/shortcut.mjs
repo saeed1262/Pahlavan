@@ -96,7 +96,11 @@ export function plist(root) {
   return HEADER + lines.join('\n') + '\n';
 }
 
-export function save(path, actions, { color = 4282601983, glyph = 59511 } = {}) {
+/**
+ * `input`: the shortcut reads Shortcut Input (a URL scheme's text, a Run Shortcut's input). Its
+ * types stay empty, so it still isn't in the share sheet; with no input it runs as from the home screen.
+ */
+export function save(path, actions, { color = 4282601983, glyph = 59511, input = false } = {}) {
   const wf = {
     WFWorkflowClientVersion: '2607.0.5',
     WFWorkflowClientRelease: '2.2.2',
@@ -105,7 +109,7 @@ export function save(path, actions, { color = 4282601983, glyph = 59511 } = {}) 
     WFWorkflowIcon: { WFWorkflowIconStartColor: color, WFWorkflowIconGlyphNumber: glyph },
     WFWorkflowTypes: [],
     WFQuickActionSurfaces: [],
-    WFWorkflowHasShortcutInputVariables: false,
+    WFWorkflowHasShortcutInputVariables: input,
     WFWorkflowHasOutputFallback: false,
     WFWorkflowInputContentItemClasses: [
       'WFAppStoreAppContentItem', 'WFArticleContentItem', 'WFContactContentItem', 'WFDateContentItem',
@@ -129,10 +133,24 @@ export const HAS_NOT = 101;
 
 export const REPEAT_ITEM = { Type: 'Variable', VariableName: 'Repeat Item' };
 
+/** Shortcut Input: what the shortcut was run with, or nothing (then "has any value" is false). */
+export const SHORTCUT_INPUT = { Type: 'ExtensionInput' };
+
 /** A string as a WFTextTokenString; a token string passes through. */
 const textOf = (p) => (typeof p === 'string' ? text(p) : p);
 /** An array of text parts, or a single part, as a WFTextTokenString. */
 const partsOf = (p) => (Array.isArray(p) ? text(...p) : text(p));
+
+/** Show Alert with its Cancel button: OK goes on, Cancel stops the shortcut. Title and message are each a string or a token string. */
+export const alert = (title, message) =>
+  action('alert', { WFAlertActionTitle: textOf(title), WFAlertActionMessage: textOf(message), WFAlertActionCancelButtonShown: true });
+
+/** Open URLs, on an attachment that holds a link (or its text). */
+export const openUrl = (att) => action('openurl', { WFInput: ref(att), 'Show-WFInput': true });
+/** Copy to Clipboard, on this phone only (not handed to a nearby Mac). */
+export const copyToClipboard = (att) => action('setclipboard', { WFInput: ref(att), WFLocalOnly: true });
+/** A URL action: the address typed in. Its output is "URL". */
+export const urlAction = (address) => action('url', { WFURLActionURL: text(address) });
 
 /** Collects actions; if/menu/repeat open groups that end() closes. */
 export class Flow {

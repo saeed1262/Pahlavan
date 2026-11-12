@@ -27,7 +27,7 @@ describe('mergeMorning: the morning check-in into body-data.json', () => {
   const base = morningFrom(before, DATE).values;
 
   it('reads the day as Habit Nudges left it, with yesterday’s steps and floors', () => {
-    assert.deepEqual(base, { energy: 2, soreness: 3, sleepQ: 2, sleepH: 5.5, rhr: 68, weight: 83.8, steps: 9184, floors: 4 });
+    assert.deepEqual(base, { energy: 2, soreness: 3, sleepQ: 2, sleepH: 5.5, rhr: 68, hrv: null, weight: 83.8, steps: 9184, floors: 4 });
     assert.equal(morningFrom(before, DATE).checkedAt, '2026-04-10T07:10:00.000Z');
     assert.equal(dayOfField('steps', DATE), '2026-04-09');
     assert.equal(dayOfField('floors', DATE), '2026-04-09');
@@ -89,6 +89,30 @@ describe('mergeMorning: the morning check-in into body-data.json', () => {
     assert.equal(mergeMorning(BODY_TEXT, DATE, { values: { energy: 0 }, baseline: base }).result, 'invalid');
     assert.equal(mergeMorning('{', DATE, { values: { energy: 3 }, baseline: base }).result, 'unreadable');
     assert.equal(mergeMorning(BODY_TEXT, DATE, { values: { energy: 2 }, baseline: base }).result, 'unchanged');
+  });
+
+  it('HRV: a whole number of ms, 5 to 300, on the check-in day', () => {
+    assert.deepEqual(validateMorning({ hrv: 4 }), ['HRV is between 5 and 300']);
+    assert.deepEqual(validateMorning({ hrv: 52.5 }), ['HRV is a whole number']);
+    const r = mergeMorning(BODY_TEXT, DATE, { values: { hrv: 52 }, baseline: base });
+    assert.equal(r.result === 'merged' && JSON.parse(r.text).days[DATE].hrv, 52);
+    assert.equal(r.result === 'merged' && morningFrom(JSON.parse(r.text), DATE).values.hrv, 52);
+  });
+
+  it('"I\'m ill today": a yes writes illness true on the day, a no takes it off, and it counts as a check-in save', () => {
+    assert.equal(morningFrom(before, DATE).illness, false);
+    const ill = mergeMorning(BODY_TEXT, '2026-04-12', { values: {}, baseline: {}, illness: true, checkedAt: '2026-04-12T07:05:00.000Z' });
+    assert.equal(ill.result, 'merged');
+    if (ill.result !== 'merged') return;
+    assert.deepEqual([ill.illness, ill.stamped, ill.changed], [true, true, []]);
+    const day = JSON.parse(ill.text).days['2026-04-12'];
+    assert.deepEqual(day, { illness: true, checkedAt: '2026-04-12T07:05:00.000Z' });
+    assert.equal(morningFrom(JSON.parse(ill.text), '2026-04-12').illness, true);
+    // Asked again: nothing to write. A no takes the field off, never writing false.
+    assert.equal(mergeMorning(ill.text, '2026-04-12', { values: {}, baseline: {}, illness: true }).result, 'unchanged');
+    const well = mergeMorning(ill.text, '2026-04-12', { values: {}, baseline: {}, illness: false });
+    assert.equal(well.result === 'merged' && 'illness' in JSON.parse(well.text).days['2026-04-12'], false);
+    assert.equal(mergeMorning(BODY_TEXT, DATE, { values: {}, baseline: base, illness: false }).result, 'unchanged');
   });
 });
 
@@ -197,7 +221,7 @@ describe('buildCheckin', () => {
   it('pre-fills the morning from body-data, finds what today trains, and opens the late Sunday check-in on a weekday', () => {
     const read = readVault(io(), VAULT, { asOf: '2026-04-10' });
     const c = buildCheckin(read, '2026-04-10', null);
-    assert.deepEqual(c.morning.values, { energy: 2, soreness: 3, sleepQ: 2, sleepH: 5.5, rhr: 68, weight: 83.8, steps: 9184, floors: 4 });
+    assert.deepEqual(c.morning.values, { energy: 2, soreness: 3, sleepQ: 2, sleepH: 5.5, rhr: 68, hrv: null, weight: 83.8, steps: 9184, floors: 4 });
     assert.deepEqual(c.morning.sore, { gluteal: 'sore', quadriceps: 'mild' });
     assert.equal(c.morning.filled, true);
     assert.ok(c.morning.trains.includes('gluteal'));

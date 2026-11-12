@@ -1,26 +1,23 @@
-// Pahlavan: one menu for water, habit ticks, a session, the evening answer and the morning check-in.
+// Pahlavan: one menu for the gym page, water, habit ticks, a session, the evening answer and the
+// morning check-in; and the gym page's Send.
 //
-// It reads Pahlavan's list for the phone (`phone.json`), asks only what is still open, and sends one
-// inbox entry itself. It depends only on the user's own Pahlavan Token shortcut.
+// Run with no input, it reads Pahlavan's list for the phone (`phone.json`), asks only what is still
+// open, and sends one inbox entry itself. Run with input (the gym page's Send opens
+// shortcuts://run-shortcut?name=Pahlavan&input=text&text=<the session's JSON>), it asks once and
+// sends that session. It depends only on the user's own Pahlavan Token shortcut.
 
-import { action, dictField, Flow, HAS, HAS_NOT, out, ref, REPEAT_ITEM, runShortcut, text, variable as V } from './shortcut.mjs';
+import { GYM_PAGE } from '../../src/core/gym.ts';
+import { action, alert, copyToClipboard, dictField, Flow, HAS, HAS_NOT, openUrl, out, ref, REPEAT_ITEM, runShortcut, SHORTCUT_INPUT, text, urlAction, variable as V } from './shortcut.mjs';
 
 /** The actions. `repoUrl` is the inbox folder's GitHub contents URL, ending in /. */
 export function build(repoUrl) {
   const REPO = repoUrl;
   const f = new Flow();
 
-  // 1. The token (from your own Pahlavan Token shortcut) and Pahlavan's list for the phone
+  // 1. The token (from your own Pahlavan Token shortcut): the one Run Shortcut, at the top
   const tok = f.add(runShortcut('Pahlavan Token')); f.set('Token', out(tok, 'Shortcut Result'));
   const headers = (accept) => dictField([['Authorization', text('Bearer ', V('Token'))], ['Accept', text(accept)],
     ['X-GitHub-Api-Version', text('2022-11-28')]]);
-  const get = f.add(action('downloadurl', { WFURL: text(REPO + 'phone.json'), WFHTTPMethod: 'GET', ShowHeaders: true,
-    WFHTTPHeaders: headers('application/vnd.github.raw+json') }));
-  const parse = f.add(action('detect.dictionary', { WFInput: ref(out(get, 'Contents of URL')) })); f.set('Phone', out(parse, 'Dictionary'));
-  const st = f.value('status', V('Phone'));
-  f.if(HAS, out(st, 'Dictionary Value'));
-  f.notify('Pahlavan', ["Couldn't read Pahlavan's list (HTTP ", out(st, 'Dictionary Value'), '). See Troubleshooting in Phone shortcuts.']);
-  f.stop(); f.end();
 
   // 2. The times, and the training day (after midnight until 04:00 it may be yesterday)
   const now = f.add(action('date', { WFDateActionMode: 'Current Date' })); f.set('Now', out(now, 'Date'));
@@ -39,13 +36,41 @@ export function build(repoUrl) {
   f.item('Yes, yesterday'); f.set('Day', V('YesterdayText'));
   f.item('No, today');
   f.end(); f.end();
+
+  // 3. The gym page's Send ran this with the session's JSON (numbers already numbers): ask once, keep it whole
+  f.if(HAS, SHORTCUT_INPUT);
+  const sent = f.add(action('detect.dictionary', { WFInput: ref(SHORTCUT_INPUT) }));
+  const say = f.value('_say', out(sent, 'Dictionary'));
+  f.add(alert('Send to Pahlavan?', text(out(say, 'Dictionary Value'))));
+  f.textAs('Entry', '{"v":1,"at":"', V('At'), '","date":"', V('Day'), '","kind":"session","session":', SHORTCUT_INPUT, '}');
+  f.textAs('Kind', 'session');
+  f.otherwise();
+
+  // 4. No input: Pahlavan's list for the phone, then the menu
+  const get = f.add(action('downloadurl', { WFURL: text(REPO + 'phone.json'), WFHTTPMethod: 'GET', ShowHeaders: true,
+    WFHTTPHeaders: headers('application/vnd.github.raw+json') }));
+  const parse = f.add(action('detect.dictionary', { WFInput: ref(out(get, 'Contents of URL')) })); f.set('Phone', out(parse, 'Dictionary'));
+  const st = f.value('status', V('Phone'));
+  f.if(HAS, out(st, 'Dictionary Value'));
+  f.notify('Pahlavan', ["Couldn't read Pahlavan's list (HTTP ", out(st, 'Dictionary Value'), '). See Troubleshooting in Phone shortcuts.']);
+  f.stop(); f.end();
   f.value('date', V('Phone'), 'PhoneDate');
   f.ifNotMatch(V('PhoneDate'), '^', V('TodayText'), '$');
   f.notify('Pahlavan', ["Pahlavan's list is from ", V('PhoneDate'), ": the Mac hasn't sent today's yet."]);
   f.end();
 
-  // 3. The menu
-  f.menu('Pahlavan', ['Water', 'Tick habits', 'Log a session', 'Did you train?', 'Morning check-in']);
+  f.menu('Pahlavan', ['Gym', 'Water', 'Tick habits', 'Log a session', 'Did you train?', 'Morning check-in']);
+
+  // --- Gym: today's sessions (phone.json's `gym`, a ready link, or null) go on the clipboard, and the page opens
+  // with #paste to load them at a tap: Open URLs hands the browser only the address of a link that long, not its # part.
+  // It sends nothing itself.
+  f.item('Gym');
+  const gym = f.value('gym', V('Phone'));
+  f.if(HAS_NOT, out(gym, 'Dictionary Value')); f.notify('Pahlavan', 'No gym page yet: open Pahlavan on your Mac first'); f.stop(); f.end();
+  f.add(copyToClipboard(out(gym, 'Dictionary Value')));
+  const page = f.add(urlAction(`${GYM_PAGE}#paste`));
+  f.add(openUrl(out(page, 'URL')));
+  f.stop();
 
   // --- Water
   f.item('Water');
@@ -175,13 +200,16 @@ export function build(repoUrl) {
   f.textAs('Entry', '{"v":1,"at":"', V('At'), '","date":"', V('TodayText'), '","kind":"morning","morning":{', out(pc, 'Combined Text'), '}}');
   f.textAs('Kind', 'morning');
   f.end(); // the menu
+  f.end(); // the input, or the menu
 
-  // 4. Send: real numbers, then one new file on GitHub
+  // 5. Send: real numbers, then one new file on GitHub. Only a quoted whole value of a numeric key,
+  // and only where a key can start (after { or ,): a quote inside a JSON string is always \", so a
+  // note's text never matches, and the page's numbers and nulls are not quoted, so they never do either.
   const NUM = 'energy|soreness|sleepQ|sleepH|rhr|weight|steps|floors|reps|durationMin|rating|add';
   const r1 = f.add(action('text.replace', { WFReplaceTextRegularExpression: true, WFInput: text(V('Entry')),
-    WFReplaceTextFind: String.raw`"(${NUM})"\s*:\s*"(-?\d+)[.,](\d+)"`, WFReplaceTextReplace: '"$1":$2.$3' }));
+    WFReplaceTextFind: String.raw`(\{|,)\s*"(${NUM})"\s*:\s*"(-?\d+)[.,](\d+)"`, WFReplaceTextReplace: '$1"$2":$3.$4' }));
   const r2 = f.add(action('text.replace', { WFReplaceTextRegularExpression: true, WFInput: text(out(r1, 'Updated Text')),
-    WFReplaceTextFind: String.raw`"(${NUM})"\s*:\s*"(-?\d+)"`, WFReplaceTextReplace: '"$1":$2' }));
+    WFReplaceTextFind: String.raw`(\{|,)\s*"(${NUM})"\s*:\s*"(-?\d+)"`, WFReplaceTextReplace: '$1"$2":$3' }));
   f.set('Final', out(r2, 'Updated Text'));
   const b64 = f.add(action('base64encode', { WFEncodeMode: 'Encode', WFBase64LineBreakMode: 'None', WFInput: ref(V('Final')) }));
   const put = f.add(action('downloadurl', { WFURL: text(REPO, V('Stamp'), '-', V('Kind'), '.json'), WFHTTPMethod: 'PUT', ShowHeaders: true,

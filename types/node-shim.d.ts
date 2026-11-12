@@ -7,6 +7,7 @@ declare module 'node:test' {
   export function test(name: string, fn: Body): Promise<void>;
   export function describe(name: string, fn: Body): Promise<void>;
   export function it(name: string, fn: Body): Promise<void>;
+  export function it(name: string, options: { todo?: boolean | string; skip?: boolean | string }, fn: Body): Promise<void>;
   export function before(fn: Body): void;
 }
 
