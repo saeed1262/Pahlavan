@@ -164,7 +164,7 @@ export function readPlanWhy(raw: unknown): ReadPlanWhy {
   if (!isText(v['lead']) || !sp) return { why: null, present: true, problems, missing };
   return {
     why: {
-      date: typeof date === 'string' && isIsoDate(date) ? date : ('' as IsoDate),
+      date: typeof date === 'string' && isIsoDate(date) ? date : '',
       lead: v['lead'].trim(),
       reasons,
       split: sp,

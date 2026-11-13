@@ -106,7 +106,7 @@ export interface ProgressionInput {
  */
 function judged(h: ExerciseSession): { sets: LoggedSet[]; assumed: boolean; planned?: number; plannedFrom?: 'day' | 'plan' } {
   if (h.trackingLevel === 'full') {
-    const slot = h.slot as (ExerciseSession['slot'] & { _daySets?: number }) | undefined;
+    const slot: (ExerciseSession['slot'] & { _daySets?: number }) | undefined = h.slot;
     const day = slot?._daySets;
     const planned = day !== undefined && day > 0 ? { planned: day, plannedFrom: 'day' as const } : slot && slot.sets > 0 ? { planned: slot.sets, plannedFrom: 'plan' as const } : {};
     return { sets: h.sets, assumed: false, ...planned };

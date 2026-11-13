@@ -10,7 +10,7 @@
 // Pure: the date is an input.
 
 import { type VaultData } from '../adapters/vault/convert.ts';
-import { calibrateTimed, calibrationCardioNote, calibrationNote } from '../core/calibration.ts';
+import { calibrateTimed, calibrationCardioNote } from '../core/calibration.ts';
 import { busyPeriods } from '../core/checkins.ts';
 import { CATALOGUE_BY_ID, type CatalogueEntry } from '../core/data/exercises.ts';
 import { dayText, daysBetween, mondayOf } from '../core/dates.ts';
@@ -25,7 +25,7 @@ import type { Exercise, ExerciseSlot, IsoDate, RepRange, SessionTemplate, TimedW
 import { halfTimed, timedMinutes, timedSets, timedView, type TimedView } from '../core/timed.ts';
 import { sorenessForSlot } from '../core/soreness.ts';
 import { expressVariant, halveSr, hotelVariant, shortExpressVariant, travelEquipment, type SessionMode, type VariantSlot } from '../core/variant.ts';
-import { buildReview, CALENDAR, calibrationOf, context, ledgerConstraints, nameOf, sessionLabel } from './review.ts';
+import { buildReview, calibrationOf, context, dayKindOn, ledgerConstraints, nameOf, sessionLabel } from './review.ts';
 
 export interface SessionItem {
   exercise: string;
@@ -111,7 +111,8 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
   // Which session: today's logged one, else the next in the rotation for the calendar's day.
   const loggedToday = ctx.sessions.filter((s) => s.date === date && (s.plan?.template ?? s.template));
   const weekday = daysBetween(mondayOf(date), date);
-  const liftDay = (CALENDAR.liftDays as readonly number[]).includes(weekday) || !data.plan.types.some((t) => t.kind === 'short');
+  const day = dayKindOn(data, date);
+  const liftDay = day.kind === 'lift';
   const nextType = liftDay ? review.nextInRotation.lift : review.nextInRotation.short;
   const templateOf = (tp: string) => data.plan.types.find((t) => t.template === tp);
   const loggedType = loggedToday.length ? templateOf(loggedToday.at(-1)!.plan?.template ?? loggedToday.at(-1)!.template!) : undefined;
@@ -134,9 +135,13 @@ export function buildSession(data: VaultData, date: IsoDate, mode: SessionMode, 
     return { date, mode, session: null, choices: [], items: [], finisher: null, warmup: null, flags, note, ...(ahead ? { planStarts: ahead } : {}), ...(pickNote ? { pickNote } : {}) };
   }
   const loggedThis = loggedToday.some((s) => (s.plan?.template ?? s.template) === type.template);
+  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const dayName = (d: IsoDate) => WEEKDAYS[daysBetween(mondayOf(d), d)];
   const suggestionWhy = loggedType
     ? `Logged today (${loggedToday.map((s) => sessionLabel(ctx, s)).join(', ')}).`
-    : `Next in the ${liftDay ? 'lifting' : 'short-session'} rotation; the training calendar has a ${liftDay ? 'lifting' : 'short'} day on ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][weekday]}.`;
+    : day.spacedAfter
+      ? `Next in the short-session rotation: you lifted on ${dayName(day.spacedAfter.dates[0])} and ${dayName(day.spacedAfter.dates[1])}, and your plan's week never has three lifting days in a row.`
+      : `Next in the ${liftDay ? 'lifting' : 'short-session'} rotation; the training calendar has a ${liftDay ? 'lifting' : 'short'} day on ${WEEKDAYS[weekday]}.`;
   const why = picked
     ? `Chosen by you; ${!suggested ? 'the rotation has no suggestion today' : loggedType ? `logged today: ${suggested.label}` : `the rotation suggested ${suggested.label}`}.`
     : suggestionWhy;

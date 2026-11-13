@@ -183,7 +183,8 @@ export class ReminderWriter {
       const check = (back: string | null) => {
         try {
           const arr = (JSON.parse(back ?? 'null') as Record<string, unknown> | null)?.[list];
-          const e = Array.isArray(arr) ? arr.find((x) => typeof x === 'object' && x !== null && (x as { date?: unknown }).date === date) : undefined;
+          const items: unknown[] = Array.isArray(arr) ? arr : [];
+          const e = items.find((x) => typeof x === 'object' && x !== null && (x as { date?: unknown }).date === date);
           return JSON.stringify(e ?? null) === JSON.stringify(want);
         } catch {
           return false;

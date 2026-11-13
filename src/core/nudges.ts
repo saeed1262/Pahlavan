@@ -92,6 +92,8 @@ export interface DueInput {
   stand?: Readonly<Record<string, StandState>>;
   /** The coach step after the Sunday check-in, where it stands today (coachSteps' `now`); absent: no "Ask the coach" card. */
   coach?: CoachNow | null;
+  /** A card asked for by hand (Due today's Answer, a command): its snooze doesn't hold it, only the clock's offer. */
+  byHand?: boolean;
 }
 
 // ---------------------------------------------------------------- cards
@@ -233,6 +235,7 @@ function dueItems(tracking: Tracking | null, td: TrainingDays, program: DueInput
 export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boolean }> {
   const s: NudgeSettings = { ...DEFAULT_NUDGE_SETTINGS, ...input.settings };
   const { now, tracking, nudges } = input;
+  const held = (e: NudgeEntry) => !input.byHand && snoozed(e, now);
   const date = now.date;
   if (inQuiet(s.quiet, now.minutes)) {
     return explain({ cards: [], quiet: true }, 'nudges.quiet', { now: hhmm(now.minutes), quiet: s.quiet }, { note: `Quiet hours, ${s.quiet!.from} to ${s.quiet!.to}: no cards. One due in the early morning waits until they end; one due late in the evening is skipped that day, so put evening items before ${s.quiet!.from}.` });
@@ -270,9 +273,9 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
   const until = toMinutes(MORNING_UNTIL)!;
   const tapeEntry = entryOf(nudges, date, 'tape');
   const tape = parts?.tape.value;
-  const tapeDue = Boolean(tape?.due) && tapeEntry.how === undefined && !snoozed(tapeEntry, now);
+  const tapeDue = Boolean(tape?.due) && tapeEntry.how === undefined && !held(tapeEntry);
   const periodic = (p: PartStatus) => ({ key: skipKey(p.part, p.occurrence!), next: p.schedule.afterCurrent });
-  if (morningAt !== null && now.minutes >= morningAt && now.minutes < until && !morningDone && !snoozed(mEntry, now)) {
+  if (morningAt !== null && now.minutes >= morningAt && now.minutes < until && !morningDone && !held(mEntry)) {
     card({
       key: 'morning',
       kind: 'morning',
@@ -314,7 +317,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
   }
   for (const [key, sl] of slots) {
     const e = entryOf(nudges, date, key);
-    if (e.how !== undefined || snoozed(e, now)) continue;
+    if (e.how !== undefined || held(e)) continue;
     const label = key === 'slot:after-log' ? 'after the session' : `with a ${key.slice(5)} reminder`;
     card({
       key,
@@ -335,7 +338,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
   const dytAt = toMinutes(dyt.at);
   const tEntry = entryOf(nudges, date, 'train');
   const t = input.training;
-  if (dyt.on && dytAt !== null && now.minutes >= dytAt && t.plannedToday && !trainingKnown(t, date) && tEntry.how === undefined && !snoozed(tEntry, now)) {
+  if (dyt.on && dytAt !== null && now.minutes >= dytAt && t.plannedToday && !trainingKnown(t, date) && tEntry.how === undefined && !held(tEntry)) {
     card({
       key: 'train',
       kind: 'train',
@@ -357,7 +360,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
     if (v.done) continue;
     const key = `amount:${item.id}`;
     const e = entryOf(nudges, date, key);
-    if (e.how !== undefined || snoozed(e, now)) continue;
+    if (e.how !== undefined || held(e)) continue;
     const r = item.reminder;
     const a = item.amount!;
     if (r.at) {
@@ -385,7 +388,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
     if (item.kind !== 'desk' || !desk || !desk.times.length) continue;
     const key = `desk:${item.id}`;
     const e = entryOf(nudges, date, key);
-    if (e.how !== undefined || snoozed(e, now)) continue;
+    if (e.how !== undefined || held(e)) continue;
     const done = dayValue(item, date, ctx).value ?? 0;
     if (done >= desk.times.length) continue;
     const last = toMinutes(desk.to)! - desk.minutes;
@@ -414,7 +417,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
     const today = input.sitting.today;
     const key = `sitting:${item.id}`;
     const e = entryOf(nudges, date, key);
-    if (r.atMinutes && today.minutes >= r.atMinutes && e.how === undefined && !snoozed(e, now)) {
+    if (r.atMinutes && today.minutes >= r.atMinutes && e.how === undefined && !held(e)) {
       card({
         key,
         kind: 'sitting',
@@ -432,7 +435,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
     const cur = input.sitting.current;
     const se = entryOf(nudges, date, `${key}:stretch`);
     const start = cur ? toTs(cur.start) : null;
-    if (r.stretch && cur && cur.minutes >= c.stretchMaxMinutes && se.for !== start && !snoozed(se, now)) {
+    if (r.stretch && cur && cur.minutes >= c.stretchMaxMinutes && se.for !== start && !held(se)) {
       card({
         key: `${key}:stretch`,
         kind: 'sitting',
@@ -457,7 +460,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
     for (const part of ['photos', 'tests'] as const) {
       const p = parts[part].value;
       const e = entryOf(nudges, date, part);
-      if (!p.due || !ready || now.minutes < from || now.minutes >= until || e.how !== undefined || snoozed(e, now)) continue;
+      if (!p.due || !ready || now.minutes < from || now.minutes >= until || e.how !== undefined || held(e)) continue;
       card({ key: part, kind: part, items: [], at: from, closable: true, skip: 'today', later: true, snooze: standardSnooze(s, now, { tomorrow: true }), occurrence: p.occurrence!, skipPeriod: periodic(p), reason: p.schedule.reason });
     }
   }
@@ -466,7 +469,7 @@ export function dueNow(input: DueInput): Result<{ cards: DueCard[]; quiet: boole
   const cn = input.coach;
   const coachAt = toMinutes(COACH_AT)!;
   const cEntry = entryOf(nudges, date, 'coach');
-  if (cn && (cn.state === 'due' || cn.state === 'late') && now.minutes >= coachAt && cEntry.how === undefined && !snoozed(cEntry, now)) {
+  if (cn && (cn.state === 'due' || cn.state === 'late') && now.minutes >= coachAt && cEntry.how === undefined && !held(cEntry)) {
     const { date: sunday, week, phase, kind, title, command, does, nextCycle, state, line } = cn;
     card({
       key: 'coach',

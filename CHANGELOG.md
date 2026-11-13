@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.1: a short day after two lifting days, and fixes
+
+- **No third lifting day in a row.** Today picked lifting or short by the weekday alone, so a week that slipped a day could stack three lifting days: lift on Tuesday and Wednesday (Wednesday's short day), and Thursday still offered the next lift. Now a lifting day after two logged lifting days in a row offers the next short session instead, while the week still has short sessions to do, and says why ("you lifted on Tuesday and Wednesday"). Once the week's short sessions are done, the lift stays. A rest day, an unlogged day or a custom session doesn't count as lifting, so a week on schedule reads as before. The reminders, the Food tab's kind of day, the gym page and the phone follow the same rule, and **Change session** still offers the lift.
+- **Answer on a snoozed card.** Due today keeps a snoozed card's row ("Did you train today?") with its **Answer** button, but Answer said the card wasn't due. Answer now opens it, and an answer closes it as before; on their own, cards still wait out the snooze.
+- **Code cleanup for the directory's review.** The changes Obsidian's automated review of 0.28.0 asked for: no inline styles in the Try it demo, values typed where they were read as `any`, unneeded type assertions and unused names removed. Nothing you see changes.
+
 ## 0.28.0: Movements, every set, and plans from a blank page
 
 A new **Movements** tab to search every movement with its guide, weight targets on the weights your gym actually has, every set logged with one tap, a coach that counts each exercise's skips, swaps and pain and decides your priority muscles from your assessment, HRV and an "I'm ill today" answer in the morning check-in, a gym page for logging every set from your phone, your coach's reasons for your plan on the Plan tab, and the old plan generator gone. You can try it all in your browser before you install it.

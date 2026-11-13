@@ -222,10 +222,7 @@ export class PahlavanView extends ItemView {
     console.error(`[Pahlavan] ${title}`, e);
     const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     const stack = e instanceof Error && e.stack ? e.stack.split('\n').slice(0, 6).join('\n') : '';
-    const box = activeDocument.createElement('div');
-    box.className = 'pv-error';
-    box.textContent = `${title}\n\n${msg}${stack ? `\n\n${stack}` : ''}`;
-    target.replaceChildren(box);
+    target.replaceChildren(h('div', { class: 'pv-error' }, `${title}\n\n${msg}${stack ? `\n\n${stack}` : ''}`));
   }
 
   /** The photo compare's keys, as the dashboard's: ← → step the After set, 1 to 4 pick the pose. */
@@ -1034,8 +1031,7 @@ export class PahlavanView extends ItemView {
     this.logState = freshPanelState();
     this.logState.habitTicked = this.deps.writer ? await this.deps.writer.habitTicked(form.date) : null;
     if (!this.logLayer) {
-      this.logLayer = activeDocument.createElement('div');
-      this.logLayer.className = 'pv-log-layer';
+      this.logLayer = h('div', { class: 'pv-log-layer' });
       this.contentEl.appendChild(this.logLayer);
       this.registerDomEvent(activeDocument, 'keydown', (ev: KeyboardEvent) => {
         if (ev.key !== 'Escape' || !this.logForm) return;

@@ -462,7 +462,7 @@ export function readinessActions(
     explain<ReadinessAction>({ action: 'trim', active: trim }, 'readiness.trim', { asOf, s: row?.s ?? null, band: row?.band ?? 'unscored' }, {
       threshold: { low: `S <= ${READINESS.bands.watch}` },
       note: joinNotes(
-        trim && `Readiness is low: ${trimWords(low!)} until it is back to watch or better.`,
+        trim && `Readiness is low: ${trimWords(low)} until it is back to watch or better.`,
         isLow && !low && 'Readiness is low; the plan\'s rule leaves the session as planned.',
         base.building ? buildingNote(base) : row?.band === 'unscored' && 'The latest check-in is not scored.',
         stale,

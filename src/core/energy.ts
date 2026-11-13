@@ -173,8 +173,6 @@ export const kcalText = (n: number): string => String(Math.round(n)).replace(/\B
 const figText = (f: Figure, unit: string) => (isPair(f) ? (f[0] === f[1] ? `${kcalText(f[0])} ${unit}` : `${kcalText(f[0])} to ${kcalText(f[1])} ${unit}`) : `${kcalText(f)} ${unit}`);
 const pct = (v: number) => `${v > 0 ? '+' : ''}${(v * 100).toFixed(2)} %`;
 const kg = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
-const pctFig = (f: Figure) => (isPair(f) ? `${pct(f[0])} to ${pct(f[1])}` : pct(f));
-const kgFig = (f: Figure) => (isPair(f) ? `${kg(f[0])} to ${kg(f[1])} kg` : `${kg(f)} kg`);
 
 /** A goal's band as signed fractions of body weight a week: a kg band divided by the trend weight. */
 export function bandPct(band: RateBand, weightKg: number): { lo: number; hi: number } {

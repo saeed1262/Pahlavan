@@ -113,23 +113,61 @@ useFolders(findFolders((dir) => {
   if (!under.length) return null;
   return { files: [...new Set(under.filter((u) => !u.includes('/')))], folders: [...new Set(under.filter((u) => u.includes('/')).map((u) => u.split('/')[0]!))] };
 }));
+
+// The fixture files as the made-up edits below see them: each shape names only the fields those edits
+// touch (the files hold more, and the rest is written back as it was).
+interface ProfileJson { targets?: Record<string, unknown>; priorityRegions?: string[]; units?: Record<string, unknown> }
+interface BodyDayJson { checkedAt?: string; illness?: boolean; mark?: string; rhr?: number; hrv?: number }
+interface BodyJson { tape: unknown[]; tests: unknown[]; photos: unknown[]; days: Record<string, BodyDayJson> }
+interface LogJson { ladders: { pushup: unknown[] }; sessions: { date: string }[]; todayChecklist?: unknown }
+interface PlanItemJson { name: string; note?: string; [key: string]: unknown }
+interface PlanJson {
+  sessions: Record<string, PlanItemJson[]>;
+  guide: Record<string, Record<string, unknown>>;
+  deskRoutine?: { name: string; dose: string }[];
+  ladders: unknown[];
+  laddersFor?: Record<string, string[]>;
+  phases?: { name: string }[];
+}
+interface TrackingItemJson { id: string; kind: string; schedule: { kind: string }; amount?: { target: number }; pauses?: unknown[] }
+type TrackingDayJson = Record<string, Record<string, unknown>>;
+interface TrackingJson { items: TrackingItemJson[]; days: Record<string, TrackingDayJson>; bodyRecord?: unknown }
+interface CheckinsJson { checkins: { date: string; weekStart: string }[] }
+interface NudgesJson { days: Record<string, Record<string, unknown>> }
+interface HabitsJson { checkins: Record<string, unknown> }
+interface SittingJson { days: Record<string, Record<string, { start: string; end: string }[]>> }
+
+/** A fixture file's JSON (or `fallback`'s, when the file is missing), in the shape the edit expects. */
+function readJson<T>(path: string, fallback?: string): T {
+  const text = files[path] ?? fallback;
+  if (text === undefined) throw new Error(`no fixture file ${path}`);
+  return JSON.parse(text) as T;
+}
+
+/** A made-up edit to a fixture file in memory, written back indented. */
+function editJson<T>(path: string, fn: (d: T) => void): void {
+  const d = readJson<T>(path);
+  fn(d);
+  files[path] = JSON.stringify(d, null, 2);
+}
+
 const CARD = params.get('card');
 if (params.get('rich') === '1' || CARD) {
   // MADE UP, preview only: what a fuller cycle would hold.
   const fit = '3-Personal/Fitness';
-  const prof = JSON.parse(files[`${fit}/Coach/profile.json`]!);
+  const prof = readJson<ProfileJson>(`${fit}/Coach/profile.json`);
   prof.targets = { waistDropCm: [4, 6], weightDropKg: [3, 5], rhrDropBpm: [3, 6], tests: { pushups: 25, pullups: 5, hollowS: 45, handstandS: 45, sidePlankS: 60 } };
   // A region declared weak: the vasti, over their 6 direct sets; it makes the quads a priority for the region rules,
   // so the rectus femoris (no leg extension in the plan) shows short of its 4.
   prof.priorityRegions = ['quads-vasti'];
   files[`${fit}/Coach/profile.json`] = JSON.stringify(prof);
-  const body = JSON.parse(files[`${fit}/body-data.json`]!);
+  const body = readJson<BodyJson>(`${fit}/body-data.json`);
   body.tape.push({ date: '2026-03-10', waist: 95.2, hips: 97.6, chest: 101, arm: 33 }, { date: '2026-04-07', waist: 93.6, hips: 96.4, chest: 101.5, arm: 33.5 });
   body.tests.push({ date: '2026-03-21', pushups: 15, pullups: 0, hollowS: 31, handstandS: 18, sidePlankS: 40 }, { date: '2026-04-04', pushups: 17, pullups: 1, hollowS: 36, handstandS: 24, sidePlankS: 52 });
   body.photos.push({ date: '2026-03-10', poses: ['front', 'side', 'back'] }, { date: '2026-03-24', poses: ['front', 'side', 'back', 'posture-closeup'] }, { date: '2026-04-07', poses: ['front', 'back', 'posture-closeup'] });
   files[`${fit}/body-data.json`] = JSON.stringify(body);
   // The push-up ladder one level behind its latest test, so Skills shows "Move to level".
-  const log = JSON.parse(files[`${fit}/fitness-log-data.json`]!);
+  const log = readJson<LogJson>(`${fit}/fitness-log-data.json`);
   log.ladders.pushup = log.ladders.pushup.slice(0, 1);
   files[`${fit}/fitness-log-data.json`] = JSON.stringify(log, null, 2);
   const samples = (window as unknown as { PAHLAVAN_SAMPLES: Record<string, string> }).PAHLAVAN_SAMPLES;
@@ -140,7 +178,7 @@ if (params.get('rich') === '1' || CARD) {
   // A busy week, as a check-in would have recorded it.
   files[`${fit}/Coach/checkins.json`] = JSON.stringify({ schemaVersion: 1, checkins: [{ date: '2026-04-05', weekStart: '2026-03-30', knownBusy: [{ from: '2026-05-04', to: '2026-05-10', kind: 'travel', note: 'Work trip, hotel gym' }] }] });
   // The plan's desk routine (the mockup's five steps, with a how-to each in the plan's guide).
-  const plan = JSON.parse(files[`${fit}/plan-data.json`]!);
+  const plan = readJson<PlanJson>(`${fit}/plan-data.json`);
   const steps: [string, string, string][] = [
     ['Chin tuck', '×10, hold 2 s', 'Slide the head straight back, eyes level.'],
     ['Doorway chest stretch', '2 × 30 s', 'Forearms on the frame, step through.'],
@@ -151,7 +189,7 @@ if (params.get('rich') === '1' || CARD) {
   // Two months of made-up ticks and amounts before the fixture's own week, so the Habits grid reads as a
   // habit with a history (a fixed pseudo-random pattern per item, as the mockup's).
   const TR = `${fit}/Coach/tracking.json`;
-  const trk = JSON.parse(files[TR]!);
+  const trk = readJson<TrackingJson>(TR);
   const rate: Record<string, number> = { creatine: 0.92, multivitamin: 0.8, shake: 0.86, magnesium: 0.76, protein: 0.7, flossing: 0.66, water: 0.68, 'stand-ups': 0.58, 'desk-breaks': 0.62 };
   const hash = (str: string) => {
     let x = 2166136261;
@@ -161,9 +199,9 @@ if (params.get('rich') === '1' || CARD) {
   for (let t = Date.UTC(2026, 2, 2); t < Date.UTC(2026, 3, 6); t += 864e5) {
     const d = new Date(t).toISOString().slice(0, 10);
     const dow = new Date(t).getUTCDay();
-    const day: Record<string, Record<string, unknown>> = {};
+    const day: TrackingDayJson = {};
     for (const [id, r] of Object.entries(rate)) {
-      const it = trk.items.find((x: { id: string }) => x.id === id);
+      const it = trk.items.find((x) => x.id === id);
       if (!it || (it.schedule.kind === 'weekdays' && (dow === 0 || dow === 6)) || (id === 'fish-oil')) continue;
       const met = hash(id + d) < r;
       const f = met ? 1 + 0.2 * hash(d + id) : 0.3 + 0.6 * hash(d + id);
@@ -190,14 +228,17 @@ if (params.get('rich') === '1' || CARD) {
   const fit = '3-Personal/Fitness';
   const TRK = `${fit}/Coach/tracking.json`;
   if (params.get('desk') === 'none') {
-    const plan = JSON.parse(files[`${fit}/plan-data.json`]!);
+    const plan = readJson<PlanJson>(`${fit}/plan-data.json`);
     delete plan.deskRoutine;
     files[`${fit}/plan-data.json`] = JSON.stringify(plan);
   }
   if (params.get('standdesk') === '1') {
     // MADE UP, preview only: minutes stood at the desk on three days, for the stand-ups chart's split (8 Apr all at the desk).
-    const t = JSON.parse(files[TRK]!);
-    for (const [d, m] of [['2026-04-07', 40], ['2026-04-08', 140], ['2026-04-09', 30]] as const) if (t.days[d]?.['stand-ups']) t.days[d]['stand-ups'].deskMinutes = m;
+    const t = readJson<TrackingJson>(TRK);
+    for (const [d, m] of [['2026-04-07', 40], ['2026-04-08', 140], ['2026-04-09', 30]] as const) {
+      const stood = t.days[d]?.['stand-ups'];
+      if (stood) stood['deskMinutes'] = m;
+    }
     files[TRK] = JSON.stringify(t);
   }
   if (params.get('habits') === 'empty') {
@@ -215,23 +256,23 @@ if (params.get('rich') === '1' || CARD) {
   }
   if (params.get('nolog') === '1') {
     // MADE UP, preview only: a fresh start with the log archived (no sessions yet).
-    const log = JSON.parse(files[`${fit}/fitness-log-data.json`]!);
+    const log = readJson<LogJson>(`${fit}/fitness-log-data.json`);
     log.sessions = [];
     files[`${fit}/fitness-log-data.json`] = JSON.stringify(log, null, 2);
   }
   if (params.get('ladderstart') === '1') {
     // MADE UP, preview only: a pull-up ladder in session A that the plan starts at level 6 (its startLevel), nothing logged
     // on it, so Skills shows the plan's start with Log this level, and the guide and Today's copy say it is the start.
-    const pd = JSON.parse(files[`${fit}/plan-data.json`]!);
+    const pd = readJson<PlanJson>(`${fit}/plan-data.json`);
     const levels = ['Dead hang', 'Scapular pull-up', 'Inverted row', 'Negative pull-up', 'Band-assisted pull-up', 'Pull-up', 'Weighted pull-up', 'L-sit pull-up'];
     pd.ladders.push({ id: 'pullup', name: 'Pull-up', startLevel: 6, levels: levels.map((name) => ({ name })) });
     pd.laddersFor = { ...pd.laddersFor, A: ['pullup'] };
-    pd.sessions.A.splice(2, 0, { name: 'Pull-up (your level)', table: 'Pull-up (your level)', sr: '4 × 3–8', rest: '2 min', rir: 2, note: 'Why: the main vertical pull.', label: 'Pull-up', ladder: 'pullup' });
+    pd.sessions['A']?.splice(2, 0, { name: 'Pull-up (your level)', table: 'Pull-up (your level)', sr: '4 × 3–8', rest: '2 min', rir: 2, note: 'Why: the main vertical pull.', label: 'Pull-up', ladder: 'pullup' });
     files[`${fit}/plan-data.json`] = JSON.stringify(pd, null, 2);
   }
   if (params.get('named') === '1') {
     // MADE UP, preview only: the plan's phases by name (plan-data's optional `phases`).
-    const pd = JSON.parse(files[`${fit}/plan-data.json`]!);
+    const pd = readJson<PlanJson>(`${fit}/plan-data.json`);
     pd.phases = [{ name: 'Foundation' }, { name: 'Build' }, { name: 'Peak' }];
     files[`${fit}/plan-data.json`] = JSON.stringify(pd, null, 2);
   }
@@ -239,15 +280,15 @@ if (params.get('rich') === '1' || CARD) {
   if (HRV === '1' || HRV === 'low') {
     // MADE UP, preview only: HRV (ms) on every morning with a resting HR, about 60; &hrv=low puts 7 and 8 Apr
     // at 44 ms, so Today on 8 Apr (&today=2026-04-08) shows the HRV note.
-    const b = JSON.parse(files[`${fit}/body-data.json`]!);
-    for (const [d, e] of Object.entries(b.days as Record<string, Record<string, unknown>>)) {
-      if (typeof e['rhr'] === 'number') e['hrv'] = HRV === 'low' && d >= '2026-04-07' && d <= '2026-04-08' ? 44 : 58 + (Number(d.slice(8)) % 5);
+    const b = readJson<BodyJson>(`${fit}/body-data.json`);
+    for (const [d, e] of Object.entries(b.days)) {
+      if (typeof e.rhr === 'number') e.hrv = HRV === 'low' && d >= '2026-04-07' && d <= '2026-04-08' ? 44 : 58 + (Number(d.slice(8)) % 5);
     }
     files[`${fit}/body-data.json`] = JSON.stringify(b, null, 2);
   }
   if (params.get('ill') === '1') {
     // MADE UP, preview only: "I'm ill today" on the preview's day (the morning card's 10 Apr by default).
-    const b = JSON.parse(files[`${fit}/body-data.json`]!);
+    const b = readJson<BodyJson>(`${fit}/body-data.json`);
     const day = params.get('today') ?? '2026-04-10';
     b.days[day] = { ...(b.days[day] ?? {}), illness: true };
     files[`${fit}/body-data.json`] = JSON.stringify(b, null, 2);
@@ -255,7 +296,7 @@ if (params.get('rich') === '1' || CARD) {
   if (params.get('units') === 'lb') {
     // MADE UP, preview only: a profile in lb and inches (the files keep kg and cm).
     const p = `${fit}/Coach/profile.json`;
-    const prof = JSON.parse(files[p]!);
+    const prof = readJson<ProfileJson>(p);
     prof.units = { ...prof.units, body: 'lb' };
     files[p] = JSON.stringify(prof);
   }
@@ -281,7 +322,7 @@ if (params.get('rich') === '1' || CARD) {
   const ticks = params.get('ticks');
   if (ticks && /^[01]+$/.test(ticks)) {
     // MADE UP, preview only: today's ticks on the session's checklist (with &log=new, the Log panel starts from them).
-    const log = JSON.parse(files[`${fit}/fitness-log-data.json`]!);
+    const log = readJson<LogJson>(`${fit}/fitness-log-data.json`);
     log.todayChecklist = { date: params.get('today') ?? '2026-04-10', type: params.get('pick') ?? 'B', express: params.get('session') === 'express', checked: [...ticks].map((c) => c === '1') };
     files[`${fit}/fitness-log-data.json`] = JSON.stringify(log, null, 2);
   }
@@ -295,7 +336,7 @@ if (params.get('rich') === '1' || CARD) {
     ] });
   }
   if (params.get('sched') === 'fixed') {
-    const t = JSON.parse(files[TRK]!);
+    const t = readJson<TrackingJson>(TRK);
     t.bodyRecord = { schedule: 'fixed', tapeFrom: '2026-03-24', tapeEvery: 14, testsFrom: '2026-03-21', testsEvery: 28 };
     files[TRK] = JSON.stringify(t);
   }
@@ -312,47 +353,45 @@ if (params.get('coach') === 'saved') {
   const t = Date.parse(`${day}T00:00:00Z`);
   const sunday = new Date(t - (new Date(t).getUTCDay() * 864e5)).toISOString().slice(0, 10);
   const p = '3-Personal/Fitness/Coach/checkins.json';
-  const d = JSON.parse(files[p] ?? '{"schemaVersion":1,"checkins":[]}');
-  d.checkins = [...d.checkins.filter((c: { date: string }) => c.date !== sunday), { date: sunday, weekStart: new Date(Date.parse(`${sunday}T00:00:00Z`) - 6 * 864e5).toISOString().slice(0, 10) }];
+  const d = readJson<CheckinsJson>(p, '{"schemaVersion":1,"checkins":[]}');
+  d.checkins = [...d.checkins.filter((c) => c.date !== sunday), { date: sunday, weekStart: new Date(Date.parse(`${sunday}T00:00:00Z`) - 6 * 864e5).toISOString().slice(0, 10) }];
   files[p] = JSON.stringify(d);
 }
-/** A fixture file's JSON as JSON.parse gives it: the made-up edits below know each file's shape. */
-type FixtureJson = ReturnType<typeof JSON.parse>;
 const YD = new Set((params.get('yourday') ?? '').split(',').filter(Boolean));
 if (YD.size) {
   // MADE UP, preview only: Your day's states on the date (in memory only).
   const fit = '3-Personal/Fitness';
   const day = params.get('today') ?? '2026-04-10';
-  const edit = (path: string, fn: (d: FixtureJson) => void) => {
-    const d = JSON.parse(files[path]!);
-    fn(d);
-    files[path] = JSON.stringify(d, null, 2);
-  };
   const unlog = () => {
-    edit(`${fit}/fitness-log-data.json`, (d) => void (d['sessions'] = d['sessions'].filter((x: { date: string }) => x.date !== day)));
-    edit('5-System/Data/habits-data.json', (d) => void delete d['checkins'][habitCheckinKey('workout', day)]);
+    editJson<LogJson>(`${fit}/fitness-log-data.json`, (d) => void (d.sessions = d.sessions.filter((x) => x.date !== day)));
+    editJson<HabitsJson>('5-System/Data/habits-data.json', (d) => void delete d.checkins[habitCheckinKey('workout', day)]);
   };
   if (YD.has('morning')) {
-    edit(`${fit}/body-data.json`, (d) => void (d['days'][day] && delete d['days'][day].checkedAt));
-    edit(`${fit}/Coach/nudges.json`, (d) => void (d['days'][day] && delete d['days'][day].morning));
+    editJson<BodyJson>(`${fit}/body-data.json`, (d) => void delete d.days[day]?.checkedAt);
+    editJson<NudgesJson>(`${fit}/Coach/nudges.json`, (d) => void delete d.days[day]?.['morning']);
   }
   if (YD.has('open')) unlog();
   if (YD.has('rest')) {
     unlog();
-    edit(`${fit}/body-data.json`, (d) => void (d['days'][day] = { ...(d['days'][day] ?? {}), mark: 'rest' }));
+    editJson<BodyJson>(`${fit}/body-data.json`, (d) => void (d.days[day] = { ...(d.days[day] ?? {}), mark: 'rest' }));
   }
   if (YD.has('done')) {
-    edit(`${fit}/Coach/tracking.json`, (d) => {
-      const today: Record<string, unknown> = { ...(d['days'][day] ?? {}) };
-      for (const it of d['items']) {
+    editJson<TrackingJson>(`${fit}/Coach/tracking.json`, (d) => {
+      const today: TrackingDayJson = { ...(d.days[day] ?? {}) };
+      for (const it of d.items) {
         if (it.kind === 'supplement' || it.kind === 'tick') today[it.id] = { done: true, at: `${day}T08:00:00.000Z` };
-        if (it.kind === 'amount') today[it.id] = { amount: it.amount.target, at: `${day}T11:00:00.000Z` };
+        if (it.kind === 'amount') today[it.id] = { amount: it.amount?.target, at: `${day}T11:00:00.000Z` };
       }
-      d['days'][day] = today;
+      d.days[day] = today;
     });
   }
   // Paused, not removed: the days already logged for it stay valid.
-  if (YD.has('nofood')) edit(`${fit}/Coach/tracking.json`, (d) => void (d['items'].find((x: { id: string }) => x.id === 'protein').pauses = [{ from: '2026-03-02' }]));
+  if (YD.has('nofood')) {
+    editJson<TrackingJson>(`${fit}/Coach/tracking.json`, (d) => {
+      const protein = d.items.find((x) => x.id === 'protein');
+      if (protein) protein.pauses = [{ from: '2026-03-02' }];
+    });
+  }
 }
 const FOOD = params.get('food');
 const foodToday = FOOD === 'early' || FOOD === 'later' || FOOD === 'empty' ? applyFoodState(files, FOOD, '', params.get('plan') === 'plain' ? 'plain' : 'day').today : null;
@@ -362,7 +401,7 @@ if (foodToday && params.get('checks') === '1') {
   // The light checks of the last week, as the Food tab keeps them in Coach/help.json: vegetables at both meals on
   // most days (so Sunday’s pattern starts as met), at lunch on one, fruit once a day; today vegetables at lunch.
   const hp = '3-Personal/Fitness/Coach/help.json';
-  const h = JSON.parse(files[hp] ?? '{"schemaVersion":1,"tips":{},"welcomeHidden":null}');
+  const h = readJson<Record<string, unknown>>(hp, '{"schemaVersion":1,"tips":{},"welcomeHidden":null}');
   const day = (n: number) => new Date(Date.parse(`${foodToday}T00:00:00Z`) - n * 864e5).toISOString().slice(0, 10);
   const checks = Object.fromEntries([1, 2, 3, 4, 5, 6].map((n) => [day(n), { veg: n === 4 ? [0] : [0, 1], fruit: [0] }]));
   files[hp] = JSON.stringify({ ...h, foodChecks: { ...checks, [foodToday]: { veg: [0], fruit: [0] } } });
@@ -371,25 +410,20 @@ if (foodToday && params.get('checks') === '1') {
 const SCENE = CARD ? scenario(CARD) : null;
 function scenario(card: string): { date: string; time: string; key: string; stand?: boolean } {
   const fit = '3-Personal/Fitness';
-  const edit = (path: string, fn: (d: FixtureJson) => void) => {
-    const d = JSON.parse(files[path]!);
-    fn(d);
-    files[path] = JSON.stringify(d, null, 2);
-  };
   const NUD = `${fit}/Coach/nudges.json`;
   const TR = `${fit}/Coach/tracking.json`;
   const BODY = `${fit}/body-data.json`;
-  const checked = (date: string) => edit(BODY, (d) => void (d['days'][date] = { ...(d['days'][date] ?? {}), checkedAt: `${date}T07:10:00.000Z` }));
+  const checked = (date: string) => editJson<BodyJson>(BODY, (d) => void (d.days[date] = { ...(d.days[date] ?? {}), checkedAt: `${date}T07:10:00.000Z` }));
   switch (card) {
     case 'morning':
-      edit(BODY, (d) => void delete d['days']['2026-04-10'].checkedAt);
-      edit(NUD, (d) => void delete d['days']['2026-04-10'].morning);
+      editJson<BodyJson>(BODY, (d) => void delete d.days['2026-04-10']?.checkedAt);
+      editJson<NudgesJson>(NUD, (d) => void delete d.days['2026-04-10']?.['morning']);
       return { date: '2026-04-10', time: '07:35', key: 'morning' };
     case 'tape':
       return { date: '2026-04-12', time: '07:35', key: 'morning' };
     case 'habits':
-      edit(NUD, (d) => void delete d['days']['2026-04-10']['slot:09:00']);
-      edit(TR, (d) => void delete d['days']['2026-04-10'].creatine);
+      editJson<NudgesJson>(NUD, (d) => void delete d.days['2026-04-10']?.['slot:09:00']);
+      editJson<TrackingJson>(TR, (d) => void delete d.days['2026-04-10']?.['creatine']);
       return { date: '2026-04-10', time: '09:05', key: 'slot:09:00' };
     case 'evening':
       return { date: '2026-04-10', time: '21:35', key: 'slot:21:30' };
@@ -400,12 +434,12 @@ function scenario(card: string): { date: string; time: string; key: string; stan
     case 'sitting': {
       // 5 h 30 by 15:40 in seven stretches, the longest 52 minutes.
       const st = [['07:30', '08:22'], ['08:30', '09:20'], ['09:30', '10:18'], ['10:30', '11:15'], ['11:30', '12:15'], ['13:00', '13:45'], ['14:00', '14:45']];
-      edit(`${fit}/Coach/sitting.json`, (d) => void (d['days']['2026-04-10'] = { 'Work Mac': st.map(([a, b]) => ({ start: `2026-04-10T${a}:00.000Z`, end: `2026-04-10T${b}:00.000Z` })) }));
+      editJson<SittingJson>(`${fit}/Coach/sitting.json`, (d) => void (d.days['2026-04-10'] = { 'Work Mac': st.map(([a, b]) => ({ start: `2026-04-10T${a}:00.000Z`, end: `2026-04-10T${b}:00.000Z` })) }));
       return { date: '2026-04-10', time: '15:40', key: 'sitting:sitting' };
     }
     case 'desk':
-      edit(TR, (d) => void delete d['days']['2026-04-10']['desk-breaks']);
-      edit(NUD, (d) => void delete d['days']['2026-04-10']['desk:desk-breaks']);
+      editJson<TrackingJson>(TR, (d) => void delete d.days['2026-04-10']?.['desk-breaks']);
+      editJson<NudgesJson>(NUD, (d) => void delete d.days['2026-04-10']?.['desk:desk-breaks']);
       return { date: '2026-04-10', time: '10:00', key: 'desk:desk-breaks' };
     case 'photos':
       checked('2026-04-26');
@@ -414,12 +448,12 @@ function scenario(card: string): { date: string; time: string; key: string; stan
       checked('2026-04-25');
       return { date: '2026-04-25', time: '08:00', key: 'tests' };
     case 'train':
-      edit('5-System/Data/habits-data.json', (d) => void delete d['checkins']['hab-workout-2026-W15-3']);
-      edit(NUD, (d) => void delete d['days']['2026-04-09']);
+      editJson<HabitsJson>('5-System/Data/habits-data.json', (d) => void delete d.checkins['hab-workout-2026-W15-3']);
+      editJson<NudgesJson>(NUD, (d) => void delete d.days['2026-04-09']);
       return { date: '2026-04-09', time: '20:05', key: 'train' };
     case 'coach':
       // Sun 26 Apr, plan week 8: the phase review, the answers saved and no letter yet.
-      edit(`${fit}/Coach/checkins.json`, (d) => void d['checkins'].push({ date: '2026-04-26', weekStart: '2026-04-20' }));
+      editJson<CheckinsJson>(`${fit}/Coach/checkins.json`, (d) => void d.checkins.push({ date: '2026-04-26', weekStart: '2026-04-20' }));
       return { date: '2026-04-26', time: '18:05', key: 'coach' };
     default:
       return { date: '2026-04-10', time: '12:00', key: card };
@@ -461,9 +495,7 @@ const TODAY = params.get('today') ?? foodToday ?? PREVIEW_TODAY;
 /** The plugin's notices, drawn as a toast at the top right (Obsidian's Notice, as the harness shows it). */
 function toast(message: string): void {
   console.debug(`[notice] ${message}`);
-  const n = activeDocument.createElement('div');
-  n.className = 'preview-notice';
-  n.textContent = message;
+  const n = h('div', { class: 'preview-notice' }, message);
   activeDocument.body.append(n);
   window.setTimeout(() => n.remove(), 6000);
 }
@@ -479,10 +511,8 @@ async function copy(text: string): Promise<void> {
     await navigator.clipboard.writeText(text);
   } catch {
     // Some browsers and embedded views refuse the Clipboard API; the older copy command still works in most.
-    const box = activeDocument.createElement('textarea');
+    const box = h('textarea', { class: 'preview-copy-box', readonly: true });
     box.value = text;
-    box.setAttribute('readonly', '');
-    box.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
     activeDocument.body.append(box);
     box.select();
     const done = activeDocument.execCommand('copy');

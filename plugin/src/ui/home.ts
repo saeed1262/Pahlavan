@@ -10,7 +10,7 @@ import { PAHLAVAN_LOGO_SRC } from '../brand-logo.ts';
 import type { TodayModel } from '../data-source.ts';
 import type { PhaseId } from '../phase.ts';
 import { ring, type BannerOptions } from './banner.ts';
-import { h, icon, s, type Child } from './dom.ts';
+import { h, icon, s } from './dom.ts';
 import { fmt } from './format.ts';
 import { calmNotes } from './today.ts';
 

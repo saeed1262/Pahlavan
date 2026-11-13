@@ -29,7 +29,13 @@ function setAttrs(el: Element, attrs: Attrs | undefined): void {
   }
 }
 
-/** An HTML element with attributes (`onclick`: a listener; `class`, `data-*`, `aria-*`: attributes) and children. */
+/**
+ * An HTML element with attributes (`onclick`: a listener; `class`, `data-*`, `aria-*`: attributes) and children.
+ * Every element the view, the preview harness and its Obsidian stand-in make comes from here, built on
+ * `activeDocument` rather than with Obsidian's global `createEl`: the element belongs to the focused
+ * window's document (a popout's too), and the harness and the tests, which have no `createEl`, run
+ * the same code.
+ */
 export function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs?: Attrs, ...children: Child[]): HTMLElementTagNameMap[K] {
   const el = activeDocument.createElement(tag);
   setAttrs(el, attrs);

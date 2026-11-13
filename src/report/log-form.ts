@@ -193,7 +193,7 @@ function unitStep(plan: Obj, name: string, planned: string | null, unit?: string
 function realWeights(read: VaultRead, id: string, unit: 'lb' | 'kg'): { weights?: number[] } {
   const loads = read.data.profile?.loads;
   if (!loads) return {};
-  const ex = read.data.program.exercises[id] as (Exercise & ExerciseExtras) | undefined;
+  const ex: (Exercise & ExerciseExtras) | undefined = read.data.program.exercises[id];
   if (ex?.weights?.length && ex.unit === unit) return { weights: ex.weights };
   const w = weightsFor(loadKindOf(ex?.equipment ?? catalogueEntry(read, id)?.equipment[0], ex?._lift?.db) ?? undefined, loads, unit);
   return w ? { weights: w } : {};

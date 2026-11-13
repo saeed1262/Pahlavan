@@ -266,7 +266,7 @@ export class Reminders {
     return (snap.tr.tracking?.items ?? []).filter((x) => x.kind === 'standup' && x.standup && scheduled(x, m.date, td) === 'due');
   }
 
-  private input(snap: Snapshot, m: Moment, opts: { quiet?: boolean } = {}): DueInput {
+  private input(snap: Snapshot, m: Moment, opts: { quiet?: boolean; byHand?: boolean } = {}): DueInput {
     const t = snap.tr;
     const sitItem = this.sittingItem(snap, m);
     const s = nudgeSettings(this.host.settings());
@@ -285,6 +285,7 @@ export class Reminders {
       stand: this.idleReadable === false ? {} : Object.fromEntries(this.stand.all()),
       // The coach step after the Sunday check-in, as Today shows it.
       coach: coachStepsOf(snap.vault, m.date, snap.letter).now?.value ?? null,
+      ...(opts.byHand ? { byHand: true } : {}),
     };
   }
 
@@ -848,7 +849,7 @@ export class Reminders {
     }
     const snap = await this.read();
     const m = this.host.moment(this.host.now());
-    const due = queueOrder(dueNow(this.input(snap, m, { quiet: false })).value.cards);
+    const due = queueOrder(dueNow(this.input(snap, m, { quiet: false, byHand: true })).value.cards);
     const found = due.find((c) => (c.kind === kind || (kind === 'tape' && c.kind === 'morning' && c.tape)) && (!item || c.items.includes(item)));
     if (found) {
       this.present(found, snap, { manual: false, byHand: true });
@@ -863,7 +864,7 @@ export class Reminders {
     return true;
   }
 
-  /** A due card by its key (Due today's rows), else the matching card by hand. */
+  /** A due card by its key (Due today's rows), a snoozed one too, else the matching card by hand. */
   async openKey(key: string): Promise<boolean> {
     if (this.current) {
       this.current.handle?.focus();
@@ -871,7 +872,7 @@ export class Reminders {
     }
     const snap = await this.read();
     const m = this.host.moment(this.host.now());
-    const card = queueOrder(dueNow(this.input(snap, m, { quiet: false })).value.cards).find((c) => c.key === key);
+    const card = queueOrder(dueNow(this.input(snap, m, { quiet: false, byHand: true })).value.cards).find((c) => c.key === key);
     if (card) {
       this.present(card, snap, { manual: false, byHand: true });
       return true;

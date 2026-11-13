@@ -206,6 +206,7 @@ export function painTrend(reports: readonly PainReport[], from: IsoDate, to: Iso
     const a = given.at(-1);
     const b = given.at(-2);
     const last = rs.at(-1);
+    const direction: PainDirection = a === undefined || b === undefined ? 'single' : a > b ? 'rising' : a < b ? 'falling' : 'steady';
     return {
       ...g,
       area: last?.area ?? g.area,
@@ -215,7 +216,7 @@ export function painTrend(reports: readonly PainReport[], from: IsoDate, to: Iso
       last: last?.date ?? null,
       max: given.length ? Math.max(...given) : null,
       latest: last ? { date: last.date, severity: last.severity } : null,
-      direction: (a === undefined || b === undefined ? 'single' : a > b ? 'rising' : a < b ? 'falling' : 'steady') as PainDirection,
+      direction,
       verdict: worstVerdict(rs.map((x) => x.verdict)),
       notGiven: rs.length - given.length,
     };

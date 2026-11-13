@@ -83,6 +83,8 @@ describe('due now, on the fixture\'s Friday', () => {
     n.days['2026-04-10']!['tape'] = { snoozedUntil: '2026-04-10T12:45:00.000Z' };
     assert.deepEqual(keys(input('2026-04-10', '12:15', { nudges: n })), []);
     assert.deepEqual(keys(input('2026-04-10', '12:46', { nudges: n })), ['tape']);
+    // Asked for by hand (Due today's Answer): the snooze doesn't hold it; an answer still does.
+    assert.deepEqual(keys({ ...input('2026-04-10', '12:15', { nudges: n }), byHand: true }), ['tape']);
   });
 
   it('a stand-up that is due comes first; it can\'t be closed or skipped, and snoozes once', () => {

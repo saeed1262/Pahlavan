@@ -516,6 +516,27 @@ describe('what Save writes', () => {
     assert.equal(h2.logs.length, 1);
     assert.equal(nudge(h2.v, '2026-04-09', 'train').how, 'logged');
   });
+
+  it('a snoozed card still opens by hand (Due today\'s Answer), while the clock keeps holding it', async () => {
+    const mutate = (v: MemVault) => {
+      const hb = v.json(HABITS);
+      delete hb.checkins[habitCheckinKey('workout', '2026-04-09')];
+      v.files.set(HABITS, JSON.stringify(hb));
+      const n = v.json(NUDGES);
+      n.days['2026-04-09'] = { tape: { how: 'later', at: '2026-04-09T08:00:00.000Z' }, 'slot:20:00': { how: 'done', at: '2026-04-09T20:00:00.000Z' }, train: { snoozedUntil: '2026-04-10T23:00:00.000Z' } };
+      v.files.set(NUDGES, JSON.stringify(n));
+    };
+    const h = harness({ date: '2026-04-09', at: '20:05', mutate });
+    await h.r.tick();
+    assert.deepEqual(h.open().map((c) => c.view.kind), ['amount'], 'the snooze holds it on the clock: the water card comes instead');
+    await h.open()[0]!.answer({ do: 'later' });
+    assert.equal(await h.r.openKey('train'), true, 'Answer opens it');
+    const c = h.cards.at(-1)!;
+    assert.equal(c.view.kind, 'train');
+    await c.answer({ do: 'train', choice: 'rest' });
+    assert.equal(h.v.json(BODY).days['2026-04-09'].mark, 'rest');
+    assert.equal(nudge(h.v, '2026-04-09', 'train').how, 'rest');
+  });
 });
 
 describe('the stand-up', () => {

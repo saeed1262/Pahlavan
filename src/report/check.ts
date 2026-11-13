@@ -171,6 +171,8 @@ export type PlanCheck = (c: CheckContext, f: Findings) => void;
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
+/** A value as a list of unknowns: itself when it is a list, else empty. */
+const listOf = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const labelOf = (muscle: string) => MUSCLES.find((m) => m.id === muscle)?.label ?? muscle;
 const rirText = (r: { lo: number; hi: number }) => (r.lo === r.hi ? `${r.lo}` : `${r.lo}–${r.hi}`);
@@ -246,7 +248,7 @@ function structure(c: CheckContext, f: Findings): void {
   for (const t of lists['liftTypes'] ?? []) if ((lists['shortTypes'] ?? []).includes(t)) out.push(item(`${t} is in both liftTypes and shortTypes`));
   // The sessions the plan lists (one it does not list is never read).
   const listed = new Set([...(lists['liftTypes'] ?? []), ...(lists['shortTypes'] ?? [])]);
-  const named = new Set([...(Array.isArray(raw['liftTypes']) ? raw['liftTypes'] : []), ...(Array.isArray(raw['shortTypes']) ? raw['shortTypes'] : [])]);
+  const named = new Set([...listOf(raw['liftTypes']), ...listOf(raw['shortTypes'])]);
   const unlisted = Array.isArray(raw['liftTypes']) && Array.isArray(raw['shortTypes']) ? Object.keys(sessions).filter((t) => !named.has(t)) : [];
   f.add('session-unlisted', 'warning', 'Sessions neither liftTypes nor shortTypes names: Pahlavan never shows, logs or counts them.', unlisted.map((t) => item(`sessions.${t}`, t)), {
     rule: 'plan.sessions',
@@ -832,7 +834,7 @@ function exerciseChanges(c: CheckContext, f: Findings): void {
     }
   }
   for (const type of Object.keys(prev['sessions'])) {
-    if (!accessoryOk && c.data.plan.types.every((t) => t.type !== type) && [...(Array.isArray(prev['liftTypes']) ? prev['liftTypes'] : []), ...(Array.isArray(prev['shortTypes']) ? prev['shortTypes'] : [])].includes(type)) out.push(item(`${type}: dropped (${when})`, type));
+    if (!accessoryOk && c.data.plan.types.every((t) => t.type !== type) && [...listOf(prev['liftTypes']), ...listOf(prev['shortTypes'])].includes(type)) out.push(item(`${type}: dropped (${when})`, type));
   }
   // A redesign is a new plan, so its changes are the point: listed for the record, not warned about.
   if (c.redesign) {
@@ -950,7 +952,7 @@ function gymSteps(c: CheckContext, f: Findings): void {
   if (!c.data.profile?.loads) return;
   const out: CheckItem[] = [];
   for (const l of c.data.plan.lifts) {
-    const ex = c.data.program.exercises[l.exercise] as (Exercise & ExerciseExtras) | undefined;
+    const ex: (Exercise & ExerciseExtras) | undefined = c.data.program.exercises[l.exercise];
     const weights = ex?.weights;
     if (!weights?.length || stepInKit(l.increment, weights)) continue;
     const fine = finestStep(weights);

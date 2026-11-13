@@ -125,7 +125,7 @@ export function logAddEntry(read: VaultRead, input: LogAddInput, today: IsoDate)
     const skipped = input.skipped;
     if (skipped !== undefined && (!Array.isArray(skipped) || !skipped.every((x) => typeof x === 'string'))) return fail('"skipped" lists the checklist lines skipped, by name');
     const swapOf = (l: unknown) => (typeof l === 'object' && l !== null && (l as Obj)['planned'] ? String((l as Obj)['name']) : null);
-    const fz = frozenList(read, { date: String(entry['date']), type: String(entry['type']), mode: entry['express'] ? 'express' : entry['hotel'] ? 'hotel' : 'full', lifts: [swapOf(entry['lift1']), swapOf(entry['lift2'])], skip: (skipped as string[] | undefined) ?? [], why: reasons }, today);
+    const fz = frozenList(read, { date: String(entry['date']), type: String(entry['type']), mode: entry['express'] ? 'express' : entry['hotel'] ? 'hotel' : 'full', lifts: [swapOf(entry['lift1']), swapOf(entry['lift2'])], skip: skipped ?? [], why: reasons }, today);
     if (!fz.ok) return fz;
     const names = everySetNames(read, entry, fz.list.value.exercises);
     if (names) return fail(names);

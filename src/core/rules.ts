@@ -210,7 +210,7 @@ class Problems {
 
 const weekList = (v: unknown): number[] | null => {
   if (!Array.isArray(v) || !v.every((x) => isInt(x))) return null;
-  const s = [...new Set(v as number[])].sort((a, b) => a - b);
+  const s = [...new Set(v)].sort((a, b) => a - b);
   return s.length === v.length ? s : null;
 };
 
@@ -228,9 +228,9 @@ const readCalibration: Reader<CalibrationRules> = (raw, legacy, p, path) => {
   if (raw['afterRestart'] !== undefined && typeof raw['afterRestart'] !== 'boolean') return bad(p, `${path}.afterRestart`, 'is not true or false');
   return {
     weeks,
-    rir: (raw['rir'] as number | undefined) ?? legacy.rir,
-    cardio: (raw['cardio'] as CalibrationRules['cardio'] | undefined) ?? legacy.cardio,
-    afterRestart: (raw['afterRestart'] as boolean | undefined) ?? legacy.afterRestart,
+    rir: raw['rir'] ?? legacy.rir,
+    cardio: raw['cardio'] ?? legacy.cardio,
+    afterRestart: raw['afterRestart'] ?? legacy.afterRestart,
   };
 };
 
@@ -247,15 +247,15 @@ const readLightWeeks: Reader<LightWeeksRules> = (raw, legacy, p, path) => {
   if (raw['rirAdd'] !== undefined && !isNum(raw['rirAdd'], 0, 6)) return bad(p, `${path}.rirAdd`, 'is not a number of reps in reserve to add, from 0 to 6');
   const early = raw['early'];
   if (early !== undefined && early !== 'apply' && early !== 'offer' && early !== 'none') return bad(p, `${path}.early`, 'is not "apply", "offer" or "none"');
-  const every = (raw['every'] as number | undefined) ?? (weeks ? null : legacy.every);
+  const every = raw['every'] ?? (weeks ? null : legacy.every);
   return {
     every,
     weeks,
-    sets: (sets as LightWeeksRules['sets'] | undefined) ?? legacy.sets,
-    load: (raw['load'] as number | undefined) ?? legacy.load,
-    rirAdd: (raw['rirAdd'] as number | undefined) ?? legacy.rirAdd,
+    sets: sets ?? legacy.sets,
+    load: raw['load'] ?? legacy.load,
+    rirAdd: raw['rirAdd'] ?? legacy.rirAdd,
     // A plan's light weeks apply an early trigger only when the rule says so: otherwise it is a fact for the coach.
-    early: (early as LightWeeksRules['early'] | undefined) ?? 'offer',
+    early: early ?? 'offer',
   };
 };
 
@@ -293,7 +293,7 @@ const readSoreness: Reader<SorenessRules> = (raw, legacy, p, path) => {
   if (sore === null && raw['sore'] !== 'none') return null;
   const two = raw['twoDays'];
   if (two !== undefined && two !== 'easier' && two !== 'same') return bad(p, `${path}.twoDays`, 'is neither "easier" nor "same"');
-  return { sore, twoDays: (two as SorenessRules['twoDays'] | undefined) ?? legacy.twoDays };
+  return { sore, twoDays: two ?? legacy.twoDays };
 };
 
 const readMissed: Reader<MissedRules> = (raw, legacy, p, path) => {
@@ -305,8 +305,8 @@ const readMissed: Reader<MissedRules> = (raw, legacy, p, path) => {
   const out: MissedRules = {
     easeBackAfterWeeks: (raw['easeBackAfterWeeks'] as number | undefined) ?? legacy.easeBackAfterWeeks,
     restartAfterWeeks: (raw['restartAfterWeeks'] as number | undefined) ?? legacy.restartAfterWeeks,
-    easeBackDrop: (raw['easeBackDrop'] as number | undefined) ?? legacy.easeBackDrop,
-    easeBackRir: (raw['easeBackRir'] as number | undefined) ?? legacy.easeBackRir,
+    easeBackDrop: raw['easeBackDrop'] ?? legacy.easeBackDrop,
+    easeBackRir: raw['easeBackRir'] ?? legacy.easeBackRir,
   };
   if (out.easeBackAfterWeeks >= out.restartAfterWeeks) return bad(p, path, 'easeBackAfterWeeks must be fewer weeks than restartAfterWeeks');
   return out;
@@ -326,7 +326,7 @@ const readHotel: Reader<HotelRules> = (raw, legacy, p, path) => {
   const l = raw['longTripSets'];
   if (s !== undefined && s !== 'catalogue' && s !== 'skip') return bad(p, `${path}.swaps`, 'is neither "catalogue" nor "skip"');
   if (l !== undefined && l !== 'third' && l !== 'all') return bad(p, `${path}.longTripSets`, 'is neither "third" nor "all"');
-  return { swaps: (s as HotelRules['swaps'] | undefined) ?? legacy.swaps, longTripSets: (l as HotelRules['longTripSets'] | undefined) ?? legacy.longTripSets };
+  return { swaps: s ?? legacy.swaps, longTripSets: l ?? legacy.longTripSets };
 };
 
 function bad(p: Problems, path: string, message: string): null {

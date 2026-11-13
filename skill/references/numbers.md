@@ -413,7 +413,10 @@ from memory.
 
 - **`session --freeze`** (with `--type`, `--date`, `--lift1`/`--lift2` for a swap's lift done, and `--skip "<line>,<line>"` for items not done): the exercise list and the checklist Pahlavan's Log panel would freeze into that day's log entry (`freeze.value.exercises`, `{name, sets, daySets}`: `daySets` the day's working sets of a strength item, after a readiness or soreness trim or in Express; `freeze.value.checklist`, `{done, total, skipped}`), read-only. `log add` writes both into the entry itself; a custom session has none (exit 2). A paired line is named "A + B", a ladder line by its plan item name.
 - **`session`**: today's session for the Today screen. `session` (type,
-  name, why: logged today or next in the rotation), `mode`, `warmup`,
+  name, why: logged today, or next in the rotation for the day's kind:
+  the weekday's in the default calendar, except a lifting weekday after
+  two logged lifting days in a row, which is a short day while the week's
+  short sessions aren't all done; its `why` names the two days), `mode`, `warmup`,
   `items` (each with `sets`, `repRange`, `rir`, the plan's `sr`, `target`
   in the lift's unit, `last` with `logged`, `replaces` for a swap, and
   `adjustments`: titled reasons for the temporary change, the Ledger,

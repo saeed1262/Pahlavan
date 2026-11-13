@@ -625,7 +625,7 @@ export function fromVault(files: VaultFiles, opts: VaultOptions = {}): VaultData
         const sev = isObj(p) ? p['severity'] : undefined;
         const given = sev !== undefined && sev !== null;
         if (isObj(p) && isStr(p['area']) && p['area'].trim() && (!given || (isNum(sev) && sev >= 0 && sev <= 10))) {
-          pain.push({ area: p['area'].trim(), ...(given ? { severity: sev as number } : {}), ...(isStr(p['exercise']) && p['exercise'].trim() ? { exercise: p['exercise'].trim() } : {}) });
+          pain.push({ area: p['area'].trim(), ...(given ? { severity: sev } : {}), ...(isStr(p['exercise']) && p['exercise'].trim() ? { exercise: p['exercise'].trim() } : {}) });
         } else notes.group('bad-pain', 'Pain entries that are not an area (with a severity from 0 to 10, when given) were left out.', `${date}: ${JSON.stringify(p)}`);
       }
       if (pain.length) session.pain = pain;

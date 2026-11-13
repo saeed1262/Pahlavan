@@ -2,6 +2,15 @@
 // PahlavanView in a plain page: the preview harness bundles the view with
 // this file in place of Obsidian (no jsdom; it runs in headless Chrome).
 
+import { h } from '../src/ui/dom.ts';
+
+/** An element with a class, appended to `parent` when given; built by the view's own `h()`. */
+const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, parent?: HTMLElement): HTMLElementTagNameMap[K] => {
+  const e = h(tag, { class: cls || undefined });
+  parent?.appendChild(e);
+  return e;
+};
+
 export class WorkspaceLeaf {
   app: unknown = {};
 }
@@ -34,13 +43,9 @@ export class ItemView extends Component {
     super();
     this.leaf = leaf;
     this.app = leaf.app;
-    this.containerEl = activeDocument.createElement('div');
-    this.containerEl.className = 'workspace-leaf-content';
-    const header = activeDocument.createElement('div');
-    header.className = 'view-header';
-    this.contentEl = activeDocument.createElement('div');
-    this.contentEl.className = 'view-content';
-    this.containerEl.append(header, this.contentEl);
+    this.containerEl = el('div', 'workspace-leaf-content');
+    el('div', 'view-header', this.containerEl);
+    this.contentEl = el('div', 'view-content', this.containerEl);
   }
   getViewType(): string {
     return '';
@@ -69,13 +74,6 @@ export type TAbstractFile = { path: string };
 // Obsidian's settings tab and Setting rows, with the same element classes
 // (setting-item, setting-item-info, checkbox-container, dropdown), so the
 // plugin's Settings tab draws in the preview as it does in the app.
-
-const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, parent?: HTMLElement): HTMLElementTagNameMap[K] => {
-  const e = activeDocument.createElement(tag);
-  if (cls) e.className = cls;
-  parent?.appendChild(e);
-  return e;
-};
 
 export type App = unknown;
 

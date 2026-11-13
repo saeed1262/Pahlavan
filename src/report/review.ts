@@ -448,7 +448,7 @@ function analyseLift(ctx: Ctx, exercise: string, lc: LiftContext) {
   const trend = hotel ? { ...own, reason: { ...own.reason, note: joinNotes(own.reason.note, hotel.reason.note) ?? '' } } : own;
   const slot = currentSlot(ctx, exercise);
   // The gym's real weights for this lift: every target lands on one (never for a ladder slot).
-  const load = liftLoad(ex as (Exercise & ExerciseExtras) | undefined, unit, increment, slot);
+  const load = liftLoad(ex, unit, increment, slot);
   const weights = load.weights;
   const detected = detectStall(trend.value, lc.adherencePct);
   const stall = lc.calibration ? calibrationStall(detected, lc.calibration) : detected;
@@ -1010,17 +1010,39 @@ export function rotationNext(data: VaultData, date: IsoDate): { lift: string | n
 }
 
 /**
- * The rotation's next session type for the calendar's day, as Today
- * suggests it (even once today's is logged: the one after it): the next
- * lift on a lifting day (or in a plan with no short sessions), the next
- * short session on a short day, else whichever the rotation has. phone.json's
- * `next` and the gym page's first session.
+ * The day's kind of session, as Today suggests it. The weekday's kind in the
+ * default calendar (lifting on its lifting days, or every day in a plan with
+ * no short sessions), except a lifting weekday after two lifting days in a
+ * row: that is a short day while the week's short sessions aren't all done,
+ * since the default week never has three lifting days running (a B done on
+ * Wednesday's short day makes Thursday the short one). Only logged sessions
+ * of the plan's lifting types count (Express included; a custom session or
+ * an unlogged day doesn't), and the week's short sessions count through the
+ * date. Once they're done, the lift stays: the week needs it.
+ */
+export function dayKindOn(data: VaultData, date: IsoDate): { kind: 'lift' | 'short'; weekdayKind: 'lift' | 'short'; spacedAfter: { dates: [IsoDate, IsoDate] } | null } {
+  const hasShort = data.plan.types.some((t) => t.kind === 'short');
+  const weekday = daysBetween(mondayOf(date), date);
+  const weekdayKind = (CALENDAR.liftDays as readonly number[]).includes(weekday) || !hasShort ? 'lift' : 'short';
+  if (weekdayKind === 'short' || !hasShort) return { kind: weekdayKind, weekdayKind, spacedAfter: null };
+  const kindOf = (s: Session) => data.plan.types.find((t) => t.template === (s.plan?.template ?? s.template))?.kind;
+  const lifted = (day: IsoDate) => data.sessions.some((s) => s.date === day && kindOf(s) === 'lift');
+  const dates: [IsoDate, IsoDate] = [addDays(date, -2), addDays(date, -1)];
+  const monday = mondayOf(date);
+  const shortsDone = data.sessions.filter((s) => s.date >= monday && s.date <= date && kindOf(s) === 'short').length;
+  const spaced = dates.every(lifted) && shortsDone < data.plan.weekTarget.short;
+  return spaced ? { kind: 'short', weekdayKind, spacedAfter: { dates } } : { kind: 'lift', weekdayKind, spacedAfter: null };
+}
+
+/**
+ * The rotation's next session type for the day, as Today suggests it (even
+ * once today's is logged: the one after it): the next lift on a lifting day,
+ * the next short session on a short day (`dayKindOn`), else whichever the
+ * rotation has. phone.json's `next` and the gym page's first session.
  */
 export function nextOfDay(data: VaultData, date: IsoDate): string | null {
-  const weekday = daysBetween(mondayOf(date), date);
-  const liftDay = (CALENDAR.liftDays as readonly number[]).includes(weekday) || !data.plan.types.some((t) => t.kind === 'short');
   const rot = rotationNext(data, date);
-  return (liftDay ? rot.lift : rot.short) ?? rot.lift ?? rot.short;
+  return (dayKindOn(data, date).kind === 'lift' ? rot.lift : rot.short) ?? rot.lift ?? rot.short;
 }
 
 /** The week's check-in effort for a date: the record whose reviewed week holds it. */

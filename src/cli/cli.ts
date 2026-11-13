@@ -70,7 +70,7 @@ import { buildEvidence, TOPIC_IDS, type Topic } from '../report/evidence.ts';
 import { planDiff, sameJson } from '../report/plan-write.ts';
 import { coachStepsOf } from '../report/checkin-screen.ts';
 import { frozenList } from '../report/log-form.ts';
-import { logAddEntry, type LogAddInput } from '../report/log-add.ts';
+import { logAddEntry } from '../report/log-add.ts';
 import { mergeFix, mergeHabit, mergeLadder, mergeLog, sessionKey } from '../adapters/vault/log-write.ts';
 import { readChanges, planTrack, setUp, type TrackChanges } from '../report/track-write.ts';
 import { buildBringOver, buildDue, buildHabitStats, buildTracked, proteinFor } from '../report/tracking.ts';
@@ -620,7 +620,7 @@ function inferKind(v: unknown): Kind | null {
   if ('items' in o && 'days' in o) return 'tracking';
   if ('skipped' in o) return 'nudges';
   if ('days' in o && 'schemaVersion' in o && typeof o['days'] === 'object' && o['days'] !== null) {
-    const first = Object.values(o['days'] as Record<string, unknown>).map((d) => (typeof d === 'object' && d !== null ? Object.values(d)[0] : undefined)).find((x) => x !== undefined);
+    const first = Object.values(o['days'] as Record<string, unknown>).map((d): unknown => (typeof d === 'object' && d !== null ? Object.values(d)[0] : undefined)).find((x) => x !== undefined);
     if (Array.isArray(first)) return 'sitting';
     if (first !== undefined) return 'nudges';
   }
@@ -1296,7 +1296,7 @@ function cmdLog(action: LogAction, flags: Record<string, string | true>, io: Cli
     const raw = readJson(io, fileFlag, 'session file');
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return fail('invalid', 'the session file must hold one object');
     // The entry as the Log panel's save writes it: its checks, its frozen checklist and exercise list.
-    const added = logAddEntry(read, raw as LogAddInput, today);
+    const added = logAddEntry(read, raw, today);
     if (!added.ok) return fail('invalid', added.error);
     const entry = added.entry;
     const key = sessionKey(entry);
