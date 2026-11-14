@@ -43,6 +43,12 @@ describe('the Body record card', () => {
     assert.doesNotMatch(text(card(true)), /reset/i);
   });
 
+  it('its foot note, which opens with an icon, is marked has-icon (the layout reads the class, not :has())', () => {
+    const note = card(false).querySelector('.pv-foot-note')!;
+    assert.ok(note.classList.contains('has-icon'));
+    assert.equal(note.children[0]!.tagName.toLowerCase(), 'svg');
+  });
+
   it('the schedule’s hint says what the plan does: its own test weeks add their photo days', () => {
     const hint = (c: FakeElement) => text(c.querySelector('.pv-sf-hint')!);
     assert.equal(hint(card(false, { edit: true })), 'From the plan: the tape every second Sunday, photos on each light week’s Sunday, tests at each phase end. Before there’s a plan, every N days.');

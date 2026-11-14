@@ -1,5 +1,5 @@
 // The engine's own version. A test keeps it equal to package.json's.
-export const ENGINE_VERSION = '0.28.1';
+export const ENGINE_VERSION = '0.28.2';
 
 /**
  * The vault's coach against the engine version Pahlavan carries: the same,

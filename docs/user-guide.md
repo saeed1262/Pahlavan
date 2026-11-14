@@ -2,7 +2,7 @@
 
 Pahlavan is a training coach that lives in your Obsidian vault. It has two parts that work on the same files. The **plugin** is a tab in Obsidian with seven screens (Home, Today, Progress, Plan, Check-in, Food and Movements) and reminder cards that pop up through the day. The **coach** is an AI skill you run in Claude Code with `/fitness-coach`: it interviews you, designs your plan, reviews your week and writes you a letter every Sunday. Behind both is the **engine**: it does every calculation (sets per muscle, targets, readiness), checks every plan against the safety rules and the evidence, and holds the evidence library the coach designs from. The coach designs; the engine calculates and checks. You use the plugin by hand every day; the coach does the thinking and makes the plan changes. Everything stays in your vault as plain files, with no account and no server.
 
-This guide covers plugin 0.28.1 and engine 0.28.1. The screenshots come from a practice vault with made-up data, so your numbers will differ. To look around before you install, [try Pahlavan in your browser](https://saeed1262.github.io/pahlavan/demo/): the same screens on a made-up athlete.
+This guide covers plugin 0.28.2 and engine 0.28.2. The screenshots come from a practice vault with made-up data, so your numbers will differ. To look around before you install, [try Pahlavan in your browser](https://saeed1262.github.io/pahlavan/demo/): the same screens on a made-up athlete.
 
 > [!WARNING] Safety
 > Pahlavan is a general fitness tool for adults 18 and over, not medical advice. If you have a health condition, check with a doctor before you start, and stop any exercise that hurts.

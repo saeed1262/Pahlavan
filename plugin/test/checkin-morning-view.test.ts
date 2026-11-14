@@ -42,6 +42,9 @@ describe('Check-in’s morning form', () => {
     type(sleep, 'seven');
     assert.equal(st.morning.values.sleepH, 6.5);
     assert.ok(sleep.classList.contains('is-bad'));
+    assert.ok(sleep.closest('.pv-field-in')!.classList.contains('is-bad'), 'the field’s frame is marked too');
+    type(sleep, '7');
+    assert.ok(!sleep.closest('.pv-field-in')!.classList.contains('is-bad'), 'and cleared with a value it reads');
   });
 
   it('the weight in lb for an lb profile, kept in kg', () => {

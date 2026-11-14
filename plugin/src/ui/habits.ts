@@ -350,7 +350,7 @@ function listCard(total: number, ctx: HabitsContext): HTMLElement {
         h('span', {}, s('svg', { viewBox: '0 0 12 12' }, s('rect', { class: 'pv-cal-today', x: 1, y: 1, width: 10, height: 10, rx: 3 })), 'Today')),
     ),
     h('div', { class: 'pv-table-area' }, table([{ t: 'Item' }, { t: 'Kind' }, { t: 'Dose or target' }, { t: 'When' }, { t: 'Reminder' }, { t: 'Streak', r: true }, { t: '30 days', r: true }, { t: 'Added by' }, { t: 'Homepage habit' }, { t: 'Status' }], rows)),
-    h('div', { class: 'pv-foot-note' }, icon('info'), 'Each item counts from its own start: a linked habit’s earlier ticks are not counted, and the days before read Not started. Sitting time is your keyboard and mouse activity (on a day it did not count, Habit Nudges’ desk time, read only).'),
+    h('div', { class: 'pv-foot-note has-icon' }, icon('info'), 'Each item counts from its own start: a linked habit’s earlier ticks are not counted, and the days before read Not started. Sitting time is your keyboard and mouse activity (on a day it did not count, Habit Nudges’ desk time, read only).'),
   );
 }
 
@@ -395,7 +395,7 @@ function bringCard(ctx: HabitsContext): HTMLElement | null {
         x.coachToo && !x.already ? h('span', { class: 'pv-bring-also' }, 'your coach suggests it too') : null,
       );
     })),
-    h('div', { class: 'pv-foot-note' }, icon('info'), h('span', {}, `Habit Nudges keeps the word cards, the plan reminders and the work timer; Pahlavan reads your activity for sitting time but never writes the work timer.${b.left.length ? ` Staying there: ${b.left.map((x) => `${x.name} (${x.why.replace(/\.$/, '').toLowerCase()})`).join('; ')}.` : ''} Not now asks again next time; once you’ve brought anything over, it doesn’t ask again.`, ' ', h('button', { class: 'pv-link-btn', disabled: !ctx.canWrite || ui.busy, onclick: () => ctx.onBringNever(), 'data-k': 'bring-never' }, 'Start fresh instead'), '.')),
+    h('div', { class: 'pv-foot-note has-icon' }, icon('info'), h('span', {}, `Habit Nudges keeps the word cards, the plan reminders and the work timer; Pahlavan reads your activity for sitting time but never writes the work timer.${b.left.length ? ` Staying there: ${b.left.map((x) => `${x.name} (${x.why.replace(/\.$/, '').toLowerCase()})`).join('; ')}.` : ''} Not now asks again next time; once you’ve brought anything over, it doesn’t ask again.`, ' ', h('button', { class: 'pv-link-btn', disabled: !ctx.canWrite || ui.busy, onclick: () => ctx.onBringNever(), 'data-k': 'bring-never' }, 'Start fresh instead'), '.')),
   );
 }
 

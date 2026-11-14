@@ -210,11 +210,14 @@ function morningCard(c: CheckinScreen, st: CheckinState, ctx: CheckinContext): H
       const t = input.value.trim();
       const v = t === '' ? null : sleep ? parseHours(t) : Number(t);
       if (t !== '' && (v === null || !Number.isFinite(v))) {
+        // The wrapper is marked too: its border shows it (a class, not :has(), which the directory's review warns about).
         input.classList.add('is-bad');
+        input.closest('.pv-field-in')?.classList.add('is-bad');
         input.setAttribute('aria-invalid', 'true');
         return;
       }
       input.classList.remove('is-bad');
+      input.closest('.pv-field-in')?.classList.remove('is-bad');
       input.removeAttribute('aria-invalid');
       m.values[f.key] = v === null ? null : f.key === 'weight' ? Math.round(F.kg(v) * 10) / 10 : v;
       change();

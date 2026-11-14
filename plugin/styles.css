@@ -255,7 +255,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view { --pv-acc-movements: #4f7a28; }
 .theme-dark .pahlavan-view { --pv-acc-movements: #9cc96b; }
 .pahlavan-view .pv-sections button[data-section="movements"] svg { color: var(--pv-acc-movements); }
-.pahlavan-view [data-home] [hidden] { display: none !important; }
+.pahlavan-view [data-home] [hidden][hidden] { display: none; }
 
 .pahlavan-view .pv-home-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .pahlavan-view .pv-home-count { color: var(--text-muted); font-size: 12.5px; font-weight: 600; }
@@ -294,7 +294,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-home-rest { margin-top: 8px; }
 
 /* Progress: three small tiles, one number and one sentence each. */
-.pahlavan-view .pv-home-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); column-gap: 12px; }
+.pahlavan-view .pv-home-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); gap: normal 12px; }
 /* Each tile spans the four shared rows (label, number, picture, line), so the pictures and lines align across tiles. */
 .pahlavan-view .pv-home-tiles > .pv-home-tile { grid-row: span 4; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; row-gap: 6px; position: relative; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
 .pahlavan-view .pv-home-tile { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; white-space: normal; gap: 6px; padding: 14px 14px 12px; border: 1px solid var(--pv-card-line); border-radius: 12px; background: transparent; box-shadow: none; text-align: left; cursor: pointer; color: inherit; font: inherit; height: auto; }
@@ -337,7 +337,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 /* Food and habits: two plain rows. */
 .pahlavan-view [data-home="food"] { container-type: inline-size; }
 .pahlavan-view .pv-home-pair { display: grid; gap: 14px; }
-@container (min-width: 560px) { .pahlavan-view .pv-home-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; } }
+@container (min-width: 560px) { .pahlavan-view .pv-home-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; } }
 .pahlavan-view .pv-home-kv { display: flex; align-items: center; gap: 12px; }
 .pahlavan-view .pv-home-kv .ic { flex: 0 0 auto; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--background-modifier-hover); }
 .pahlavan-view .pv-home-kv .ic svg { width: 16px; height: 16px; color: var(--pv-line); }
@@ -350,7 +350,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 
 /* Your tabs: one tile per tab (its name, what it is for, where it stands now), a list in a narrow pane. */
 .pahlavan-view .pv-home-tabs-card { container-type: inline-size; }
-.pahlavan-view .pv-home-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); column-gap: 12px; }
+.pahlavan-view .pv-home-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); gap: normal 12px; }
 /* Each tile spans the four shared rows (icon, name, what it is for, now), so the lines under them align across tiles. */
 .pahlavan-view .pv-home-tabs > .pv-home-tab { grid-row: span 4; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; align-items: start; row-gap: 5px; }
 .pahlavan-view .pv-home-tab {
@@ -385,8 +385,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 @container (max-width: 860px) {
   .pahlavan-view .pv-home-tabs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 8px; }
   .pahlavan-view .pv-home-tabs > .pv-home-tab { grid-row: auto; grid-template-rows: none; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; }
-  .pahlavan-view .pv-home-tab { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "ic nm go" "ic does go" "ic now go"; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px; }
-  .pahlavan-view .pv-home-tab .top { display: contents; }
+  .pahlavan-view .pv-home-tab { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "ic nm go" "ic does go" "ic now go"; gap: 2px 12px; align-items: center; padding: 12px; }
+  .pahlavan-view .pv-home-tab .top { grid-area: 1 / 1 / -1 / -1; display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; justify-content: normal; margin-bottom: 0; }
   .pahlavan-view .pv-home-tab .ic { grid-area: ic; align-self: start; }
   .pahlavan-view .pv-home-tab .go { grid-area: go; }
   .pahlavan-view .pv-home-tab .nm { grid-area: nm; font-size: 19px; }
@@ -398,15 +398,16 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 @keyframes pv-home-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes pv-home-fill { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes pv-home-arc { from { stroke-dasharray: 0 100; } }
-.pahlavan-view .pv-home-intro > .pv-hero, .pahlavan-view .pv-home-intro .pv-home-grid > * { animation: pv-home-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(1) { animation-delay: 0.08s; }
-.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(2) { animation-delay: 0.14s; }
-.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(3) { animation-delay: 0.2s; }
-.pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(4) { animation-delay: 0.26s; }
-.pahlavan-view .pv-home-intro .pv-hero-ring .pv-ring-seg:not(.is-empty) { stroke-dasharray: 1; animation: pv-home-fill 0.9s 0.25s ease-out both; }
-.pahlavan-view .pv-home-intro .pv-home-ring .arc { animation: pv-home-arc 1s 0.45s ease-out both; }
-@media (prefers-reduced-motion: reduce) {
-  .pahlavan-view .pv-home-intro *, .pahlavan-view .pv-home-intro > * { animation: none !important; }
+.pahlavan-view .pv-home-intro .pv-hero-ring .pv-ring-seg:not(.is-empty) { stroke-dasharray: 1; }
+/* Only when the system allows motion (Reduce motion off), so nothing has to switch them off again. */
+@media (prefers-reduced-motion: no-preference) {
+  .pahlavan-view .pv-home-intro > .pv-hero, .pahlavan-view .pv-home-intro .pv-home-grid > * { animation: pv-home-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(1) { animation-delay: 0.08s; }
+  .pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(2) { animation-delay: 0.14s; }
+  .pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(3) { animation-delay: 0.2s; }
+  .pahlavan-view .pv-home-intro .pv-home-grid > :nth-child(4) { animation-delay: 0.26s; }
+  .pahlavan-view .pv-home-intro .pv-hero-ring .pv-ring-seg:not(.is-empty) { animation: pv-home-fill 0.9s 0.25s ease-out both; }
+  .pahlavan-view .pv-home-intro .pv-home-ring .arc { animation: pv-home-arc 1s 0.45s ease-out both; }
 }
 
 @media (max-width: 900px) {
@@ -675,7 +676,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-bm-reg.is-declared .pv-bm-reg-name { color: var(--text-normal); font-weight: 600; }
 .pahlavan-view .pv-bm-reg-star { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; color: var(--pv-kicker); fill: currentColor; }
 /* Read by screen readers, not drawn: words for what a mark (the declared star) shows. */
-.pahlavan-view .pv-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.pahlavan-view .pv-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; opacity: 0; white-space: nowrap; border: 0; }
 .pahlavan-view .pv-bm-side li.pv-bm-reg > .pv-bm-reg-sets { text-align: right; }
 .pahlavan-view .pv-bm-side li.pv-bm-reg > .pv-status { padding: 1px 7px 1px 5px; font-size: 11px; }
 .pahlavan-view .pv-bm-side li.pv-bm-reg > .pv-status svg { width: 12px; height: 12px; }
@@ -773,8 +774,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 }
 @container pahlavan (max-width: 760px) {
   .pahlavan-view .pv-span-7, .pahlavan-view .pv-span-5 { grid-column: span 12; }
-  /* The independent columns dissolve: their cards read one under the other, by their order. */
-  .pahlavan-view .pv-col { display: contents; }
+  /* The Plan's columns stack, the first over the second, across the width (Progress draws no columns here). */
+  .pahlavan-view .pv-stack.pv-col { grid-column: 1 / -1; }
   .pahlavan-view .pv-bodymap { grid-template-columns: minmax(0, 1fr); }
   .pahlavan-view .pv-top { flex-direction: column; align-items: flex-start; gap: 10px; }
   .pahlavan-view .pv-hero { flex-direction: column; align-items: flex-start; gap: 18px; padding: 22px 22px; }
@@ -786,8 +787,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 }
 
 /* ── The Log panel (a side panel over the view) ────────────── */
-.pahlavan-view .pv-link { display: inline; padding: 0; border: none; box-shadow: none; background: none; color: inherit; font: inherit; text-decoration: underline; text-decoration-color: var(--text-faint); text-underline-offset: 2px; cursor: pointer; }
-.pahlavan-view .pv-link:hover { color: var(--text-normal); text-decoration-color: currentColor; }
+.pahlavan-view .pv-link { display: inline; padding: 0; border: none; box-shadow: none; background: none; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.pahlavan-view .pv-link:hover { color: var(--text-normal); }
 .pahlavan-view .pv-day { position: relative; }
 .pahlavan-view .pv-day.is-editable { cursor: pointer; }
 .pahlavan-view .pv-day.is-editable:hover { border-color: var(--pv-card-line); background: var(--background-modifier-hover); }
@@ -859,7 +860,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-dose b { color: var(--text-normal); font-weight: 650; }
 .pahlavan-view .pv-lg-item-head .pv-lg-seg { height: 34px; }
 .pahlavan-view .pv-lg-item-head .pv-lg-seg button { padding: 0 11px; font-size: 12.5px; }
-.pahlavan-view .pv-lg-item.is-skipped .pv-lg-name-line b { color: var(--text-faint); text-decoration: line-through; text-decoration-color: var(--text-faint); }
+.pahlavan-view .pv-lg-item.is-skipped .pv-lg-name-line b { color: var(--text-faint); text-decoration: line-through; }
 .pahlavan-view .pv-lg-item.is-skipped .pv-lg-dose { color: var(--text-faint); }
 .pahlavan-view .pv-lg-skip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 0 38px; color: var(--text-muted); font-size: 12px; font-weight: 600; }
 .pahlavan-view .pv-lg-skip i { font-style: normal; font-weight: 500; color: var(--text-faint); }
@@ -1005,7 +1006,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-lg-sum-also svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--pv-line); }
 .pahlavan-view .pv-lg-json { margin-top: 10px; font-size: 12px; }
 .pahlavan-view .pv-lg-json summary { cursor: pointer; color: var(--text-muted); font-weight: 600; }
-.pahlavan-view .pv-lg-json pre { margin: 8px 0 0; padding: 10px 12px; max-height: 260px; overflow: auto; border-radius: 9px; background: var(--background-modifier-hover); font-family: var(--font-monospace, ui-monospace, monospace); font-size: 11px; line-height: 1.45; user-select: text; }
+.pahlavan-view .pv-lg-json pre { margin: 8px 0 0; padding: 10px 12px; max-height: 260px; overflow: auto; border-radius: 9px; background: var(--background-modifier-hover); font-family: var(--font-monospace, monospace); font-size: 11px; line-height: 1.45; user-select: text; }
 @media (max-width: 1240px) {
   .pahlavan-view .pv-lg { width: min(560px, 100%); }
   .pahlavan-view .pv-lg-head, .pahlavan-view .pv-lg-foot, .pahlavan-view .pv-lg-sum, .pahlavan-view .pv-lg-body { padding-left: 22px; padding-right: 22px; }
@@ -1368,7 +1369,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-field-in input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--text-normal); font: inherit; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .pahlavan-view .pv-field-in input { -moz-appearance: textfield; appearance: textfield; }
 .pahlavan-view .pv-field-in input::-webkit-inner-spin-button, .pahlavan-view .pv-field-in input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.pahlavan-view .pv-field-in:has(input.is-bad) { border-color: var(--pv-over); }
+.pahlavan-view .pv-field-in.is-bad { border-color: var(--pv-over); }
 .pahlavan-view .pv-field-in input::placeholder { font-weight: 400; color: var(--text-faint); }
 .pahlavan-view .pv-field-in em { font-style: normal; color: var(--text-faint); font-size: 12px; font-weight: 500; margin-left: 6px; }
 .pahlavan-view .pv-mc-sore { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; padding-top: 14px; border-top: 1px solid var(--pv-card-line); align-items: start; }
@@ -1564,7 +1565,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 /* The card draws its own × (or "Stays open"), so the modal's frame shows
    nothing but the content: Obsidian's close control was .modal-close-button
    before 1.15 and is .modal-header-button since, beside .modal-header. */
-.modal.pahlavan-modal > :not(.modal-content) { display: none !important; }
+.modal-container .modal.pahlavan-modal > :not(.modal-content) { display: none; }
 .modal.pahlavan-modal > .modal-content { padding: 0; margin: 0; overflow: visible; }
 .pahlavan-view.pv-nv { position: relative; max-height: calc(100vh - 140px); overflow: auto; background: var(--background-primary); color: var(--text-normal); border: 1px solid var(--pv-card-line); border-radius: var(--pv-radius-card); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); text-align: left; user-select: text; }
 .pahlavan-view.pv-nv.is-stand { border-color: color-mix(in srgb, var(--pv-kicker) 45%, var(--pv-card-line)); }
@@ -1712,7 +1713,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
    card and the morning reminder time, and the Plan's Desk breaks card;
    ported from the signed-off mockups (pahlavan.css, "STAGE 3.5"). Colours
    are the validated tokens above; nothing new in the ramp. */
-.pahlavan-view .pv-foot-note:has(> svg) { display: flex; gap: 6px; align-items: flex-start; }
+.pahlavan-view .pv-foot-note.has-icon { display: flex; gap: 6px; align-items: flex-start; }
 .pahlavan-view .pv-foot-note > svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--text-faint); }
 .pahlavan-view .pv-icon-btn { width: 28px; height: 28px; display: inline-grid; place-items: center; padding: 0; border: none; border-radius: 7px; box-shadow: none; background: transparent; color: var(--text-faint); cursor: pointer; }
 .pahlavan-view .pv-icon-btn svg { width: 15px; height: 15px; }
@@ -1945,7 +1946,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-field-in.pv-sf-date { width: 150px; height: 30px; padding: 0 8px; display: inline-flex; }
 .pahlavan-view .pv-field-in.pv-sf-date input { font-size: 13px; }
 .pahlavan-view .pv-field-in.pv-sf-path { height: 30px; margin-top: 6px; }
-.pahlavan-view .pv-field-in.pv-sf-path input { font-family: var(--font-monospace, ui-monospace, "SF Mono", Menlo, monospace); font-size: 11.5px; font-weight: 500; }
+.pahlavan-view .pv-field-in.pv-sf-path input { font-family: var(--font-monospace, "SF Mono", Menlo, monospace); font-size: 11.5px; font-weight: 500; }
 .pahlavan-view .pv-sf-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pahlavan-view .pv-sf-chip { display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 2px 0 10px; border-radius: 999px; background: var(--background-modifier-hover); font-size: 12.5px; font-weight: 600; }
 .pahlavan-view .pv-sf-chip .pv-icon-btn { width: 22px; height: 22px; }
@@ -2017,7 +2018,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-tip-note { margin-top: 6px; color: var(--text-muted); }
 
 /* A number with a reason: a faint dotted underline, the Why on hover. */
-.pahlavan-view .pv-fd-why { cursor: help; text-decoration: underline dotted var(--text-faint); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+/* A dotted border, not a styled underline (which the directory's review warns about); the -1px margin keeps a block-level one from growing by it. */
+.pahlavan-view .pv-fd-why { cursor: help; border-bottom: 1px dotted var(--text-faint); margin-bottom: -1px; }
 
 .pahlavan-view .pv-fd-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; align-items: start; }
 .pahlavan-view .pv-fd-main { grid-column: span 7; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
@@ -2061,8 +2063,8 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-fd-day .pv-card-head { margin-bottom: 10px; }
 .pahlavan-view .pv-fd-day .pv-card-sub { line-height: 1.45; }
 .pahlavan-view .pv-fd-tl { list-style: none; margin: 6px 0 0; padding: 0; }
-.pahlavan-view .pv-fd-tl-row { display: grid; grid-template-columns: 42px 26px minmax(0, 1fr); column-gap: 12px; }
-.pahlavan-view .pv-fd-day.is-untimed .pv-fd-tl-row { grid-template-columns: 0 26px minmax(0, 1fr); column-gap: 8px; }
+.pahlavan-view .pv-fd-tl-row { display: grid; grid-template-columns: 42px 26px minmax(0, 1fr); gap: normal 12px; }
+.pahlavan-view .pv-fd-day.is-untimed .pv-fd-tl-row { grid-template-columns: 0 26px minmax(0, 1fr); gap: normal 8px; }
 .pahlavan-view .pv-fd-tl-row time { padding-top: 3px; text-align: right; color: var(--text-muted); font-size: 12.5px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pahlavan-view .pv-fd-tl-rail { position: relative; display: flex; justify-content: center; }
 .pahlavan-view .pv-fd-tl-rail::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--pv-card-line); }
@@ -2227,7 +2229,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
   .pahlavan-view .pv-fd-hand { width: 27px; height: 27px; border-radius: 8px; }
   .pahlavan-view .pv-fd-hand svg { width: 19px; height: 19px; }
   .pahlavan-view .pv-fd-hg-icons { gap: 3px; }
-  .pahlavan-view .pv-fd-tl-row { grid-template-columns: 38px 24px minmax(0, 1fr); column-gap: 10px; }
+  .pahlavan-view .pv-fd-tl-row { grid-template-columns: 38px 24px minmax(0, 1fr); gap: normal 10px; }
   .pahlavan-view .pv-fd-idea { flex-direction: column; gap: 8px; }
   .pahlavan-view .pv-fd-soon { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -2295,7 +2297,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-fold-bar { display: none; }
 .pahlavan-view .pv-card.is-folded { display: block; padding: 0; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.035); }
 .theme-dark .pahlavan-view .pv-card.is-folded { box-shadow: none; }
-.pahlavan-view .pv-card.is-folded > :not(.pv-fold-bar) { display: none !important; }
+.pahlavan-view .pv-card.is-folded.is-folded > :not(.pv-fold-bar) { display: none; }
 .pahlavan-view .pv-card.is-folded > .pv-fold-bar { display: block; width: 100%; height: auto; padding: 0; border: none; border-radius: inherit; box-shadow: none; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; container-type: inline-size; }
 .pahlavan-view .pv-card.is-folded > .pv-fold-bar:hover { background: var(--background-modifier-hover); }
 .pahlavan-view .pv-fold-h { display: grid; grid-template-columns: auto minmax(0, 1fr) 28px; align-items: center; gap: 14px; padding: 9px 13px 9px 22px; min-height: 46px; }
@@ -2352,7 +2354,7 @@ body.isfahan.isfahan-night .pahlavan-view { --pv-seq-1: #0b5953; --pv-seq-2: #2b
 .pahlavan-view .pv-welcome-steps { list-style: none; margin: 12px 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
 .pahlavan-view .pv-welcome-steps li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: var(--background-modifier-hover); font-size: 12.5px; line-height: 1.4; }
 .pahlavan-view .pv-welcome-steps li > div { display: flex; flex-direction: column; gap: 2px; }
-.pahlavan-view .pv-welcome-steps li.is-done b { color: var(--text-muted); font-weight: 600; text-decoration: line-through; text-decoration-color: var(--text-faint); }
+.pahlavan-view .pv-welcome-steps li.is-done b { color: var(--text-muted); font-weight: 600; text-decoration: line-through; }
 .pahlavan-view .pv-welcome-steps li.is-next { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pv-kicker) 55%, transparent); background: transparent; }
 .pahlavan-view .pv-welcome-mark { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--pv-card-line); color: var(--text-muted); font-size: 11.5px; font-weight: 700; }
 .pahlavan-view .pv-welcome-steps li.is-done .pv-welcome-mark { border-color: transparent; background: var(--pv-trained); color: #fff; }

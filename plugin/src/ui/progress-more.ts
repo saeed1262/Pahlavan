@@ -520,18 +520,16 @@ function skills(sk: Skills, ctx: MoreContext): HTMLElement {
 // ================================================================ the section
 /**
  * A two-column card layout as two independent columns (a 7 and a 5), so a
- * short card never leaves a gap beside a tall one. Each card keeps its place
- * in the reading order as `order`: on a narrow pane the columns dissolve
- * (CSS `display: contents`) and the cards read in that order, one under the
- * other, as they did in rows.
+ * short card never leaves a gap beside a tall one. On a narrow pane there are
+ * no columns: the cards come back as they are, in the reading order, and read
+ * one under the other as they did in rows (the view draws again when the
+ * pane's width changes).
  */
-function columns(cards: readonly (readonly [HTMLElement, 'left' | 'right'])[]): HTMLElement[] {
+function columns(cards: readonly (readonly [HTMLElement, 'left' | 'right'])[], narrow: boolean): HTMLElement[] {
+  if (narrow) return cards.map(([c]) => c);
   const left = h('div', { class: 'pv-span-7 pv-stack pv-col' });
   const right = h('div', { class: 'pv-span-5 pv-stack pv-col' });
-  cards.forEach(([c, side], i) => {
-    c.style.order = String(i + 1);
-    (side === 'left' ? left : right).append(c);
-  });
+  for (const [c, side] of cards) (side === 'left' ? left : right).append(c);
   return [left, right];
 }
 
@@ -566,10 +564,10 @@ export function renderMore(grid: HTMLElement, section: ProgressSection, m: MoreM
   const notes = firstRunNotes(notesFor(m, section).filter((n) => !['one-photo-set', 'no-photos', 'no-targets', 'one-tape'].includes(n.code)));
   const head = notes.length ? h('div', { class: 'pv-notes pv-span-12' }, notes.map((n) => h('div', { class: 'pv-note' }, icon('info'), h('span', {}, n.text)))) : null;
   const cards: Child[] = [];
-  if (section === 'training' && m.training) cards.push(...columns([[records(m.training, w(7), ctx), 'left'], [everyLift(m.training, ctx), 'right'], [sessions(m.training, w(7), ctx), 'left'], [cardio(m.training, w(5), ctx), 'right']]));
+  if (section === 'training' && m.training) cards.push(...columns([[records(m.training, w(7), ctx), 'left'], [everyLift(m.training, ctx), 'right'], [sessions(m.training, w(7), ctx), 'left'], [cardio(m.training, w(5), ctx), 'right']], narrow));
   if (section === 'body' && m.body) {
     const b = bodyIn(m.body, ctx.units);
-    cards.push(...columns([[tape(b, w(7), ctx), 'left'], [targets(b, w(5), ctx), 'right']]), photos(b, ctx));
+    cards.push(...columns([[tape(b, w(7), ctx), 'left'], [targets(b, w(5), ctx), 'right']], narrow), photos(b, ctx));
   }
   if (section === 'health' && m.health) cards.push(...(['rhr', 'sleep', 'steps'] as const).map((k) => healthTile(k, m.health, w(4), ctx)), healthDetail(m.health, w(12), ctx, baseline(ctx.health === 'sleep' ? 'sleepH' : ctx.health)));
   if (section === 'skills' && m.skills) cards.push(skills(m.skills, ctx));

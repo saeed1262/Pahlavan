@@ -52,10 +52,16 @@ describe('Progress: two-column sections as independent columns', () => {
     assert.deepEqual(cols.map((c) => c.children.map(kicker)), [['Records and milestones', 'Sessions'], ['Every lift', 'Cardio minutes']]);
   });
 
-  it('keeps the reading order for a narrow pane: Records, Every lift, Sessions, Cardio', () => {
-    const cards = draw('training').querySelectorAll('.pv-card').filter((c) => c.style['order']);
-    const order = [...cards].sort((a, b) => Number(a.style['order']) - Number(b.style['order'])).map(kicker);
-    assert.deepEqual(order, ['Records and milestones', 'Every lift', 'Sessions', 'Cardio minutes']);
+  it('keeps the reading order for a narrow pane: no columns, Records, Every lift, Sessions, Cardio', () => {
+    const grid = draw('training', 700);
+    assert.equal(grid.children.filter((c) => c.classList.contains('pv-col')).length, 0);
+    assert.deepEqual(grid.children.filter((c) => c.classList.contains('pv-card')).map(kicker), ['Records and milestones', 'Every lift', 'Sessions', 'Cardio minutes']);
+  });
+
+  it('Body on a narrow pane: the tape, the targets, then the photos, one under the other', () => {
+    const grid = draw('body', 700);
+    assert.equal(grid.children.filter((c) => c.classList.contains('pv-col')).length, 0);
+    assert.ok(grid.children.at(-1)!.classList.contains('pv-span-12'), 'the photos last');
   });
 
   it('Body: the tape and the targets side by side in their own columns, the photos below across', () => {
@@ -67,10 +73,10 @@ describe('Progress: two-column sections as independent columns', () => {
     assert.ok(grid.children.at(-1)!.classList.contains('pv-span-12'), 'the photos span the width');
   });
 
-  it('the stylesheet dissolves the columns on a narrow pane', () => {
+  it('the stylesheet stacks any columns on a narrow pane (the Plan screen’s), across the width', () => {
     const css = readFileSync(new URL('../styles.css', import.meta.url).pathname, 'utf8');
     const narrow = css.slice(css.indexOf('@container pahlavan (max-width: 760px) {'));
-    assert.match(narrow.slice(0, narrow.indexOf('\n}')), /\.pahlavan-view \.pv-col \{ display: contents; \}/);
+    assert.match(narrow.slice(0, narrow.indexOf('\n}')), /\.pahlavan-view \.pv-stack\.pv-col \{ grid-column: 1 \/ -1; \}/);
   });
 });
 

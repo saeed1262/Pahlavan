@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.2: styles for the directory's review
+
+- **Styles cleanup for the directory's review.** The changes Obsidian's automated review of 0.28.1 asked for in the stylesheet: no styled underlines, multi-column gaps, `display: contents`, `clip-path`, `:has()` or `!important`, and no `ui-monospace` fallback. Home's opening animation now runs only when the system allows motion, so Reduce motion needs no override. On a narrow pane, Progress draws its cards in one column in their reading order (the view already draws again when the pane's width changes). A test fails on any of these before a release. What you see stays the same, except that a link's underline now takes the link's own colour.
+
 ## 0.28.1: a short day after two lifting days, and fixes
 
 - **No third lifting day in a row.** Today picked lifting or short by the weekday alone, so a week that slipped a day could stack three lifting days: lift on Tuesday and Wednesday (Wednesday's short day), and Thursday still offered the next lift. Now a lifting day after two logged lifting days in a row offers the next short session instead, while the week still has short sessions to do, and says why ("you lifted on Tuesday and Wednesday"). Once the week's short sessions are done, the lift stays. A rest day, an unlogged day or a custom session doesn't count as lifting, so a week on schedule reads as before. The reminders, the Food tab's kind of day, the gym page and the phone follow the same rule, and **Change session** still offers the lift.

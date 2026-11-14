@@ -216,9 +216,10 @@ describe('the card’s frame', () => {
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1]!.trim(), body: m[2]! }));
 
   it('shows one close control: the card’s own, never Obsidian’s beside it (whatever 1.15 or later calls it)', () => {
-    const hide = rules.find((r) => r.sel.split(',').some((s) => s.trim() === '.modal.pahlavan-modal > :not(.modal-content)'));
+    // Four classes outrank Obsidian's own rules for the frame's children (one or two classes), so no !important.
+    const hide = rules.find((r) => r.sel.split(',').some((s) => s.trim() === '.modal-container .modal.pahlavan-modal > :not(.modal-content)'));
     assert.ok(hide, 'a rule hides every child of the card’s modal but its content');
-    assert.match(hide.body, /display:\s*none\s*!important/);
+    assert.match(hide.body, /display:\s*none/);
     // Nothing shows one of those children again.
     const back = rules.filter((r) => r.sel.split(',').some((s) => /\.pahlavan-modal\s*>\s*\.(?!modal-content\b)/.test(s)) && /display:\s*(?!none)/.test(r.body));
     assert.deepEqual(back.map((r) => r.sel), []);

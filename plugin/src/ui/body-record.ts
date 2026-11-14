@@ -84,7 +84,7 @@ export function bodyRecordCard(ctx: BodyRecordContext): HTMLElement {
     ),
     editor,
     h('div', { class: 'pv-br-grid' }, tiles),
-    h('div', { class: 'pv-foot-note' }, icon('info'), 'Saved to body-data.json and the dated folders under Progress Photos, field by field, the files Habit Nudges writes too.'),
+    h('div', { class: 'pv-foot-note has-icon' }, icon('info'), 'Saved to body-data.json and the dated folders under Progress Photos, field by field, the files Habit Nudges writes too.'),
   );
 }
 

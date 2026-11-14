@@ -386,7 +386,7 @@ function readLiftProgression(raw: unknown, p: Problems, path: string): LiftProgr
 export function readRules(plan: unknown): ReadRules {
   const legacy = legacyRules();
   const p = new Problems();
-  const rules = { ...legacy } as PlanRules;
+  const rules = { ...legacy };
   const sources = Object.fromEntries(RULE_KINDS.map((k) => [k, 'legacy-default'])) as Record<RuleKind, RuleSource>;
   const raw = isObj(plan) ? plan['rules'] : undefined;
   if (raw !== undefined && !isObj(raw)) p.add('rules', 'is not an object: every rule is the old default');
